@@ -1,0 +1,7 @@
+{
+  "prefix": "queryInsightsDashboards",
+  "paths": {
+    "queryInsightsDashboards": "."
+  },
+  "translations": ["translations/ja-JP.json"]
+}
