@@ -5,8 +5,8 @@
 
 module.exports = {
   rootDir: '../',
-  setupFiles: [],
-  setupFilesAfterEnv: [],
+  setupFiles: ['<rootDir>/test/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup.jest.ts'],
   roots: ['<rootDir>'],
   coverageDirectory: './coverage',
   moduleNameMapper: {
