@@ -5,6 +5,11 @@
   "scripts": {
     "build": "yarn plugin-helpers build",
     "plugin-helpers": "../../scripts/use_node ../../scripts/plugin_helpers",
-    "osd": "../../scripts/use_node ../../scripts/osd"
+    "osd": "../../scripts/use_node ../../scripts/osd",
+    "test:jest": "../../node_modules/.bin/jest --config ./test/jest.config.js"
+  },
+  "devDependencies": {
+    "jest-dom": "^4.0.0",
+    "ts-jest": "^29.1.5"
   }
 }
