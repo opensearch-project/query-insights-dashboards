@@ -12,8 +12,15 @@ export class QueryInsightsDashboardsPlugin
   public setup(core: CoreSetup): QueryInsightsDashboardsPluginSetup {
     // Register an application into the side navigation menu
     core.application.register({
-      id: 'queryInsightsDashboards',
-      title: PLUGIN_NAME,
+      id: PLUGIN_NAME,
+      title: 'Query Insights',
+      description: 'OpenSearch Dashboards Query Insights Plugin',
+      category: {
+        id: 'opensearch',
+        label: 'OpenSearch Plugins',
+        order: 2000,
+      },
+      order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle
         const { renderApp } = await import('./application');
