@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
-import { EuiTab, EuiTabs } from '@elastic/eui';
+import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
 import Configuration from '../Configuration';
-import Dashboard from '../Dashboard';
+import QueryInsights from '../QueryInsights';
+import { FormattedMessage } from '@osd/i18n/react';
 
 const TopNQueries = (props) => {
-  const { httpClient, notifications, setFlyout, landingDataSourceId } = props;
+  const conf = 'configuration'
+  // const { httpClient, notifications, setFlyout, landingDataSourceId } = props;
   const history = useHistory();
   const location = useLocation();
-  const [selectedTabId, setSelectedTabId] = useState(location.pathname.includes('configuration') ? 'configuration' : 'topNQueries')
+  const [selectedTabId, setSelectedTabId] = useState(location.pathname.includes(conf) ? conf : 'topNQueries')
 
   const tabs = [
     {
       id: 'topNQueries',
-      name: 'Top N Queries',
-      route: '/dashboard',
+      name: 'Top N queries',
+      route: '/queryInsights',
     },
     {
       id: 'configuration',
@@ -27,7 +29,7 @@ const TopNQueries = (props) => {
     const { pathname: prevPathname } = location;
     const { pathname: currPathname } = props.location;
     if (prevPathname !== currPathname) {
-      const selectedTabId = currPathname.includes('configuration') ? 'configuration' : 'topNQueries';
+      const selectedTabId = currPathname.includes(conf) ? conf : 'topNQueries';
       setSelectedTabId(selectedTabId);
     }
   }, [location, props.location]);
@@ -50,16 +52,50 @@ const TopNQueries = (props) => {
   );
 
   return (
-    <div>
-      <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+    <div style={{ padding: '35px 35px' }}>
+      <Switch>
+        <Route
+          exact
+          path="/queryInsights"
+          render={(props) => (
+            <EuiTitle size="l">
+              <h1>
+                <FormattedMessage
+                  id={"queryInsightsDashboards.topnqueries"}
+                  defaultMessage="{name}"
+                  values={{ name: "Query insights - Top N queries" }}
+                />
+              </h1>
+            </EuiTitle>
+          )}
+        />
+        <Route
+          exact
+          path="/configuration"
+          render={(props) => (
+            <EuiTitle size="l">
+              <h1>
+                <FormattedMessage
+                  id={"queryInsightsDashboards.configuration"}
+                  defaultMessage="{name}"
+                  values={{ name: "Query insights - Configuration" }}
+                />
+              </h1>
+            </EuiTitle>
+          )}
+        />
+      </Switch>
+      <div style={{ padding: '25px 0px' }}>
+        <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+      </div>
       <div style={{ padding: '25px 25px' }}>
         <Switch>
           <Route
             exact
-            path="/dashboard"
+            path="/queryInsights"
             render={(props) => (
-              <Dashboard
-            //     {...props}
+              <QueryInsights
+                {...props}
             //     httpClient={httpClient}
             //     notifications={notifications}
             //     perAlertView={false}
@@ -80,7 +116,7 @@ const TopNQueries = (props) => {
               />
             )}
           />
-          <Redirect to="/dashboard" />
+          <Redirect to="/queryInsights" />
         </Switch>
       </div>
     </div>
