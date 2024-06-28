@@ -3,6 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import Dashboard from './Dashboard';
+import QueryInsights from './QueryInsights';
 
-export default Dashboard;
+export default QueryInsights;
