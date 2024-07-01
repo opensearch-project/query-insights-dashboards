@@ -1,21 +1,16 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 
-export default class Configuration extends Component{
-    constructor(props) {
-        super(props);
-    }
+const Configuration = () => {
 
-    // Define the component's methods here
-    myMethod() {
-      // Method implementation
-    }
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
 
-    render() {
-      // Return the component's JSX or DOM structure
-      return (
-        <div>
-          {/*  */}
-        </div>
-      );
-    }
-  }
+  return (
+    <div>
+    </div>
+  );
+};
+
+export default Configuration;

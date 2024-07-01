@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
-import Configuration from '../Configuration';
-import QueryInsights from '../QueryInsights';
+import Configuration from '../Configuration/Configuration';
+import QueryInsights from '../QueryInsights/QueryInsights';
 import { FormattedMessage } from '@osd/i18n/react';
 
 const TopNQueries = (props) => {

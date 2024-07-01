@@ -14,7 +14,8 @@ export const renderApp = (
   { navigation },
   { appBasePath, element }
 ) => {
-  const isDarkMode = coreStart.uiSettings.get('theme:darkMode') || false;
+  // const isDarkMode = coreStart.uiSettings.get('theme:darkMode') || false;
+  coreStart.chrome.setBreadcrumbs([{text: 'Query insights'}]);
   ReactDOM.render(
     <Router>
       <QueryInsightsDashboardsApp

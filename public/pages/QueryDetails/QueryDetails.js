@@ -1,21 +1,16 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 
-export default class QueryDetails extends Component{
-    constructor(props) {
-        super(props);
-    }
+const QueryDetails = () => {
 
-    // Define the component's methods here
-    myMethod() {
-      // Method implementation
-    }
+  useEffect(() => {
+    return () => {
+    };
+  }, []);
 
-    render() {
-      // Return the component's JSX or DOM structure
-      return (
-        <def>
+  return (
+    <div>
+    </div>
+  );
+};
 
-        </def>
-      );
-    }
-  }
+export default QueryDetails;
