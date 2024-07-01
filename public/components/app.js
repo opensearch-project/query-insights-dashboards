@@ -2,7 +2,7 @@ import React from 'react';
 // import { i18n } from '@osd/i18n';
 // import { FormattedMessage, I18nProvider } from '@osd/i18n/react';
 import { Route, BrowserRouter as Router } from 'react-router-dom';
-import TopNQueries from '../pages/TopNQueries'
+import TopNQueries from '../pages/TopNQueries/TopNQueries'
 
 // import {
 //   EuiButton,
