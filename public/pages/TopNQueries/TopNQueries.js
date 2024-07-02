@@ -88,7 +88,7 @@ const TopNQueries = (props) => {
       <div style={{ padding: '25px 0px' }}>
         <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
       </div>
-      <div style={{ padding: '25px 25px' }}>
+      <div>
         <Switch>
           <Route
             exact
