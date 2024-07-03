@@ -7,7 +7,6 @@ import { FormattedMessage } from '@osd/i18n/react';
 
 const TopNQueries = (props) => {
   const conf = 'configuration'
-  // const { httpClient, notifications, setFlyout, landingDataSourceId } = props;
   const history = useHistory();
   const location = useLocation();
   const [selectedTabId, setSelectedTabId] = useState(location.pathname.includes(conf) ? conf : 'topNQueries')
@@ -96,11 +95,6 @@ const TopNQueries = (props) => {
             render={(props) => (
               <QueryInsights
                 {...props}
-            //     httpClient={httpClient}
-            //     notifications={notifications}
-            //     perAlertView={false}
-            //     setFlyout={setFlyout}
-            //     landingDataSourceId={landingDataSourceId}
               />
             )}
           />
@@ -109,10 +103,7 @@ const TopNQueries = (props) => {
             path="/configuration"
             render={(props) => (
               <Configuration
-            //     {...props}
-            //     httpClient={httpClient}
-            //     notifications={notifications}
-            //     landingDataSourceId={landingDataSourceId}
+                {...props}
               />
             )}
           />
