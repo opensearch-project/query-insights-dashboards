@@ -15,12 +15,12 @@ const TopNQueries = (props) => {
     {
       id: 'topNQueries',
       name: 'Top N queries',
-      route: '/queryInsights',
+      route: 'queryInsights',
     },
     {
       id: 'configuration',
       name: 'Configuration',
-      route: '/configuration',
+      route: 'configuration',
     },
   ];
 
@@ -43,7 +43,7 @@ const TopNQueries = (props) => {
   const renderTab = (tab) => (
     <EuiTab
       onClick={() => onSelectedTabChanged(tab.route)}
-      isSelected={tab.id === selectedTabId}
+      isSelected={location.pathname.includes(tab.route)}
       key={tab.id}
     >
       {tab.name}
