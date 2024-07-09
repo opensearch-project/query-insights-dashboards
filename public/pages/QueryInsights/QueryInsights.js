@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { EuiBasicTable,  EuiFlexItem, EuiFieldSearch, EuiSuperDatePicker, EuiFlexGroup, EuiSpacer, EuiInMemoryTable, CriteriaWithPagination } from '@elastic/eui';
+import dateMath from '@elastic/datemath';
+import { EuiSuperDatePicker, EuiInMemoryTable } from '@elastic/eui';
 
 const QueryInsights = () => {
-
-  useEffect(() => {
-    return () => {
-      onRefresh({ start, end } )
-    };
-  }, []);
 
   // Generated fake queries
   const testItems = [
@@ -55,13 +50,13 @@ const QueryInsights = () => {
       "cpu" : 15461000
     },
     {
-      "timestamp" : 1719871061236,
+      "timestamp" : 1712875061236,
       "task_resource_usages" : [
         {
           "action" : "indices:data/read/search[phase/query]",
           "taskId" : 58,
           "parentTaskId" : 57,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "P3aliJxGyghvQKjvhXf57u78",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 6625000,
             "memory_in_bytes" : 818120
@@ -71,7 +66,7 @@ const QueryInsights = () => {
           "action" : "indices:data/read/search",
           "taskId" : 57,
           "parentTaskId" : -1,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "P3aliJxGyghvQKjvhXf57u78",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 0,
             "memory_in_bytes" : 0
@@ -89,20 +84,20 @@ const QueryInsights = () => {
         "query" : 16,
         "fetch" : 0
       },
-      "node_id" : "F9Qw4La8RiOZXji7s6WtTw",
+      "node_id" : "P3aliJxGyghvQKjvhXf57u78",
       "total_shards" : 2,
       "latency" : 17,
       "memory" : 818120,
       "cpu" : 6625000
     },
     {
-      "timestamp" : 1719871061197,
+      "timestamp" : 1709871061197,
       "task_resource_usages" : [
         {
           "action" : "indices:data/read/search[phase/query]",
           "taskId" : 56,
           "parentTaskId" : 55,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "5xUwXtVhSWUdcEcDMZExFLsu",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 2824000,
             "memory_in_bytes" : 288328
@@ -112,7 +107,7 @@ const QueryInsights = () => {
           "action" : "indices:data/read/search",
           "taskId" : 55,
           "parentTaskId" : -1,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "5xUwXtVhSWUdcEcDMZExFLsu",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 0,
             "memory_in_bytes" : 0
@@ -130,20 +125,20 @@ const QueryInsights = () => {
         "query" : 4,
         "fetch" : 0
       },
-      "node_id" : "F9Qw4La8RiOZXji7s6WtTw",
+      "node_id" : "5xUwXtVhSWUdcEcDMZExFLsu",
       "total_shards" : 3,
       "latency" : 4,
       "memory" : 288328,
       "cpu" : 2824000
     },
     {
-      "timestamp" : 1719871061255,
+      "timestamp" : 1714871061255,
       "task_resource_usages" : [
         {
           "action" : "indices:data/read/search[phase/query]",
           "taskId" : 60,
           "parentTaskId" : 59,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "kFeVUOtzZ9bTYHm2EHennkm",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 805000,
             "memory_in_bytes" : 66680
@@ -153,7 +148,7 @@ const QueryInsights = () => {
           "action" : "indices:data/read/search[phase/query]",
           "taskId" : 60,
           "parentTaskId" : 59,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "kFeVUOtzZ9bTYHm2EHennkm",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 805000,
             "memory_in_bytes" : 66680
@@ -163,7 +158,7 @@ const QueryInsights = () => {
           "action" : "indices:data/read/search",
           "taskId" : 59,
           "parentTaskId" : -1,
-          "nodeId" : "F9Qw4La8RiOZXji7s6WtTw",
+          "nodeId" : "kFeVUOtzZ9bTYHm2EHennkm",
           "taskResourceUsage" : {
             "cpu_time_in_nanos" : 0,
             "memory_in_bytes" : 0
@@ -178,7 +173,7 @@ const QueryInsights = () => {
         "my-index-1",
       ],
       "phase_latency_map" : { },
-      "node_id" : "F9Qw4La8RiOZXji7s6WtTw",
+      "node_id" : "kFeVUOtzZ9bTYHm2EHennkm",
       "total_shards" : 5,
       "latency" : 2,
       "memory" : 133360,
@@ -204,19 +199,11 @@ const QueryInsights = () => {
     }
   ];
 
-  const [queries, setQueries] = useState(testItems);
-
-  const convertTimestamp = (unixTime) => {
-    const date = new Date(unixTime);
-    const loc = date.toDateString().split(' ');
-    return loc[1] + ' ' + loc[2] + ', ' + loc[3] + " @ " + date.toLocaleTimeString("en-US");
-  };
-
   const cols = [
     {
       field: 'timestamp',
       name: 'Time stamp',
-      render: (timestamp) => convertTimestamp(timestamp),
+      render: (timestamp) => convertTime(timestamp),
       sortable: true,
       truncateText: true,
     },
@@ -247,7 +234,6 @@ const QueryInsights = () => {
       render: (indices) => indices.toString(),
       sortable: true,
       truncateText: true,
-      // render: (indices) =>
     },
     {
       field: 'search_type',
@@ -275,72 +261,64 @@ const QueryInsights = () => {
       field: 'timestamp',
       direction: 'desc',
     }
-  }
-
-  const onTableChange = (nextValues) => {
-    console.log(nextValues);
   };
 
-  const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([{ start: 'now-30m', end: 'now' }]);
+  const [queries, setQueries] = useState(testItems);
+
+  const convertTime = (unixTime) => {
+    const date = new Date(unixTime);
+    const loc = date.toDateString().split(' ');
+    return loc[1] + ' ' + loc[2] + ', ' + loc[3] + " @ " + date.toLocaleTimeString("en-US");
+  };
+
+  const defaultStart = 'now-24h';
+  const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([{ start: defaultStart, end: 'now' }]);
   const [loading, setLoading] = useState(false);
-  const [start, setStart] = useState('now-30m');
-  const [end, setEnd] = useState('now');
+  const [currStart, setStart] = useState(defaultStart);
+  const [currEnd, setEnd] = useState('now');
 
-  const stopLoading = () => {
-    setLoading(false);
+  const parseDateString = (dateString) => {
+    const date = dateMath.parse(dateString);
+    return date ? date.toDate().getTime() : new Date().getTime();
+  };
+
+  const updateQueries = ({ start, end }) => {
+    const startTimestamp = parseDateString(start);
+    const endTimestamp = parseDateString(end);
+    setQueries(testItems.filter((item) => item.timestamp >= startTimestamp && item.timestamp <= endTimestamp));
   }
 
-  const startLoading = () => {
-    setTimeout(stopLoading, 1000);
-  }
-
-  const onTimeChange = ({ start, end}) => {
-    const usedRange = recentlyUsedRanges.find(
-      (recentlyUsedRange) => !(recentlyUsedRange.start === start && recentlyUsedRange.end === end)
+  const onTimeChange = ({ start, end }) => {
+    const usedRange = recentlyUsedRanges.filter(
+      (range) => !(range.start === start && range.end === end)
     );
     usedRange.unshift({ start, end });
     setStart(start);
     setEnd(end);
-    setRecentlyUsedRanges(usedRange.length > 5 ? usedRange.slice(0, 5) : usedRange);
-    setQueries(testItems.filter((item) => item.timestamp >= start && item.timestamp <= end));
+    setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
+    updateQueries({ start, end });
   };
 
   const onRefresh = async ({ start, end }) => {
-    // setLoading(true);
-    setQueries(testItems.filter((item) => item.timestamp >= start && item.timestamp <= end));
-    // return new Promise((resolve) => {
-    //   setTimeout(resolve, 100);
-    // }).then(() => {
-    //   console.log(start, end, refreshInterval);
-    // });
+    updateQueries({ start, end });
   };
+
+  useEffect(() => {
+    onRefresh({ start: currStart, end: currEnd });
+  }, []);
 
   const searchTopNQueries = () => {
     return {
       box: {
         placeholder: 'Search queries',
-        schema: true,
+        schema: false,
       },
-      // filters:
-      //   [
-      //     {
-      //       type: 'field_value_selection',
-      //         field: 'indices',
-      //       name: 'Index',
-      //       multiSelect: false,
-      //       options: store.countries.map((country) => ({
-      //       value: country.code,
-      //       name: country.name,
-      //       view: `${country.flag} ${country.name}`,
-      //     })),
-      //     },
-      //   ],
       toolsRight: [
         <EuiSuperDatePicker
+          start={currStart}
+          end={currEnd}
           recentlyUsedRanges={recentlyUsedRanges}
           isLoading={loading}
-          start={start}
-          end={end}
           onTimeChange={onTimeChange}
           onRefresh={onRefresh}
           updateButtonProps={{ fill: false }}
@@ -355,9 +333,20 @@ const QueryInsights = () => {
         items={queries}
         columns={cols}
         sorting={sorting}
-        onTableChange={onTableChange}
         loading={loading}
         search={searchTopNQueries()}
+        executeQueryOptions={{
+          defaultFields: [
+            "timestamp",
+            "latency",
+            "cpu",
+            "memory",
+            "indices",
+            "search_type",
+            "node_id",
+            "total_shards",
+          ]
+        }}
         allowNeutralSort={false}
       />
     </div>
