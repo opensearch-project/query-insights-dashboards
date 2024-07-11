@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import { FormattedMessage } from '@osd/i18n/react';
 
-const TopNQueries = (props) => {
-  const conf = 'configuration'
+const TopNQueries = () => {
   const history = useHistory();
   const location = useLocation();
-  const [selectedTabId, setSelectedTabId] = useState(location.pathname.includes(conf) ? conf : 'topNQueries')
 
   const tabs = [
     {
@@ -22,15 +20,6 @@ const TopNQueries = (props) => {
       route: 'configuration',
     },
   ];
-
-  useEffect(() => {
-    const { pathname: prevPathname } = location;
-    const { pathname: currPathname } = props.location;
-    if (prevPathname !== currPathname) {
-      const selectedTabId = currPathname.includes(conf) ? conf : 'topNQueries';
-      setSelectedTabId(selectedTabId);
-    }
-  }, [location, props.location]);
 
   const onSelectedTabChanged = (route) => {
     const { pathname: currPathname } = location;
@@ -55,13 +44,13 @@ const TopNQueries = (props) => {
         <Route
           exact
           path="/queryInsights"
-          render={(props) => (
+          render={() => (
             <EuiTitle size="l">
               <h1>
                 <FormattedMessage
-                  id={"queryInsightsDashboards.topnqueries"}
+                  id={'queryInsightsDashboards.topnqueries'}
                   defaultMessage="{name}"
-                  values={{ name: "Query insights - Top N queries" }}
+                  values={{ name: 'Query insights - Top N queries' }}
                 />
               </h1>
             </EuiTitle>
@@ -70,13 +59,13 @@ const TopNQueries = (props) => {
         <Route
           exact
           path="/configuration"
-          render={(props) => (
+          render={() => (
             <EuiTitle size="l">
               <h1>
                 <FormattedMessage
-                  id={"queryInsightsDashboards.configuration"}
+                  id={'queryInsightsDashboards.configuration'}
                   defaultMessage="{name}"
-                  values={{ name: "Query insights - Configuration" }}
+                  values={{ name: 'Query insights - Configuration' }}
                 />
               </h1>
             </EuiTitle>
@@ -88,15 +77,7 @@ const TopNQueries = (props) => {
       </div>
       <div>
         <Switch>
-          <Route
-            exact
-            path="/queryInsights"
-            render={(props) => (
-              <QueryInsights
-                {...props}
-              />
-            )}
-          />
+          <Route exact path="/queryInsights" render={(props) => <QueryInsights {...props} />} />
           <Redirect to="/queryInsights" />
         </Switch>
       </div>
