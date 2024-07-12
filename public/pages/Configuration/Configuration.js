@@ -116,7 +116,7 @@ const Configuration = () => {
                     <h3>Value of N (count)</h3>
                   </EuiText>
                   <EuiText size="xs" style={{ lineHeight: '22px', padding: '5px 0px' }}>
-                    Specify the value of N. N is the number of queries to be collected with in the
+                    Specify the value of N. N is the number of queries to be collected within the
                     window size.
                   </EuiText>
                 </EuiFlexItem>
