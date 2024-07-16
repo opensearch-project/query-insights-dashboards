@@ -5,6 +5,7 @@
   "scripts": {
     "build": "yarn plugin-helpers build",
     "plugin-helpers": "../../scripts/use_node ../../scripts/plugin_helpers",
-    "osd": "../../scripts/use_node ../../scripts/osd"
+    "osd": "../../scripts/use_node ../../scripts/osd",
+    "lint": "node ../../scripts/eslint ."
   }
 }
