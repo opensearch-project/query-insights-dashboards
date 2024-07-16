@@ -1,54 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import dateMath from '@elastic/datemath';
-import { EuiSuperDatePicker, EuiInMemoryTable } from '@elastic/eui';
+import { EuiBasicTableColumn, EuiSuperDatePicker, EuiInMemoryTable } from '@elastic/eui';
 
 const QueryInsights = () => {
-  const convertTime = (unixTime) => {
+  const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');
     return loc[1] + ' ' + loc[2] + ', ' + loc[3] + ' @ ' + date.toLocaleTimeString('en-US');
   };
 
-  const cols = [
+  const cols: Array<EuiBasicTableColumn<any>> = [
     {
       field: 'timestamp',
       name: 'Time stamp',
-      render: (timestamp) => convertTime(timestamp),
+      render: (timestamp: number) => convertTime(timestamp),
       sortable: true,
       truncateText: true,
     },
     {
       field: 'latency',
       name: 'Latency',
-      render: (latency) => `${latency} ms`,
+      render: (latency: number) => `${latency} ms`,
       sortable: true,
       truncateText: true,
     },
     {
       field: 'cpu',
       name: 'CPU usage',
-      render: (cpu) => `${cpu} ns`,
+      render: (cpu: number) => `${cpu} ns`,
       sortable: true,
       truncateText: true,
     },
     {
       field: 'memory',
       name: 'Memory',
-      render: (memory) => `${memory} B`,
+      render: (memory: number) => `${memory} B`,
       sortable: true,
       truncateText: true,
     },
     {
       field: 'indices',
       name: 'Indices',
-      render: (indices) => indices.toString(),
+      render: (indices: string[]) => indices.toString(),
       sortable: true,
       truncateText: true,
     },
     {
       field: 'search_type',
       name: 'Search type',
-      render: (searchType) => searchType.replaceAll('_', ' '),
+      render: (searchType: string) => searchType.replaceAll('_', ' '),
       sortable: true,
       truncateText: true,
     },
@@ -66,14 +66,7 @@ const QueryInsights = () => {
     },
   ];
 
-  const sorting = {
-    sort: {
-      field: 'timestamp',
-      direction: 'desc',
-    },
-  };
-
-  const retrievedQueries = [];
+  const retrievedQueries: any[] = [];
   const [queries, setQueries] = useState(retrievedQueries);
 
   const defaultStart = 'now-24h';
@@ -83,12 +76,12 @@ const QueryInsights = () => {
   const [currStart, setStart] = useState(defaultStart);
   const [currEnd, setEnd] = useState('now');
 
-  const parseDateString = (dateString) => {
+  const parseDateString = (dateString: string) => {
     const date = dateMath.parse(dateString);
     return date ? date.toDate().getTime() : new Date().getTime();
   };
 
-  const updateQueries = ({ start, end }) => {
+  const updateQueries = ({ start, end }: { start: string; end: string }) => {
     const startTimestamp = parseDateString(start);
     const endTimestamp = parseDateString(end);
     setQueries(
@@ -98,7 +91,7 @@ const QueryInsights = () => {
     );
   };
 
-  const onTimeChange = ({ start, end }) => {
+  const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
       (range) => !(range.start === start && range.end === end)
     );
@@ -109,7 +102,7 @@ const QueryInsights = () => {
     updateQueries({ start, end });
   };
 
-  const onRefresh = async ({ start, end }) => {
+  const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     updateQueries({ start, end });
   };
 
@@ -126,7 +119,12 @@ const QueryInsights = () => {
       <EuiInMemoryTable
         items={queries}
         columns={cols}
-        sorting={sorting}
+        sorting={{
+          sort: {
+            field: 'timestamp',
+            direction: 'desc',
+          },
+        }}
         search={{
           box: {
             placeholder: 'Search queries',
@@ -161,4 +159,5 @@ const QueryInsights = () => {
   );
 };
 
+// eslint-disable-next-line import/no-default-export
 export default QueryInsights;
