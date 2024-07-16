@@ -1,10 +1,6 @@
 import { i18n } from '@osd/i18n';
 import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
-import {
-  QueryInsightsDashboardsPluginSetup,
-  QueryInsightsDashboardsPluginStart,
-  AppPluginStartDependencies,
-} from './types';
+import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { PLUGIN_NAME } from '../common';
 
 export class QueryInsightsDashboardsPlugin
@@ -25,9 +21,9 @@ export class QueryInsightsDashboardsPlugin
         // Load application bundle
         const { renderApp } = await import('./application');
         // Get start services as specified in opensearch_dashboards.json
-        const [coreStart, depsStart] = await core.getStartServices();
+        const [coreStart] = await core.getStartServices();
         // Render the application
-        return renderApp(coreStart, depsStart as AppPluginStartDependencies, params);
+        return renderApp(coreStart, params);
       },
     });
 
