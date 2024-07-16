@@ -83,7 +83,6 @@ const Configuration = () => {
   }
 
   let valid = false;
-
   const nVal = parseInt(topNSize, 10);
   if (1 <= nVal && nVal <= 100) {
     if (time === timeUnits[0].value) {
