@@ -1,14 +1,14 @@
 import React from 'react';
-import { useHistory, useLocation, Switch, Route } from 'react-router-dom';
+import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
-import Configuration from '../Configuration/Configuration';
 import { FormattedMessage } from '@osd/i18n/react';
+import Configuration from '../Configuration/Configuration';
 
 const TopNQueries = () => {
   const history = useHistory();
   const location = useLocation();
 
-  const tabs = [
+  const tabs: Array<{ id: string; name: string; route: string }> = [
     {
       id: 'topNQueries',
       name: 'Top N queries',
@@ -21,14 +21,14 @@ const TopNQueries = () => {
     },
   ];
 
-  const onSelectedTabChanged = (route) => {
+  const onSelectedTabChanged = (route: string) => {
     const { pathname: currPathname } = location;
     if (!currPathname.includes(route)) {
       history.push(route);
     }
   };
 
-  const renderTab = (tab) => (
+  const renderTab = (tab: { route: string; id: string; name: string }) => (
     <EuiTab
       onClick={() => onSelectedTabChanged(tab.route)}
       isSelected={location.pathname.includes(tab.route)}
@@ -77,11 +77,13 @@ const TopNQueries = () => {
       </div>
       <div>
         <Switch>
-          <Route exact path="/configuration" render={(props) => <Configuration {...props} />} />
+          <Route exact path="/configuration" render={(props) => <Configuration />} />
+          <Redirect to="/queryInsights" />
         </Switch>
       </div>
     </div>
   );
 };
 
+// eslint-disable-next-line import/no-default-export
 export default TopNQueries;

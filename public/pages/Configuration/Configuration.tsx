@@ -39,15 +39,17 @@ const Configuration = () => {
   const [windowSize, setWindowSize] = useState(defaultWindowSize);
   const [time, setTime] = useState(defaultTimeUnit);
 
-  const onTopNSizeChange = (e) => {
+  const onTopNSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTopNSize(e.target.value);
   };
 
-  const onWindowSizeChange = (e) => {
+  const onWindowSizeChange = (
+    e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>
+  ) => {
     setWindowSize(e.target.value);
   };
 
-  const onTimeChange = (e) => {
+  const onTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTime(e.target.value);
   };
 
@@ -81,11 +83,14 @@ const Configuration = () => {
   }
 
   let valid = false;
-  if (1 <= topNSize && topNSize <= 100) {
+
+  const nVal = parseInt(topNSize, 10);
+  if (1 <= nVal && nVal <= 100) {
     if (time === timeUnits[0].value) {
       valid = true;
     } else {
-      if (1 <= windowSize && windowSize <= 24) {
+      const windowVal = parseInt(windowSize, 10);
+      if (1 <= windowVal && windowVal <= 24) {
         valid = true;
       }
     }
@@ -198,4 +203,5 @@ const Configuration = () => {
   );
 };
 
+// eslint-disable-next-line import/no-default-export
 export default Configuration;
