@@ -4,6 +4,9 @@ import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
 import { FormattedMessage } from '@osd/i18n/react';
 import QueryInsights from '../QueryInsights/QueryInsights';
 
+const QUERY_INSIGHTS = '/queryInsights';
+const CONFIGURATION = '/configuration';
+
 const TopNQueries = () => {
   const history = useHistory();
   const location = useLocation();
@@ -12,12 +15,12 @@ const TopNQueries = () => {
     {
       id: 'topNQueries',
       name: 'Top N queries',
-      route: 'queryInsights',
+      route: QUERY_INSIGHTS,
     },
     {
       id: 'configuration',
       name: 'Configuration',
-      route: 'configuration',
+      route: CONFIGURATION,
     },
   ];
 
@@ -43,7 +46,7 @@ const TopNQueries = () => {
       <Switch>
         <Route
           exact
-          path="/queryInsights"
+          path={QUERY_INSIGHTS}
           render={() => (
             <EuiTitle size="l">
               <h1>
@@ -58,7 +61,7 @@ const TopNQueries = () => {
         />
         <Route
           exact
-          path="/configuration"
+          path={CONFIGURATION}
           render={() => (
             <EuiTitle size="l">
               <h1>
@@ -77,8 +80,8 @@ const TopNQueries = () => {
       </div>
       <div>
         <Switch>
-          <Route exact path="/queryInsights" render={(props) => <QueryInsights />} />
-          <Redirect to="/queryInsights" />
+          <Route exact path={QUERY_INSIGHTS} render={(props) => <QueryInsights />} />
+          <Redirect to={QUERY_INSIGHTS} />
         </Switch>
       </div>
     </div>
