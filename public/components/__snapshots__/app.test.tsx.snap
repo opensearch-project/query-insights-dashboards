@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
+<div>
+  <div
+    class="euiPage euiPage--paddingMedium euiPage--grow euiPage--restrictWidth-custom"
+    style="max-width: 1000px;"
+  >
+    <main
+      class="euiPageBody euiPageBody--borderRadiusNone"
+    >
+      <header
+        class="euiPageHeader euiPageHeader--responsive euiPageHeader--center"
+      >
+        <h1
+          class="euiTitle euiTitle--large"
+        >
+          query-insights-dashboards
+        </h1>
+      </header>
+      <div
+        class="euiPanel euiPanel--paddingLarge euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPageContent"
+        role="main"
+      >
+        <div
+          class="euiPageContentHeader euiPageContentHeader--responsive"
+        >
+          <h2
+            class="euiTitle euiTitle--medium"
+          >
+            Congratulations, you have successfully created a new OpenSearch Dashboards Plugin!
+          </h2>
+        </div>
+        <div
+          class="euiPageContentBody"
+        >
+          <div
+            class="euiText euiText--medium"
+          >
+            <p>
+              Look through the generated code and check out the plugin development documentation.
+            </p>
+            <hr
+              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginLarge"
+            />
+            <p>
+              Last timestamp: Unknown
+            </p>
+            <button
+              class="euiButton euiButton--primary euiButton--small"
+              type="primary"
+            >
+              <span
+                class="euiButtonContent euiButton__content"
+              >
+                <span
+                  class="euiButton__text"
+                >
+                  Get data
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+`;
