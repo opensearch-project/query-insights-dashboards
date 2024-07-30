@@ -10,6 +10,7 @@ export class QueryInsightsDashboardsPlugin
     core.application.register({
       id: PLUGIN_NAME,
       title: 'Query Insights',
+      // @ts-ignore
       description: 'OpenSearch Dashboards Query Insights Plugin',
       category: {
         id: 'opensearch',

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import dateMath from '@elastic/datemath';
-import { EuiBasicTableColumn, EuiSuperDatePicker, EuiInMemoryTable } from '@elastic/eui';
-
+import React, { useState } from 'react';
+import { EuiBasicTableColumn, EuiSuperDatePicker, EuiInMemoryTable, EuiLink } from '@elastic/eui';
+import { useHistory } from 'react-router-dom';
 const TIMESTAMP_FIELD = 'timestamp';
 const LATENCY_FIELD = 'latency';
 const CPU_FIELD = 'cpu';
@@ -11,7 +10,8 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 
-const QueryInsights = () => {
+const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { queries: any[], loading: boolean, onQueriesChange: any, defaultStart: string }) => {
+  const history = useHistory();
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');
@@ -20,10 +20,17 @@ const QueryInsights = () => {
 
   const cols: Array<EuiBasicTableColumn<any>> = [
     {
-      field: TIMESTAMP_FIELD,
       name: 'Time stamp',
-      render: (timestamp: number) => convertTime(timestamp),
-      sortable: true,
+      render: (query: any) => {
+        return (
+          <span>
+          <EuiLink onClick={() => {history.push(`/query-details/${query.node_id}`); console.log(history.location)}}>
+            {convertTime(query.timestamp)}
+          </EuiLink>
+        </span>
+        );
+      },
+      sortable: (query) => query.timestamp,
       truncateText: true,
     },
     {
@@ -75,30 +82,11 @@ const QueryInsights = () => {
     },
   ];
 
-  const retrievedQueries: any[] = [];
-  const [queries, setQueries] = useState(retrievedQueries);
-
-  const defaultStart = 'now-24h';
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: defaultStart, end: 'now' },
   ]);
   const [currStart, setStart] = useState(defaultStart);
   const [currEnd, setEnd] = useState('now');
-
-  const parseDateString = (dateString: string) => {
-    const date = dateMath.parse(dateString);
-    return date ? date.toDate().getTime() : new Date().getTime();
-  };
-
-  const updateQueries = ({ start, end }: { start: string; end: string }) => {
-    const startTimestamp = parseDateString(start);
-    const endTimestamp = parseDateString(end);
-    setQueries(
-      retrievedQueries.filter(
-        (item) => item.timestamp >= startTimestamp && item.timestamp <= endTimestamp
-      )
-    );
-  };
 
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
@@ -108,63 +96,53 @@ const QueryInsights = () => {
     setStart(start);
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
-    updateQueries({ start, end });
+    onQueriesChange({ start, end });
   };
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
-    updateQueries({ start, end });
+    onQueriesChange({ start, end });
   };
 
-  useEffect(
-    () => {
-      onRefresh({ start: currStart, end: currEnd });
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
-
   return (
-    <div>
-      <EuiInMemoryTable
-        items={queries}
-        columns={cols}
-        sorting={{
-          sort: {
-            field: TIMESTAMP_FIELD,
-            direction: 'desc',
-          },
-        }}
-        search={{
-          box: {
-            placeholder: 'Search queries',
-            schema: false,
-          },
-          toolsRight: [
-            <EuiSuperDatePicker
-              start={currStart}
-              end={currEnd}
-              recentlyUsedRanges={recentlyUsedRanges}
-              onTimeChange={onTimeChange}
-              onRefresh={onRefresh}
-              updateButtonProps={{ fill: false }}
-            />,
-          ],
-        }}
-        executeQueryOptions={{
-          defaultFields: [
-            TIMESTAMP_FIELD,
-            LATENCY_FIELD,
-            CPU_FIELD,
-            MEMORY_FIELD,
-            INDICES_FIELD,
-            SEARCH_TYPE_FIELD,
-            NODE_ID_FIELD,
-            TOTAL_SHARDS_FIELD,
-          ],
-        }}
-        allowNeutralSort={false}
-      />
-    </div>
+    <EuiInMemoryTable
+      items={queries}
+      columns={cols}
+      sorting={{
+        sort: {
+          field: TIMESTAMP_FIELD,
+          direction: 'desc',
+        },
+      }}
+      search={{
+        box: {
+          placeholder: 'Search queries',
+          schema: false,
+        },
+        toolsRight: [
+          <EuiSuperDatePicker
+            start={currStart}
+            end={currEnd}
+            recentlyUsedRanges={recentlyUsedRanges}
+            onTimeChange={onTimeChange}
+            onRefresh={onRefresh}
+            updateButtonProps={{ fill: false }}
+          />,
+        ],
+      }}
+      executeQueryOptions={{
+        defaultFields: [
+          TIMESTAMP_FIELD,
+          LATENCY_FIELD,
+          CPU_FIELD,
+          MEMORY_FIELD,
+          INDICES_FIELD,
+          SEARCH_TYPE_FIELD,
+          NODE_ID_FIELD,
+          TOTAL_SHARDS_FIELD,
+        ],
+      }}
+      allowNeutralSort={false}
+    />
   );
 };
 

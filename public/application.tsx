@@ -4,14 +4,13 @@ import { HashRouter as Router } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from '../../../src/core/public';
 import { QueryInsightsDashboardsApp } from './components/app';
 
-export const renderApp = ({ chrome }: CoreStart, { element }: AppMountParameters) => {
-  chrome.setBreadcrumbs([{ text: 'Query insights' }]);
+export const renderApp = (core: CoreStart, { element }: AppMountParameters) => {
   ReactDOM.render(
     <Router>
-      <QueryInsightsDashboardsApp />
+      <QueryInsightsDashboardsApp core={core} />
     </Router>,
     element
   );
 
   return () => ReactDOM.unmountComponentAtNode(element);
-};
+}
