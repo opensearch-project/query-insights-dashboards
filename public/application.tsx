@@ -1,21 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { HashRouter as Router } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from '../../../src/core/public';
-import { AppPluginStartDependencies } from './types';
 import { QueryInsightsDashboardsApp } from './components/app';
 
-export const renderApp = (
-  { notifications, http }: CoreStart,
-  { navigation }: AppPluginStartDependencies,
-  { appBasePath, element }: AppMountParameters
-) => {
+export const renderApp = (core: CoreStart, { element }: AppMountParameters) => {
   ReactDOM.render(
-    <QueryInsightsDashboardsApp
-      basename={appBasePath}
-      notifications={notifications}
-      http={http}
-      navigation={navigation}
-    />,
+    <Router>
+      <QueryInsightsDashboardsApp core={core} />
+    </Router>,
     element
   );
 
