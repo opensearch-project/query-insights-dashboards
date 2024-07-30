@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { EuiBasicTableColumn, EuiSuperDatePicker, EuiInMemoryTable, EuiLink } from '@elastic/eui';
 import { useHistory } from 'react-router-dom';
+
 const TIMESTAMP_FIELD = 'timestamp';
 const LATENCY_FIELD = 'latency';
 const CPU_FIELD = 'cpu';
@@ -10,7 +11,17 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 
-const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { queries: any[], loading: boolean, onQueriesChange: any, defaultStart: string }) => {
+const QueryInsights = ({
+  queries,
+  loading,
+  onQueriesChange,
+  defaultStart,
+}: {
+  queries: any[];
+  loading: boolean;
+  onQueriesChange: any;
+  defaultStart: string;
+}) => {
   const history = useHistory();
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
@@ -24,10 +35,10 @@ const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { q
       render: (query: any) => {
         return (
           <span>
-          <EuiLink onClick={() => {history.push(`/query-details/${query.node_id}`); console.log(history.location)}}>
-            {convertTime(query.timestamp)}
-          </EuiLink>
-        </span>
+            <EuiLink onClick={() => history.push(`/query-details/${query.node_id}`)}>
+              {convertTime(query.timestamp)}
+            </EuiLink>
+          </span>
         );
       },
       sortable: (query) => query.timestamp,
@@ -35,7 +46,7 @@ const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { q
     },
     {
       field: LATENCY_FIELD,
-      name: 'latency',
+      name: 'Latency',
       render: (latency: number) => `${latency} ms`,
       sortable: true,
       truncateText: true,
@@ -49,14 +60,14 @@ const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { q
     },
     {
       field: MEMORY_FIELD,
-      name: 'memory',
+      name: 'Memory',
       render: (memory: number) => `${memory} B`,
       sortable: true,
       truncateText: true,
     },
     {
       field: INDICES_FIELD,
-      name: 'indices',
+      name: 'Indices',
       render: (indices: string[]) => indices.toString(),
       sortable: true,
       truncateText: true,
@@ -96,11 +107,11 @@ const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { q
     setStart(start);
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
-    onQueriesChange({ start, end });
+    onQueriesChange(start, end);
   };
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
-    onQueriesChange({ start, end });
+    onQueriesChange(start, end);
   };
 
   return (
@@ -113,6 +124,7 @@ const QueryInsights = ({ queries, loading, onQueriesChange, defaultStart } : { q
           direction: 'desc',
         },
       }}
+      loading={loading}
       search={{
         box: {
           placeholder: 'Search queries',

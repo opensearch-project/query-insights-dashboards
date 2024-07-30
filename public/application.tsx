@@ -13,4 +13,4 @@ export const renderApp = (core: CoreStart, { element }: AppMountParameters) => {
   );
 
   return () => ReactDOM.unmountComponentAtNode(element);
-}
+};

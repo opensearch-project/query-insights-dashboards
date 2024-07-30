@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
-import { FormattedMessage } from '@osd/i18n/react';
-import QueryInsights from '../QueryInsights/QueryInsights';
 import dateMath from '@elastic/datemath';
+import QueryInsights from '../QueryInsights/QueryInsights';
 import { CoreStart } from '../../../../../src/core/public';
 
 const QUERY_INSIGHTS = '/queryInsights';
@@ -13,7 +12,8 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
   const history = useHistory();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const defaultStart = 'now-1d';
+  const defaultStart: string = 'now-1d';
+  const allQueries = useMemo(() => [], []);
   const [queries, setQueries] = useState<any[]>([]);
 
   const tabs: Array<{ id: string; name: string; route: string }> = [
@@ -51,66 +51,67 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
     return date ? date.toDate().getTime() : new Date().getTime();
   };
 
-  const retrieveQueries = async (start: string, end: string) => {
-    setLoading(true);
-    const startTimestamp = parseDateString(start);
-    const endTimestamp = parseDateString(end);
-    const newQueries = queries.filter(
-      (item) => item.timestamp >= startTimestamp && item.timestamp <= endTimestamp
-    );
-    setQueries(newQueries);
-    setLoading(false);
-  }
-
-  const handleQueriesChange = useCallback(({ start, end }: { start: string; end: string}) => {
-    try {
-      retrieveQueries(start, end);
-    } catch (error) {
-      console.error('Error fetching top queries:', error);
-    }
-  }, []);
+  const retrieveQueries = useCallback(
+    async (start: string, end: string) => {
+      setLoading(true);
+      try {
+        const startTimestamp = parseDateString(start);
+        const endTimestamp = parseDateString(end);
+        setQueries((prevQueries) => {
+          // @ts-ignore
+          const newQueries = allQueries.filter(
+            (item) => item.timestamp >= startTimestamp && item.timestamp <= endTimestamp
+          );
+          return newQueries;
+        });
+      } catch (error) {
+        // console.error('Failed to retrieve queries:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [allQueries]
+  );
 
   useEffect(() => {
     retrieveQueries(defaultStart, 'now');
-  }, []);
+    core.chrome.setBreadcrumbs([
+      {
+        text: 'Query insights',
+        href: '/queryInsights',
+        onClick: (e) => {
+          e.preventDefault();
+          history.push('/queryInsights');
+        },
+      },
+    ]);
+  }, [retrieveQueries, core.chrome, history, defaultStart]);
 
   return (
     <div style={{ padding: '35px 35px' }}>
       <Switch>
-        <Route
-          exact
-          path={QUERY_INSIGHTS}>
+        <Route exact path={QUERY_INSIGHTS}>
           <EuiTitle size="l">
-            <h1>
-              <FormattedMessage
-                id={'queryInsightsDashboards.topnqueries'}
-                defaultMessage="{name}"
-                values={{name: 'Query insights - Top N queries'}}
-              />
-            </h1>
+            <h1>Query insights - Top N queries</h1>
           </EuiTitle>
-          <div style={{padding: '25px 0px'}}>
+          <div style={{ padding: '25px 0px' }}>
             <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
           </div>
-          <QueryInsights queries={queries} loading={loading} onQueriesChange={handleQueriesChange}
-                         defaultStart={defaultStart}/>
+          <QueryInsights
+            queries={queries}
+            loading={loading}
+            onQueriesChange={retrieveQueries}
+            defaultStart={defaultStart}
+          />
         </Route>
-        <Route
-            exact
-            path={CONFIGURATION}>
-            <EuiTitle size="l">
-              <h1>
-                <FormattedMessage
-                  id={'queryInsightsDashboards.configuration'}
-                  defaultMessage="{name}"
-                  values={{name: 'Query insights - Configuration'}}
-                />
-              </h1>
-            </EuiTitle>
+        <Route exact path={CONFIGURATION}>
+          <EuiTitle size="l">
+            <h1>Query insights - Configuration</h1>
+          </EuiTitle>
+          <div style={{ padding: '25px 0px' }}>
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+          </div>
         </Route>
-        <div style={{padding: '25px 0px'}}>
-          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-        </div>
         <Redirect to={QUERY_INSIGHTS} />
       </Switch>
     </div>
