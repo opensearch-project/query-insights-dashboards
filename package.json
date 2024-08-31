@@ -1,11 +1,55 @@
 {
-  "name": "queryInsightsDashboards",
-  "version": "0.0.0",
-  "private": true,
+  "name": "opensearch_query_insights_dashboards",
+  "version": "3.0.0.0",
+  "description": "OpenSearch Dashboards plugin for Query Insights",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/opensearch-project/query-insights-dashboards",
+  "config": {
+    "id": "queryInsightsDashboards",
+    "zip_name": "query-insights-dashboards"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/opensearch-project/query-insights-dashboards"
+  },
   "scripts": {
     "build": "yarn plugin-helpers build",
     "plugin-helpers": "../../scripts/use_node ../../scripts/plugin_helpers",
     "osd": "../../scripts/use_node ../../scripts/osd",
+    "test:jest": "../../node_modules/.bin/jest --config ./test/jest.config.js",
+    "test:jest:dev": "../../node_modules/.bin/jest --watch --config ./test/jest.config.js",
+    "test:jest:update-snapshots": "yarn run test:jest -u",
     "lint": "node ../../scripts/eslint ."
+  },
+  "resolutions": {
+    "@types/react": "^16.9.8",
+    "**/@types/jest": "^29.3.1",
+    "**/@types/react-dom": "^16.9.8",
+    "eslint-utils": "^1.4.2",
+    "async": "^3.2.3",
+    "json5": "^2.2.3",
+    "@babel/core": "^7.20.12",
+    "@babel/traverse": "^7.20.12",
+    "@cypress/request": "^3.0.0"
+  },
+  "devDependencies": {
+    "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
+    "@elastic/eslint-import-resolver-kibana": "link:../../packages/osd-eslint-import-resolver-opensearch-dashboards",
+    "@testing-library/dom": "^8.11.3",
+    "@testing-library/user-event": "^14.4.3",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-router-dom": "^5.3.2",
+    "cypress": "9.5.4",
+    "cypress-real-events": "1.7.6",
+    "cypress-recurse": "^1.27.0",
+    "eslint-plugin-no-unsanitized": "^3.0.2",
+    "eslint-plugin-prefer-object-spread": "^1.2.1",
+    "husky": "^8.0.0",
+    "jest-cli": "^27.5.1",
+    "jest-environment-jsdom": "^27.5.1",
+    "lint-staged": "^10.2.0",
+    "ts-loader": "^6.2.1",
+    "string.prototype.replaceall": "1.0.7"
   }
 }
