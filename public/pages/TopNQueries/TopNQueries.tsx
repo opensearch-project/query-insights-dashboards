@@ -1,19 +1,28 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useHistory, useLocation, Switch, Route, Redirect } from 'react-router-dom';
-import { EuiTab, EuiTabs, EuiTitle } from '@elastic/eui';
-import dateMath from '@elastic/datemath';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
+import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import { CoreStart } from '../../../../../src/core/public';
 
 const QUERY_INSIGHTS = '/queryInsights';
-const CONFIGURATION = '/configuration';
+
+export interface MetricSettings {
+  isEnabled: boolean;
+  currTopN: string;
+  currWindowSize: string;
+  currTimeUnit: string;
+}
 
 const TopNQueries = ({ core }: { core: CoreStart }) => {
   const history = useHistory();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const defaultStart: string = 'now-1d';
-  const allQueries = useMemo(() => [], []);
+  const [currStart, setStart] = useState('now-1d');
+  const [currEnd, setEnd] = useState('now');
+  const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
+    { start: currStart, end: currEnd },
+  ]);
+
   const [queries, setQueries] = useState<any[]>([]);
 
   const tabs: Array<{ id: string; name: string; route: string }> = [
@@ -21,11 +30,6 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
       id: 'topNQueries',
       name: 'Top N queries',
       route: QUERY_INSIGHTS,
-    },
-    {
-      id: 'configuration',
-      name: 'Configuration',
-      route: CONFIGURATION,
     },
   ];
 
@@ -46,46 +50,38 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
     </EuiTab>
   );
 
-  const parseDateString = (dateString: string) => {
-    const date = dateMath.parse(dateString);
-    return date ? date.toDate().getTime() : new Date().getTime();
+  const retrieveQueries = useCallback(async (start: string, end: string) => {
+    try {
+      setLoading(true);
+      const noDuplicates: any[] = [];
+      setQueries(noDuplicates);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error retrieving queries:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const onTimeChange = ({ start, end }: { start: string; end: string }) => {
+    const usedRange = recentlyUsedRanges.filter(
+      (range) => !(range.start === start && range.end === end)
+    );
+    usedRange.unshift({ start, end });
+    setStart(start);
+    setEnd(end);
+    setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
+    retrieveQueries(start, end);
   };
 
-  const retrieveQueries = useCallback(
-    async (start: string, end: string) => {
-      setLoading(true);
-      try {
-        const startTimestamp = parseDateString(start);
-        const endTimestamp = parseDateString(end);
-        setQueries((prevQueries) => {
-          // @ts-ignore
-          const newQueries = allQueries.filter(
-            (item) => item.timestamp >= startTimestamp && item.timestamp <= endTimestamp
-          );
-          return newQueries;
-        });
-      } catch (error) {
-        // console.error('Failed to retrieve queries:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [allQueries]
-  );
+  useEffect(() => {
+    onTimeChange({ start: currStart, end: currEnd });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currStart, currEnd]);
 
   useEffect(() => {
-    retrieveQueries(defaultStart, 'now');
-    core.chrome.setBreadcrumbs([
-      {
-        text: 'Query insights',
-        href: '/queryInsights',
-        onClick: (e) => {
-          e.preventDefault();
-          history.push('/queryInsights');
-        },
-      },
-    ]);
-  }, [retrieveQueries, core.chrome, history, defaultStart]);
+    retrieveQueries(currStart, currEnd);
+  }, [currStart, currEnd, retrieveQueries]);
 
   return (
     <div style={{ padding: '35px 35px' }}>
@@ -94,23 +90,18 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
           <EuiTitle size="l">
             <h1>Query insights - Top N queries</h1>
           </EuiTitle>
-          <div style={{ padding: '25px 0px' }}>
-            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          </div>
+          <EuiSpacer size="l" />
+          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+          <EuiSpacer size="l" />
           <QueryInsights
             queries={queries}
             loading={loading}
-            onQueriesChange={retrieveQueries}
-            defaultStart={defaultStart}
+            onTimeChange={onTimeChange}
+            recentlyUsedRanges={recentlyUsedRanges}
+            currStart={currStart}
+            currEnd={currEnd}
+            core={core}
           />
-        </Route>
-        <Route exact path={CONFIGURATION}>
-          <EuiTitle size="l">
-            <h1>Query insights - Configuration</h1>
-          </EuiTitle>
-          <div style={{ padding: '25px 0px' }}>
-            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          </div>
         </Route>
         <Redirect to={QUERY_INSIGHTS} />
       </Switch>
