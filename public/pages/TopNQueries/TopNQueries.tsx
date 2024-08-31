@@ -4,7 +4,7 @@ import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import { CoreStart } from '../../../../../src/core/public';
 
-const QUERY_INSIGHTS = '/queryInsights';
+export const QUERY_INSIGHTS = '/queryInsights';
 
 export interface MetricSettings {
   isEnabled: boolean;
