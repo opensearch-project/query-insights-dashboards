@@ -123,7 +123,7 @@ const Configuration = ({
       required={true}
       options={minutesOptions}
       value={windowSize}
-      onChange={(e) => onWindowSizeChange(e)}
+      onChange={onWindowSizeChange}
     />
   );
 
@@ -133,36 +133,25 @@ const Configuration = ({
       max={24}
       required={true}
       value={windowSize}
-      onChange={(e) => onWindowSizeChange(e)}
+      onChange={onWindowSizeChange}
     />
   );
 
   const WindowChoice = time === timeUnits[0].value ? MinutesBox : HoursBox;
 
-  let changed = false;
-  if (isEnabled !== metricSettingsMap[metric].isEnabled) {
-    changed = true;
-  } else if (topNSize !== metricSettingsMap[metric].currTopN) {
-    changed = true;
-  } else if (windowSize !== metricSettingsMap[metric].currWindowSize) {
-    changed = true;
-  } else if (time !== metricSettingsMap[metric].currTimeUnit) {
-    changed = true;
-  }
+  const isChanged =
+    isEnabled !== metricSettingsMap[metric].isEnabled ||
+    topNSize !== metricSettingsMap[metric].currTopN ||
+    windowSize !== metricSettingsMap[metric].currWindowSize ||
+    time !== metricSettingsMap[metric].currTimeUnit;
 
-  let valid = false;
-
-  const nVal = parseInt(topNSize, 10);
-  if (1 <= nVal && nVal <= 100) {
-    if (time === timeUnits[0].value) {
-      valid = true;
-    } else {
-      const windowVal = parseInt(windowSize, 10);
-      if (1 <= windowVal && windowVal <= 24) {
-        valid = true;
-      }
-    }
-  }
+  const isValid = (() => {
+    const nVal = parseInt(topNSize, 10);
+    if (nVal < 1 || nVal > 100) return false;
+    if (time === timeUnits[0].value) return true;
+    const windowVal = parseInt(windowSize, 10);
+    return windowVal >= 1 && windowVal <= 24;
+  })();
 
   const textPadding = { lineHeight: '22px', padding: '5px 0px' };
   const formRowPadding = { padding: '0px 0px 20px' };
@@ -199,7 +188,7 @@ const Configuration = ({
                         required={true}
                         options={metricTypes}
                         value={metric}
-                        onChange={(e) => onMetricChange(e)}
+                        onChange={onMetricChange}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -215,11 +204,7 @@ const Configuration = ({
                     <EuiFormRow style={formRowPadding}>
                       <EuiFlexItem>
                         <EuiSpacer size="s" />
-                        <EuiSwitch
-                          label=""
-                          checked={isEnabled}
-                          onChange={(e) => onEnabledChange(e)}
-                        />
+                        <EuiSwitch label="" checked={isEnabled} onChange={onEnabledChange} />
                       </EuiFlexItem>
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -245,7 +230,7 @@ const Configuration = ({
                             max={100}
                             required={isEnabled}
                             value={topNSize}
-                            onChange={(e) => onTopNSizeChange(e)}
+                            onChange={onTopNSizeChange}
                           />
                         </EuiFormRow>
                       </EuiFlexItem>
@@ -273,7 +258,7 @@ const Configuration = ({
                                 required={isEnabled}
                                 options={timeUnits}
                                 value={time}
-                                onChange={(e) => onTimeChange(e)}
+                                onChange={onTimeChange}
                               />
                             </EuiFlexItem>
                           </EuiFlexGroup>
@@ -327,7 +312,7 @@ const Configuration = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      {changed && valid ? (
+      {isChanged && isValid ? (
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
             <EuiFlexItem grow={false}>
