@@ -6,6 +6,8 @@
 
 import React from 'react';
 import { render } from '@testing-library/react';
+import { coreMock } from '../../../../src/core/public/mocks';
+import { MemoryRouter as Router } from 'react-router-dom';
 import { QueryInsightsDashboardsApp } from './app';
 
 describe('<QueryInsightsDashboardsApp /> spec', () => {
@@ -15,18 +17,22 @@ describe('<QueryInsightsDashboardsApp /> spec', () => {
         serverBasePath: '/app/opensearch-dashboards',
       },
     };
+    const coreStart = coreMock.createStart();
 
     const { container } = render(
-      <QueryInsightsDashboardsApp
-        basename="/"
-        http={mockHttpStart as any}
-        navigation={
-          {
-            ui: { TopNavMenu: () => null },
-          } as any
-        }
-        notifications={{} as any}
-      />
+      <Router>
+        <QueryInsightsDashboardsApp
+          basename="/"
+          core={coreStart}
+          http={mockHttpStart as any}
+          navigation={
+            {
+              ui: { TopNavMenu: () => null },
+            } as any
+          }
+          notifications={{} as any}
+        />
+      </Router>
     );
     expect(container).toMatchSnapshot();
   });
