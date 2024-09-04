@@ -146,7 +146,7 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
 
   useEffect(() => {
     retrieveQueries(currStart, currEnd);
-  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
+  }, [currStart, currEnd, retrieveQueries]);
 
   return (
     <div style={{ padding: '35px 35px' }}>
