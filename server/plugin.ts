@@ -4,7 +4,9 @@ import {
   CoreStart,
   Plugin,
   Logger,
+  ILegacyCustomClusterClient,
 } from '../../../src/core/server';
+import { QueryInsightsPlugin } from './clusters/queryInsightsPlugin';
 
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { defineRoutes } from './routes';
@@ -20,6 +22,19 @@ export class QueryInsightsDashboardsPlugin
   public setup(core: CoreSetup) {
     this.logger.debug('query-insights-dashboards: Setup');
     const router = core.http.createRouter();
+    const queryInsightsClient: ILegacyCustomClusterClient = core.opensearch.legacy.createClient(
+      'opensearch_queryInsights',
+      {
+        plugins: [QueryInsightsPlugin],
+      }
+    );
+    // @ts-ignore
+    core.http.registerRouteHandlerContext('queryInsights_plugin', (_context, _request) => {
+      return {
+        logger: this.logger,
+        queryInsightsClient,
+      };
+    });
 
     // Register server side APIs
     defineRoutes(router);
