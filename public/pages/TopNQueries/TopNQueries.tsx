@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import QueryInsights from '../QueryInsights/QueryInsights';
+import Configuration from '../Configuration/Configuration';
 import { CoreStart } from '../../../../../src/core/public';
 
 export const QUERY_INSIGHTS = '/queryInsights';
+export const CONFIGURATION = '/configuration';
 
 export interface MetricSettings {
   isEnabled: boolean;
@@ -22,6 +24,40 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: currStart, end: currEnd },
   ]);
+  const [latencySettings, setLatencySettings] = useState<MetricSettings>({
+    isEnabled: false,
+    currTopN: '',
+    currWindowSize: '',
+    currTimeUnit: 'HOURS',
+  });
+
+  const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
+    isEnabled: false,
+    currTopN: '',
+    currWindowSize: '',
+    currTimeUnit: 'HOURS',
+  });
+
+  const [memorySettings, setMemorySettings] = useState<MetricSettings>({
+    isEnabled: false,
+    currTopN: '',
+    currWindowSize: '',
+    currTimeUnit: 'HOURS',
+  });
+
+  const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
+    switch (metricType) {
+      case 'latency':
+        setLatencySettings((prevSettings) => ({ ...prevSettings, ...updates }));
+        break;
+      case 'cpu':
+        setCpuSettings((prevSettings) => ({ ...prevSettings, ...updates }));
+        break;
+      case 'memory':
+        setMemorySettings((prevSettings) => ({ ...prevSettings, ...updates }));
+        break;
+    }
+  };
 
   const [queries, setQueries] = useState<any[]>([]);
 
@@ -30,6 +66,11 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
       id: 'topNQueries',
       name: 'Top N queries',
       route: QUERY_INSIGHTS,
+    },
+    {
+      id: 'configuration',
+      name: 'Configuration',
+      route: CONFIGURATION,
     },
   ];
 
@@ -62,6 +103,30 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
       setLoading(false);
     }
   }, []);
+
+  const retrieveConfigInfo = useCallback(
+    async (
+      get: boolean,
+      enabled: boolean = false,
+      metric: string = '',
+      newTopN: string = '',
+      newWindowSize: string = '',
+      newTimeUnit: string = ''
+    ) => {
+      try {
+        setMetricSettings(metric, {
+          isEnabled: enabled,
+          currTopN: newTopN,
+          currWindowSize: newWindowSize,
+          currTimeUnit: newTimeUnit,
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to set settings:', error);
+      }
+    },
+    []
+  );
 
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
@@ -100,6 +165,21 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
             recentlyUsedRanges={recentlyUsedRanges}
             currStart={currStart}
             currEnd={currEnd}
+            core={core}
+          />
+        </Route>
+        <Route exact path={CONFIGURATION}>
+          <EuiTitle size="l">
+            <h1>Query insights - Configuration</h1>
+          </EuiTitle>
+          <EuiSpacer size="l" />
+          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+          <EuiSpacer size="l" />
+          <Configuration
+            latencySettings={latencySettings}
+            cpuSettings={cpuSettings}
+            memorySettings={memorySettings}
+            configInfo={retrieveConfigInfo}
             core={core}
           />
         </Route>
