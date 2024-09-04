@@ -148,45 +148,45 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
     retrieveQueries(currStart, currEnd);
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
-return (
-  <div style={{ padding: '35px 35px' }}>
-    <Switch>
-      <Route exact path={QUERY_INSIGHTS}>
-        <EuiTitle size="l">
-          <h1>Query insights - Top N queries</h1>
-        </EuiTitle>
-        <EuiSpacer size="l" />
-        <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-        <EuiSpacer size="l" />
-        <QueryInsights
-          queries={queries}
-          loading={loading}
-          onTimeChange={onTimeChange}
-          recentlyUsedRanges={recentlyUsedRanges}
-          currStart={currStart}
-          currEnd={currEnd}
-          core={core}
-        />
-      </Route>
-      <Route exact path={CONFIGURATION}>
-        <EuiTitle size="l">
-          <h1>Query insights - Configuration</h1>
-        </EuiTitle>
-        <EuiSpacer size="l" />
-        <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-        <EuiSpacer size="l" />
-        <Configuration
-          latencySettings={latencySettings}
-          cpuSettings={cpuSettings}
-          memorySettings={memorySettings}
-          configInfo={retrieveConfigInfo}
-          core={core}
-        />
-      </Route>
-      <Redirect to={QUERY_INSIGHTS} />
-    </Switch>
-  </div>
-);
+  return (
+    <div style={{ padding: '35px 35px' }}>
+      <Switch>
+        <Route exact path={QUERY_INSIGHTS}>
+          <EuiTitle size="l">
+            <h1>Query insights - Top N queries</h1>
+          </EuiTitle>
+          <EuiSpacer size="l" />
+          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+          <EuiSpacer size="l" />
+          <QueryInsights
+            queries={queries}
+            loading={loading}
+            onTimeChange={onTimeChange}
+            recentlyUsedRanges={recentlyUsedRanges}
+            currStart={currStart}
+            currEnd={currEnd}
+            core={core}
+          />
+        </Route>
+        <Route exact path={CONFIGURATION}>
+          <EuiTitle size="l">
+            <h1>Query insights - Configuration</h1>
+          </EuiTitle>
+          <EuiSpacer size="l" />
+          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+          <EuiSpacer size="l" />
+          <Configuration
+            latencySettings={latencySettings}
+            cpuSettings={cpuSettings}
+            memorySettings={memorySettings}
+            configInfo={retrieveConfigInfo}
+            core={core}
+          />
+        </Route>
+        <Redirect to={QUERY_INSIGHTS} />
+      </Switch>
+    </div>
+  );
 };
 
 // eslint-disable-next-line import/no-default-export
