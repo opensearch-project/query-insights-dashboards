@@ -4,6 +4,7 @@ import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import dateMath from '@elastic/datemath';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
+import QueryDetails from '../QueryDetails/QueryDetails';
 import { CoreStart } from '../../../../../src/core/public';
 
 export const QUERY_INSIGHTS = '/queryInsights';
@@ -222,30 +223,6 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
     [core]
   );
 
-  const retrieveConfigInfo = useCallback(
-    async (
-      get: boolean,
-      enabled: boolean = false,
-      metric: string = '',
-      newTopN: string = '',
-      newWindowSize: string = '',
-      newTimeUnit: string = ''
-    ) => {
-      try {
-        setMetricSettings(metric, {
-          isEnabled: enabled,
-          currTopN: newTopN,
-          currWindowSize: newWindowSize,
-          currTimeUnit: newTimeUnit,
-        });
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to set settings:', error);
-      }
-    },
-    []
-  );
-
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
       (range) => !(range.start === start && range.end === end)
@@ -270,6 +247,9 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
   return (
     <div style={{ padding: '35px 35px' }}>
       <Switch>
+        <Route exact path="/query-details/:hashedQuery">
+          <QueryDetails queries={queries} core={core} />
+        </Route>
         <Route exact path={QUERY_INSIGHTS}>
           <EuiTitle size="l">
             <h1>Query insights - Top N queries</h1>

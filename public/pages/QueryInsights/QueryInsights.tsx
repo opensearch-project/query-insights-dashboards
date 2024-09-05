@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { EuiBasicTableColumn, EuiInMemoryTable, EuiSuperDatePicker } from '@elastic/eui';
+import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
+import hash from 'object-hash';
 import { CoreStart } from '../../../../../src/core/public';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 
@@ -59,7 +60,13 @@ const QueryInsights = ({
       // Make into flyout instead?
       name: 'Timestamp',
       render: (query: any) => {
-        return <span>{convertTime(query.timestamp)}</span>;
+        return (
+          <span>
+            <EuiLink onClick={() => history.push(`/query-details/${hash(query)}`)}>
+              {convertTime(query.timestamp)}
+            </EuiLink>
+          </span>
+        );
       },
       sortable: (query) => query.timestamp,
       truncateText: true,
