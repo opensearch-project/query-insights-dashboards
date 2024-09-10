@@ -5,13 +5,36 @@
 
 import React from 'react';
 import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
+import { SearchQueryRecord } from '../../../../types/types';
+import {
+  CPU_TIME,
+  INDICES,
+  LATENCY,
+  MEMORY_USAGE,
+  NODE_ID,
+  SEARCH_TYPE,
+  TIMESTAMP,
+  TOTAL_SHARDS,
+} from '../../../../common/constants';
 
-const QuerySummary = ({ query }: { query: any }) => {
+// Panel component for displaying query detail values
+const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
+  <EuiFlexItem>
+    <EuiText size="xs">
+      <h4>{label}</h4>
+    </EuiText>
+    <EuiText size="xs">{value}</EuiText>
+  </EuiFlexItem>
+);
+
+const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const { timestamp, measurements, indices, search_type, node_id, total_shards } = query;
   return (
     <EuiPanel>
       <EuiText size="xs">
@@ -19,54 +42,21 @@ const QuerySummary = ({ query }: { query: any }) => {
       </EuiText>
       <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Timestamp</h4>
-          </EuiText>
-          <EuiText size="xs">{convertTime(query.timestamp)}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Latency</h4>
-          </EuiText>
-          <EuiText size="xs">{`${query.latency} ms`}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>CPU Usage</h4>
-          </EuiText>
-          <EuiText size="xs">{`${query.cpu} ns`}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Memory</h4>
-          </EuiText>
-          <EuiText size="xs">{`${query.memory} B`}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Indexes</h4>
-          </EuiText>
-          <EuiText size="xs">{query.indices.toString()}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Search type</h4>
-          </EuiText>
-          <EuiText size="xs">{query.search_type.replaceAll('_', ' ')}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Coordinator node ID</h4>
-          </EuiText>
-          <EuiText size="xs">{query.node_id}</EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiText size="xs">
-            <h4>Total shards</h4>
-          </EuiText>
-          <EuiText size="xs">{query.total_shards}</EuiText>
-        </EuiFlexItem>
+        <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
+        <PanelItem label={LATENCY} value={`${measurements.latency?.number ?? 'N/A'} ms`} />
+        <PanelItem
+          label={CPU_TIME}
+          value={
+            measurements.cpu?.number !== undefined
+              ? `${measurements.cpu.number / 1000000} ms`
+              : 'N/A'
+          }
+        />
+        <PanelItem label={MEMORY_USAGE} value={`${measurements.memory?.number ?? 'N/A'} B`} />
+        <PanelItem label={INDICES} value={indices.toString()} />
+        <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
+        <PanelItem label={NODE_ID} value={node_id} />
+        <PanelItem label={TOTAL_SHARDS} value={total_shards} />
       </EuiFlexGrid>
     </EuiPanel>
   );

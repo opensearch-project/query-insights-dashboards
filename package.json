@@ -43,6 +43,7 @@
     "@testing-library/dom": "^8.11.3",
     "@testing-library/user-event": "^14.4.3",
     "@types/react-dom": "^16.9.8",
+    "@types/object-hash": "^3.0.0",
     "@types/react-router-dom": "^5.3.2",
     "cypress": "9.5.4",
     "cypress-real-events": "1.7.6",

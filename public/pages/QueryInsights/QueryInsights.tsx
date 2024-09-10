@@ -7,13 +7,22 @@ import React, { useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import hash from 'object-hash';
-import { CoreStart } from '../../../../../src/core/public';
+import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { SearchQueryRecord } from '../../../types/types';
+import {
+  CPU_TIME,
+  INDICES,
+  LATENCY,
+  MEMORY_USAGE,
+  NODE_ID,
+  SEARCH_TYPE,
+  TIMESTAMP,
+  TOTAL_SHARDS,
+} from '../../../common/constants';
 
 const TIMESTAMP_FIELD = 'timestamp';
-const LATENCY_FIELD = 'latency';
-const CPU_FIELD = 'cpu';
-const MEMORY_FIELD = 'memory';
+const MEASUREMENTS_FIELD = 'measurements';
 const INDICES_FIELD = 'indices';
 const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
@@ -29,7 +38,7 @@ const QueryInsights = ({
   currEnd,
   core,
 }: {
-  queries: any[];
+  queries: SearchQueryRecord[];
   loading: boolean;
   onTimeChange: any;
   recentlyUsedRanges: any[];
@@ -63,7 +72,7 @@ const QueryInsights = ({
   const cols: Array<EuiBasicTableColumn<any>> = [
     {
       // Make into flyout instead?
-      name: 'Timestamp',
+      name: TIMESTAMP,
       render: (query: any) => {
         return (
           <span>
@@ -77,51 +86,58 @@ const QueryInsights = ({
       truncateText: true,
     },
     {
-      field: LATENCY_FIELD,
-      name: 'Latency',
-      render: (latency: number) =>
-        typeof latency !== 'undefined' ? `${latency} ms` : `${METRIC_DEFAULT_MSG}`,
+      field: MEASUREMENTS_FIELD,
+      name: LATENCY,
+      render: (measurements: any) => {
+        const latencyValue = measurements?.latency?.number;
+        return latencyValue !== undefined ? `${latencyValue} ms` : METRIC_DEFAULT_MSG;
+      },
       sortable: true,
       truncateText: true,
     },
     {
-      field: CPU_FIELD,
-      name: 'CPU usage',
-      render: (cpu: number) => (typeof cpu !== 'undefined' ? `${cpu} ns` : `${METRIC_DEFAULT_MSG}`),
+      field: MEASUREMENTS_FIELD,
+      name: CPU_TIME,
+      render: (measurements: { cpu?: { number?: number } }) => {
+        const cpuValue = measurements?.cpu?.number;
+        return cpuValue !== undefined ? `${cpuValue / 1000000} ms` : METRIC_DEFAULT_MSG;
+      },
       sortable: true,
       truncateText: true,
     },
     {
-      field: MEMORY_FIELD,
-      name: 'Memory',
-      render: (memory: number) =>
-        typeof memory !== 'undefined' ? `${memory} B` : `${METRIC_DEFAULT_MSG}`,
+      field: MEASUREMENTS_FIELD,
+      name: MEMORY_USAGE,
+      render: (measurements: { memory?: { number?: number } }) => {
+        const memoryValue = measurements?.memory?.number;
+        return memoryValue !== undefined ? `${memoryValue} B` : METRIC_DEFAULT_MSG;
+      },
       sortable: true,
       truncateText: true,
     },
     {
       field: INDICES_FIELD,
-      name: 'Indices',
+      name: INDICES,
       render: (indices: string[]) => Array.from(new Set(indices.flat())).join(', '),
       sortable: true,
       truncateText: true,
     },
     {
       field: SEARCH_TYPE_FIELD,
-      name: 'Search type',
+      name: SEARCH_TYPE,
       render: (searchType: string) => searchType.replaceAll('_', ' '),
       sortable: true,
       truncateText: true,
     },
     {
       field: NODE_ID_FIELD,
-      name: 'Coordinator node ID',
+      name: NODE_ID,
       sortable: true,
       truncateText: true,
     },
     {
       field: TOTAL_SHARDS_FIELD,
-      name: 'Total shards',
+      name: TOTAL_SHARDS,
       sortable: true,
       truncateText: true,
     },
@@ -158,7 +174,7 @@ const QueryInsights = ({
           {
             type: 'field_value_selection',
             field: INDICES_FIELD,
-            name: 'Indices',
+            name: INDICES,
             multiSelect: true,
             options: filterDuplicates(
               queries.map((query) => {
@@ -174,7 +190,7 @@ const QueryInsights = ({
           {
             type: 'field_value_selection',
             field: SEARCH_TYPE_FIELD,
-            name: 'Search type',
+            name: SEARCH_TYPE,
             multiSelect: false,
             options: filterDuplicates(
               queries.map((query) => ({
@@ -187,7 +203,7 @@ const QueryInsights = ({
           {
             type: 'field_value_selection',
             field: NODE_ID_FIELD,
-            name: 'Coordinator node ID',
+            name: NODE_ID,
             multiSelect: true,
             options: filterDuplicates(
               queries.map((query) => ({
@@ -212,9 +228,7 @@ const QueryInsights = ({
       executeQueryOptions={{
         defaultFields: [
           TIMESTAMP_FIELD,
-          LATENCY_FIELD,
-          CPU_FIELD,
-          MEMORY_FIELD,
+          MEASUREMENTS_FIELD,
           INDICES_FIELD,
           SEARCH_TYPE_FIELD,
           NODE_ID_FIELD,
