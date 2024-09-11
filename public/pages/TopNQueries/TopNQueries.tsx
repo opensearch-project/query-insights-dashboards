@@ -1,11 +1,16 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import dateMath from '@elastic/datemath';
+import { CoreStart } from 'opensearch-dashboards/public';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
-import { CoreStart } from '../../../../../src/core/public';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -142,7 +147,6 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
         ).map((item) => JSON.parse(item));
         setQueries(noDuplicates);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Error retrieving queries:', error);
       } finally {
         setLoading(false);
@@ -195,7 +199,6 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
             });
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error('Failed to retrieve settings:', error);
         }
       } else {
@@ -215,7 +218,6 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
             },
           });
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error('Failed to set settings:', error);
         }
       }

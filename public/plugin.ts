@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { i18n } from '@osd/i18n';
 import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
@@ -41,7 +46,7 @@ export class QueryInsightsDashboardsPlugin
     };
   }
 
-  public start(core: CoreStart): QueryInsightsDashboardsPluginStart {
+  public start(_core: CoreStart): QueryInsightsDashboardsPluginStart {
     return {};
   }
 
