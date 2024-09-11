@@ -16,4 +16,14 @@ window.URL = {
   },
 };
 
+jest.mock('@elastic/eui/lib/components/form/form_row/make_id', () => () => 'random_id');
+
+jest.mock('@elastic/eui/lib/services/accessibility/html_id_generator', () => ({
+  htmlIdGenerator: () => {
+    return () => 'random_html_id';
+  },
+}));
+
+jest.mock('plotly.js-dist', () => ({ Plotly: {} }));
+
 jest.setTimeout(10000); // in milliseconds
