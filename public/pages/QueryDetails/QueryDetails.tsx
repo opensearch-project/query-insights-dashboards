@@ -19,7 +19,7 @@ import {
 } from '@elastic/eui';
 import hash from 'object-hash';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from '../../../../../src/core/public';
+import { CoreStart } from 'opensearch-dashboards/public';
 import QuerySummary from './Components/QuerySummary';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 

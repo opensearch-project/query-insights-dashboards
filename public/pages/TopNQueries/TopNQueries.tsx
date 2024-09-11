@@ -11,6 +11,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
+import { SearchQueryRecord } from '../../../types/types';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -66,7 +67,7 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
     }
   };
 
-  const [queries, setQueries] = useState<any[]>([]);
+  const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
 
   const tabs: Array<{ id: string; name: string; route: string }> = [
     {
@@ -114,7 +115,11 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
       };
       const fetchMetric = async (endpoint: string) => {
         try {
-          const response = await core.http.get(endpoint, params);
+          // TODO: #13 refactor the interface definitions for requests and responses
+          const response: { response: { top_queries: SearchQueryRecord[] } } = await core.http.get(
+            endpoint,
+            params
+          );
           return {
             response: {
               top_queries: Array.isArray(response?.response?.top_queries)
@@ -142,7 +147,7 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
           ...respCpu.response.top_queries,
           ...respMemory.response.top_queries,
         ];
-        const noDuplicates = Array.from(
+        const noDuplicates: SearchQueryRecord[] = Array.from(
           new Set(newQueries.map((item) => JSON.stringify(item)))
         ).map((item) => JSON.parse(item));
         setQueries(noDuplicates);

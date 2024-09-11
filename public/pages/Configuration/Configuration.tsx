@@ -23,7 +23,7 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from '../../../../../src/core/public';
+import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
 
 const Configuration = ({

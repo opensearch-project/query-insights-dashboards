@@ -452,7 +452,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_latency_1"
+                  data-test-subj="tableHeaderCell_measurements_1"
                   role="columnheader"
                   scope="col"
                 >
@@ -477,7 +477,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_cpu_2"
+                  data-test-subj="tableHeaderCell_measurements_2"
                   role="columnheader"
                   scope="col"
                 >
@@ -491,9 +491,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="CPU usage"
+                        title="CPU Time"
                       >
-                        CPU usage
+                        CPU Time
                       </span>
                     </span>
                   </button>
@@ -502,7 +502,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_memory_3"
+                  data-test-subj="tableHeaderCell_measurements_3"
                   role="columnheader"
                   scope="col"
                 >
@@ -516,9 +516,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Memory"
+                        title="Memory Usage"
                       >
-                        Memory
+                        Memory Usage
                       </span>
                     </span>
                   </button>
