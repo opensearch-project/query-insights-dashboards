@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import {
   PluginInitializerContext,
   CoreSetup,
@@ -42,7 +47,7 @@ export class QueryInsightsDashboardsPlugin
     return {};
   }
 
-  public start(core: CoreStart) {
+  public start(_core: CoreStart) {
     this.logger.debug('query-insights-dashboards: Started');
     return {};
   }

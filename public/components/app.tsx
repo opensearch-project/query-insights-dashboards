@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React from 'react';
 import { Route } from 'react-router-dom';
 import TopNQueries from '../pages/TopNQueries/TopNQueries';
