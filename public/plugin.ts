@@ -7,6 +7,7 @@ import { i18n } from '@osd/i18n';
 import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { PLUGIN_NAME } from '../common';
+import { QUERY_DETAILS_CACHE_KEY } from '../common/constants';
 
 export class QueryInsightsDashboardsPlugin
   implements Plugin<QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart> {
@@ -50,5 +51,7 @@ export class QueryInsightsDashboardsPlugin
     return {};
   }
 
-  public stop() {}
+  public stop() {
+    sessionStorage.removeItem(QUERY_DETAILS_CACHE_KEY);
+  }
 }
