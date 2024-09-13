@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import Plotly from 'plotly.js-dist';
 import {
   EuiButton,
@@ -17,54 +17,63 @@ import {
   EuiText,
   EuiTitle,
 } from '@elastic/eui';
-import hash from 'object-hash';
-import { useParams, useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import QuerySummary from './Components/QuerySummary';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { SearchQueryRecord } from '../../../types/types';
+import { QUERY_DETAILS_CACHE_KEY } from '../../../common/constants';
 
-const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
-  const { hashedQuery } = useParams<{ hashedQuery: string }>();
-  const query = queries.find((q: any) => hash(q) === hashedQuery);
+interface QueryDetailsState {
+  query: SearchQueryRecord;
+}
 
-  const convertTime = (unixTime: number) => {
-    const date = new Date(unixTime);
-    const loc = date.toDateString().split(' ');
-    return loc[1] + ' ' + loc[2] + ', ' + loc[3] + ' @ ' + date.toLocaleTimeString('en-US');
-  };
-
+const QueryDetails = ({ core }: { core: CoreStart }) => {
   const history = useHistory();
-  const location = useLocation();
+  const location = useLocation<QueryDetailsState>();
 
-  useEffect(() => {
-    core.chrome.setBreadcrumbs([
-      {
-        text: 'Query insights',
-        href: QUERY_INSIGHTS,
-        onClick: (e) => {
-          e.preventDefault();
-          history.push(QUERY_INSIGHTS);
-        },
-      },
-      { text: `Query details: ${convertTime(query.timestamp)}` },
-    ]);
-  }, [core.chrome, history, location, query.timestamp]);
-
-  useEffect(() => {
-    let x: number[] = Object.values(query.phase_latency_map);
-    if (x.length < 3) {
-      x = [0, 0, 0];
+  // Get query from state or sessionStorage
+  const query = location.state?.query || getQueryFromSession();
+  function getQueryFromSession(): SearchQueryRecord | null {
+    try {
+      const cachedQuery = sessionStorage.getItem(QUERY_DETAILS_CACHE_KEY);
+      return cachedQuery ? JSON.parse(cachedQuery) : null;
+    } catch (error) {
+      console.error('Error reading query from sessionStorage:', error);
+      return null;
     }
+  }
+
+  // Cache query if it exists
+  useEffect(() => {
+    if (query) {
+      sessionStorage.setItem(QUERY_DETAILS_CACHE_KEY, JSON.stringify(query));
+    } else {
+      // if query doesn't exist, return to overview page
+      history.push(QUERY_INSIGHTS);
+    }
+  }, [query, history]);
+
+  // Convert UNIX time to a readable format
+  const convertTime = useCallback((unixTime: number) => {
+    const date = new Date(unixTime);
+    const [_weekDay, month, day, year] = date.toDateString().split(' ');
+    return `${month} ${day}, ${year} @ ${date.toLocaleTimeString('en-US')}`;
+  }, []);
+
+  // Initialize the Plotly chart
+  const initPlotlyChart = useCallback(() => {
+    const latencies = Object.values(query?.phase_latency_map || [0, 0, 0]);
     const data = [
       {
-        x: x.reverse(),
+        x: latencies.reverse(),
         y: ['Fetch    ', 'Query    ', 'Expand    '],
         type: 'bar',
         orientation: 'h',
         width: 0.5,
         marker: { color: ['#F990C0', '#1BA9F5', '#7DE2D1'] },
-        base: [x[2] + x[1], x[2], 0],
-        text: x.map((value) => `${value}ms`),
+        base: [latencies[2] + latencies[1], latencies[2], 0],
+        text: latencies.map((value) => `${value}ms`),
         textposition: 'outside',
         cliponaxis: false,
       },
@@ -72,7 +81,6 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
     const layout = {
       autosize: true,
       margin: { l: 80, r: 80, t: 25, b: 15, pad: 0 },
-      autorange: true,
       height: 120,
       xaxis: {
         side: 'top',
@@ -89,7 +97,28 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
     Plotly.newPlot('latency', data, layout, config);
   }, [query]);
 
-  const queryString = JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2);
+  useEffect(() => {
+    if (query) {
+      core.chrome.setBreadcrumbs([
+        {
+          text: 'Query insights',
+          href: QUERY_INSIGHTS,
+          onClick: (e) => {
+            e.preventDefault();
+            history.push(QUERY_INSIGHTS);
+          },
+        },
+        { text: `Query details: ${convertTime(query.timestamp)}` },
+      ]);
+      initPlotlyChart();
+    }
+  }, [query, history, core.chrome, convertTime, initPlotlyChart]);
+
+  if (!query) {
+    return <div />;
+  }
+
+  const queryString = JSON.stringify(query.source, null, 2);
   const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
 
   return (
@@ -117,7 +146,7 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
                     target="_blank"
                     href="https://playground.opensearch.org/app/searchRelevance#/"
                   >
-                    Open in search comparision
+                    Open in search comparison
                   </EuiButton>
                 </EuiFlexItem>
               </EuiFlexGroup>
