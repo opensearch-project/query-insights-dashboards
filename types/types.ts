@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ISearchSource } from 'src/plugins/data/public';
-
 export interface SearchQueryRecord {
   timestamp: number;
   measurements: {
@@ -14,7 +12,7 @@ export interface SearchQueryRecord {
   };
   total_shards: number;
   node_id: string;
-  source: ISearchSource;
+  source: Record<string, any>;
   labels: Record<string, string>;
   search_type: string;
   indices: string[];
