@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import hash from 'object-hash';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
@@ -73,10 +72,17 @@ const QueryInsights = ({
     {
       // Make into flyout instead?
       name: TIMESTAMP,
-      render: (query: any) => {
+      render: (query: SearchQueryRecord) => {
         return (
           <span>
-            <EuiLink onClick={() => history.push(`/query-details/${hash(query)}`)}>
+            <EuiLink
+              onClick={() =>
+                history.push({
+                  pathname: `/query-details`,
+                  state: { query },
+                })
+              }
+            >
               {convertTime(query.timestamp)}
             </EuiLink>
           </span>
