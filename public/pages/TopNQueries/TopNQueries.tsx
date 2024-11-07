@@ -23,12 +23,20 @@ export interface MetricSettings {
   currTimeUnit: string;
 }
 
-const TopNQueries = ({ core }: { core: CoreStart }) => {
+const TopNQueries = ({
+  core,
+  initialStart = 'now-1d',
+  initialEnd = 'now',
+}: {
+  core: CoreStart;
+  initialStart?: string;
+  initialEnd?: string;
+}) => {
   const history = useHistory();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const [currStart, setStart] = useState('now-1d');
-  const [currEnd, setEnd] = useState('now');
+  const [currStart, setStart] = useState(initialStart);
+  const [currEnd, setEnd] = useState(initialEnd);
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: currStart, end: currEnd },
   ]);
@@ -172,10 +180,8 @@ const TopNQueries = ({ core }: { core: CoreStart }) => {
       if (get) {
         try {
           const resp = await core.http.get('/api/settings');
-          const settings = resp.response.persistent.search.insights.top_queries;
-          const latency = settings.latency;
-          const cpu = settings.cpu;
-          const memory = settings.memory;
+          const { latency, cpu, memory } =
+            resp?.response?.persistent?.search?.insights?.top_queries || {};
           if (latency !== undefined && latency.enabled === 'true') {
             const [time, timeUnits] = latency.window_size.match(/\D+|\d+/g);
             setMetricSettings('latency', {
