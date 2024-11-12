@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -66,14 +66,19 @@ const Configuration = ({
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
 
-  const metricSettingsMap = useMemo(
-    () => ({
+  const [metricSettingsMap, setMetricSettingsMap] = useState({
+    latency: latencySettings,
+    cpu: cpuSettings,
+    memory: memorySettings,
+  });
+
+  useEffect(() => {
+    setMetricSettingsMap({
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-    }),
-    [latencySettings, cpuSettings, memorySettings]
-  );
+    });
+  }, [latencySettings, cpuSettings, memorySettings]);
 
   const newOrReset = useCallback(() => {
     const currMetric = metricSettingsMap[metric];
@@ -85,7 +90,7 @@ const Configuration = ({
 
   useEffect(() => {
     newOrReset();
-  }, [newOrReset]);
+  }, [newOrReset, metricSettingsMap]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
