@@ -184,7 +184,9 @@ const TopNQueries = ({
           const { latency, cpu, memory } =
             resp?.response?.persistent?.search?.insights?.top_queries || {};
           if (latency !== undefined && latency.enabled === 'true') {
-            const [time, timeUnits] = latency.window_size.match(/\D+|\d+/g);
+            const [time, timeUnits] = latency.window_size
+              ? latency.window_size.match(/\D+|\d+/g)
+              : ['1', 'm'];
             setMetricSettings('latency', {
               isEnabled: true,
               currTopN: latency.top_n_size,
@@ -193,7 +195,9 @@ const TopNQueries = ({
             });
           }
           if (cpu !== undefined && cpu.enabled === 'true') {
-            const [time, timeUnits] = cpu.window_size.match(/\D+|\d+/g);
+            const [time, timeUnits] = cpu.window_size
+              ? cpu.window_size.match(/\D+|\d+/g)
+              : ['1', 'm'];
             setMetricSettings('cpu', {
               isEnabled: true,
               currTopN: cpu.top_n_size,
@@ -202,7 +206,9 @@ const TopNQueries = ({
             });
           }
           if (memory !== undefined && memory.enabled === 'true') {
-            const [time, timeUnits] = memory.window_size.match(/\D+|\d+/g);
+            const [time, timeUnits] = memory.window_size
+              ? memory.window_size.match(/\D+|\d+/g)
+              : ['1', 'm'];
             setMetricSettings('memory', {
               isEnabled: true,
               currTopN: memory.top_n_size,
