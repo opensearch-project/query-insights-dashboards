@@ -12,7 +12,6 @@ import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
-import { removeQueryGroups } from '../../utils/utils';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -159,7 +158,7 @@ const TopNQueries = ({
         const noDuplicates: SearchQueryRecord[] = Array.from(
           new Set(newQueries.map((item) => JSON.stringify(item)))
         ).map((item) => JSON.parse(item));
-        setQueries(removeQueryGroups(noDuplicates));
+        setQueries(noDuplicates);
       } catch (error) {
         console.error('Error retrieving queries:', error);
       } finally {
