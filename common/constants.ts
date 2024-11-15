@@ -11,3 +11,4 @@ export const INDICES = 'Indices';
 export const SEARCH_TYPE = 'Search type';
 export const NODE_ID = 'Coordinator node ID';
 export const TOTAL_SHARDS = 'Total shards';
+export const QUERY_DETAILS_CACHE_KEY = 'query_insights_top_queries_detail_query_key';

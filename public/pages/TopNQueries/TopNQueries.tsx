@@ -266,8 +266,8 @@ const TopNQueries = ({
   return (
     <div style={{ padding: '35px 35px' }}>
       <Switch>
-        <Route exact path="/query-details/:hashedQuery">
-          <QueryDetails queries={queries} core={core} />
+        <Route exact path="/query-details">
+          <QueryDetails core={core} />
         </Route>
         <Route exact path={QUERY_INSIGHTS}>
           <EuiTitle size="l">
