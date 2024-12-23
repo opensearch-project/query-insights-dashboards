@@ -5,19 +5,13 @@
 
 import React from 'react';
 import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
-import { SearchQueryRecord } from '../../../../types/types';
 import {
-  CPU_TIME,
-  INDICES,
+  CPU_TIME, GROUP_BY,
   LATENCY,
-  MEMORY_USAGE,
-  NODE_ID,
-  SEARCH_TYPE,
-  TIMESTAMP,
-  TOTAL_SHARDS,
+  MEMORY_USAGE, QUERY_HASHCODE
 } from '../../../../common/constants';
 
-// Panel component for displaying query detail values
+// Panel component for displaying query group detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
     <EuiText size="xs">
@@ -27,22 +21,20 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
   </EuiFlexItem>
 );
 
-const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
-  const convertTime = (unixTime: number) => {
-    const date = new Date(unixTime);
-    const loc = date.toDateString().split(' ');
-    return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
-  };
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { timestamp, measurements, indices, search_type, node_id, total_shards } = query;
+const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
+
+  const { measurements, query_hashcode, group_by } = query;
+  const queryCount = measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
-    <EuiPanel data-test-subj={'query-details-summary-section'}>
+    <EuiPanel>
       <EuiText size="xs">
-        <h2>Summary</h2>
+        <h2>
+          Aggregate summary for {queryCount} {queryCount === 1 ? 'query' : 'queries'}
+        </h2>
       </EuiText>
-      <EuiHorizontalRule margin="m" />
+      <EuiHorizontalRule margin="m"/>
       <EuiFlexGrid columns={4}>
-        <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
+      <PanelItem label={QUERY_HASHCODE} value={query_hashcode}/>
         <PanelItem
           label={LATENCY}
           value={
@@ -67,14 +59,17 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
               : 'N/A'
           }
         />
-        <PanelItem label={INDICES} value={indices.toString()} />
-        <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
-        <PanelItem label={NODE_ID} value={node_id} />
-        <PanelItem label={TOTAL_SHARDS} value={total_shards} />
+        <PanelItem
+          label={GROUP_BY}
+          value={
+            group_by !== undefined
+              ? `${group_by}`
+              : 'N/A'
+          }
+        />
       </EuiFlexGrid>
     </EuiPanel>
   );
 };
 
-// eslint-disable-next-line import/no-default-export
-export default QuerySummary;
+export default QueryGroupAggregateSummary;

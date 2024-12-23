@@ -129,6 +129,49 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiFilterButton__textShift"
+                        data-text="Type"
+                        title="Type"
+                      >
+                        Type
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              class="euiPopover euiPopover--anchorDownCenter"
+              id="field_value_selection_1"
+            >
+              <div
+                class="euiPopover__anchor"
+              >
+                <button
+                  class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+                  type="button"
+                >
+                  <span
+                    class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonContent__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                      />
+                    </svg>
+                    <span
+                      class="euiButtonEmpty__text"
+                    >
+                      <span
+                        class="euiFilterButton__textShift"
                         data-text="Indices"
                         title="Indices"
                       >
@@ -141,7 +184,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
             </div>
             <div
               class="euiPopover euiPopover--anchorDownCenter"
-              id="field_value_selection_1"
+              id="field_value_selection_2"
             >
               <div
                 class="euiPopover__anchor"
@@ -184,7 +227,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
             </div>
             <div
               class="euiPopover euiPopover--anchorDownCenter"
-              id="field_value_selection_2"
+              id="field_value_selection_3"
             >
               <div
                 class="euiPopover__anchor"
@@ -427,7 +470,82 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Timestamp_0"
+                  data-test-subj="tableHeaderCell_Query Hashcode_0"
+                  role="columnheader"
+                  scope="col"
+                >
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Query Hashcode"
+                      >
+                        Query Hashcode
+                      </span>
+                    </span>
+                  </button>
+                </th>
+                <th
+                  aria-live="polite"
+                  aria-sort="none"
+                  class="euiTableHeaderCell"
+                  data-test-subj="tableHeaderCell_Type_1"
+                  role="columnheader"
+                  scope="col"
+                >
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Type"
+                      >
+                        Type
+                      </span>
+                    </span>
+                  </button>
+                </th>
+                <th
+                  aria-live="polite"
+                  aria-sort="none"
+                  class="euiTableHeaderCell"
+                  data-test-subj="tableHeaderCell_measurements_2"
+                  role="columnheader"
+                  scope="col"
+                >
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Query Count"
+                      >
+                        Query Count
+                      </span>
+                    </span>
+                  </button>
+                </th>
+                <th
+                  aria-live="polite"
+                  aria-sort="none"
+                  class="euiTableHeaderCell"
+                  data-test-subj="tableHeaderCell_Timestamp_3"
                   role="columnheader"
                   scope="col"
                 >
@@ -452,7 +570,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_1"
+                  data-test-subj="tableHeaderCell_measurements_4"
                   role="columnheader"
                   scope="col"
                 >
@@ -477,7 +595,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_2"
+                  data-test-subj="tableHeaderCell_measurements_5"
                   role="columnheader"
                   scope="col"
                 >
@@ -502,7 +620,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_3"
+                  data-test-subj="tableHeaderCell_measurements_6"
                   role="columnheader"
                   scope="col"
                 >
@@ -527,7 +645,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_indices_4"
+                  data-test-subj="tableHeaderCell_indices_7"
                   role="columnheader"
                   scope="col"
                 >
@@ -552,7 +670,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_search_type_5"
+                  data-test-subj="tableHeaderCell_search_type_8"
                   role="columnheader"
                   scope="col"
                 >
@@ -577,7 +695,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_node_id_6"
+                  data-test-subj="tableHeaderCell_node_id_9"
                   role="columnheader"
                   scope="col"
                 >
@@ -602,7 +720,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_total_shards_7"
+                  data-test-subj="tableHeaderCell_total_shards_10"
                   role="columnheader"
                   scope="col"
                 >
@@ -631,7 +749,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
               >
                 <td
                   class="euiTableRowCell euiTableRowCell--isMobileFullWidth"
-                  colspan="8"
+                  colspan="11"
                 >
                   <div
                     class="euiTableCellContent euiTableCellContent--alignCenter"

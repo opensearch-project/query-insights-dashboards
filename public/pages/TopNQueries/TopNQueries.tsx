@@ -12,6 +12,7 @@ import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
+import QueryGroupDetails from "../QueryGroupDetails/QueryGroupDetails";
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -21,6 +22,10 @@ export interface MetricSettings {
   currTopN: string;
   currWindowSize: string;
   currTimeUnit: string;
+}
+
+export interface GroupBySettings {
+  groupBy: string
 }
 
 const TopNQueries = ({
@@ -44,22 +49,24 @@ const TopNQueries = ({
     isEnabled: false,
     currTopN: '',
     currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTimeUnit: 'HOURS'
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
     isEnabled: false,
     currTopN: '',
     currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTimeUnit: 'HOURS'
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
     isEnabled: false,
     currTopN: '',
     currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTimeUnit: 'HOURS'
   });
+
+  const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
@@ -175,12 +182,13 @@ const TopNQueries = ({
       metric: string = '',
       newTopN: string = '',
       newWindowSize: string = '',
-      newTimeUnit: string = ''
+      newTimeUnit: string = '',
+      newGroupBy: string = ''
     ) => {
       if (get) {
         try {
           const resp = await core.http.get('/api/settings');
-          const { latency, cpu, memory } =
+          const { latency, cpu, memory, group_by } =
             resp?.response?.persistent?.search?.insights?.top_queries || {};
           if (latency !== undefined && latency.enabled === 'true') {
             const [time, timeUnits] = latency.window_size
@@ -215,6 +223,9 @@ const TopNQueries = ({
               currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
             });
           }
+          if (group_by) {
+            setGroupBySettings({ groupBy: group_by });
+          }
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -226,12 +237,14 @@ const TopNQueries = ({
             currWindowSize: newWindowSize,
             currTimeUnit: newTimeUnit,
           });
+          setGroupBySettings({ groupBy: newGroupBy })
           await core.http.put('/api/update_settings', {
             query: {
               metric,
               enabled,
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
+              group_by: newGroupBy
             },
           });
         } catch (error) {
@@ -269,6 +282,9 @@ const TopNQueries = ({
         <Route exact path="/query-details/:hashedQuery">
           <QueryDetails queries={queries} core={core} />
         </Route>
+        <Route exact path="/query-group-details/:hashedQuery">
+          <QueryGroupDetails queries={queries} core={core} />
+        </Route>
         <Route exact path={QUERY_INSIGHTS}>
           <EuiTitle size="l">
             <h1>Query insights - Top N queries</h1>
@@ -297,6 +313,7 @@ const TopNQueries = ({
             latencySettings={latencySettings}
             cpuSettings={cpuSettings}
             memorySettings={memorySettings}
+            groupBySettings={groupBySettings}
             configInfo={retrieveConfigInfo}
             core={core}
           />
