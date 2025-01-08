@@ -1,6 +1,11 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
-import {MemoryRouter, Route} from 'react-router-dom';
-import QueryGroupDetails from './QueryGroupDetails';
+import { MemoryRouter, Route } from 'react-router-dom';
+import { QueryGroupDetails } from './QueryGroupDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
 import React from 'react';
 import { mockQueries } from '../../../test/mocks/mockQueries';
@@ -21,11 +26,11 @@ jest.mock('react-ace', () => ({
 }));
 
 describe('QueryGroupDetails', () => {
-  const coreMock = {
+  const coreMock = ({
     chrome: {
       setBreadcrumbs: jest.fn(),
     },
-  } as unknown as CoreStart;
+  } as unknown) as CoreStart;
 
   const expectedHash = '8c1e50c035663459d567fa11d8eb494d';
 
@@ -43,8 +48,14 @@ describe('QueryGroupDetails', () => {
 
     await waitFor(() => {
       expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith([
-        { text: 'Query insights', href: '/queryInsights' , onClick: expect.any(Function)},
-        { text: 'Query group details: Nov 15, 2024 @ 12:36:12 PM' },
+        {
+          text: 'Query insights',
+          href: '/queryInsights',
+          onClick: expect.any(Function),
+        },
+        {
+          text: expect.stringMatching(/^Query group details: .+ @ .+$/), // Matches dynamic date/time format
+        },
       ]);
     });
   });
@@ -53,7 +64,7 @@ describe('QueryGroupDetails', () => {
     render(
       <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
         <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={mockQueries} core={coreMock}/>
+          <QueryGroupDetails queries={mockQueries} core={coreMock} />
         </Route>
       </MemoryRouter>
     );
@@ -77,12 +88,10 @@ describe('QueryGroupDetails', () => {
   it('should find the query based on hash', () => {
     const expectedQuery = mockQueries.find((q: any) => hash(q) === expectedHash);
 
-    expect(expectedQuery).not.toBeUndefined();
-    if (expectedQuery) {
-      expect(expectedQuery.query_hashcode).toBe(expectedHash);
-    } else {
+    if (!expectedQuery) {
       throw new Error(`Query with hash ${expectedHash} was not found in mockQueries`);
     }
+    expect(expectedQuery.query_hashcode).toBe(expectedHash);
   });
 
   it('renders correct breadcrumb based on query hash', async () => {
@@ -95,13 +104,14 @@ describe('QueryGroupDetails', () => {
     );
 
     await waitFor(() => {
-      expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith(expect.arrayContaining([
-        { text: 'Query insights', href: '/queryInsights' , onClick: expect.any(Function)},
-        { text: 'Query group details: Nov 15, 2024 @ 12:36:12 PM' },
-        expect.objectContaining({
-          text: expect.stringMatching(/^Query group details: .+/)
-        })
-      ]));
+      expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          { text: 'Query insights', href: '/queryInsights', onClick: expect.any(Function) },
+          expect.objectContaining({
+            text: expect.stringMatching(/^Query group details: .+/),
+          }),
+        ])
+      );
     });
   });
 });

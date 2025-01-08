@@ -8,8 +8,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import Plotly from 'plotly.js-dist';
 import hash from 'object-hash';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
-import React, {useEffect} from "react";
-import {QUERY_INSIGHTS} from "../TopNQueries/TopNQueries";
+import React, { useEffect } from 'react';
 import {
   EuiButton,
   EuiCodeBlock,
@@ -21,12 +20,13 @@ import {
   EuiSpacer,
   EuiText,
   EuiTitle,
-  EuiIconTip
+  EuiIconTip,
 } from '@elastic/eui';
-import QueryGroupAggregateSummary from "./Components/QueryGroupAggregateSummary";
-import QueryGroupSampleQuerySummary from "./Components/QueryGroupSampleQuerySummary";
+import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { QueryGroupAggregateSummary } from './Components/QueryGroupAggregateSummary';
+import { QueryGroupSampleQuerySummary } from './Components/QueryGroupSampleQuerySummary';
 
-const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
+export const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
   const { hashedQuery } = useParams<{ hashedQuery: string }>();
   const query = queries.find((q: any) => hash(q) === hashedQuery);
 
@@ -102,18 +102,18 @@ const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart })
           <h1>Query group details</h1>
         </EuiTitle>
         <EuiIconTip
-            content="Details for the query group including aggregate statistics and number of queries in the group"
-            position="right"
-            type="iInCircle"
-            aria-label="Details tooltip"
+          content="Details for the query group including aggregate statistics and number of queries in the group"
+          position="right"
+          type="iInCircle"
+          aria-label="Details tooltip"
         />
       </EuiFlexGrid>
-      <EuiSpacer size="l"/>
+      <EuiSpacer size="l" />
       <EuiFlexItem>
-        <QueryGroupAggregateSummary query={query}/>
+        <QueryGroupAggregateSummary query={query} />
       </EuiFlexItem>
-      <EuiSpacer size="l"/>
-      <EuiSpacer size="l"/>
+      <EuiSpacer size="l" />
+      <EuiSpacer size="l" />
       <EuiFlexGrid columns={2}>
         <EuiTitle size="l">
           <h1>Sample query details</h1>
@@ -125,9 +125,9 @@ const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart })
           aria-label="Details tooltip"
         />
       </EuiFlexGrid>
-      <EuiSpacer size="l"/>
+      <EuiSpacer size="l" />
       <EuiFlexItem>
-        <QueryGroupSampleQuerySummary query={query}/>
+        <QueryGroupSampleQuerySummary query={query} />
         <EuiSpacer size="m" />
         <EuiFlexGrid columns={2}>
           <EuiFlexItem grow={1}>
@@ -175,6 +175,4 @@ const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart })
       </EuiFlexItem>
     </div>
   );
-
 };
-export default QueryGroupDetails;

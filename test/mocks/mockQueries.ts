@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 export const mockQueries = [
   {
     timestamp: 1731702972708, // Example timestamp in milliseconds

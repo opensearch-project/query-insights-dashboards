@@ -15,7 +15,9 @@ import {
   INDICES,
   LATENCY,
   MEMORY_USAGE,
-  NODE_ID, QUERY_COUNT, QUERY_HASHCODE,
+  NODE_ID,
+  QUERY_COUNT,
+  QUERY_HASHCODE,
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
@@ -29,7 +31,7 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const METRIC_DEFAULT_MSG = 'Not enabled';
-const GROUP_BY_FIELD = 'group_by'
+const GROUP_BY_FIELD = 'group_by';
 
 const QueryInsights = ({
   queries,
@@ -77,13 +79,18 @@ const QueryInsights = ({
       render: (query: any) => {
         return (
           <span>
-        <EuiLink onClick={() => {
-          const route = query.group_by === 'SIMILARITY' ? `/query-group-details/${hash(query)}` : `/query-details/${hash(query)}`;
-          history.push(route);
-        }}>
-          {query.query_hashcode || '-'}
-        </EuiLink>
-      </span>
+            <EuiLink
+              onClick={() => {
+                const route =
+                  query.group_by === 'SIMILARITY'
+                    ? `/query-group-details/${hash(query)}`
+                    : `/query-details/${hash(query)}`;
+                history.push(route);
+              }}
+            >
+              {query.query_hashcode || '-'}
+            </EuiLink>
+          </span>
         );
       },
       sortable: (query) => query.query_hashcode || '-',
@@ -94,13 +101,18 @@ const QueryInsights = ({
       render: (query: any) => {
         return (
           <span>
-        <EuiLink onClick={() => {
-          const route = query.group_by === 'SIMILARITY' ? `/query-group-details/${hash(query)}` : `/query-details/${hash(query)}`;
-          history.push(route);
-        }}>
-          {query.group_by === 'SIMILARITY' ? 'group' : 'query'}
-        </EuiLink>
-      </span>
+            <EuiLink
+              onClick={() => {
+                const route =
+                  query.group_by === 'SIMILARITY'
+                    ? `/query-group-details/${hash(query)}`
+                    : `/query-details/${hash(query)}`;
+                history.push(route);
+              }}
+            >
+              {query.group_by === 'SIMILARITY' ? 'group' : 'query'}
+            </EuiLink>
+          </span>
         );
       },
       sortable: (query) => query.group_by || 'query',
@@ -109,9 +121,20 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: QUERY_COUNT,
-      render: (measurements: any) => `${measurements?.latency?.count || measurements?.cpu?.count || measurements?.memory?.count || 1}`,
+      render: (measurements: any) =>
+        `${
+          measurements?.latency?.count ||
+          measurements?.cpu?.count ||
+          measurements?.memory?.count ||
+          1
+        }`,
       sortable: (measurements: any) => {
-        return Number(measurements?.latency?.count || measurements?.cpu?.count || measurements?.memory?.count || 1);
+        return Number(
+          measurements?.latency?.count ||
+            measurements?.cpu?.count ||
+            measurements?.memory?.count ||
+            1
+        );
       },
       truncateText: true,
     },
@@ -120,15 +143,13 @@ const QueryInsights = ({
       name: TIMESTAMP,
       render: (query: any) => {
         const isQuery = query.group_by === 'NONE';
-        const linkContent = isQuery ? convertTime(query.timestamp): '-';
+        const linkContent = isQuery ? convertTime(query.timestamp) : '-';
         const onClickHandler = () => history.push(`/query-details/${hash(query)}`);
 
         return (
           <span>
-          <EuiLink onClick={onClickHandler}>
-            {linkContent}
-          </EuiLink>
-        </span>
+            <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>
+          </span>
         );
       },
       sortable: (query) => query.timestamp,
@@ -140,9 +161,10 @@ const QueryInsights = ({
       render: (measurements: any) => {
         const latencyValue = measurements?.latency?.number;
         const latencyCount = measurements?.latency?.count;
-        const result = latencyValue !== undefined && latencyCount !== undefined
-          ? (latencyValue / latencyCount).toFixed(2)
-          : METRIC_DEFAULT_MSG;
+        const result =
+          latencyValue !== undefined && latencyCount !== undefined
+            ? (latencyValue / latencyCount).toFixed(2)
+            : METRIC_DEFAULT_MSG;
         return `${result} ms`;
       },
       sortable: true,
@@ -154,9 +176,10 @@ const QueryInsights = ({
       render: (measurements: any) => {
         const cpuValue = measurements?.cpu?.number;
         const cpuCount = measurements?.cpu?.count;
-        const result = cpuValue !== undefined && cpuCount !== undefined
-          ? (cpuValue / cpuCount / 1000000).toFixed(2)
-          : METRIC_DEFAULT_MSG;
+        const result =
+          cpuValue !== undefined && cpuCount !== undefined
+            ? (cpuValue / cpuCount / 1000000).toFixed(2)
+            : METRIC_DEFAULT_MSG;
         return `${result} ms`;
       },
       sortable: true,
@@ -168,9 +191,10 @@ const QueryInsights = ({
       render: (measurements: any) => {
         const memoryValue = measurements?.memory?.number;
         const memoryCount = measurements?.memory?.count;
-        const result = memoryValue !== undefined && memoryCount !== undefined
-          ? (memoryValue / memoryCount).toFixed(2)
-          : METRIC_DEFAULT_MSG;
+        const result =
+          memoryValue !== undefined && memoryCount !== undefined
+            ? (memoryValue / memoryCount).toFixed(2)
+            : METRIC_DEFAULT_MSG;
         return `${result} B`;
       },
       sortable: true,
@@ -255,12 +279,12 @@ const QueryInsights = ({
               {
                 value: 'NONE',
                 name: 'query',
-                view: 'query'
+                view: 'query',
               },
               {
                 value: 'SIMILARITY',
                 name: 'group',
-                view: 'group'
+                view: 'group',
               },
             ],
             noOptionsMessage: 'No data available for the selected type', // Fallback message when no queries match

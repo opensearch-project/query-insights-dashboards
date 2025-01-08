@@ -22,15 +22,20 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
   </EuiFlexItem>
 );
 
-const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
+export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
 
-
-  const { timestamp, indices, search_type, node_id, total_shards } = query;
+  const {
+    timestamp,
+    indices,
+    search_type: searchType,
+    node_id: nodeId,
+    total_shards: totalShards,
+  } = query;
   return (
     <EuiPanel>
       <EuiText size="xs">
@@ -40,12 +45,10 @@ const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
       <EuiFlexGrid columns={4}>
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
         <PanelItem label={INDICES} value={indices.toString()} />
-        <PanelItem label={SEARCH_TYPE} value={search_type.replace(/_/g, ' ')} />
-        <PanelItem label={NODE_ID} value={node_id} />
-        <PanelItem label={TOTAL_SHARDS} value={total_shards} />
+        <PanelItem label={SEARCH_TYPE} value={searchType.replace(/_/g, ' ')} />
+        <PanelItem label={NODE_ID} value={nodeId} />
+        <PanelItem label={TOTAL_SHARDS} value={totalShards} />
       </EuiFlexGrid>
     </EuiPanel>
   );
 };
-
-export default QueryGroupSampleQuerySummary;

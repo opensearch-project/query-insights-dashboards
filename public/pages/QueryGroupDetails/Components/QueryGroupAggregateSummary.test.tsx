@@ -1,9 +1,14 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { render, screen } from '@testing-library/react';
-import QueryGroupAggregateSummary from './QueryGroupAggregateSummary';
-import React from "react";
-import {mockQueries} from "../../../../test/mocks/mockQueries";
+import { QueryGroupAggregateSummary } from './QueryGroupAggregateSummary';
+import React from 'react';
+import { mockQueries } from '../../../../test/mocks/mockQueries';
 import '@testing-library/jest-dom/extend-expect';
-import {MemoryRouter, Route} from "react-router-dom";
+import { MemoryRouter, Route } from 'react-router-dom';
 
 describe('QueryGroupAggregateSummary', () => {
   const expectedHash = '8c1e50c035663459d567fa11d8eb494d';

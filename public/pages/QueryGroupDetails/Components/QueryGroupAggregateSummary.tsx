@@ -6,9 +6,11 @@
 import React from 'react';
 import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
 import {
-  CPU_TIME, GROUP_BY,
+  CPU_TIME,
+  GROUP_BY,
   LATENCY,
-  MEMORY_USAGE, QUERY_HASHCODE
+  MEMORY_USAGE,
+  QUERY_HASHCODE,
 } from '../../../../common/constants';
 
 // Panel component for displaying query group detail values
@@ -21,10 +23,10 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
   </EuiFlexItem>
 );
 
-const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
-
-  const { measurements, query_hashcode, group_by } = query;
-  const queryCount = measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
+export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
+  const { measurements, query_hashcode: queryHashcode, group_by: groupBy } = query;
+  const queryCount =
+    measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
     <EuiPanel>
       <EuiText size="xs">
@@ -32,9 +34,9 @@ const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
           Aggregate summary for {queryCount} {queryCount === 1 ? 'query' : 'queries'}
         </h2>
       </EuiText>
-      <EuiHorizontalRule margin="m"/>
+      <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
-      <PanelItem label={QUERY_HASHCODE} value={query_hashcode}/>
+        <PanelItem label={QUERY_HASHCODE} value={queryHashcode} />
         <PanelItem
           label={LATENCY}
           value={
@@ -54,22 +56,11 @@ const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
         <PanelItem
           label={MEMORY_USAGE}
           value={
-            measurements.memory?.number !== undefined
-              ? `${measurements.memory.number} B`
-              : 'N/A'
+            measurements.memory?.number !== undefined ? `${measurements.memory.number} B` : 'N/A'
           }
         />
-        <PanelItem
-          label={GROUP_BY}
-          value={
-            group_by !== undefined
-              ? `${group_by}`
-              : 'N/A'
-          }
-        />
+        <PanelItem label={GROUP_BY} value={groupBy !== undefined ? `${groupBy}` : 'N/A'} />
       </EuiFlexGrid>
     </EuiPanel>
   );
 };
-
-export default QueryGroupAggregateSummary;

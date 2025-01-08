@@ -24,7 +24,7 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
-import {QUERY_INSIGHTS, MetricSettings, GroupBySettings} from '../TopNQueries/TopNQueries';
+import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
 
 const Configuration = ({
   latencySettings,
@@ -61,7 +61,7 @@ const Configuration = ({
 
   const groupByOptions = [
     { value: 'none', text: 'None' },
-    { value: 'similarity', text: 'Similarity' }
+    { value: 'similarity', text: 'Similarity' },
   ];
 
   const history = useHistory();
@@ -78,7 +78,7 @@ const Configuration = ({
     latency: latencySettings,
     cpu: cpuSettings,
     memory: memorySettings,
-    groupBy: groupBySettings
+    groupBy: groupBySettings,
   });
 
   useEffect(() => {
@@ -86,7 +86,7 @@ const Configuration = ({
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-      groupBy: groupBySettings
+      groupBy: groupBySettings,
     });
 
     setGroupBy(groupBySettings.groupBy);
@@ -170,7 +170,7 @@ const Configuration = ({
     topNSize !== metricSettingsMap[metric].currTopN ||
     windowSize !== metricSettingsMap[metric].currWindowSize ||
     time !== metricSettingsMap[metric].currTimeUnit ||
-    groupBy != metricSettingsMap["groupBy"].groupBy;
+    groupBy !== metricSettingsMap.groupBy.groupBy;
 
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
@@ -392,7 +392,7 @@ const Configuration = ({
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
-                  {groupBySettings.groupBy == 'similarity' ? enabledSymb : disabledSymb}
+                  {groupBySettings.groupBy === 'similarity' ? enabledSymb : disabledSymb}
                 </EuiFlexItem>
               </EuiFlexGroup>
             </EuiFlexItem>

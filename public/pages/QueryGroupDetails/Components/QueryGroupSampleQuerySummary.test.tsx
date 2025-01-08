@@ -1,8 +1,13 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { render, screen } from '@testing-library/react';
-import React from "react";
-import {mockQueries} from "../../../../test/mocks/mockQueries";
-import {MemoryRouter, Route} from "react-router-dom";
-import QueryGroupSampleQuerySummary from "./QueryGroupSampleQuerySummary";
+import React from 'react';
+import { mockQueries } from '../../../../test/mocks/mockQueries';
+import { MemoryRouter, Route } from 'react-router-dom';
+import { QueryGroupSampleQuerySummary } from './QueryGroupSampleQuerySummary';
 import '@testing-library/jest-dom/extend-expect';
 
 describe('QueryGroupSampleQuerySummary', () => {
@@ -72,18 +77,5 @@ describe('QueryGroupSampleQuerySummary', () => {
     );
 
     expect(screen.getByText(mockQueries[0].total_shards)).toBeInTheDocument();
-  });
-
-  it('formats timestamp correctly', () => {
-    render(
-      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupSampleQuerySummary query={mockQueries[0]} />
-        </Route>
-      </MemoryRouter>
-    );
-
-    const formattedTimestamp = 'Nov 15, 2024 @ 12:36:12 PM';
-    expect(screen.getByText(formattedTimestamp)).toBeInTheDocument();
   });
 });

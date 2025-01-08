@@ -62,9 +62,7 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
         <PanelItem
           label={MEMORY_USAGE}
           value={
-            measurements.memory?.number !== undefined
-              ? `${measurements.memory.number} B`
-              : 'N/A'
+            measurements.memory?.number !== undefined ? `${measurements.memory.number} B` : 'N/A'
           }
         />
         <PanelItem label={INDICES} value={indices.toString()} />
