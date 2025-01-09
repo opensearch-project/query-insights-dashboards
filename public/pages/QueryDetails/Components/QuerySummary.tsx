@@ -36,7 +36,7 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const { timestamp, measurements, indices, search_type, node_id, total_shards } = query;
   return (
-    <EuiPanel>
+    <EuiPanel data-test-subj={'query-details-summary-section'}>
       <EuiText size="xs">
         <h2>Summary</h2>
       </EuiText>

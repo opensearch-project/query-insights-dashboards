@@ -103,7 +103,7 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
         <EuiSpacer size="m" />
         <EuiFlexGrid columns={2}>
           <EuiFlexItem grow={1}>
-            <EuiPanel>
+            <EuiPanel data-test-subj={'query-details-source-section'}>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
                 <EuiFlexItem>
                   <EuiText size="xs">
@@ -135,7 +135,7 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
             </EuiPanel>
           </EuiFlexItem>
           <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
-            <EuiPanel>
+            <EuiPanel data-test-subj={'query-details-latency-chart'}>
               <EuiText size="xs">
                 <h2>Latency</h2>
               </EuiText>

@@ -13,6 +13,7 @@ module.exports = {
   extends: [
     '@elastic/eslint-config-kibana',
     'plugin:@elastic/eui/recommended',
+    "plugin:cypress/recommended",
     'plugin:react-hooks/recommended',
     'plugin:jest/recommended',
     'plugin:prettier/recommended',
@@ -38,6 +39,7 @@ module.exports = {
         ],
       },
     ],
+    'cypress/no-unnecessary-waiting': 'off',
   },
   overrides: [
     {
@@ -53,6 +55,13 @@ module.exports = {
         ],
       },
     },
+    {
+      'files': [ '**/*.cy.js' ],
+      "rules": {
+        'jest/valid-expect': 'off',
+        'cypress/unsafe-to-chain-command': 'off',
+      }
+    },
   ],
-  "ignorePatterns": ["**/*.d.ts"]
+  'ignorePatterns': ['**/*.d.ts']
 };
