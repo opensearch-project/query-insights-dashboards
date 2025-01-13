@@ -7,9 +7,8 @@ on:
     branches:
       - "*"
 env:
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  OPENSEARCH_VERSION: '3.0.0-SNAPSHOT'
-  QUERY_INSIGHTS_BRANCH: 'main'
+  OPENSEARCH_DASHBOARDS_VERSION: '2.x'
+  QUERY_INSIGHTS_BRANCH: '2.x'
   GRADLE_VERSION: '7.6.1'
 jobs:
   tests:
@@ -53,8 +52,8 @@ jobs:
       - name: Run OpenSearch with Query Insights plugin
         run: |
           cd query-insights
-          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
-          sleep 300
+          ./gradlew run &
+          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9200)" != "200" ]]; do sleep 5; done'
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
