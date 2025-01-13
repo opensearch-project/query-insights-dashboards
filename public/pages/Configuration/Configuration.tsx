@@ -327,6 +327,7 @@ const Configuration = ({
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiButton
+                data-test-subj={'save-config-button'}
                 color="primary"
                 fill
                 size="s"

@@ -38,6 +38,7 @@
     "@cypress/request": "^3.0.0"
   },
   "devDependencies": {
+    "@cypress/webpack-preprocessor": "^5.17.1",
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
     "@elastic/eslint-import-resolver-kibana": "link:../../packages/osd-eslint-import-resolver-opensearch-dashboards",
     "@testing-library/dom": "^8.11.3",
@@ -45,9 +46,10 @@
     "@types/react-dom": "^16.9.8",
     "@types/object-hash": "^3.0.0",
     "@types/react-router-dom": "^5.3.2",
-    "cypress": "9.5.4",
+    "cypress": "12.17.4",
     "cypress-real-events": "1.7.6",
     "cypress-recurse": "^1.27.0",
+    "eslint-plugin-cypress": "^2.8.1",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-prefer-object-spread": "^1.2.1",
     "husky": "^8.0.0",
