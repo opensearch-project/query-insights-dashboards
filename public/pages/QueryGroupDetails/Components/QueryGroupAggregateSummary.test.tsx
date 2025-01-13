@@ -24,9 +24,9 @@ describe('QueryGroupAggregateSummary', () => {
 
     expect(screen.getByText('Aggregate summary for 8 queries')).toBeInTheDocument();
     expect(screen.getByText('Query Hashcode')).toBeInTheDocument();
-    expect(screen.getByText('Latency')).toBeInTheDocument();
-    expect(screen.getByText('CPU Time')).toBeInTheDocument();
-    expect(screen.getByText('Memory Usage')).toBeInTheDocument();
+    expect(screen.getByText('Average Latency')).toBeInTheDocument();
+    expect(screen.getByText('Average CPU Time')).toBeInTheDocument();
+    expect(screen.getByText('Average Memory Usage')).toBeInTheDocument();
     expect(screen.getByText('Group by')).toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe('QueryGroupAggregateSummary', () => {
       </MemoryRouter>
     );
 
-    const memoryUsage = '132224 B';
+    const memoryUsage = '16528.00 B';
     expect(screen.getByText(memoryUsage)).toBeInTheDocument();
   });
 

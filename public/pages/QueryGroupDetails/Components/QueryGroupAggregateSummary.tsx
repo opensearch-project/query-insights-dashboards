@@ -6,12 +6,13 @@
 import React from 'react';
 import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
 import {
-  CPU_TIME,
+  AVERAGE_CPU_TIME,
+  AVERAGE_LATENCY,
+  AVERAGE_MEMORY_USAGE,
   GROUP_BY,
-  LATENCY,
-  MEMORY_USAGE,
-  QUERY_HASHCODE,
+  QUERY_GROUP_HASHCODE,
 } from '../../../../common/constants';
+import { calculateMetric } from '../../Utils/MetricUtils';
 
 // Panel component for displaying query group detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -24,7 +25,7 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
-  const { measurements, query_hashcode: queryHashcode, group_by: groupBy } = query;
+  const { measurements, query_hashcode: queryGroupHashcode, group_by: groupBy } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
@@ -36,27 +37,33 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
       </EuiText>
       <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
-        <PanelItem label={QUERY_HASHCODE} value={queryHashcode} />
+        <PanelItem label={QUERY_GROUP_HASHCODE} value={queryGroupHashcode} />
         <PanelItem
-          label={LATENCY}
+          label={AVERAGE_LATENCY}
           value={
-            measurements.latency?.number !== undefined && measurements.latency?.count !== undefined
-              ? `${(measurements.latency.number / measurements.latency.count).toFixed(2)} ms`
-              : 'N/A'
+            calculateMetric(measurements.latency?.number, measurements.latency?.count, 1) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(
+                  measurements.latency?.number,
+                  measurements.latency?.count,
+                  1
+                )} ms`
           }
         />
         <PanelItem
-          label={CPU_TIME}
+          label={AVERAGE_CPU_TIME}
           value={
-            measurements.cpu?.number !== undefined && measurements.cpu?.count !== undefined
-              ? `${(measurements.cpu.number / measurements.cpu.count / 1000000).toFixed(2)} ms`
-              : 'N/A'
+            calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000)} ms`
           }
         />
         <PanelItem
-          label={MEMORY_USAGE}
+          label={AVERAGE_MEMORY_USAGE}
           value={
-            measurements.memory?.number !== undefined ? `${measurements.memory.number} B` : 'N/A'
+            calculateMetric(measurements.memory?.number, measurements.memory?.count, 1) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(measurements.memory?.number, measurements.memory?.count, 1)} B`
           }
         />
         <PanelItem label={GROUP_BY} value={groupBy !== undefined ? `${groupBy}` : 'N/A'} />

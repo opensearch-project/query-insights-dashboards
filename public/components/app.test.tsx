@@ -8,7 +8,6 @@ import { render } from '@testing-library/react';
 import { coreMock } from '../../../../src/core/public/mocks';
 import { MemoryRouter as Router } from 'react-router-dom';
 import { QueryInsightsDashboardsApp } from './app';
-import '@testing-library/jest-dom/extend-expect';
 
 describe('<QueryInsightsDashboardsApp /> spec', () => {
   it('renders the component', () => {

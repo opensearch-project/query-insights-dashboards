@@ -17,12 +17,13 @@ import {
   MEMORY_USAGE,
   NODE_ID,
   QUERY_COUNT,
-  QUERY_HASHCODE,
+  QUERY_GROUP_HASHCODE,
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
   TYPE,
 } from '../../../common/constants';
+import { calculateMetric } from '../Utils/MetricUtils';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
@@ -75,8 +76,8 @@ const QueryInsights = ({
 
   const cols: Array<EuiBasicTableColumn<any>> = [
     {
-      name: QUERY_HASHCODE,
-      render: (query: any) => {
+      name: QUERY_GROUP_HASHCODE,
+      render: (query: SearchQueryRecord) => {
         return (
           <span>
             <EuiLink
@@ -88,17 +89,18 @@ const QueryInsights = ({
                 history.push(route);
               }}
             >
-              {query.query_hashcode || '-'}
+              {query.query_group_hashcode || '-'}{' '}
+              {/* TODO: Remove fallback '-' once query_id is available - #159 */}
             </EuiLink>
           </span>
         );
       },
-      sortable: (query) => query.query_hashcode || '-',
+      sortable: (query: SearchQueryRecord) => query.query_group_hashcode || '-',
       truncateText: true,
     },
     {
       name: TYPE,
-      render: (query: any) => {
+      render: (query: SearchQueryRecord) => {
         return (
           <span>
             <EuiLink
@@ -121,14 +123,14 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: QUERY_COUNT,
-      render: (measurements: any) =>
+      render: (measurements: SearchQueryRecord['measurements']) =>
         `${
           measurements?.latency?.count ||
           measurements?.cpu?.count ||
           measurements?.memory?.count ||
           1
         }`,
-      sortable: (measurements: any) => {
+      sortable: (measurements: SearchQueryRecord['measurements']) => {
         return Number(
           measurements?.latency?.count ||
             measurements?.cpu?.count ||
@@ -141,7 +143,7 @@ const QueryInsights = ({
     {
       // Make into flyout instead?
       name: TIMESTAMP,
-      render: (query: any) => {
+      render: (query: SearchQueryRecord) => {
         const isQuery = query.group_by === 'NONE';
         const linkContent = isQuery ? convertTime(query.timestamp) : '-';
         const onClickHandler = () => history.push(`/query-details/${hash(query)}`);
@@ -158,13 +160,13 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: LATENCY,
-      render: (measurements: any) => {
-        const latencyValue = measurements?.latency?.number;
-        const latencyCount = measurements?.latency?.count;
-        const result =
-          latencyValue !== undefined && latencyCount !== undefined
-            ? (latencyValue / latencyCount).toFixed(2)
-            : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.latency?.number,
+          measurements?.latency?.count,
+          1,
+          METRIC_DEFAULT_MSG
+        );
         return `${result} ms`;
       },
       sortable: true,
@@ -173,13 +175,13 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: CPU_TIME,
-      render: (measurements: any) => {
-        const cpuValue = measurements?.cpu?.number;
-        const cpuCount = measurements?.cpu?.count;
-        const result =
-          cpuValue !== undefined && cpuCount !== undefined
-            ? (cpuValue / cpuCount / 1000000).toFixed(2)
-            : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.cpu?.number,
+          measurements?.cpu?.count,
+          1000000, // Divide by 1,000,000 for CPU time
+          METRIC_DEFAULT_MSG
+        );
         return `${result} ms`;
       },
       sortable: true,
@@ -188,13 +190,13 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: MEMORY_USAGE,
-      render: (measurements: any) => {
-        const memoryValue = measurements?.memory?.number;
-        const memoryCount = measurements?.memory?.count;
-        const result =
-          memoryValue !== undefined && memoryCount !== undefined
-            ? (memoryValue / memoryCount).toFixed(2)
-            : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.memory?.number,
+          measurements?.memory?.count,
+          1,
+          METRIC_DEFAULT_MSG
+        );
         return `${result} B`;
       },
       sortable: true,
@@ -203,7 +205,7 @@ const QueryInsights = ({
     {
       field: INDICES_FIELD,
       name: INDICES,
-      render: (indices: string[], query: any) => {
+      render: (indices: string[], query: SearchQueryRecord) => {
         const isSimilarity = query.group_by === 'SIMILARITY';
         return isSimilarity ? '-' : Array.from(new Set(indices.flat())).join(', ');
       },
@@ -213,7 +215,7 @@ const QueryInsights = ({
     {
       field: SEARCH_TYPE_FIELD,
       name: SEARCH_TYPE,
-      render: (searchType: string, query: any) => {
+      render: (searchType: string, query: SearchQueryRecord) => {
         const isSimilarity = query.group_by === 'SIMILARITY';
         return isSimilarity ? '-' : searchType.replaceAll('_', ' ');
       },
@@ -223,7 +225,7 @@ const QueryInsights = ({
     {
       field: NODE_ID_FIELD,
       name: NODE_ID,
-      render: (nodeId: string, query: any) => {
+      render: (nodeId: string, query: SearchQueryRecord) => {
         const isSimilarity = query.group_by === 'SIMILARITY';
         return isSimilarity ? '-' : nodeId;
       },
@@ -233,7 +235,7 @@ const QueryInsights = ({
     {
       field: TOTAL_SHARDS_FIELD,
       name: TOTAL_SHARDS,
-      render: (totalShards: number, query: any) => {
+      render: (totalShards: number, query: SearchQueryRecord) => {
         const isSimilarity = query.group_by === 'SIMILARITY';
         return isSimilarity ? '-' : totalShards;
       },
@@ -354,7 +356,7 @@ const QueryInsights = ({
         ],
       }}
       allowNeutralSort={false}
-      itemId={(query) => `${query.query_hashcode}-${query.timestamp}`}
+      itemId={(query) => `${query.query_group_hashcode}-${query.timestamp}`}
     />
   );
 };

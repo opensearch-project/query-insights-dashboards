@@ -20,7 +20,7 @@ export interface SearchQueryRecord {
   indices: string[];
   phase_latency_map: PhaseLatencyMap;
   task_resource_usages: Task[];
-  query_hashcode: string;
+  query_group_hashcode: string;
   group_by: string;
 }
 
