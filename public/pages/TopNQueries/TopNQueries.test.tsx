@@ -51,22 +51,26 @@ const setUpDefaultEnabledSettings = () => {
   (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
 };
 
+const renderTopNQueries = (type: string) =>
+  render(
+    <MemoryRouter initialEntries={[type]}>
+      <TopNQueries core={mockCore} />
+    </MemoryRouter>
+  );
+
 describe('TopNQueries Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders and switches tabs correctly', () => {
-    render(
-      <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} />
-      </MemoryRouter>
-    );
+    const container = renderTopNQueries(QUERY_INSIGHTS);
 
     // Check for Query Insights tab content
     expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
     expect(screen.getByText('Top N queries')).toBeInTheDocument();
     expect(screen.getByText('Configuration')).toBeInTheDocument();
+    expect(container).toMatchSnapshot();
 
     // Switch to Configuration tab
     fireEvent.click(screen.getByText('Configuration'));
@@ -90,24 +94,17 @@ describe('TopNQueries Component', () => {
       },
     };
     (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
-    render(
-      <MemoryRouter initialEntries={[CONFIGURATION]}>
-        <TopNQueries core={mockCore} />
-      </MemoryRouter>
-    );
+    const container = renderTopNQueries(CONFIGURATION);
     await waitFor(() => {
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
       expect(screen.getByText('Mocked Configuration')).toBeInTheDocument();
+      expect(container).toMatchSnapshot();
     });
   });
 
   it('fetches queries for all metrics in retrieveQueries', async () => {
     setUpDefaultEnabledSettings();
-    render(
-      <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} />
-      </MemoryRouter>
-    );
+    const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
@@ -119,6 +116,8 @@ describe('TopNQueries Component', () => {
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/memory', expect.any(Object));
       // Check that deduplicated queries would be displayed in QueryInsights
       expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
+
+      expect(container).toMatchSnapshot();
     });
   });
 
@@ -148,11 +147,7 @@ describe('TopNQueries Component', () => {
       },
     };
     (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
-    render(
-      <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} />
-      </MemoryRouter>
-    );
+    const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
@@ -170,6 +165,8 @@ describe('TopNQueries Component', () => {
       );
       // Check that deduplicated queries would be displayed in QueryInsights
       expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
+
+      expect(container).toMatchSnapshot();
     });
   });
 
@@ -186,6 +183,7 @@ describe('TopNQueries Component', () => {
     (mockCore.http.get as jest.Mock).mockResolvedValueOnce({
       response: { top_queries: [{ id: 'newQuery' }] },
     });
+
     // Re-render with updated time range to simulate a change
     rerender(
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>

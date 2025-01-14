@@ -1,0 +1,1155 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`QueryDetails component renders the QueryDetails page 1`] = `
+<div>
+  <div>
+    <h1
+      class="euiTitle euiTitle--large"
+    >
+      Query details
+    </h1>
+    <div
+      class="euiSpacer euiSpacer--l"
+    />
+    <div
+      class="euiFlexItem"
+    >
+      <div
+        class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        data-test-subj="query-details-summary-section"
+      >
+        <div
+          class="euiText euiText--extraSmall"
+        >
+          <h2>
+            Summary
+          </h2>
+        </div>
+        <hr
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
+        />
+        <div
+          class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--fourths euiFlexGrid--responsive"
+        >
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Timestamp
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              Jan 13, 2025 @ 12:00:00 AM
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Latency
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              8 ms
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                CPU Time
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              5.51 ms
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Memory Usage
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              N/A B
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Indices
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              top_queries-2024.09.12
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Search Type
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              query then fetch
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Coordinator Node ID
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              Q36D2z_NRGKim6EZZMgi6A
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h4>
+                Total Shards
+              </h4>
+            </div>
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              1
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--m"
+      />
+      <div
+        class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--halves euiFlexGrid--responsive"
+      >
+        <div
+          class="euiFlexItem euiFlexItem--flexGrow1"
+        >
+          <div
+            class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            data-test-subj="query-details-source-section"
+          >
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--extraSmall"
+                >
+                  <h2>
+                    Query
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <a
+                  class="euiButton euiButton--primary"
+                  href="https://playground.opensearch.org/app/searchRelevance#/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <span
+                    class="euiButtonContent euiButtonContent--iconRight euiButton__content"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonContent__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                      />
+                    </svg>
+                    <span
+                      class="euiButton__text"
+                    >
+                      Open in search comparison
+                    </span>
+                  </span>
+                </a>
+              </div>
+            </div>
+            <hr
+              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+            />
+            <div
+              class="euiSpacer euiSpacer--xs"
+            />
+            <div
+              class="euiCodeBlock euiCodeBlock--fontSmall euiCodeBlock--paddingMedium euiCodeBlock--hasControls prismjs language-jsx"
+              style="max-height: 600px;"
+            >
+              <pre
+                class="euiCodeBlock__pre euiCodeBlock__pre--whiteSpacePreWrap"
+                style="max-height: 600px;"
+                tabindex="-1"
+              >
+                <code
+                  class="euiCodeBlock__code jsx"
+                >
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                      
+                    <span
+                      class="token string-property property"
+                    >
+                      "query"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                        
+                    <span
+                      class="token string-property property"
+                    >
+                      "query"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                          
+                    <span
+                      class="token string-property property"
+                    >
+                      "bool"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token string-property property"
+                    >
+                      "must"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      [
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                              
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                
+                    <span
+                      class="token string-property property"
+                    >
+                      "range"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                  
+                    <span
+                      class="token string-property property"
+                    >
+                      "timestamp"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "from"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      1726092595177
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "to"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      1726178995177
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "include_lower"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      true
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "include_upper"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      true
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "boost"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      1
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                  
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                              
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token punctuation"
+                    >
+                      ]
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token string-property property"
+                    >
+                      "must_not"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      [
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                              
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                
+                    <span
+                      class="token string-property property"
+                    >
+                      "match"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                  
+                    <span
+                      class="token string-property property"
+                    >
+                      "indices"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token punctuation"
+                    >
+                      {
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "query"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token string"
+                    >
+                      "top_queries*"
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "operator"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token string"
+                    >
+                      "OR"
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "prefix_length"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      0
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "max_expansions"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      50
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "fuzzy_transpositions"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      true
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "lenient"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      false
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "zero_terms_query"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token string"
+                    >
+                      "NONE"
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "auto_generate_synonyms_phrase_query"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      true
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                    
+                    <span
+                      class="token string-property property"
+                    >
+                      "boost"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      1
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                  
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                                
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                              
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token punctuation"
+                    >
+                      ]
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token string-property property"
+                    >
+                      "adjust_pure_negative"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token boolean"
+                    >
+                      true
+                    </span>
+                    <span
+                      class="token punctuation"
+                    >
+                      ,
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                            
+                    <span
+                      class="token string-property property"
+                    >
+                      "boost"
+                    </span>
+                    <span
+                      class="token operator"
+                    >
+                      :
+                    </span>
+                     
+                    <span
+                      class="token number"
+                    >
+                      1
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                          
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                        
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                      
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                    
+                    <span
+                      class="token punctuation"
+                    >
+                      }
+                    </span>
+                  </span>
+                </code>
+              </pre>
+              <div
+                class="euiCodeBlock__controls"
+              >
+                <button
+                  aria-label="Expand"
+                  class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall euiCodeBlock__fullScreenButton"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonIcon__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                    />
+                  </svg>
+                </button>
+                <div
+                  class="euiCodeBlock__copyButton"
+                >
+                  <span
+                    class="euiToolTipAnchor"
+                  >
+                    <button
+                      aria-label="Copy"
+                      class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonIcon__icon"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                        />
+                      </svg>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrow1"
+          style="align-self: start;"
+        >
+          <div
+            class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            data-test-subj="query-details-latency-chart"
+          >
+            <div
+              class="euiText euiText--extraSmall"
+            >
+              <h2>
+                Latency
+              </h2>
+            </div>
+            <hr
+              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
+            />
+            <div
+              id="latency"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

@@ -103,7 +103,7 @@ jobs:
 
       - name: Sleep until OSD server starts - non-windows
         if: ${{ matrix.os != 'windows-latest' }}
-        run: sleep 450
+        run: sleep 500
         shell: bash
 
       - name: Install Cypress
@@ -134,7 +134,7 @@ jobs:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
           command: yarn run cypress run
           wait-on: 'http://localhost:5601'
-          wait-on-timeout: 300
+          wait-on-timeout: 600
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
