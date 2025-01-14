@@ -44,7 +44,7 @@ exports[`QueryDetails component renders the QueryDetails page 1`] = `
             <div
               class="euiText euiText--extraSmall"
             >
-              Sep 12, 2024 @ 3:09:55 PM
+              Jan 13, 2025 @ 12:00:00 AM
             </div>
           </div>
           <div

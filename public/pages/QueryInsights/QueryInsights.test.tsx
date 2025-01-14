@@ -37,6 +37,15 @@ const renderQueryInsights = () =>
   );
 
 describe('QueryInsights Component', () => {
+  beforeAll(() => {
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
+    jest.spyOn(Date.prototype, 'toDateString').mockImplementation(() => 'Mon Jan 13 2025');
+  });
+
+  afterAll(() => {
+    jest.resetAllMocks(); // Reset all mocks after all tests
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

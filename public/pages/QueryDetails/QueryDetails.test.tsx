@@ -25,6 +25,15 @@ const mockQuery = MockQueries()[0];
 const mockParams = { hashedQuery: hash(mockQuery) };
 
 describe('QueryDetails component', () => {
+  beforeAll(() => {
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
+    jest.spyOn(Date.prototype, 'toDateString').mockImplementation(() => 'Mon Jan 13 2025');
+  });
+
+  afterAll(() => {
+    jest.resetAllMocks(); // Reset all mocks after all tests
+  });
+
   beforeEach(() => {
     jest.clearAllMocks(); // Clear all mock calls and instances before each test
   });
