@@ -18,10 +18,9 @@ const mockCore = {
   },
 };
 
-// TODO: change to use MockQueries once https://github.com/opensearch-project/query-insights-dashboards/pull/21/files is merged
 const sampleQueries = MockQueries();
 
-const renderQueryInsights = () => {
+const renderQueryInsights = () =>
   render(
     <MemoryRouter>
       <QueryInsights
@@ -36,7 +35,6 @@ const renderQueryInsights = () => {
       />
     </MemoryRouter>
   );
-};
 
 describe('QueryInsights Component', () => {
   beforeEach(() => {
@@ -44,18 +42,8 @@ describe('QueryInsights Component', () => {
   });
 
   it('renders the table with the correct columns and data', () => {
-    renderQueryInsights();
-
-    // Check that the table and columns render correctly
-    expect(document.querySelector('span[title="Timestamp"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Latency"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="CPU Time"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Memory Usage"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Indices"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Search Type"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Coordinator Node ID"]')).toBeInTheDocument();
-    expect(document.querySelector('span[title="Total Shards"]')).toBeInTheDocument();
-    // TODO add tests for the values
+    const { container } = renderQueryInsights();
+    expect(container).toMatchSnapshot();
   });
 
   it('calls setBreadcrumbs on mount', () => {

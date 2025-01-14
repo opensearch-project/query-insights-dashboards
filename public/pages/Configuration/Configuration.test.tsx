@@ -35,7 +35,7 @@ const defaultMemorySettings = {
   currTimeUnit: 'HOURS',
 };
 
-const renderConfiguration = (overrides = {}) => {
+const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
       <Configuration
@@ -43,12 +43,10 @@ const renderConfiguration = (overrides = {}) => {
         cpuSettings={defaultCpuSettings}
         memorySettings={defaultMemorySettings}
         configInfo={mockConfigInfo}
-        // @ts-ignore
         core={mockCoreStart}
       />
     </MemoryRouter>
   );
-};
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
 const getTopNSizeConfiguration = () => screen.getByRole('spinbutton');
@@ -60,31 +58,13 @@ describe('Configuration Component', () => {
   });
 
   it('renders with default settings', () => {
-    renderConfiguration();
-    // main header
-    expect(
-      screen.getByRole('heading', { name: /Top n queries monitoring configuration settings/i })
-    ).toBeInTheDocument();
-    // section headers
-    expect(screen.getByRole('heading', { name: /Metric Type/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Enabled/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Value of N/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Window size/i })).toBeInTheDocument();
-    // Check values for window size configurations
-    const selectBoxes = getWindowSizeConfigurations();
-    expect(selectBoxes[0]).toHaveValue('latency');
-    expect(selectBoxes[1]).toHaveValue('10');
-    expect(selectBoxes[2]).toHaveValue('MINUTES');
-    // Check the value for top n size configurations
-    expect(getTopNSizeConfiguration()).toHaveValue(5);
-    // Check the value for enabled switch
-    const enableBox = getEnableToggle();
-    expect(enableBox).toBeInTheDocument();
-    expect(enableBox).toBeChecked();
+    const { container } = renderConfiguration();
+    expect(container).toMatchSnapshot('should match default settings snapshot');
   });
 
+  // The following tests test the interactions on the frontend with Mocks.
   it('updates state when toggling metrics and enables Save button when changes are made', () => {
-    renderConfiguration();
+    const { container } = renderConfiguration();
     // before toggling the metric
     expect(getWindowSizeConfigurations()[0]).toHaveValue('latency');
     expect(getEnableToggle()).toBeChecked();
@@ -100,6 +80,7 @@ describe('Configuration Component', () => {
     fireEvent.click(getEnableToggle());
     expect(getEnableToggle()).toBeChecked();
     expect(screen.getByText('Save')).toBeEnabled();
+    expect(container).toMatchSnapshot('should match settings snapshot after toggling');
   });
 
   it('validates topNSize and windowSize inputs and disables Save button for invalid input', () => {
