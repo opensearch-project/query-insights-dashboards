@@ -48,7 +48,7 @@ export const mockQueries = [
         },
       },
     ],
-    query_hashcode: '8c1e50c035663459d567fa11d8eb494d',
+    query_group_hashcode: '8c1e50c035663459d567fa11d8eb494d',
     total_shards: 1,
     measurements: {
       latency: {

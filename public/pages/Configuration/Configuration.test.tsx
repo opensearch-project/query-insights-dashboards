@@ -35,6 +35,10 @@ const defaultMemorySettings = {
   currTimeUnit: 'HOURS',
 };
 
+const groupBySettings = {
+  groupBy: 'SIMILARITY',
+};
+
 const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
@@ -42,6 +46,7 @@ const renderConfiguration = (overrides = {}) =>
         latencySettings={{ ...defaultLatencySettings, ...overrides }}
         cpuSettings={defaultCpuSettings}
         memorySettings={defaultMemorySettings}
+        groupBySettings={groupBySettings}
         configInfo={mockConfigInfo}
         core={mockCoreStart}
       />
@@ -96,7 +101,15 @@ describe('Configuration Component', () => {
     fireEvent.change(getTopNSizeConfiguration(), { target: { value: '7' } });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => {
-      expect(mockConfigInfo).toHaveBeenCalledWith(false, true, 'latency', '7', '10', 'MINUTES');
+      expect(mockConfigInfo).toHaveBeenCalledWith(
+        false,
+        true,
+        'latency',
+        '7',
+        '10',
+        'MINUTES',
+        'SIMILARITY'
+      );
     });
   });
 

@@ -25,6 +25,7 @@ import {
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
+import { METRIC_TYPES, TIME_UNITS, MINUTES_OPTIONS, GROUP_BY_OPTIONS } from '../Utils/Constants';
 
 const Configuration = ({
   latencySettings,
@@ -41,29 +42,6 @@ const Configuration = ({
   configInfo: any;
   core: CoreStart;
 }) => {
-  const metricTypes = [
-    { value: 'latency', text: 'Latency' },
-    { value: 'cpu', text: 'CPU' },
-    { value: 'memory', text: 'Memory' },
-  ];
-
-  const timeUnits = [
-    { value: 'MINUTES', text: 'Minute(s)' },
-    { value: 'HOURS', text: 'Hour(s)' },
-  ];
-
-  const minutesOptions = [
-    { value: '1', text: '1' },
-    { value: '5', text: '5' },
-    { value: '10', text: '10' },
-    { value: '30', text: '30' },
-  ];
-
-  const groupByOptions = [
-    { value: 'none', text: 'None' },
-    { value: 'similarity', text: 'Similarity' },
-  ];
-
   const history = useHistory();
   const location = useLocation();
 
@@ -147,7 +125,7 @@ const Configuration = ({
     <EuiSelect
       id="minutes"
       required={true}
-      options={minutesOptions}
+      options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
     />
@@ -163,7 +141,7 @@ const Configuration = ({
     />
   );
 
-  const WindowChoice = time === timeUnits[0].value ? MinutesBox : HoursBox;
+  const WindowChoice = time === TIME_UNITS[0].value ? MinutesBox : HoursBox;
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
@@ -175,7 +153,7 @@ const Configuration = ({
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
     if (nVal < 1 || nVal > 100) return false;
-    if (time === timeUnits[0].value) return true;
+    if (time === TIME_UNITS[0].value) return true;
     const windowVal = parseInt(windowSize, 10);
     return windowVal >= 1 && windowVal <= 24;
   })();
@@ -213,7 +191,7 @@ const Configuration = ({
                       <EuiSelect
                         id="metricType"
                         required={true}
-                        options={metricTypes}
+                        options={METRIC_TYPES}
                         value={metric}
                         onChange={onMetricChange}
                       />
@@ -283,7 +261,7 @@ const Configuration = ({
                               <EuiSelect
                                 id="timeUnit"
                                 required={isEnabled}
-                                options={timeUnits}
+                                options={TIME_UNITS}
                                 value={time}
                                 onChange={onTimeChange}
                               />
@@ -365,7 +343,7 @@ const Configuration = ({
                       <EuiSelect
                         id="groupBy"
                         required={true}
-                        options={groupByOptions}
+                        options={GROUP_BY_OPTIONS}
                         value={groupBy}
                         onChange={onGroupByChange}
                       />

@@ -69,7 +69,7 @@ export const MockQueries = (): SearchQueryRecord[] => {
           },
         },
       },
-      query_hashcode: '80a17984b847133b8bf5e7d5dfbfa96c',
+      query_group_hashcode: '80a17984b847133b8bf5e7d5dfbfa96c',
       phase_latency_map: {
         expand: 0,
         query: 5,

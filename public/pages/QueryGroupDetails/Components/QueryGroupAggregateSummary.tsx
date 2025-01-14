@@ -25,7 +25,7 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
-  const { measurements, query_hashcode: queryGroupHashcode, group_by: groupBy } = query;
+  const { measurements, query_group_hashcode: queryGroupHashcode, group_by: groupBy } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (

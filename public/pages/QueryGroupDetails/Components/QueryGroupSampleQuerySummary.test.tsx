@@ -25,9 +25,9 @@ describe('QueryGroupSampleQuerySummary', () => {
     expect(screen.getByText('Sample query summary')).toBeInTheDocument();
     expect(screen.getByText('Timestamp')).toBeInTheDocument();
     expect(screen.getByText('Indices')).toBeInTheDocument();
-    expect(screen.getByText('Search type')).toBeInTheDocument();
-    expect(screen.getByText('Coordinator node ID')).toBeInTheDocument();
-    expect(screen.getByText('Total shards')).toBeInTheDocument();
+    expect(screen.getByText('Search Type')).toBeInTheDocument();
+    expect(screen.getByText('Coordinator Node ID')).toBeInTheDocument();
+    expect(screen.getByText('Total Shards')).toBeInTheDocument();
   });
 
   it('displays correct indices value', () => {

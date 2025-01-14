@@ -78,7 +78,7 @@ describe('QueryGroupAggregateSummary', () => {
       </MemoryRouter>
     );
 
-    const hashcode = mockQueries[0].query_hashcode;
+    const hashcode = mockQueries[0].query_group_hashcode;
     expect(screen.getByText(hashcode)).toBeInTheDocument();
   });
 

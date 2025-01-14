@@ -91,7 +91,7 @@ describe('QueryGroupDetails', () => {
     if (!expectedQuery) {
       throw new Error(`Query with hash ${expectedHash} was not found in mockQueries`);
     }
-    expect(expectedQuery.query_hashcode).toBe(expectedHash);
+    expect(expectedQuery.query_group_hashcode).toBe(expectedHash);
   });
 
   it('renders correct breadcrumb based on query hash', async () => {
