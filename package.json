@@ -42,6 +42,7 @@
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
     "@elastic/eslint-import-resolver-kibana": "link:../../packages/osd-eslint-import-resolver-opensearch-dashboards",
     "@testing-library/dom": "^8.11.3",
+    "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/user-event": "^14.4.3",
     "@types/react-dom": "^16.9.8",
     "@types/object-hash": "^3.0.0",

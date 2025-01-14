@@ -172,10 +172,10 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiFilterButton__textShift"
-                        data-text="Search type"
-                        title="Search type"
+                        data-text="Search Type"
+                        title="Search Type"
                       >
-                        Search type
+                        Search Type
                       </span>
                     </span>
                   </span>
@@ -215,10 +215,10 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiFilterButton__textShift"
-                        data-text="Coordinator node ID"
-                        title="Coordinator node ID"
+                        data-text="Coordinator Node ID"
+                        title="Coordinator Node ID"
                       >
-                        Coordinator node ID
+                        Coordinator Node ID
                       </span>
                     </span>
                   </span>
@@ -566,9 +566,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Search type"
+                        title="Search Type"
                       >
-                        Search type
+                        Search Type
                       </span>
                     </span>
                   </button>
@@ -591,9 +591,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Coordinator node ID"
+                        title="Coordinator Node ID"
                       >
-                        Coordinator node ID
+                        Coordinator Node ID
                       </span>
                     </span>
                   </button>
@@ -616,9 +616,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Total shards"
+                        title="Total Shards"
                       >
-                        Total shards
+                        Total Shards
                       </span>
                     </span>
                   </button>

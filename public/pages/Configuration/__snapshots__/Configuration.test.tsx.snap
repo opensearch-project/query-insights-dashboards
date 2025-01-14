@@ -1,0 +1,1220 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Configuration Component renders with default settings: should match default settings snapshot 1`] = `
+<div>
+  <div>
+    <div
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+    >
+      <div
+        class="euiFlexItem euiFlexItem--flexGrow6"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiForm"
+          >
+            <div
+              class="euiFlexItem"
+            >
+              <div
+                class="euiText euiText--small euiTitle euiTitle--small"
+              >
+                <h2>
+                  Top n queries monitoring configuration settings
+                </h2>
+              </div>
+            </div>
+            <div
+              class="euiFlexItem"
+            >
+              <div
+                class="euiFlexGrid euiFlexGrid--gutterSmall euiFlexGrid--halves euiFlexGrid--responsive"
+                style="padding: 15px 0px;"
+              >
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Metric Type
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Specify the metric type to set settings for.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <select
+                            class="euiSelect"
+                            id="random_html_id"
+                            required=""
+                          >
+                            <option
+                              value="latency"
+                            >
+                              Latency
+                            </option>
+                            <option
+                              value="cpu"
+                            >
+                              CPU
+                            </option>
+                            <option
+                              value="memory"
+                            >
+                              Memory
+                            </option>
+                          </select>
+                          <div
+                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                          >
+                            <span
+                              class="euiFormControlLayoutCustomIcon"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiIcon-isLoading euiFormControlLayoutCustomIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Enabled
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Enable/disable top N query monitoring by latency.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFlexItem"
+                        id="random_html_id"
+                      >
+                        <div
+                          class="euiSpacer euiSpacer--s"
+                        />
+                        <div
+                          class="euiSwitch euiSwitch--primary"
+                        >
+                          <button
+                            aria-checked="true"
+                            aria-labelledby="random_html_id"
+                            class="euiSwitch__button"
+                            id="random_html_id"
+                            role="switch"
+                            type="button"
+                          >
+                            <span
+                              class="euiSwitch__body"
+                            >
+                              <span
+                                class="euiSwitch__thumb"
+                              />
+                              <span
+                                class="euiSwitch__track"
+                              >
+                                <svg
+                                  aria-hidden="true"
+                                  class="euiIcon euiIcon--medium euiIcon-isLoading euiSwitch__icon"
+                                  focusable="false"
+                                  height="16"
+                                  role="img"
+                                  viewBox="0 0 16 16"
+                                  width="16"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                  />
+                                </svg>
+                                <svg
+                                  aria-hidden="true"
+                                  class="euiIcon euiIcon--medium euiIcon-isLoading euiSwitch__icon euiSwitch__icon--checked"
+                                  focusable="false"
+                                  height="16"
+                                  role="img"
+                                  viewBox="0 0 16 16"
+                                  width="16"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                  />
+                                </svg>
+                              </span>
+                            </span>
+                          </button>
+                          <span
+                            class="euiSwitch__label"
+                            id="random_html_id"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Value of N (count)
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Specify the value of N. N is the number of queries to be collected within the window size.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__labelWrapper"
+                    >
+                      <label
+                        class="euiFormLabel euiFormRow__label"
+                        for="random_html_id"
+                      >
+                        latency.top_n_size
+                      </label>
+                    </div>
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <input
+                            aria-describedby="random_html_id-help-0"
+                            class="euiFieldNumber"
+                            id="random_html_id"
+                            max="100"
+                            min="1"
+                            required=""
+                            type="number"
+                            value="5"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 100.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Window size
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    The duration during which the Top N queries are collected.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 15px 0px 5px;"
+                  >
+                    <div
+                      class="euiFormRow__labelWrapper"
+                    >
+                      <label
+                        class="euiFormLabel euiFormRow__label"
+                        for="random_html_id"
+                      >
+                        latency.window_size
+                      </label>
+                    </div>
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        aria-describedby="random_html_id-help-0"
+                        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+                        id="random_html_id"
+                      >
+                        <div
+                          class="euiFlexItem"
+                          style="flex-direction: row;"
+                        >
+                          <div
+                            class="euiFormControlLayout"
+                          >
+                            <div
+                              class="euiFormControlLayout__childrenWrapper"
+                            >
+                              <select
+                                class="euiSelect"
+                                id="minutes"
+                                required=""
+                              >
+                                <option
+                                  value="1"
+                                >
+                                  1
+                                </option>
+                                <option
+                                  value="5"
+                                >
+                                  5
+                                </option>
+                                <option
+                                  value="10"
+                                >
+                                  10
+                                </option>
+                                <option
+                                  value="30"
+                                >
+                                  30
+                                </option>
+                              </select>
+                              <div
+                                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                              >
+                                <span
+                                  class="euiFormControlLayoutCustomIcon"
+                                >
+                                  <svg
+                                    aria-hidden="true"
+                                    class="euiIcon euiIcon--medium euiIcon-isLoading euiFormControlLayoutCustomIcon__icon"
+                                    focusable="false"
+                                    height="16"
+                                    role="img"
+                                    viewBox="0 0 16 16"
+                                    width="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                    />
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="euiFlexItem"
+                        >
+                          <div
+                            class="euiFormControlLayout"
+                          >
+                            <div
+                              class="euiFormControlLayout__childrenWrapper"
+                            >
+                              <select
+                                class="euiSelect"
+                                id="timeUnit"
+                                required=""
+                              >
+                                <option
+                                  value="MINUTES"
+                                >
+                                  Minute(s)
+                                </option>
+                                <option
+                                  value="HOURS"
+                                >
+                                  Hour(s)
+                                </option>
+                              </select>
+                              <div
+                                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                              >
+                                <span
+                                  class="euiFormControlLayoutCustomIcon"
+                                >
+                                  <svg
+                                    aria-hidden="true"
+                                    class="euiIcon euiIcon--medium euiIcon-isLoading euiFormControlLayoutCustomIcon__icon"
+                                    focusable="false"
+                                    height="16"
+                                    role="img"
+                                    viewBox="0 0 16 16"
+                                    width="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                    />
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 24 hours.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem euiFlexItem--flexGrow2"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--flexGrowZero"
+        >
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--small euiTitle euiTitle--small"
+            >
+              <h2>
+                Statuses for configuration metrics
+              </h2>
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  Latency
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon--primary euiIcon-isLoading"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Enabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  CPU Usage
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon-isLoading"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Disabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  Memory
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon-isLoading"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Disabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Configuration Component updates state when toggling metrics and enables Save button when changes are made: should match settings snapshot after toggling 1`] = `
+<div>
+  <div>
+    <div
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+    >
+      <div
+        class="euiFlexItem euiFlexItem--flexGrow6"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiForm"
+          >
+            <div
+              class="euiFlexItem"
+            >
+              <div
+                class="euiText euiText--small euiTitle euiTitle--small"
+              >
+                <h2>
+                  Top n queries monitoring configuration settings
+                </h2>
+              </div>
+            </div>
+            <div
+              class="euiFlexItem"
+            >
+              <div
+                class="euiFlexGrid euiFlexGrid--gutterSmall euiFlexGrid--halves euiFlexGrid--responsive"
+                style="padding: 15px 0px;"
+              >
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Metric Type
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Specify the metric type to set settings for.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <select
+                            class="euiSelect"
+                            id="random_html_id"
+                            required=""
+                          >
+                            <option
+                              value="latency"
+                            >
+                              Latency
+                            </option>
+                            <option
+                              value="cpu"
+                            >
+                              CPU
+                            </option>
+                            <option
+                              value="memory"
+                            >
+                              Memory
+                            </option>
+                          </select>
+                          <div
+                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                          >
+                            <span
+                              class="euiFormControlLayoutCustomIcon"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                  fill-rule="non-zero"
+                                />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Enabled
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Enable/disable top N query monitoring by cpu.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFlexItem"
+                        id="random_html_id"
+                      >
+                        <div
+                          class="euiSpacer euiSpacer--s"
+                        />
+                        <div
+                          class="euiSwitch euiSwitch--primary"
+                        >
+                          <button
+                            aria-checked="true"
+                            aria-labelledby="random_html_id"
+                            class="euiSwitch__button"
+                            id="random_html_id"
+                            role="switch"
+                            type="button"
+                          >
+                            <span
+                              class="euiSwitch__body"
+                            >
+                              <span
+                                class="euiSwitch__thumb"
+                              />
+                              <span
+                                class="euiSwitch__track"
+                              >
+                                <svg
+                                  aria-hidden="true"
+                                  class="euiIcon euiIcon--medium euiSwitch__icon"
+                                  focusable="false"
+                                  height="16"
+                                  role="img"
+                                  viewBox="0 0 16 16"
+                                  width="16"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M7.293 8 3.146 3.854a.5.5 0 1 1 .708-.708L8 7.293l4.146-4.147a.5.5 0 0 1 .708.708L8.707 8l4.147 4.146a.5.5 0 0 1-.708.708L8 8.707l-4.146 4.147a.5.5 0 0 1-.708-.708L7.293 8Z"
+                                  />
+                                </svg>
+                                <svg
+                                  aria-hidden="true"
+                                  class="euiIcon euiIcon--medium euiSwitch__icon euiSwitch__icon--checked"
+                                  focusable="false"
+                                  height="16"
+                                  role="img"
+                                  viewBox="0 0 16 16"
+                                  width="16"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M6.5 12a.502.502 0 0 1-.354-.146l-4-4a.502.502 0 0 1 .708-.708L6.5 10.793l6.646-6.647a.502.502 0 0 1 .708.708l-7 7A.502.502 0 0 1 6.5 12"
+                                    fill-rule="evenodd"
+                                  />
+                                </svg>
+                              </span>
+                            </span>
+                          </button>
+                          <span
+                            class="euiSwitch__label"
+                            id="random_html_id"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Value of N (count)
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Specify the value of N. N is the number of queries to be collected within the window size.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__labelWrapper"
+                    >
+                      <label
+                        class="euiFormLabel euiFormRow__label"
+                        for="random_html_id"
+                      >
+                        cpu.top_n_size
+                      </label>
+                    </div>
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <input
+                            aria-describedby="random_html_id-help-0"
+                            class="euiFieldNumber"
+                            id="random_html_id"
+                            max="100"
+                            min="1"
+                            required=""
+                            type="number"
+                            value="10"
+                          />
+                        </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 100.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
+                      Window size
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    The duration during which the Top N queries are collected.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 15px 0px 5px;"
+                  >
+                    <div
+                      class="euiFormRow__labelWrapper"
+                    >
+                      <label
+                        class="euiFormLabel euiFormRow__label"
+                        for="random_html_id"
+                      >
+                        cpu.window_size
+                      </label>
+                    </div>
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        aria-describedby="random_html_id-help-0"
+                        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+                        id="random_html_id"
+                      >
+                        <div
+                          class="euiFlexItem"
+                          style="flex-direction: row;"
+                        >
+                          <div
+                            class="euiFormControlLayout"
+                          >
+                            <div
+                              class="euiFormControlLayout__childrenWrapper"
+                            >
+                              <input
+                                class="euiFieldNumber"
+                                max="24"
+                                min="1"
+                                required=""
+                                type="number"
+                                value="1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="euiFlexItem"
+                        >
+                          <div
+                            class="euiFormControlLayout"
+                          >
+                            <div
+                              class="euiFormControlLayout__childrenWrapper"
+                            >
+                              <select
+                                class="euiSelect"
+                                id="timeUnit"
+                                required=""
+                              >
+                                <option
+                                  value="MINUTES"
+                                >
+                                  Minute(s)
+                                </option>
+                                <option
+                                  value="HOURS"
+                                >
+                                  Hour(s)
+                                </option>
+                              </select>
+                              <div
+                                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                              >
+                                <span
+                                  class="euiFormControlLayoutCustomIcon"
+                                >
+                                  <svg
+                                    aria-hidden="true"
+                                    class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
+                                    focusable="false"
+                                    height="16"
+                                    role="img"
+                                    viewBox="0 0 16 16"
+                                    width="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                      fill-rule="non-zero"
+                                    />
+                                  </svg>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 24 hours.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem euiFlexItem--flexGrow2"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow euiPanel--flexGrowZero"
+        >
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiText euiText--small euiTitle euiTitle--small"
+            >
+              <h2>
+                Statuses for configuration metrics
+              </h2>
+            </div>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  Latency
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon--primary"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="8"
+                          cy="8"
+                          r="4"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Enabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  CPU Usage
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="8"
+                          cy="8"
+                          r="4"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Disabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+            >
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiText euiText--medium"
+                >
+                  Memory
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiSpacer euiSpacer--xs"
+                />
+                <div
+                  class="euiHealth euiHealth--textSizeS"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterExtraSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle
+                          cx="8"
+                          cy="8"
+                          r="4"
+                        />
+                      </svg>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      Disabled
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

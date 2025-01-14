@@ -55,9 +55,9 @@ describe('Top Queries Details Page', () => {
       'CPU Time',
       'Memory Usage',
       'Indices',
-      'Search type',
-      'Coordinator node ID',
-      'Total shards',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
     ];
     fieldLabels.forEach((label) => {
       cy.get('.euiPanel').contains('h4', label).should('be.visible');
@@ -96,19 +96,19 @@ describe('Top Queries Details Page', () => {
       // Validate Indices
       cy.contains('h4', 'Indices').parent().next().invoke('text').should('not.be.empty');
       // Validate Search Type
-      cy.contains('h4', 'Search type')
+      cy.contains('h4', 'Search Type')
         .parent()
         .next()
         .invoke('text')
         .should('equal', 'query then fetch');
       // Validate Coordinator Node ID
-      cy.contains('h4', 'Coordinator node ID')
+      cy.contains('h4', 'Coordinator Node ID')
         .parent()
         .next()
         .invoke('text')
         .should('not.be.empty');
       // Validate Total Shards
-      cy.contains('h4', 'Total shards')
+      cy.contains('h4', 'Total Shards')
         .parent()
         .next()
         .invoke('text')
