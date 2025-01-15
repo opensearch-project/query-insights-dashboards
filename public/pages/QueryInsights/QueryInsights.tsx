@@ -89,8 +89,7 @@ const QueryInsights = ({
                 history.push(route);
               }}
             >
-              {query.id || '-'}{' '}
-              {/* TODO: Remove fallback '-' once query_id is available - #159 */}
+              {query.id || '-'} {/* TODO: Remove fallback '-' once query_id is available - #159 */}
             </EuiLink>
           </span>
         );
