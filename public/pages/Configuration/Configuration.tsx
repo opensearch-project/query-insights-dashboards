@@ -28,12 +28,12 @@ import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
 import { getDefaultMetricSettings } from '../Configuration/metricSettingsUtils';
 
 const Configuration = ({
-                         latencySettings,
-                         cpuSettings,
-                         memorySettings,
-                         configInfo,
-                         core,
-                       }: {
+  latencySettings,
+  cpuSettings,
+  memorySettings,
+  configInfo,
+  core,
+}: {
   latencySettings: MetricSettings;
   cpuSettings: MetricSettings;
   memorySettings: MetricSettings;
@@ -71,10 +71,9 @@ const Configuration = ({
     [latencySettings, cpuSettings, memorySettings]
   );
 
-  const initialSettings = useMemo(
-    () => getDefaultMetricSettings(metricSettingsMap, 'latency'),
-    [metricSettingsMap]
-  );
+  const initialSettings = useMemo(() => getDefaultMetricSettings(metricSettingsMap, 'latency'), [
+    metricSettingsMap,
+  ]);
   const [isEnabled, setIsEnabled] = useState(initialSettings.isEnabled);
   const [topNSize, setTopNSize] = useState(initialSettings.topNSize);
   const [windowSize, setWindowSize] = useState(initialSettings.windowSize);
@@ -91,7 +90,7 @@ const Configuration = ({
   useEffect(() => {
     newOrReset();
   }, [newOrReset]);
-  
+
   useEffect(() => {
     core.chrome.setBreadcrumbs([
       {
@@ -326,7 +325,7 @@ const Configuration = ({
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
             <EuiFlexItem grow={false}>
-              <EuiButtonEmpty  color="ghost" size="s" iconType="cross" onClick={newOrReset}>
+              <EuiButtonEmpty color="ghost" size="s" iconType="cross" onClick={newOrReset}>
                 Cancel
               </EuiButtonEmpty>
             </EuiFlexItem>
