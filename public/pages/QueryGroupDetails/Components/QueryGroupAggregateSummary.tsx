@@ -10,7 +10,7 @@ import {
   AVERAGE_LATENCY,
   AVERAGE_MEMORY_USAGE,
   GROUP_BY,
-  QUERY_GROUP_HASHCODE,
+  ID,
 } from '../../../../common/constants';
 import { calculateMetric } from '../../Utils/MetricUtils';
 
@@ -25,7 +25,7 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
-  const { measurements, query_group_hashcode: queryGroupHashcode, group_by: groupBy } = query;
+  const { measurements, id: id, group_by: groupBy } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
@@ -37,7 +37,7 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
       </EuiText>
       <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
-        <PanelItem label={QUERY_GROUP_HASHCODE} value={queryGroupHashcode} />
+        <PanelItem label={ID} value={id} />
         <PanelItem
           label={AVERAGE_LATENCY}
           value={

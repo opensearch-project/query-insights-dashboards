@@ -427,7 +427,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Query Hashcode_0"
+                data-test-subj="tableHeaderCell_Id_0"
                 role="columnheader"
                 scope="col"
               >
@@ -441,9 +441,9 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     <span
                       class="euiTableCellContent__text"
-                      title="Query Hashcode"
+                      title="Id"
                     >
-                      Query Hashcode
+                      Id
                     </span>
                   </span>
                 </button>
@@ -710,7 +710,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                 >
-                  Query Hashcode
+                  Id
                 </div>
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"

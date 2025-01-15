@@ -5,7 +5,7 @@
 
 export const TIMESTAMP = 'Timestamp';
 export const TYPE = 'Type';
-export const QUERY_GROUP_HASHCODE = 'Query Hashcode';
+export const ID = 'Id';
 export const QUERY_COUNT = 'Query Count';
 export const LATENCY = 'Latency';
 export const CPU_TIME = 'CPU Time';

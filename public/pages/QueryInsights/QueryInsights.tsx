@@ -17,7 +17,7 @@ import {
   MEMORY_USAGE,
   NODE_ID,
   QUERY_COUNT,
-  QUERY_GROUP_HASHCODE,
+  ID,
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
@@ -76,7 +76,7 @@ const QueryInsights = ({
 
   const cols: Array<EuiBasicTableColumn<any>> = [
     {
-      name: QUERY_GROUP_HASHCODE,
+      name: ID,
       render: (query: SearchQueryRecord) => {
         return (
           <span>
@@ -89,13 +89,13 @@ const QueryInsights = ({
                 history.push(route);
               }}
             >
-              {query.query_group_hashcode || '-'}{' '}
+              {query.id || '-'}{' '}
               {/* TODO: Remove fallback '-' once query_id is available - #159 */}
             </EuiLink>
           </span>
         );
       },
-      sortable: (query: SearchQueryRecord) => query.query_group_hashcode || '-',
+      sortable: (query: SearchQueryRecord) => query.id || '-',
       truncateText: true,
     },
     {
@@ -356,7 +356,7 @@ const QueryInsights = ({
         ],
       }}
       allowNeutralSort={false}
-      itemId={(query) => `${query.query_group_hashcode}-${query.timestamp}`}
+      itemId={(query) => `${query.id}-${query.timestamp}`}
     />
   );
 };

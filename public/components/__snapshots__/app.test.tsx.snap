@@ -470,7 +470,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Query Hashcode_0"
+                  data-test-subj="tableHeaderCell_Id_0"
                   role="columnheader"
                   scope="col"
                 >
@@ -484,9 +484,9 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Query Hashcode"
+                        title="Id"
                       >
-                        Query Hashcode
+                        Id
                       </span>
                     </span>
                   </button>

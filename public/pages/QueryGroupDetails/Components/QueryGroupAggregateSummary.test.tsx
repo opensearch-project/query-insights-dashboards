@@ -23,7 +23,7 @@ describe('QueryGroupAggregateSummary', () => {
     );
 
     expect(screen.getByText('Aggregate summary for 8 queries')).toBeInTheDocument();
-    expect(screen.getByText('Query Hashcode')).toBeInTheDocument();
+    expect(screen.getByText('Id')).toBeInTheDocument();
     expect(screen.getByText('Average Latency')).toBeInTheDocument();
     expect(screen.getByText('Average CPU Time')).toBeInTheDocument();
     expect(screen.getByText('Average Memory Usage')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('QueryGroupAggregateSummary', () => {
     expect(screen.getByText(memoryUsage)).toBeInTheDocument();
   });
 
-  it('displays correct query hashcode', () => {
+  it('displays correct query id', () => {
     render(
       <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
         <Route exact path="/query-group-details/:hashedQuery">
@@ -78,8 +78,8 @@ describe('QueryGroupAggregateSummary', () => {
       </MemoryRouter>
     );
 
-    const hashcode = mockQueries[0].query_group_hashcode;
-    expect(screen.getByText(hashcode)).toBeInTheDocument();
+    const id = mockQueries[0].id;
+    expect(screen.getByText(id)).toBeInTheDocument();
   });
 
   it('displays correct group_by value when SIMILARITY', () => {
