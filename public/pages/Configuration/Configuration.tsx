@@ -25,6 +25,7 @@ import {
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
+import { getDefaultMetricSettings } from '../Configuration/metricSettingsUtils';
 
 const Configuration = ({
                          latencySettings,
@@ -70,52 +71,27 @@ const Configuration = ({
     [latencySettings, cpuSettings, memorySettings]
   );
 
-// Initialize states based on the default metric
-  const defaultSettings = metricSettingsMap['latency']; // Default metric is 'latency'
-  const [isEnabled, setIsEnabled] = useState(defaultSettings.isEnabled ?? false);
-  const [topNSize, setTopNSize] = useState(defaultSettings.currTopN ?? 3);
-  const [windowSize, setWindowSize] = useState(defaultSettings.currWindowSize ?? 1);
-  const [time, setTime] = useState(defaultSettings.currTimeUnit ?? 'MINUTES');
+  const initialSettings = useMemo(
+    () => getDefaultMetricSettings(metricSettingsMap, 'latency'),
+    [metricSettingsMap]
+  );
+  const [isEnabled, setIsEnabled] = useState(initialSettings.isEnabled);
+  const [topNSize, setTopNSize] = useState(initialSettings.topNSize);
+  const [windowSize, setWindowSize] = useState(initialSettings.windowSize);
+  const [time, setTime] = useState(initialSettings.time);
 
   const newOrReset = useCallback(() => {
-    const currMetric = metricSettingsMap[metric];
-    setTopNSize(currMetric.currTopN ?? 3); // Default to 3 if undefined
-    setWindowSize(currMetric.currWindowSize ?? 1); // Default to 1 if undefined
-    setTime(currMetric.currTimeUnit ?? 'MINUTES'); // Default to 'MINUTES' if undefined
-    setIsEnabled(currMetric.isEnabled ?? false); // Default to false if undefined
+    const settings = getDefaultMetricSettings(metricSettingsMap, metric);
+    setIsEnabled(settings.isEnabled);
+    setTopNSize(settings.topNSize);
+    setWindowSize(settings.windowSize);
+    setTime(settings.time);
   }, [metric, metricSettingsMap]);
-
-
-
-  const applyDefaults = (settings) => ({
-    isEnabled: settings.isEnabled ?? false, // Default to false if undefined
-    currTopN: settings.isEnabled ? settings.currTopN ?? 3 : null, // Default to 3 if enabled
-    currWindowSize: settings.isEnabled ? settings.currWindowSize ?? 1 : null, // Default to 1 if enabled
-    currTimeUnit: settings.isEnabled ? settings.currTimeUnit ?? 'MINUTES' : null, // Default to 'MINUTES' if enabled
-  });
-
-
-
-  const validatedSettings = {
-    latency: applyDefaults(latencySettings),
-    cpu: applyDefaults(cpuSettings),
-    memory: applyDefaults(memorySettings),
-  };
-
 
   useEffect(() => {
     newOrReset();
   }, [newOrReset]);
-
-  useEffect(() => {
-    const currMetric = metricSettingsMap[metric];
-    setTopNSize(currMetric.currTopN ?? 3);
-    setWindowSize(currMetric.currWindowSize ?? 1);
-    setTime(currMetric.currTimeUnit ?? 'MINUTES');
-    setIsEnabled(currMetric.isEnabled ?? false);
-  }, [latencySettings, cpuSettings, memorySettings, metric, metricSettingsMap]);
-
-
+  
   useEffect(() => {
     core.chrome.setBreadcrumbs([
       {
@@ -345,21 +321,18 @@ const Configuration = ({
             </EuiFlexItem>
           </EuiPanel>
         </EuiFlexItem>
-
-
-
       </EuiFlexGroup>
-
       {isChanged && isValid ? (
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
             <EuiFlexItem grow={false}>
-              <EuiButtonEmpty color="ghost" size="s" iconType="cross" onClick={newOrReset}>
+              <EuiButtonEmpty  color="ghost" size="s" iconType="cross" onClick={newOrReset}>
                 Cancel
               </EuiButtonEmpty>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiButton
+                data-test-subj={'save-config-button'}
                 color="primary"
                 fill
                 size="s"
