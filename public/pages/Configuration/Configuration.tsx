@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -24,39 +24,24 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
+import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
+import { METRIC_TYPES, TIME_UNITS, MINUTES_OPTIONS, GROUP_BY_OPTIONS } from '../Utils/Constants';
 
 const Configuration = ({
   latencySettings,
   cpuSettings,
   memorySettings,
+  groupBySettings,
   configInfo,
   core,
 }: {
   latencySettings: MetricSettings;
   cpuSettings: MetricSettings;
   memorySettings: MetricSettings;
+  groupBySettings: GroupBySettings;
   configInfo: any;
   core: CoreStart;
 }) => {
-  const metricTypes = [
-    { value: 'latency', text: 'Latency' },
-    { value: 'cpu', text: 'CPU' },
-    { value: 'memory', text: 'Memory' },
-  ];
-
-  const timeUnits = [
-    { value: 'MINUTES', text: 'Minute(s)' },
-    { value: 'HOURS', text: 'Hour(s)' },
-  ];
-
-  const minutesOptions = [
-    { value: '1', text: '1' },
-    { value: '5', text: '5' },
-    { value: '10', text: '10' },
-    { value: '30', text: '30' },
-  ];
-
   const history = useHistory();
   const location = useLocation();
 
@@ -65,15 +50,25 @@ const Configuration = ({
   const [topNSize, setTopNSize] = useState(latencySettings.currTopN);
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
+  const [groupBy, setGroupBy] = useState(groupBySettings.groupBy);
 
-  const metricSettingsMap = useMemo(
-    () => ({
+  const [metricSettingsMap, setMetricSettingsMap] = useState({
+    latency: latencySettings,
+    cpu: cpuSettings,
+    memory: memorySettings,
+    groupBy: groupBySettings,
+  });
+
+  useEffect(() => {
+    setMetricSettingsMap({
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-    }),
-    [latencySettings, cpuSettings, memorySettings]
-  );
+      groupBy: groupBySettings,
+    });
+
+    setGroupBy(groupBySettings.groupBy);
+  }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
 
   const newOrReset = useCallback(() => {
     const currMetric = metricSettingsMap[metric];
@@ -85,7 +80,7 @@ const Configuration = ({
 
   useEffect(() => {
     newOrReset();
-  }, [newOrReset]);
+  }, [newOrReset, metricSettingsMap]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -122,11 +117,15 @@ const Configuration = ({
     setTime(e.target.value);
   };
 
+  const onGroupByChange = (e: any) => {
+    setGroupBy(e.target.value);
+  };
+
   const MinutesBox = () => (
     <EuiSelect
       id="minutes"
       required={true}
-      options={minutesOptions}
+      options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
     />
@@ -142,18 +141,19 @@ const Configuration = ({
     />
   );
 
-  const WindowChoice = time === timeUnits[0].value ? MinutesBox : HoursBox;
+  const WindowChoice = time === TIME_UNITS[0].value ? MinutesBox : HoursBox;
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
     topNSize !== metricSettingsMap[metric].currTopN ||
     windowSize !== metricSettingsMap[metric].currWindowSize ||
-    time !== metricSettingsMap[metric].currTimeUnit;
+    time !== metricSettingsMap[metric].currTimeUnit ||
+    groupBy !== metricSettingsMap.groupBy.groupBy;
 
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
     if (nVal < 1 || nVal > 100) return false;
-    if (time === timeUnits[0].value) return true;
+    if (time === TIME_UNITS[0].value) return true;
     const windowVal = parseInt(windowSize, 10);
     return windowVal >= 1 && windowVal <= 24;
   })();
@@ -191,7 +191,7 @@ const Configuration = ({
                       <EuiSelect
                         id="metricType"
                         required={true}
-                        options={metricTypes}
+                        options={METRIC_TYPES}
                         value={metric}
                         onChange={onMetricChange}
                       />
@@ -261,7 +261,7 @@ const Configuration = ({
                               <EuiSelect
                                 id="timeUnit"
                                 required={isEnabled}
-                                options={timeUnits}
+                                options={TIME_UNITS}
                                 value={time}
                                 onChange={onTimeChange}
                               />
@@ -317,6 +317,66 @@ const Configuration = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiFlexGroup>
+        <EuiFlexItem grow={6}>
+          <EuiPanel paddingSize="m">
+            <EuiForm>
+              <EuiFlexItem>
+                <EuiTitle size="s">
+                  <EuiText size="s">
+                    <h2>Top n queries grouping configuration settings</h2>
+                  </EuiText>
+                </EuiTitle>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
+                  <EuiFlexItem>
+                    <EuiText size="xs">
+                      <h3>Group By</h3>
+                    </EuiText>
+                    <EuiText size="xs" style={textPadding}>
+                      Specify the group by type.
+                    </EuiText>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow style={formRowPadding}>
+                      <EuiSelect
+                        id="groupBy"
+                        required={true}
+                        options={GROUP_BY_OPTIONS}
+                        value={groupBy}
+                        onChange={onGroupByChange}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGrid>
+              </EuiFlexItem>
+            </EuiForm>
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem grow={2}>
+          <EuiPanel paddingSize="m" grow={false}>
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <EuiText size="s">
+                  <h2>Statuses for group by</h2>
+                </EuiText>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem>
+              <EuiFlexGroup>
+                <EuiFlexItem>
+                  <EuiText size="m">Group By</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {groupBySettings.groupBy === 'similarity' ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </EuiFlexItem>
+          </EuiPanel>
+        </EuiFlexItem>
+      </EuiFlexGroup>
       {isChanged && isValid ? (
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
@@ -333,7 +393,7 @@ const Configuration = ({
                 size="s"
                 iconType="check"
                 onClick={() => {
-                  configInfo(false, isEnabled, metric, topNSize, windowSize, time);
+                  configInfo(false, isEnabled, metric, topNSize, windowSize, time, groupBy);
                   return history.push(QUERY_INSIGHTS);
                 }}
               >
