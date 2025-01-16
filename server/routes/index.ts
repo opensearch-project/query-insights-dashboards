@@ -181,6 +181,7 @@ export function defineRoutes(router: IRouter) {
           enabled: schema.maybe(schema.boolean({ defaultValue: false })),
           top_n_size: schema.maybe(schema.string({ defaultValue: '' })),
           window_size: schema.maybe(schema.string({ defaultValue: '' })),
+          group_by: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
@@ -195,6 +196,7 @@ export function defineRoutes(router: IRouter) {
               [`search.insights.top_queries.${query.metric}.enabled`]: query.enabled,
               [`search.insights.top_queries.${query.metric}.top_n_size`]: query.top_n_size,
               [`search.insights.top_queries.${query.metric}.window_size`]: query.window_size,
+              [`search.insights.top_queries.group_by`]: query.group_by,
             },
           },
         };

@@ -86,6 +86,49 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     <span
                       class="euiFilterButton__textShift"
+                      data-text="Type"
+                      title="Type"
+                    >
+                      Type
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </div>
+          </div>
+          <div
+            class="euiPopover euiPopover--anchorDownCenter"
+            id="field_value_selection_1"
+          >
+            <div
+              class="euiPopover__anchor"
+            >
+              <button
+                class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+                type="button"
+              >
+                <span
+                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoading euiButtonContent__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                    />
+                  </svg>
+                  <span
+                    class="euiButtonEmpty__text"
+                  >
+                    <span
+                      class="euiFilterButton__textShift"
                       data-text="Indices"
                       title="Indices"
                     >
@@ -98,7 +141,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
           </div>
           <div
             class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_1"
+            id="field_value_selection_2"
           >
             <div
               class="euiPopover__anchor"
@@ -141,7 +184,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
           </div>
           <div
             class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_2"
+            id="field_value_selection_3"
           >
             <div
               class="euiPopover__anchor"
@@ -384,7 +427,82 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Timestamp_0"
+                data-test-subj="tableHeaderCell_Id_0"
+                role="columnheader"
+                scope="col"
+              >
+                <button
+                  class="euiTableHeaderButton"
+                  data-test-subj="tableHeaderSortButton"
+                  type="button"
+                >
+                  <span
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                      title="Id"
+                    >
+                      Id
+                    </span>
+                  </span>
+                </button>
+              </th>
+              <th
+                aria-live="polite"
+                aria-sort="none"
+                class="euiTableHeaderCell"
+                data-test-subj="tableHeaderCell_Type_1"
+                role="columnheader"
+                scope="col"
+              >
+                <button
+                  class="euiTableHeaderButton"
+                  data-test-subj="tableHeaderSortButton"
+                  type="button"
+                >
+                  <span
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                      title="Type"
+                    >
+                      Type
+                    </span>
+                  </span>
+                </button>
+              </th>
+              <th
+                aria-live="polite"
+                aria-sort="none"
+                class="euiTableHeaderCell"
+                data-test-subj="tableHeaderCell_measurements_2"
+                role="columnheader"
+                scope="col"
+              >
+                <button
+                  class="euiTableHeaderButton"
+                  data-test-subj="tableHeaderSortButton"
+                  type="button"
+                >
+                  <span
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                      title="Query Count"
+                    >
+                      Query Count
+                    </span>
+                  </span>
+                </button>
+              </th>
+              <th
+                aria-live="polite"
+                aria-sort="none"
+                class="euiTableHeaderCell"
+                data-test-subj="tableHeaderCell_Timestamp_3"
                 role="columnheader"
                 scope="col"
               >
@@ -409,7 +527,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_1"
+                data-test-subj="tableHeaderCell_measurements_4"
                 role="columnheader"
                 scope="col"
               >
@@ -434,7 +552,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_2"
+                data-test-subj="tableHeaderCell_measurements_5"
                 role="columnheader"
                 scope="col"
               >
@@ -459,7 +577,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_3"
+                data-test-subj="tableHeaderCell_measurements_6"
                 role="columnheader"
                 scope="col"
               >
@@ -484,7 +602,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_indices_4"
+                data-test-subj="tableHeaderCell_indices_7"
                 role="columnheader"
                 scope="col"
               >
@@ -509,7 +627,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_search_type_5"
+                data-test-subj="tableHeaderCell_search_type_8"
                 role="columnheader"
                 scope="col"
               >
@@ -534,7 +652,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_node_id_6"
+                data-test-subj="tableHeaderCell_node_id_9"
                 role="columnheader"
                 scope="col"
               >
@@ -559,7 +677,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_total_shards_7"
+                data-test-subj="tableHeaderCell_total_shards_10"
                 role="columnheader"
                 scope="col"
               >
@@ -592,6 +710,67 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                 >
+                  Id
+                </div>
+                <div
+                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+                >
+                  <span
+                    class=""
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      80a17984b847133b8bf5e7d5dfbfa96c
+                       
+                    </button>
+                  </span>
+                </div>
+              </td>
+              <td
+                class="euiTableRowCell"
+              >
+                <div
+                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                >
+                  Type
+                </div>
+                <div
+                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+                >
+                  <span
+                    class=""
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      query
+                    </button>
+                  </span>
+                </div>
+              </td>
+              <td
+                class="euiTableRowCell"
+              >
+                <div
+                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                >
+                  Query Count
+                </div>
+                <div
+                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+                >
+                  1
+                </div>
+              </td>
+              <td
+                class="euiTableRowCell"
+              >
+                <div
+                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                >
                   Timestamp
                 </div>
                 <div
@@ -604,7 +783,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      Jan 13, 2025 @ 12:00:00 AM
+                      -
                     </button>
                   </span>
                 </div>
@@ -620,7 +799,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  8 ms
+                  8.00 ms
                 </div>
               </td>
               <td
@@ -648,7 +827,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  Not enabled
+                  Not enabled B
                 </div>
               </td>
               <td
@@ -688,13 +867,9 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   Coordinator Node ID
                 </div>
                 <div
-                  class="euiTableCellContent euiTableCellContent--truncateText"
+                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  <span
-                    class="euiTableCellContent__text"
-                  >
-                    Q36D2z_NRGKim6EZZMgi6A
-                  </span>
+                  Q36D2z_NRGKim6EZZMgi6A
                 </div>
               </td>
               <td
@@ -706,13 +881,9 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   Total Shards
                 </div>
                 <div
-                  class="euiTableCellContent euiTableCellContent--truncateText"
+                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  <span
-                    class="euiTableCellContent__text"
-                  >
-                    1
-                  </span>
+                  1
                 </div>
               </td>
             </tr>

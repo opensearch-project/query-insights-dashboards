@@ -16,10 +16,14 @@ import {
   LATENCY,
   MEMORY_USAGE,
   NODE_ID,
+  QUERY_COUNT,
+  ID,
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  TYPE,
 } from '../../../common/constants';
+import { calculateMetric } from '../Utils/MetricUtils';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
@@ -28,6 +32,7 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const METRIC_DEFAULT_MSG = 'Not enabled';
+const GROUP_BY_FIELD = 'group_by';
 
 const QueryInsights = ({
   queries,
@@ -71,14 +76,80 @@ const QueryInsights = ({
 
   const cols: Array<EuiBasicTableColumn<any>> = [
     {
-      // Make into flyout instead?
-      name: TIMESTAMP,
-      render: (query: any) => {
+      name: ID,
+      render: (query: SearchQueryRecord) => {
         return (
           <span>
-            <EuiLink onClick={() => history.push(`/query-details/${hash(query)}`)}>
-              {convertTime(query.timestamp)}
+            <EuiLink
+              onClick={() => {
+                const route =
+                  query.group_by === 'SIMILARITY'
+                    ? `/query-group-details/${hash(query)}`
+                    : `/query-details/${hash(query)}`;
+                history.push(route);
+              }}
+            >
+              {query.id || '-'} {/* TODO: Remove fallback '-' once query_id is available - #159 */}
             </EuiLink>
+          </span>
+        );
+      },
+      sortable: (query: SearchQueryRecord) => query.id || '-',
+      truncateText: true,
+    },
+    {
+      name: TYPE,
+      render: (query: SearchQueryRecord) => {
+        return (
+          <span>
+            <EuiLink
+              onClick={() => {
+                const route =
+                  query.group_by === 'SIMILARITY'
+                    ? `/query-group-details/${hash(query)}`
+                    : `/query-details/${hash(query)}`;
+                history.push(route);
+              }}
+            >
+              {query.group_by === 'SIMILARITY' ? 'group' : 'query'}
+            </EuiLink>
+          </span>
+        );
+      },
+      sortable: (query) => query.group_by || 'query',
+      truncateText: true,
+    },
+    {
+      field: MEASUREMENTS_FIELD,
+      name: QUERY_COUNT,
+      render: (measurements: SearchQueryRecord['measurements']) =>
+        `${
+          measurements?.latency?.count ||
+          measurements?.cpu?.count ||
+          measurements?.memory?.count ||
+          1
+        }`,
+      sortable: (measurements: SearchQueryRecord['measurements']) => {
+        return Number(
+          measurements?.latency?.count ||
+            measurements?.cpu?.count ||
+            measurements?.memory?.count ||
+            1
+        );
+      },
+      truncateText: true,
+    },
+    {
+      // Make into flyout instead?
+      name: TIMESTAMP,
+      render: (query: SearchQueryRecord) => {
+        const isQuery = query.group_by === 'NONE';
+        const linkContent = isQuery ? convertTime(query.timestamp) : '-';
+        const onClickHandler = () => history.push(`/query-details/${hash(query)}`);
+
+        return (
+          <span>
+            <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>
           </span>
         );
       },
@@ -88,9 +159,14 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: LATENCY,
-      render: (measurements: any) => {
-        const latencyValue = measurements?.latency?.number;
-        return latencyValue !== undefined ? `${latencyValue} ms` : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.latency?.number,
+          measurements?.latency?.count,
+          1,
+          METRIC_DEFAULT_MSG
+        );
+        return `${result} ms`;
       },
       sortable: true,
       truncateText: true,
@@ -98,9 +174,14 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: CPU_TIME,
-      render: (measurements: { cpu?: { number?: number } }) => {
-        const cpuValue = measurements?.cpu?.number;
-        return cpuValue !== undefined ? `${cpuValue / 1000000} ms` : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.cpu?.number,
+          measurements?.cpu?.count,
+          1000000, // Divide by 1,000,000 for CPU time
+          METRIC_DEFAULT_MSG
+        );
+        return `${result} ms`;
       },
       sortable: true,
       truncateText: true,
@@ -108,9 +189,14 @@ const QueryInsights = ({
     {
       field: MEASUREMENTS_FIELD,
       name: MEMORY_USAGE,
-      render: (measurements: { memory?: { number?: number } }) => {
-        const memoryValue = measurements?.memory?.number;
-        return memoryValue !== undefined ? `${memoryValue} B` : METRIC_DEFAULT_MSG;
+      render: (measurements: SearchQueryRecord['measurements']) => {
+        const result = calculateMetric(
+          measurements?.memory?.number,
+          measurements?.memory?.count,
+          1,
+          METRIC_DEFAULT_MSG
+        );
+        return `${result} B`;
       },
       sortable: true,
       truncateText: true,
@@ -118,26 +204,40 @@ const QueryInsights = ({
     {
       field: INDICES_FIELD,
       name: INDICES,
-      render: (indices: string[]) => Array.from(new Set(indices.flat())).join(', '),
+      render: (indices: string[], query: SearchQueryRecord) => {
+        const isSimilarity = query.group_by === 'SIMILARITY';
+        return isSimilarity ? '-' : Array.from(new Set(indices.flat())).join(', ');
+      },
       sortable: true,
       truncateText: true,
     },
     {
       field: SEARCH_TYPE_FIELD,
       name: SEARCH_TYPE,
-      render: (searchType: string) => searchType.replaceAll('_', ' '),
+      render: (searchType: string, query: SearchQueryRecord) => {
+        const isSimilarity = query.group_by === 'SIMILARITY';
+        return isSimilarity ? '-' : searchType.replaceAll('_', ' ');
+      },
       sortable: true,
       truncateText: true,
     },
     {
       field: NODE_ID_FIELD,
       name: NODE_ID,
+      render: (nodeId: string, query: SearchQueryRecord) => {
+        const isSimilarity = query.group_by === 'SIMILARITY';
+        return isSimilarity ? '-' : nodeId;
+      },
       sortable: true,
       truncateText: true,
     },
     {
       field: TOTAL_SHARDS_FIELD,
       name: TOTAL_SHARDS,
+      render: (totalShards: number, query: SearchQueryRecord) => {
+        const isSimilarity = query.group_by === 'SIMILARITY';
+        return isSimilarity ? '-' : totalShards;
+      },
       sortable: true,
       truncateText: true,
     },
@@ -171,6 +271,25 @@ const QueryInsights = ({
           schema: false,
         },
         filters: [
+          {
+            type: 'field_value_selection',
+            field: GROUP_BY_FIELD,
+            name: TYPE,
+            multiSelect: true,
+            options: [
+              {
+                value: 'NONE',
+                name: 'query',
+                view: 'query',
+              },
+              {
+                value: 'SIMILARITY',
+                name: 'group',
+                view: 'group',
+              },
+            ],
+            noOptionsMessage: 'No data available for the selected type', // Fallback message when no queries match
+          },
           {
             type: 'field_value_selection',
             field: INDICES_FIELD,
@@ -236,6 +355,7 @@ const QueryInsights = ({
         ],
       }}
       allowNeutralSort={false}
+      itemId={(query) => `${query.id}-${query.timestamp}`}
     />
   );
 };
