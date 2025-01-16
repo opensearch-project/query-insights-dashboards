@@ -181,7 +181,7 @@ const TopNQueries = ({
         try {
           const resp = await core.http.get('/api/settings');
           const { latency, cpu, memory } =
-            resp?.response?.persistent?.search?.insights?.top_queries || {};
+            resp?.response?.persistent?.search?.insights?.top_queries || resp?.response?.transient?.search?.insights?.top_queries || {};
           if (latency !== undefined && latency.enabled === 'true') {
             const [time, timeUnits] = latency.window_size
               ? latency.window_size.match(/\D+|\d+/g)
