@@ -28,7 +28,7 @@ describe('Top Queries Details Page', () => {
     // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.navigateToOverview();
-    cy.get('.euiTableRow').first().find('button').click(); // Navigate to details
+    cy.get('.euiTableRow').first().find('button').first().click(); // Navigate to details
   });
 
   it('should display correct details on the query details page', () => {
@@ -80,7 +80,7 @@ describe('Top Queries Details Page', () => {
         .parent()
         .next()
         .invoke('text')
-        .should('match', /^\d+ ms$/);
+        .should('match', /^\d+(\.\d{1,2})? ms$/);
       // Validate CPU Time
       cy.contains('h4', 'CPU Time')
         .parent()
@@ -92,7 +92,7 @@ describe('Top Queries Details Page', () => {
         .parent()
         .next()
         .invoke('text')
-        .should('match', /^\d+ B$/);
+        .should('match', /^\d+(\.\d+)? B$/);
       // Validate Indices
       cy.contains('h4', 'Indices').parent().next().invoke('text').should('not.be.empty');
       // Validate Search Type

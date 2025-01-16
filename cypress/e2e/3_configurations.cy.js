@@ -29,7 +29,7 @@ describe('Query Insights Configurations Page', () => {
     cy.contains('button', 'Top N queries').should('be.visible');
     cy.contains('button', 'Configuration').should('have.class', 'euiTab-isSelected');
     // Validate the panels
-    cy.get('.euiPanel').should('have.length', 2); // Two panels: configuration settings and statuses
+    cy.get('.euiPanel').should('have.length', 4); // Two panels: configuration settings and statuses
   });
 
   /**
@@ -125,7 +125,7 @@ describe('Query Insights Configurations Page', () => {
   it('should display statuses for configuration metrics', () => {
     // Validate the status panel header
     cy.get('.euiPanel')
-      .last()
+      .eq(1) // Selects the second panel (index 1)
       .within(() => {
         cy.get('h2').contains('Statuses for configuration metrics').should('be.visible');
       });

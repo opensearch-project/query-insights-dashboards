@@ -16,6 +16,7 @@ import {
   TIMESTAMP,
   TOTAL_SHARDS,
 } from '../../../../common/constants';
+import { calculateMetric } from '../../Utils/MetricUtils';
 
 // Panel component for displaying query detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -43,16 +44,30 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
       <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
-        <PanelItem label={LATENCY} value={`${measurements.latency?.number ?? 'N/A'} ms`} />
+        <PanelItem
+          label={LATENCY}
+          value={
+            calculateMetric(measurements.latency?.number, measurements.latency?.count) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(measurements.latency?.number, measurements.latency?.count)} ms`
+          }
+        />
         <PanelItem
           label={CPU_TIME}
           value={
-            measurements.cpu?.number !== undefined
-              ? `${measurements.cpu.number / 1000000} ms`
-              : 'N/A'
+            calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000)} ms`
           }
         />
-        <PanelItem label={MEMORY_USAGE} value={`${measurements.memory?.number ?? 'N/A'} B`} />
+        <PanelItem
+          label={MEMORY_USAGE}
+          value={
+            calculateMetric(measurements.memory?.number, measurements.memory?.count) === 'N/A'
+              ? 'N/A'
+              : `${calculateMetric(measurements.memory?.number, measurements.memory?.count)} B`
+          }
+        />
         <PanelItem label={INDICES} value={indices.toString()} />
         <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
         <PanelItem label={NODE_ID} value={node_id} />

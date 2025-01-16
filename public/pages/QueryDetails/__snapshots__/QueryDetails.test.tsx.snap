@@ -60,7 +60,7 @@ exports[`QueryDetails component renders the QueryDetails page 1`] = `
             <div
               class="euiText euiText--extraSmall"
             >
-              8 ms
+              8.00 ms
             </div>
           </div>
           <div
@@ -92,7 +92,7 @@ exports[`QueryDetails component renders the QueryDetails page 1`] = `
             <div
               class="euiText euiText--extraSmall"
             >
-              N/A B
+              N/A
             </div>
           </div>
           <div
