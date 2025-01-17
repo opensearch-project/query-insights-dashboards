@@ -5,10 +5,11 @@
 
 import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/public';
 
+/* eslint-disable @typescript-eslint/no-empty-interface */
 export interface QueryInsightsDashboardsPluginSetup {}
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface QueryInsightsDashboardsPluginStart {}
+/* eslint-enable @typescript-eslint/no-empty-interface */
 
-export interface AppPluginStartDependencies {
+export interface QueryInsightsDashboardsPluginStartDependencies {
   navigation: NavigationPublicPluginStart;
 }
