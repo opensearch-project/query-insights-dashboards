@@ -25,3 +25,6 @@ export const GROUP_BY_OPTIONS = [
   { value: 'none', text: 'None' },
   { value: 'similarity', text: 'Similarity' },
 ];
+
+export const DEFAULT_TOP_N_SIZE = 3;
+export const DEFAULT_WINDOW_SIZE = 1;

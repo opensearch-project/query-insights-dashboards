@@ -24,8 +24,30 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
+
 import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
-import { METRIC_TYPES, TIME_UNITS, MINUTES_OPTIONS, GROUP_BY_OPTIONS } from '../Utils/Constants';
+import {
+  METRIC_TYPES,
+  TIME_UNITS,
+  MINUTES_OPTIONS,
+  GROUP_BY_OPTIONS,
+  DEFAULT_TOP_N_SIZE,
+  DEFAULT_WINDOW_SIZE,
+} from '../Utils/Constants';
+
+const getDefaultMetricSettings = (
+  metricSettingsMap: Record<string, MetricSettings>,
+  metric: string
+) => {
+  const defaultSettings = metricSettingsMap[metric];
+  return {
+    isEnabled: defaultSettings.isEnabled ?? false,
+    topNSize: defaultSettings.currTopN ?? DEFAULT_TOP_N_SIZE,
+    windowSize: defaultSettings.currWindowSize ?? DEFAULT_WINDOW_SIZE,
+    time: defaultSettings.currTimeUnit ?? 'MINUTES',
+  };
+};
+
 
 const Configuration = ({
   latencySettings,
@@ -70,12 +92,20 @@ const Configuration = ({
     setGroupBy(groupBySettings.groupBy);
   }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
 
+  const initialSettings = useMemo(() => getDefaultMetricSettings(metricSettingsMap, 'latency'), [
+    metricSettingsMap,
+  ]);
+  const [isEnabled, setIsEnabled] = useState(initialSettings.isEnabled);
+  const [topNSize, setTopNSize] = useState(initialSettings.topNSize);
+  const [windowSize, setWindowSize] = useState(initialSettings.windowSize);
+  const [time, setTime] = useState(initialSettings.time);
+
   const newOrReset = useCallback(() => {
-    const currMetric = metricSettingsMap[metric];
-    setTopNSize(currMetric.currTopN);
-    setWindowSize(currMetric.currWindowSize);
-    setTime(currMetric.currTimeUnit);
-    setIsEnabled(currMetric.isEnabled);
+    const settings = getDefaultMetricSettings(metricSettingsMap, metric);
+    setIsEnabled(settings.isEnabled);
+    setTopNSize(settings.topNSize);
+    setWindowSize(settings.windowSize);
+    setTime(settings.time);
   }, [metric, metricSettingsMap]);
 
   useEffect(() => {
