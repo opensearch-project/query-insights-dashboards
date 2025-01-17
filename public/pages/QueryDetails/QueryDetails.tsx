@@ -23,8 +23,18 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import QuerySummary from './Components/QuerySummary';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
+import { PageHeader } from '../../components/PageHeader';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
-const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
+const QueryDetails = ({
+  queries,
+  core,
+  depsStart,
+}: {
+  queries: any;
+  core: CoreStart;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
+}) => {
   const { hashedQuery } = useParams<{ hashedQuery: string }>();
   const query = queries.find((q: SearchQueryRecord) => hash(q) === hashedQuery);
   const history = useHistory();
@@ -92,10 +102,19 @@ const QueryDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
 
   return (
     <div>
-      <EuiTitle size="l">
-        <h1>Query details</h1>
-      </EuiTitle>
-      <EuiSpacer size="l" />
+      <PageHeader
+        coreStart={core}
+        depsStart={depsStart}
+        fallBackComponent={
+          <>
+            <EuiTitle size="l">
+              <h1>Query details</h1>
+            </EuiTitle>
+            <EuiSpacer size="l" />
+          </>
+        }
+      />
+
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />

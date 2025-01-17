@@ -25,8 +25,18 @@ import {
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { QueryGroupAggregateSummary } from './Components/QueryGroupAggregateSummary';
 import { QueryGroupSampleQuerySummary } from './Components/QueryGroupSampleQuerySummary';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { PageHeader } from '../../components/PageHeader';
 
-export const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreStart }) => {
+export const QueryGroupDetails = ({
+  queries,
+  core,
+  depsStart,
+}: {
+  queries: any;
+  core: CoreStart;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
+}) => {
   const { hashedQuery } = useParams<{ hashedQuery: string }>();
   const query = queries.find((q: any) => hash(q) === hashedQuery);
 
@@ -97,18 +107,26 @@ export const QueryGroupDetails = ({ queries, core }: { queries: any; core: CoreS
 
   return (
     <div>
-      <EuiFlexGrid columns={2}>
-        <EuiTitle size="l">
-          <h1>Query group details</h1>
-        </EuiTitle>
-        <EuiIconTip
-          content="Details for the query group including aggregate statistics and number of queries in the group"
-          position="right"
-          type="iInCircle"
-          aria-label="Details tooltip"
-        />
-      </EuiFlexGrid>
-      <EuiSpacer size="l" />
+      <PageHeader
+        coreStart={core}
+        depsStart={depsStart}
+        fallBackComponent={
+          <>
+            <EuiFlexGrid columns={2}>
+              <EuiTitle size="l">
+                <h1>Query group details</h1>
+              </EuiTitle>
+              <EuiIconTip
+                content="Details for the query group including aggregate statistics and number of queries in the group"
+                position="right"
+                type="iInCircle"
+                aria-label="Details tooltip"
+              />
+            </EuiFlexGrid>
+            <EuiSpacer size="l" />
+          </>
+        }
+      />
       <EuiFlexItem>
         <QueryGroupAggregateSummary query={query} />
       </EuiFlexItem>

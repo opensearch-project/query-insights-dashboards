@@ -5,12 +5,11 @@
 
 import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/public';
 
-export interface QueryInsightsDashboardsPluginSetup {
-  getGreeting: () => string;
-}
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+/* eslint-disable @typescript-eslint/no-empty-interface */
+export interface QueryInsightsDashboardsPluginSetup {}
 export interface QueryInsightsDashboardsPluginStart {}
+/* eslint-enable @typescript-eslint/no-empty-interface */
 
-export interface AppPluginStartDependencies {
+export interface QueryInsightsDashboardsPluginStartDependencies {
   navigation: NavigationPublicPluginStart;
 }
