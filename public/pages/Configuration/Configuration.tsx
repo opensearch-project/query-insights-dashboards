@@ -24,15 +24,14 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
 import {
   metricTypes,
   timeUnits,
-  MINUTES_OPTIONS,
+  minutesOptions,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
 } from '../Utils/Constants';
-import { MetricSettings } from '../TopNQueries/TopNQueries';
 
 const getDefaultMetricSettings = (
   metricSettingsMap: Record<string, MetricSettings>,
@@ -132,7 +131,7 @@ const Configuration = ({
     <EuiSelect
       id="minutes"
       required={true}
-      options={MINUTES_OPTIONS}
+      options={minutesOptions}
       value={windowSize}
       onChange={onWindowSizeChange}
     />

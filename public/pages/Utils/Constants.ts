@@ -14,7 +14,7 @@ export const timeUnits = [
   { value: 'HOURS', text: 'Hour(s)' },
 ];
 
-export const MINUTES_OPTIONS = [
+export const minutesOptions = [
   { value: '1', text: '1' },
   { value: '5', text: '5' },
   { value: '10', text: '10' },
