@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { i18n } from '@osd/i18n';
-import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
+import { AppMountParameters, CoreSetup, CoreStart, DEFAULT_APP_CATEGORIES, DEFAULT_NAV_GROUPS, Plugin,
+} from '../../../src/core/public';
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
-import { PLUGIN_NAME } from '../common';
+import {PLUGIN_NAME} from '../common';
 
 export class QueryInsightsDashboardsPlugin
   implements Plugin<QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart> {
@@ -33,17 +33,20 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    // Return methods that should be available to other plugins
-    return {
-      getGreeting() {
-        return i18n.translate('queryInsightsDashboards.greetingText', {
-          defaultMessage: 'Hello from {name}!',
-          values: {
-            name: PLUGIN_NAME,
-          },
-        });
-      },
-    };
+    // Registration for new navigation
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.observability, [{
+      id: PLUGIN_NAME,
+      category: DEFAULT_APP_CATEGORIES.manage,
+      order: 200,
+    }]);
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.all, [{
+      id: PLUGIN_NAME,
+      category: DEFAULT_APP_CATEGORIES.manage,
+      order: 200,
+    }]);
+
+
+    return {};
   }
 
   public start(_core: CoreStart): QueryInsightsDashboardsPluginStart {
