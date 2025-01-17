@@ -24,8 +24,28 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
-import { getDefaultMetricSettings } from '../Configuration/metricSettingsUtils';
+import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import {
+  metricTypes,
+  timeUnits,
+  MINUTES_OPTIONS,
+  DEFAULT_TOP_N_SIZE,
+  DEFAULT_WINDOW_SIZE,
+} from '../Utils/Constants';
+import { MetricSettings } from '../TopNQueries/TopNQueries';
+
+const getDefaultMetricSettings = (
+  metricSettingsMap: Record<string, MetricSettings>,
+  metric: string
+) => {
+  const defaultSettings = metricSettingsMap[metric];
+  return {
+    isEnabled: defaultSettings.isEnabled ?? false,
+    topNSize: defaultSettings.currTopN ?? DEFAULT_TOP_N_SIZE,
+    windowSize: defaultSettings.currWindowSize ?? DEFAULT_WINDOW_SIZE,
+    time: defaultSettings.currTimeUnit ?? 'MINUTES',
+  };
+};
 
 const Configuration = ({
   latencySettings,
@@ -40,24 +60,6 @@ const Configuration = ({
   configInfo: any;
   core: CoreStart;
 }) => {
-  const metricTypes = [
-    { value: 'latency', text: 'Latency' },
-    { value: 'cpu', text: 'CPU' },
-    { value: 'memory', text: 'Memory' },
-  ];
-
-  const timeUnits = [
-    { value: 'MINUTES', text: 'Minute(s)' },
-    { value: 'HOURS', text: 'Hour(s)' },
-  ];
-
-  const minutesOptions = [
-    { value: '1', text: '1' },
-    { value: '5', text: '5' },
-    { value: '10', text: '10' },
-    { value: '30', text: '30' },
-  ];
-
   const history = useHistory();
   const location = useLocation();
 
@@ -130,7 +132,7 @@ const Configuration = ({
     <EuiSelect
       id="minutes"
       required={true}
-      options={minutesOptions}
+      options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
     />
