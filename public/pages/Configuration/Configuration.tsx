@@ -26,9 +26,9 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS, MetricSettings } from '../TopNQueries/TopNQueries';
 import {
-  metricTypes,
-  timeUnits,
-  minutesOptions,
+  METRIC_TYPES,
+  TIME_UNITS,
+  MINUTES_OPTIONS,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
 } from '../Utils/Constants';
@@ -131,7 +131,7 @@ const Configuration = ({
     <EuiSelect
       id="minutes"
       required={true}
-      options={minutesOptions}
+      options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
     />
@@ -147,7 +147,7 @@ const Configuration = ({
     />
   );
 
-  const WindowChoice = time === timeUnits[0].value ? MinutesBox : HoursBox;
+  const WindowChoice = time === TIME_UNITS[0].value ? MinutesBox : HoursBox;
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
@@ -158,7 +158,7 @@ const Configuration = ({
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
     if (nVal < 1 || nVal > 100) return false;
-    if (time === timeUnits[0].value) return true;
+    if (time === TIME_UNITS[0].value) return true;
     const windowVal = parseInt(windowSize, 10);
     return windowVal >= 1 && windowVal <= 24;
   })();
@@ -196,7 +196,7 @@ const Configuration = ({
                       <EuiSelect
                         id="metricType"
                         required={true}
-                        options={metricTypes}
+                        options={METRIC_TYPES}
                         value={metric}
                         onChange={onMetricChange}
                       />

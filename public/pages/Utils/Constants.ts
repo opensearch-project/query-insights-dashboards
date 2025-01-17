@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const metricTypes = [
+export const METRIC_TYPES = [
   { value: 'latency', text: 'Latency' },
   { value: 'cpu', text: 'CPU' },
   { value: 'memory', text: 'Memory' },
 ];
 
-export const timeUnits = [
+export const TIME_UNITS = [
   { value: 'MINUTES', text: 'Minute(s)' },
   { value: 'HOURS', text: 'Hour(s)' },
 ];
 
-export const minutesOptions = [
+export const MINUTES_OPTIONS = [
   { value: '1', text: '1' },
   { value: '5', text: '5' },
   { value: '10', text: '10' },
