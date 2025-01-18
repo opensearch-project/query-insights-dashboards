@@ -45,6 +45,7 @@ const Configuration = ({
   cpuSettings,
   memorySettings,
   groupBySettings,
+  deleteAfterDaysSettings,
   configInfo,
   core,
   depsStart,
@@ -55,6 +56,7 @@ const Configuration = ({
   cpuSettings: MetricSettings;
   memorySettings: MetricSettings;
   groupBySettings: GroupBySettings;
+  deleteAfterDaysSettings: DeleteAfterDaysSettings;
   configInfo: any;
   core: CoreStart;
   params: AppMountParameters;
@@ -69,14 +71,23 @@ const Configuration = ({
   const [topNSize, setTopNSize] = useState(latencySettings.currTopN);
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
+  const [exporterType, setExporterTypeType] = useState(latencySettings.exporterType);
   const [groupBy, setGroupBy] = useState(groupBySettings.groupBy);
+  const [deleteAfterDays, setDeleteAfterDays] = useState(deleteAfterDaysSettings.deleteAfterDays);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
     cpu: cpuSettings,
     memory: memorySettings,
+  });
+
+  const [groupBySettingMap, setGroupBySettingMap] = useState({
     groupBy: groupBySettings,
+  });
+
+  const [deleteAfterDaysSettingMap, deleteAfterDaysBySettingMap] = useState({
+    deleteAfterDays: deleteAfterDaysSettings,
   });
 
   useEffect(() => {
@@ -84,10 +95,7 @@ const Configuration = ({
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-      groupBy: groupBySettings,
     });
-
-    setGroupBy(groupBySettings.groupBy);
   }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
 
   const newOrReset = useCallback(() => {
@@ -96,11 +104,28 @@ const Configuration = ({
     setWindowSize(currMetric.currWindowSize);
     setTime(currMetric.currTimeUnit);
     setIsEnabled(currMetric.isEnabled);
+    setExporterTypeType(currMetric.exporterType);
   }, [metric, metricSettingsMap]);
 
   useEffect(() => {
     newOrReset();
   }, [newOrReset, metricSettingsMap]);
+
+  useEffect(() => {
+    setGroupBySettingMap({
+      groupBy: groupBySettings,
+    });
+
+    setGroupBy(groupBySettings.groupBy);
+  }, [groupBySettings]);
+
+  useEffect(() => {
+    deleteAfterDaysBySettingMap({
+      deleteAfterDays: deleteAfterDaysSettings,
+    });
+
+    setDeleteAfterDays(deleteAfterDaysSettings.deleteAfterDays);
+  }, [deleteAfterDaysSettings]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -137,8 +162,16 @@ const Configuration = ({
     setTime(e.target.value);
   };
 
-  const onGroupByChange = (e: any) => {
+  const onExporterTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setExporterTypeType(e.target.value);
+  };
+
+  const onGroupByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setGroupBy(e.target.value);
+  };
+
+  const onDeleteAfterDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeleteAfterDays(e.target.value);
   };
 
   const MinutesBox = () => (
@@ -168,7 +201,9 @@ const Configuration = ({
     topNSize !== metricSettingsMap[metric].currTopN ||
     windowSize !== metricSettingsMap[metric].currWindowSize ||
     time !== metricSettingsMap[metric].currTimeUnit ||
-    groupBy !== metricSettingsMap.groupBy.groupBy;
+    exporterType !== metricSettingsMap[metric].exporterType ||
+    groupBy !== groupBySettingMap.groupBy.groupBy ||
+    deleteAfterDays !== deleteAfterDaysSettingMap.deleteAfterDays.deleteAfterDays;
 
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
@@ -307,6 +342,25 @@ const Configuration = ({
                           </EuiFlexGroup>
                         </EuiFormRow>
                       </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiText size="xs">
+                          <h3>Exporter</h3>
+                        </EuiText>
+                        <EuiText size="xs" style={textPadding}>
+                          {`Configure exporter for ${metric}.`}
+                        </EuiText>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiFormRow style={formRowPadding}>
+                          <EuiSelect
+                            id="exporterType"
+                            required={true}
+                            options={EXPORTER_TYPES_LIST}
+                            value={exporterType}
+                            onChange={onExporterTypeChange}
+                          />
+                        </EuiFormRow>
+                      </EuiFlexItem>
                     </>
                   ) : null}
                 </EuiFlexGrid>
@@ -415,6 +469,65 @@ const Configuration = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiFlexGroup>
+        <EuiFlexItem grow={6}>
+          <EuiPanel paddingSize="m">
+            <EuiForm>
+              <EuiFlexItem>
+                <EuiTitle size="s">
+                  <EuiText size="s">
+                    <h2>Query Insights data retention settings</h2>
+                  </EuiText>
+                </EuiTitle>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
+                  <EuiFlexItem>
+                    <EuiText size="xs">
+                      <h3>Delete After (days)</h3>
+                    </EuiText>
+                    <EuiText size="xs" style={textPadding}>
+                      Delete the Query Insights data after certain days.
+                    </EuiText>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow style={formRowPadding}>
+                      <EuiFieldNumber
+                        min={1}
+                        max={180}
+                        value={deleteAfterDays}
+                        onChange={onDeleteAfterDaysChange}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGrid>
+              </EuiFlexItem>
+            </EuiForm>
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem grow={2}>
+          <EuiPanel paddingSize="m" grow={false}>
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <EuiText size="s">
+                  <h2>Statuses for data retention settings</h2>
+                </EuiText>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem>
+              <EuiFlexGroup>
+                <EuiFlexItem>
+                  <EuiText size="m">Delete After</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {deleteAfterDaysSettings.deleteAfterDays ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </EuiFlexItem>
+          </EuiPanel>
+        </EuiFlexItem>
+      </EuiFlexGroup>
       {isChanged && isValid ? (
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
@@ -431,7 +544,17 @@ const Configuration = ({
                 size="s"
                 iconType="check"
                 onClick={() => {
-                  configInfo(false, isEnabled, metric, topNSize, windowSize, time, groupBy);
+                  configInfo(
+                    false,
+                    isEnabled,
+                    metric,
+                    topNSize,
+                    windowSize,
+                    time,
+                    exporterType,
+                    groupBy,
+                    deleteAfterDays
+                  );
                   return history.push(QUERY_INSIGHTS);
                 }}
               >

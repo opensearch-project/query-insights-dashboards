@@ -22,18 +22,21 @@ const defaultLatencySettings = {
   currTopN: '5',
   currWindowSize: '10',
   currTimeUnit: 'MINUTES',
+  exporterType: 'local_index',
 };
 const defaultCpuSettings = {
   isEnabled: false,
   currTopN: '10',
   currWindowSize: '1',
   currTimeUnit: 'HOURS',
+  exporterType: 'local_index',
 };
 const defaultMemorySettings = {
   isEnabled: false,
   currTopN: '15',
   currWindowSize: '2',
   currTimeUnit: 'HOURS',
+  exporterType: 'local_index',
 };
 
 const groupBySettings = {
@@ -52,6 +55,10 @@ const mockDataSourceContext = {
   setDataSource: jest.fn(),
 };
 
+const deleteAfterDaysSettings = {
+  deleteAfterDays: '179',
+};
+
 const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
@@ -62,6 +69,7 @@ const renderConfiguration = (overrides = {}) =>
           memorySettings={defaultMemorySettings}
           groupBySettings={groupBySettings}
           configInfo={mockConfigInfo}
+          deleteAfterDaysSettings={deleteAfterDaysSettings}
           core={mockCoreStart}
           depsStart={{ navigation: {} }}
           params={{} as any}
@@ -72,7 +80,7 @@ const renderConfiguration = (overrides = {}) =>
   );
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
-const getTopNSizeConfiguration = () => screen.getByRole('spinbutton');
+const getTopNSizeConfiguration = () => screen.getAllByRole('spinbutton');
 const getEnableToggle = () => screen.getByRole('switch');
 
 describe('Configuration Component', () => {
@@ -108,7 +116,7 @@ describe('Configuration Component', () => {
 
   it('validates topNSize and windowSize inputs and disables Save button for invalid input', () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '101' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '101' } });
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
     fireEvent.change(getWindowSizeConfigurations()[1], { target: { value: '999' } });
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
@@ -116,7 +124,7 @@ describe('Configuration Component', () => {
 
   it('calls configInfo and navigates on Save button click', async () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '7' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => {
       expect(mockConfigInfo).toHaveBeenCalledWith(
@@ -126,15 +134,17 @@ describe('Configuration Component', () => {
         '7',
         '10',
         'MINUTES',
-        'SIMILARITY'
+        'local_index',
+        'SIMILARITY',
+        '179'
       );
     });
   });
 
   it('resets state on Cancel button click', async () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '7' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
     fireEvent.click(screen.getByText('Cancel'));
-    expect(getTopNSizeConfiguration()).toHaveValue(5); // Resets to initial value
+    expect(getTopNSizeConfiguration()[0]).toHaveValue(5); // Resets to initial value
   });
 });

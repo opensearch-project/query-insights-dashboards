@@ -44,3 +44,13 @@ export const TIME_UNIT_ABBREVIATION = {
 export const DEFAULT_TOP_N_SIZE = '3';
 export const DEFAULT_WINDOW_SIZE = '1';
 export const DEFAULT_TIME_UNIT = TIME_UNIT.MINUTES;
+
+export const EXPORTER_TYPE = {
+  localIndex: 'local_index',
+  none: 'none',
+};
+
+export const EXPORTER_TYPES_LIST = [
+  { value: EXPORTER_TYPE.localIndex, text: 'Local Index' },
+  { value: EXPORTER_TYPE.none, text: 'None' },
+];

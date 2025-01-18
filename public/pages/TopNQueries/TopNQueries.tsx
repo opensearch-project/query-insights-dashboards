@@ -27,6 +27,7 @@ import { MetricSettingsResponse } from '../../types';
 import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
 import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
+import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -36,10 +37,15 @@ export interface MetricSettings {
   currTopN: string;
   currWindowSize: string;
   currTimeUnit: string;
+  exporterType: string;
 }
 
 export interface GroupBySettings {
   groupBy: string;
+}
+
+export interface DeleteAfterDaysSettings {
+  deleteAfterDays: string;
 }
 
 export interface DataSourceContextType {
@@ -79,6 +85,7 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
@@ -86,6 +93,7 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
@@ -93,9 +101,13 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
+  const [deleteAfterDaysSettings, setDeleteAfterDaysSettings] = useState<DeleteAfterDaysSettings>({
+    deleteAfterDays: '',
+  });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
@@ -209,7 +221,9 @@ const TopNQueries = ({
       newTopN: string = '',
       newWindowSize: string = '',
       newTimeUnit: string = '',
-      newGroupBy: string = ''
+      newExporterType: string = '',
+      newGroupBy: string = '',
+      newDeleteAfterDays: string = ''
     ) => {
       if (get) {
         try {
@@ -272,6 +286,10 @@ const TopNQueries = ({
                 currTopN: metricSetting.top_n_size ?? DEFAULT_TOP_N_SIZE,
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
+                exporterType:
+                  metricSetting.exporter?.type === 'local_index'
+                    ? EXPORTER_TYPE.localIndex
+                    : EXPORTER_TYPE.none,
               });
             } else {
               setMetricSettings(metricType, {
@@ -286,6 +304,9 @@ const TopNQueries = ({
           if (groupBy) {
             setGroupBySettings({ groupBy });
           }
+          if (deleteAfterDays) {
+            setDeleteAfterDaysSettings({ deleteAfterDays });
+          }
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -296,15 +317,19 @@ const TopNQueries = ({
             currTopN: newTopN,
             currWindowSize: newWindowSize,
             currTimeUnit: newTimeUnit,
+            exporterType: newExporterType,
           });
           setGroupBySettings({ groupBy: newGroupBy });
+          setDeleteAfterDaysSettings({ deleteAfterDays: newDeleteAfterDays });
           await core.http.put('/api/update_settings', {
             query: {
               metric,
               enabled,
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
+              exporterType: newExporterType,
               group_by: newGroupBy,
+              delete_after_days: newDeleteAfterDays,
               dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
             },
           });
@@ -419,6 +444,7 @@ const TopNQueries = ({
               cpuSettings={cpuSettings}
               memorySettings={memorySettings}
               groupBySettings={groupBySettings}
+              deleteAfterDaysSettings={deleteAfterDaysSettings}
               configInfo={retrieveConfigInfo}
               core={core}
               depsStart={depsStart}
