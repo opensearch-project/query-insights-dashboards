@@ -25,3 +25,13 @@ export const GROUP_BY_OPTIONS = [
   { value: 'none', text: 'None' },
   { value: 'similarity', text: 'Similarity' },
 ];
+
+export const EXPORTER_TYPE = {
+  localIndex: 'local_index',
+  none: 'none',
+};
+
+export const EXPORTER_TYPES_LIST = [
+  { value: EXPORTER_TYPE.localIndex, text: 'Local Index' },
+  { value: EXPORTER_TYPE.none, text: 'None' },
+];
