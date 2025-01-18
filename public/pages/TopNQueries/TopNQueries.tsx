@@ -13,6 +13,7 @@ import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
+import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -22,10 +23,15 @@ export interface MetricSettings {
   currTopN: string;
   currWindowSize: string;
   currTimeUnit: string;
+  exporterType: string;
 }
 
 export interface GroupBySettings {
   groupBy: string;
+}
+
+export interface DeleteAfterDaysSettings {
+  deleteAfterDays: string;
 }
 
 const TopNQueries = ({
@@ -50,6 +56,7 @@ const TopNQueries = ({
     currTopN: '',
     currWindowSize: '',
     currTimeUnit: 'HOURS',
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
@@ -57,6 +64,7 @@ const TopNQueries = ({
     currTopN: '',
     currWindowSize: '',
     currTimeUnit: 'HOURS',
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
@@ -64,9 +72,13 @@ const TopNQueries = ({
     currTopN: '',
     currWindowSize: '',
     currTimeUnit: 'HOURS',
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
+  const [deleteAfterDaysSettings, setDeleteAfterDaysSettings] = useState<DeleteAfterDaysSettings>({
+    deleteAfterDays: '',
+  });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
@@ -183,12 +195,14 @@ const TopNQueries = ({
       newTopN: string = '',
       newWindowSize: string = '',
       newTimeUnit: string = '',
-      newGroupBy: string = ''
+      newExporterType: string = '',
+      newGroupBy: string = '',
+      newDeleteAfterDays: string = ''
     ) => {
       if (get) {
         try {
           const resp = await core.http.get('/api/settings');
-          const { latency, cpu, memory, group_by: groupBy } =
+          const { latency, cpu, memory, group_by: groupBy, delete_after_days: deleteAfterDays } =
             resp?.response?.persistent?.search?.insights?.top_queries || {};
           if (latency !== undefined && latency.enabled === 'true') {
             const [time, timeUnits] = latency.window_size
@@ -199,6 +213,10 @@ const TopNQueries = ({
               currTopN: latency.top_n_size,
               currWindowSize: time,
               currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
+              exporterType:
+                latency.exporter?.type === 'local_index'
+                  ? EXPORTER_TYPE.localIndex
+                  : EXPORTER_TYPE.none,
             });
           }
           if (cpu !== undefined && cpu.enabled === 'true') {
@@ -210,6 +228,10 @@ const TopNQueries = ({
               currTopN: cpu.top_n_size,
               currWindowSize: time,
               currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
+              exporterType:
+                cpu.exporter?.type === 'local_index'
+                  ? EXPORTER_TYPE.localIndex
+                  : EXPORTER_TYPE.none,
             });
           }
           if (memory !== undefined && memory.enabled === 'true') {
@@ -221,10 +243,17 @@ const TopNQueries = ({
               currTopN: memory.top_n_size,
               currWindowSize: time,
               currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
+              exporterType:
+                memory.exporter?.type === 'local_index'
+                  ? EXPORTER_TYPE.localIndex
+                  : EXPORTER_TYPE.none,
             });
           }
           if (groupBy) {
             setGroupBySettings({ groupBy });
+          }
+          if (deleteAfterDays) {
+            setDeleteAfterDaysSettings({ deleteAfterDays });
           }
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
@@ -236,15 +265,19 @@ const TopNQueries = ({
             currTopN: newTopN,
             currWindowSize: newWindowSize,
             currTimeUnit: newTimeUnit,
+            exporterType: newExporterType,
           });
           setGroupBySettings({ groupBy: newGroupBy });
+          setDeleteAfterDaysSettings({ deleteAfterDays: newDeleteAfterDays });
           await core.http.put('/api/update_settings', {
             query: {
               metric,
               enabled,
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
+              exporterType: newExporterType,
               group_by: newGroupBy,
+              delete_after_days: newDeleteAfterDays,
             },
           });
         } catch (error) {
@@ -314,6 +347,7 @@ const TopNQueries = ({
             cpuSettings={cpuSettings}
             memorySettings={memorySettings}
             groupBySettings={groupBySettings}
+            deleteAfterDaysSettings={deleteAfterDaysSettings}
             configInfo={retrieveConfigInfo}
             core={core}
           />

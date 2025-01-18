@@ -5,6 +5,7 @@
 
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
+import { EXPORTER_TYPE } from '../../public/pages/Utils/Constants';
 export function defineRoutes(router: IRouter) {
   router.get(
     {
@@ -181,7 +182,9 @@ export function defineRoutes(router: IRouter) {
           enabled: schema.maybe(schema.boolean({ defaultValue: false })),
           top_n_size: schema.maybe(schema.string({ defaultValue: '' })),
           window_size: schema.maybe(schema.string({ defaultValue: '' })),
+          exporterType: schema.maybe(schema.string({ defaultValue: '' })),
           group_by: schema.maybe(schema.string({ defaultValue: '' })),
+          delete_after_days: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
@@ -190,16 +193,29 @@ export function defineRoutes(router: IRouter) {
         const query = request.query;
         const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
           .callAsCurrentUser;
+        console.log('query::');
+        console.log(query);
         const params = {
           body: {
             persistent: {
               [`search.insights.top_queries.${query.metric}.enabled`]: query.enabled,
               [`search.insights.top_queries.${query.metric}.top_n_size`]: query.top_n_size,
               [`search.insights.top_queries.${query.metric}.window_size`]: query.window_size,
-              [`search.insights.top_queries.group_by`]: query.group_by,
+              [`search.insights.top_queries.${query.metric}.exporter.type`]:
+                query.exporterType === EXPORTER_TYPE.localIndex ? query.exporterType : null,
             },
           },
         };
+        if (query.group_by !== '') {
+          params.body.persistent['search.insights.top_queries.group_by'] = query.group_by;
+        }
+        if (query.delete_after_days !== '') {
+          params.body.persistent['search.insights.top_queries.delete_after_days'] =
+            query.delete_after_days;
+        }
+
+        console.log(params.body.persistent);
+
         const res = await client('queryInsights.setSettings', params);
         return response.custom({
           statusCode: 200,
