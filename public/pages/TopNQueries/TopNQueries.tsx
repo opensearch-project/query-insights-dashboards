@@ -13,6 +13,15 @@ import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
+import {
+  DEFAULT_TIME_UNIT,
+  DEFAULT_TOP_N_SIZE,
+  DEFAULT_WINDOW_SIZE,
+  MetricType,
+} from '../Utils/Constants';
+
+import { MetricSettingsResponse } from '../../types';
+import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -47,36 +56,36 @@ const TopNQueries = ({
   ]);
   const [latencySettings, setLatencySettings] = useState<MetricSettings>({
     isEnabled: false,
-    currTopN: '',
-    currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTopN: DEFAULT_TOP_N_SIZE,
+    currWindowSize: DEFAULT_WINDOW_SIZE,
+    currTimeUnit: DEFAULT_TIME_UNIT,
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
     isEnabled: false,
-    currTopN: '',
-    currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTopN: DEFAULT_TOP_N_SIZE,
+    currWindowSize: DEFAULT_WINDOW_SIZE,
+    currTimeUnit: DEFAULT_TIME_UNIT,
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
     isEnabled: false,
-    currTopN: '',
-    currWindowSize: '',
-    currTimeUnit: 'HOURS',
+    currTopN: DEFAULT_TOP_N_SIZE,
+    currWindowSize: DEFAULT_WINDOW_SIZE,
+    currTimeUnit: DEFAULT_TIME_UNIT,
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
-      case 'latency':
+      case MetricType.LATENCY:
         setLatencySettings((prevSettings) => ({ ...prevSettings, ...updates }));
         break;
-      case 'cpu':
+      case MetricType.CPU:
         setCpuSettings((prevSettings) => ({ ...prevSettings, ...updates }));
         break;
-      case 'memory':
+      case MetricType.MEMORY:
         setMemorySettings((prevSettings) => ({ ...prevSettings, ...updates }));
         break;
     }
@@ -187,42 +196,69 @@ const TopNQueries = ({
     ) => {
       if (get) {
         try {
+          // Helper to get merged settings with transient overwriting persistent
+          const getMergedMetricSettings = (
+            persistent: MetricSettingsResponse | undefined,
+            transient: MetricSettingsResponse | undefined
+          ): MetricSettingsResponse => {
+            if (transient !== undefined) {
+              return transient;
+            }
+            return {
+              ...persistent,
+            };
+          };
+
+          const getMergedGroupBySettings = (
+            persistent: string | undefined,
+            transient: string | undefined
+          ) => {
+            return transient ?? persistent;
+          };
+
           const resp = await core.http.get('/api/settings');
-          const { latency, cpu, memory, group_by: groupBy } =
-            resp?.response?.persistent?.search?.insights?.top_queries || {};
-          if (latency !== undefined && latency.enabled === 'true') {
-            const [time, timeUnits] = latency.window_size
-              ? latency.window_size.match(/\D+|\d+/g)
-              : ['1', 'm'];
-            setMetricSettings('latency', {
-              isEnabled: true,
-              currTopN: latency.top_n_size,
-              currWindowSize: time,
-              currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
-            });
-          }
-          if (cpu !== undefined && cpu.enabled === 'true') {
-            const [time, timeUnits] = cpu.window_size
-              ? cpu.window_size.match(/\D+|\d+/g)
-              : ['1', 'm'];
-            setMetricSettings('cpu', {
-              isEnabled: true,
-              currTopN: cpu.top_n_size,
-              currWindowSize: time,
-              currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
-            });
-          }
-          if (memory !== undefined && memory.enabled === 'true') {
-            const [time, timeUnits] = memory.window_size
-              ? memory.window_size.match(/\D+|\d+/g)
-              : ['1', 'm'];
-            setMetricSettings('memory', {
-              isEnabled: true,
-              currTopN: memory.top_n_size,
-              currWindowSize: time,
-              currTimeUnit: timeUnits === 'm' ? 'MINUTES' : 'HOURS',
-            });
-          }
+          const persistentSettings = resp?.response?.persistent?.search?.insights?.top_queries;
+          const transientSettings = resp?.response?.transient?.search?.insights?.top_queries;
+          const metrics = [
+            {
+              metricType: MetricType.LATENCY,
+              metricSetting: getMergedMetricSettings(
+                persistentSettings?.latency,
+                transientSettings?.latency
+              ),
+            },
+            {
+              metricType: MetricType.CPU,
+              metricSetting: getMergedMetricSettings(
+                persistentSettings?.cpu,
+                transientSettings?.cpu
+              ),
+            },
+            {
+              metricType: MetricType.MEMORY,
+              metricSetting: getMergedMetricSettings(
+                persistentSettings?.memory,
+                transientSettings?.memory
+              ),
+            },
+          ];
+
+          // Process each metric
+          metrics.forEach(({ metricType, metricSetting }) => {
+            if (metricSetting?.enabled === 'true') {
+              const [time, timeUnits] = getTimeAndUnitFromString(metricSetting.window_size);
+              setMetricSettings(metricType, {
+                isEnabled: true,
+                currTopN: metricSetting.top_n_size ?? DEFAULT_TOP_N_SIZE,
+                currWindowSize: time,
+                currTimeUnit: timeUnits,
+              });
+            }
+          });
+          const groupBy = getMergedGroupBySettings(
+            persistentSettings?.group_by,
+            transientSettings?.group_by
+          );
           if (groupBy) {
             setGroupBySettings({ groupBy });
           }
