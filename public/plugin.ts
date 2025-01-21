@@ -7,7 +7,6 @@ import {
   AppMountParameters,
   CoreSetup,
   CoreStart,
-  DEFAULT_APP_CATEGORIES,
   DEFAULT_NAV_GROUPS,
   Plugin,
 } from '../../../src/core/public';
@@ -54,31 +53,15 @@ export class QueryInsightsDashboardsPlugin
     });
 
     // Registration for new navigation
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.observability, [
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
       {
         id: PLUGIN_NAME,
-        category: DEFAULT_APP_CATEGORIES.manage,
-        order: 200,
-      },
-    ]);
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.all, [
-      {
-        id: PLUGIN_NAME,
-        category: DEFAULT_APP_CATEGORIES.manage,
-        order: 200,
-      },
-    ]);
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.search, [
-      {
-        id: PLUGIN_NAME,
-        category: DEFAULT_APP_CATEGORIES.manage,
-        order: 200,
-      },
-    ]);
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.essentials, [
-      {
-        id: PLUGIN_NAME,
-        category: DEFAULT_APP_CATEGORIES.manage,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
         order: 200,
       },
     ]);
