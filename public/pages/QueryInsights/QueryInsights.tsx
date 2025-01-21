@@ -12,12 +12,12 @@ import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import {
   CPU_TIME,
+  ID,
   INDICES,
   LATENCY,
   MEMORY_USAGE,
   NODE_ID,
   QUERY_COUNT,
-  ID,
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
@@ -160,13 +160,13 @@ const QueryInsights = ({
       field: MEASUREMENTS_FIELD,
       name: LATENCY,
       render: (measurements: SearchQueryRecord['measurements']) => {
-        const result = calculateMetric(
+        return calculateMetric(
           measurements?.latency?.number,
           measurements?.latency?.count,
+          'ms',
           1,
           METRIC_DEFAULT_MSG
         );
-        return `${result} ms`;
       },
       sortable: true,
       truncateText: true,
@@ -175,13 +175,13 @@ const QueryInsights = ({
       field: MEASUREMENTS_FIELD,
       name: CPU_TIME,
       render: (measurements: SearchQueryRecord['measurements']) => {
-        const result = calculateMetric(
+        return calculateMetric(
           measurements?.cpu?.number,
           measurements?.cpu?.count,
+          'ms',
           1000000, // Divide by 1,000,000 for CPU time
           METRIC_DEFAULT_MSG
         );
-        return `${result} ms`;
       },
       sortable: true,
       truncateText: true,
@@ -190,13 +190,13 @@ const QueryInsights = ({
       field: MEASUREMENTS_FIELD,
       name: MEMORY_USAGE,
       render: (measurements: SearchQueryRecord['measurements']) => {
-        const result = calculateMetric(
+        return calculateMetric(
           measurements?.memory?.number,
           measurements?.memory?.count,
+          'B',
           1,
           METRIC_DEFAULT_MSG
         );
-        return `${result} B`;
       },
       sortable: true,
       truncateText: true,

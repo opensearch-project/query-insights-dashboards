@@ -46,27 +46,15 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
         <PanelItem
           label={LATENCY}
-          value={
-            calculateMetric(measurements.latency?.number, measurements.latency?.count) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(measurements.latency?.number, measurements.latency?.count)} ms`
-          }
+          value={calculateMetric(measurements.latency?.number, measurements.latency?.count, 'ms')}
         />
         <PanelItem
           label={CPU_TIME}
-          value={
-            calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000)} ms`
-          }
+          value={calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 'ms', 1000000)}
         />
         <PanelItem
           label={MEMORY_USAGE}
-          value={
-            calculateMetric(measurements.memory?.number, measurements.memory?.count) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(measurements.memory?.number, measurements.memory?.count)} B`
-          }
+          value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B')}
         />
         <PanelItem label={INDICES} value={indices.toString()} />
         <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
