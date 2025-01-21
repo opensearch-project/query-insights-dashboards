@@ -29,13 +29,13 @@ describe('Query Insights Configurations Page', () => {
     cy.contains('button', 'Top N queries').should('be.visible');
     cy.contains('button', 'Configuration').should('have.class', 'euiTab-isSelected');
     // Validate the panels
-    cy.get('.euiPanel').should('have.length', 4); // Two panels: configuration settings and statuses
+    cy.get('.euiPanel').should('have.length', 4); // 4 panels: Settings, Status, Group Settings, Group Status
   });
 
   /**
-   * Validate the dropdown has 3 metrics
+   * Validate the metric type dropdown has 3 metrics
    */
-  it('should display 3 metrics in the drop down', () => {
+  it('should display 3 metrics in the metric type drop down', () => {
     // Validate default value
     cy.get('select').first().find('option').should('have.length', 3);
     const expectedMetrics = ['Latency', 'CPU', 'Memory'];
@@ -135,6 +135,56 @@ describe('Query Insights Configurations Page', () => {
       cy.get('.euiText').contains(metric).should('be.visible');
       cy.get('.euiHealth').contains('Disabled').should('be.visible');
     });
+  });
+
+  /**
+   * Validate configuration settings panel for group by
+   */
+  it('should display settings for configuration metrics for group by', () => {
+    cy.get('.euiPanel')
+      .eq(2)
+      .within(() => {
+        cy.get('h2').contains('Top n queries grouping configuration settings').should('be.visible');
+      });
+  });
+
+  /**
+   * Validate the group by drop-down has 2 options
+   */
+  it('should display 2 metrics in the group by drop-down', () => {
+    cy.get('.euiPanel')
+      .eq(2)
+      .find('select')
+      .should('exist')
+      .then(($select) => {
+        cy.wrap($select).find('option').should('have.length', 2);
+
+        const expectedMetrics = ['None', 'Similarity'];
+
+        cy.wrap($select)
+          .find('option')
+          .each((option, index) => {
+            cy.wrap(option).should('have.text', expectedMetrics[index]);
+          });
+      });
+  });
+
+  /**
+   * Validate configuration status panel for group by
+   */
+  it('should display configuration statuses for group by metrics', () => {
+    cy.get('.euiPanel')
+      .eq(3)
+      .within(() => {
+        cy.get('h2').should('be.visible').and('have.text', 'Statuses for group by');
+
+        const metrics = [{ name: 'Group By', status: 'Disabled' }];
+
+        metrics.forEach(({ name, status }) => {
+          cy.get('.euiText').contains(name).should('be.visible');
+          cy.get('.euiHealth').contains(status).should('be.visible');
+        });
+      });
   });
 
   /**
