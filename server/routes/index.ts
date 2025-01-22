@@ -5,7 +5,7 @@
 
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
-export function defineRoutes(router: IRouter) {
+export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
   router.get(
     {
       path: '/api/top_queries',
@@ -42,6 +42,7 @@ export function defineRoutes(router: IRouter) {
         query: schema.object({
           from: schema.maybe(schema.string({ defaultValue: '' })),
           to: schema.maybe(schema.string({ defaultValue: '' })),
+          dataSourceId: schema.maybe(schema.string()),
         }),
       },
     },
@@ -49,16 +50,30 @@ export function defineRoutes(router: IRouter) {
       try {
         const { from, to } = request.query;
         const params = { from, to };
-        const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-          .callAsCurrentUser;
-        const res = await client('queryInsights.getTopNQueriesLatency', params);
-        return response.custom({
-          statusCode: 200,
-          body: {
-            ok: true,
-            response: res,
-          },
-        });
+        if (dataSoureEnabled) {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getTopNQueriesLatency', params);
+          return response.custom({
+            statusCode: 200,
+            body: {
+              ok: true,
+              response: res,
+            },
+          });
+        } else {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getTopNQueriesLatency', params);
+          return response.custom({
+            statusCode: 200,
+            body: {
+              ok: true,
+              response: res,
+            },
+          });
+        }
       } catch (error) {
         console.error('Unable to get top queries (latency): ', error);
         return response.ok({

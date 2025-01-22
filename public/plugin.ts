@@ -12,6 +12,7 @@ import {
 } from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
+  QueryInsightsDashboardsPluginSetupDependencies,
   QueryInsightsDashboardsPluginStart,
   QueryInsightsDashboardsPluginStartDependencies,
 } from './types';
@@ -25,7 +26,10 @@ export class QueryInsightsDashboardsPlugin
       {},
       QueryInsightsDashboardsPluginStartDependencies
     > {
-  public setup(core: CoreSetup): QueryInsightsDashboardsPluginSetup {
+  public setup(
+    core: CoreSetup,
+    deps: QueryInsightsDashboardsPluginSetupDependencies
+  ): QueryInsightsDashboardsPluginSetup {
     // Register an application into the side navigation menu
     core.application.register({
       id: PLUGIN_NAME,
@@ -47,7 +51,8 @@ export class QueryInsightsDashboardsPlugin
         return renderApp(
           coreStart,
           depsStart as QueryInsightsDashboardsPluginStartDependencies,
-          params
+          params,
+          deps.dataSourceManagement
         );
       },
     });

@@ -7,7 +7,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import dateMath from '@elastic/datemath';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -33,11 +34,15 @@ export interface GroupBySettings {
 const TopNQueries = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
   initialStart = 'now-1d',
   initialEnd = 'now',
 }: {
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   initialStart?: string;
   initialEnd?: string;
 }) => {
@@ -126,10 +131,11 @@ const TopNQueries = ({
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       const nullResponse = { response: { top_queries: [] } };
-      const params = {
+      const apiParams = {
         query: {
           from: new Date(parseDateString(start)).toISOString(),
           to: new Date(parseDateString(end)).toISOString(),
+          dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8', // TODO: get this dynamically from the URL
         },
       };
       const fetchMetric = async (endpoint: string) => {
@@ -137,7 +143,7 @@ const TopNQueries = ({
           // TODO: #13 refactor the interface definitions for requests and responses
           const response: { response: { top_queries: SearchQueryRecord[] } } = await core.http.get(
             endpoint,
-            params
+            apiParams
           );
           return {
             response: {
@@ -312,6 +318,9 @@ const TopNQueries = ({
             currStart={currStart}
             currEnd={currEnd}
             core={core}
+            depsStart={depsStart}
+            params={params}
+            dataSourceManagement={dataSourceManagement}
           />
         </Route>
         <Route exact path={CONFIGURATION}>
