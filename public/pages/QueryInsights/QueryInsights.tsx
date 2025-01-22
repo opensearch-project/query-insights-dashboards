@@ -6,7 +6,8 @@
 import React, { useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import {
@@ -24,6 +25,8 @@ import {
 } from '../../../common/constants';
 import { calculateMetric } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
@@ -42,6 +45,9 @@ const QueryInsights = ({
   currStart,
   currEnd,
   core,
+  depsStart,
+  params,
+  dataSourceManagement,
 }: {
   queries: SearchQueryRecord[];
   loading: boolean;
@@ -50,6 +56,9 @@ const QueryInsights = ({
   currStart: string;
   currEnd: string;
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement: DataSourceManagementPluginSetup;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -258,110 +267,118 @@ const QueryInsights = ({
     );
 
   return (
-    <EuiInMemoryTable
-      items={queries}
-      columns={cols}
-      sorting={{
-        sort: {
-          field: TIMESTAMP_FIELD,
-          direction: 'desc',
-        },
-      }}
-      onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
-      pagination={pagination}
-      loading={loading}
-      search={{
-        box: {
-          placeholder: 'Search queries',
-          schema: false,
-        },
-        filters: [
-          {
-            type: 'field_value_selection',
-            field: GROUP_BY_FIELD,
-            name: TYPE,
-            multiSelect: true,
-            options: [
-              {
-                value: 'NONE',
-                name: 'query',
-                view: 'query',
-              },
-              {
-                value: 'SIMILARITY',
-                name: 'group',
-                view: 'group',
-              },
-            ],
-            noOptionsMessage: 'No data available for the selected type', // Fallback message when no queries match
+    <>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+      />
+      <EuiInMemoryTable
+        items={queries}
+        columns={cols}
+        sorting={{
+          sort: {
+            field: TIMESTAMP_FIELD,
+            direction: 'desc',
           },
-          {
-            type: 'field_value_selection',
-            field: INDICES_FIELD,
-            name: INDICES,
-            multiSelect: true,
-            options: filterDuplicates(
-              queries.map((query) => {
-                const values = Array.from(new Set(query[INDICES_FIELD].flat()));
-                return {
-                  value: values.join(','),
-                  name: values.join(','),
-                  view: values.join(', '),
-                };
-              })
-            ),
+        }}
+        onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
+        pagination={pagination}
+        loading={loading}
+        search={{
+          box: {
+            placeholder: 'Search queries',
+            schema: false,
           },
-          {
-            type: 'field_value_selection',
-            field: SEARCH_TYPE_FIELD,
-            name: SEARCH_TYPE,
-            multiSelect: false,
-            options: filterDuplicates(
-              queries.map((query) => ({
-                value: query[SEARCH_TYPE_FIELD],
-                name: query[SEARCH_TYPE_FIELD],
-                view: query[SEARCH_TYPE_FIELD],
-              }))
-            ),
-          },
-          {
-            type: 'field_value_selection',
-            field: NODE_ID_FIELD,
-            name: NODE_ID,
-            multiSelect: true,
-            options: filterDuplicates(
-              queries.map((query) => ({
-                value: query[NODE_ID_FIELD],
-                name: query[NODE_ID_FIELD],
-                view: query[NODE_ID_FIELD].replaceAll('_', ' '),
-              }))
-            ),
-          },
-        ],
-        toolsRight: [
-          <EuiSuperDatePicker
-            start={currStart}
-            end={currEnd}
-            onTimeChange={onTimeChange}
-            recentlyUsedRanges={recentlyUsedRanges}
-            onRefresh={onRefresh}
-            updateButtonProps={{ fill: false }}
-          />,
-        ],
-      }}
-      executeQueryOptions={{
-        defaultFields: [
-          TIMESTAMP_FIELD,
-          MEASUREMENTS_FIELD,
-          INDICES_FIELD,
-          SEARCH_TYPE_FIELD,
-          NODE_ID_FIELD,
-          TOTAL_SHARDS_FIELD,
-        ],
-      }}
-      allowNeutralSort={false}
-      itemId={(query) => `${query.id}-${query.timestamp}`}
-    />
+          filters: [
+            {
+              type: 'field_value_selection',
+              field: GROUP_BY_FIELD,
+              name: TYPE,
+              multiSelect: true,
+              options: [
+                {
+                  value: 'NONE',
+                  name: 'query',
+                  view: 'query',
+                },
+                {
+                  value: 'SIMILARITY',
+                  name: 'group',
+                  view: 'group',
+                },
+              ],
+              noOptionsMessage: 'No data available for the selected type', // Fallback message when no queries match
+            },
+            {
+              type: 'field_value_selection',
+              field: INDICES_FIELD,
+              name: INDICES,
+              multiSelect: true,
+              options: filterDuplicates(
+                queries.map((query) => {
+                  const values = Array.from(new Set(query[INDICES_FIELD].flat()));
+                  return {
+                    value: values.join(','),
+                    name: values.join(','),
+                    view: values.join(', '),
+                  };
+                })
+              ),
+            },
+            {
+              type: 'field_value_selection',
+              field: SEARCH_TYPE_FIELD,
+              name: SEARCH_TYPE,
+              multiSelect: false,
+              options: filterDuplicates(
+                queries.map((query) => ({
+                  value: query[SEARCH_TYPE_FIELD],
+                  name: query[SEARCH_TYPE_FIELD],
+                  view: query[SEARCH_TYPE_FIELD],
+                }))
+              ),
+            },
+            {
+              type: 'field_value_selection',
+              field: NODE_ID_FIELD,
+              name: NODE_ID,
+              multiSelect: true,
+              options: filterDuplicates(
+                queries.map((query) => ({
+                  value: query[NODE_ID_FIELD],
+                  name: query[NODE_ID_FIELD],
+                  view: query[NODE_ID_FIELD].replaceAll('_', ' '),
+                }))
+              ),
+            },
+          ],
+          toolsRight: [
+            <EuiSuperDatePicker
+              start={currStart}
+              end={currEnd}
+              onTimeChange={onTimeChange}
+              recentlyUsedRanges={recentlyUsedRanges}
+              onRefresh={onRefresh}
+              updateButtonProps={{ fill: false }}
+            />,
+          ],
+        }}
+        executeQueryOptions={{
+          defaultFields: [
+            TIMESTAMP_FIELD,
+            MEASUREMENTS_FIELD,
+            INDICES_FIELD,
+            SEARCH_TYPE_FIELD,
+            NODE_ID_FIELD,
+            TOTAL_SHARDS_FIELD,
+          ],
+        }}
+        allowNeutralSort={false}
+        itemId={(query) => `${query.id}-${query.timestamp}`}
+      />
+    </>
   );
 };
 

@@ -5,7 +5,7 @@
 
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
-export function defineRoutes(router: IRouter) {
+export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
   router.get(
     {
       path: '/api/top_queries',
@@ -43,6 +43,7 @@ export function defineRoutes(router: IRouter) {
           from: schema.maybe(schema.string({ defaultValue: '' })),
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
+          dataSourceId: schema.maybe(schema.string()),
         }),
       },
     },
