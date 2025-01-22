@@ -12,7 +12,7 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public/comp
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
-import { SearchQueryRecord } from '../../../types/types';
+import { QueryInsightsSettingsResponse, SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
@@ -24,8 +24,12 @@ import {
 } from '../Utils/Constants';
 
 import { MetricSettingsResponse } from '../../types';
-import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
+import {
+  getMergedMetricSettings,
+  getMergedStringSettings,
+  getTimeAndUnitFromString,
+} from '../Utils/MetricUtils';
 import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
 import { EXPORTER_TYPE } from '../Utils/Constants';
 
@@ -297,13 +301,17 @@ const TopNQueries = ({
               });
             }
           });
-          const groupBy = getMergedGroupBySettings(
+          const groupBy = getMergedStringSettings(
             persistentSettings?.group_by,
             transientSettings?.group_by
           );
           if (groupBy) {
             setGroupBySettings({ groupBy });
           }
+          const deleteAfterDays = getMergedStringSettings(
+            persistentSettings?.delete_after_days,
+            transientSettings?.delete_after_days
+          );
           if (deleteAfterDays) {
             setDeleteAfterDaysSettings({ deleteAfterDays });
           }

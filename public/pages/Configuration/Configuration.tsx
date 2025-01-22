@@ -29,6 +29,7 @@ import {
   QUERY_INSIGHTS,
   MetricSettings,
   GroupBySettings,
+  DeleteAfterDaysSettings,
   DataSourceContext,
 } from '../TopNQueries/TopNQueries';
 import {
@@ -36,6 +37,7 @@ import {
   TIME_UNITS_TEXT,
   MINUTES_OPTIONS,
   GROUP_BY_OPTIONS,
+  EXPORTER_TYPES_LIST,
 } from '../Utils/Constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';

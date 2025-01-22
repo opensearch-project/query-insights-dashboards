@@ -296,6 +296,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     async (context, request, response) => {
       try {
         const query = request.query;
+        const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+          .callAsCurrentUser;
         const params = {
           body: {
             persistent: {
