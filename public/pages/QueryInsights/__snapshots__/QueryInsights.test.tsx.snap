@@ -827,7 +827,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  Not enabled B
+                  Not enabled
                 </div>
               </td>
               <td

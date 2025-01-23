@@ -25,7 +25,12 @@ import {
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
-import { METRIC_TYPES, TIME_UNITS, MINUTES_OPTIONS, GROUP_BY_OPTIONS } from '../Utils/Constants';
+import {
+  METRIC_TYPES_TEXT,
+  TIME_UNITS_TEXT,
+  MINUTES_OPTIONS,
+  GROUP_BY_OPTIONS,
+} from '../Utils/Constants';
 
 const Configuration = ({
   latencySettings,
@@ -141,7 +146,7 @@ const Configuration = ({
     />
   );
 
-  const WindowChoice = time === TIME_UNITS[0].value ? MinutesBox : HoursBox;
+  const WindowChoice = time === TIME_UNITS_TEXT[0].value ? MinutesBox : HoursBox;
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
@@ -153,7 +158,7 @@ const Configuration = ({
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
     if (nVal < 1 || nVal > 100) return false;
-    if (time === TIME_UNITS[0].value) return true;
+    if (time === TIME_UNITS_TEXT[0].value) return true;
     const windowVal = parseInt(windowSize, 10);
     return windowVal >= 1 && windowVal <= 24;
   })();
@@ -191,7 +196,7 @@ const Configuration = ({
                       <EuiSelect
                         id="metricType"
                         required={true}
-                        options={METRIC_TYPES}
+                        options={METRIC_TYPES_TEXT}
                         value={metric}
                         onChange={onMetricChange}
                       />
@@ -261,7 +266,7 @@ const Configuration = ({
                               <EuiSelect
                                 id="timeUnit"
                                 required={isEnabled}
-                                options={TIME_UNITS}
+                                options={TIME_UNITS_TEXT}
                                 value={time}
                                 onChange={onTimeChange}
                               />

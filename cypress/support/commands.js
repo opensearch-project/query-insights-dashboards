@@ -96,6 +96,47 @@ Cypress.Commands.add('disableTopQueries', (metric) => {
   });
 });
 
+Cypress.Commands.add('enableGrouping', () => {
+  cy.request({
+    method: 'PUT',
+    url: `${Cypress.env('openSearchUrl')}/_cluster/settings`,
+    body: {
+      persistent: {
+        'search.insights.top_queries.latency.enabled': true,
+        'search.insights.top_queries.cpu.enabled': true,
+        'search.insights.top_queries.memory.enabled': true,
+        'search.insights.top_queries.group_by': 'similarity',
+        'search.insights.top_queries.max_groups_excluding_topn': 100,
+        'search.insights.top_queries.grouping.attributes.field_name': true,
+        'search.insights.top_queries.grouping.attributes.field_type': true,
+        'search.insights.top_queries.latency.top_n_size': 5,
+        'search.insights.top_queries.cpu.top_n_size': 5,
+        'search.insights.top_queries.memory.top_n_size': 5,
+        'search.insights.top_queries.latency.window_size': '1m',
+        'search.insights.top_queries.cpu.window_size': '1m',
+        'search.insights.top_queries.memory.window_size': '1m',
+      },
+    },
+    failOnStatusCode: false,
+  });
+});
+
+Cypress.Commands.add('disableGrouping', () => {
+  cy.request({
+    method: 'PUT',
+    url: `${Cypress.env('openSearchUrl')}/_cluster/settings`,
+    body: {
+      persistent: {
+        'search.insights.top_queries.latency.enabled': false,
+        'search.insights.top_queries.cpu.enabled': false,
+        'search.insights.top_queries.memory.enabled': false,
+        'search.insights.top_queries.group_by': 'none',
+      },
+    },
+    failOnStatusCode: false,
+  });
+});
+
 Cypress.Commands.add('createIndexByName', (indexName, body = {}) => {
   cy.request('POST', `${Cypress.env('openSearchUrl')}/${indexName}/_doc`, body);
 });
