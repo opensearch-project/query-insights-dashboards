@@ -25,6 +25,9 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
+  if (!query) {
+    return <EuiText size="s">No query data available.</EuiText>;
+  }
   const { measurements, id: id, group_by: groupBy } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;

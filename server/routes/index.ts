@@ -42,16 +42,21 @@ export function defineRoutes(router: IRouter) {
         query: schema.object({
           from: schema.maybe(schema.string({ defaultValue: '' })),
           to: schema.maybe(schema.string({ defaultValue: '' })),
+          id: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to } = request.query;
-        const params = { from, to };
+        const { from, to, id } = request.query;
+        const params = { from, to, id };
         const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
           .callAsCurrentUser;
-        const res = await client('queryInsights.getTopNQueriesLatency', params);
+
+        const res =
+          id != null
+            ? await client('queryInsights.getTopNQueriesLatencyForId', params)
+            : await client('queryInsights.getTopNQueriesLatency', params);
         return response.custom({
           statusCode: 200,
           body: {
@@ -78,16 +83,21 @@ export function defineRoutes(router: IRouter) {
         query: schema.object({
           from: schema.maybe(schema.string({ defaultValue: '' })),
           to: schema.maybe(schema.string({ defaultValue: '' })),
+          id: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to } = request.query;
-        const params = { from, to };
+        const { from, to, id } = request.query;
+        const params = { from, to, id };
         const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
           .callAsCurrentUser;
-        const res = await client('queryInsights.getTopNQueriesCpu', params);
+
+        const res =
+          id != null
+            ? await client('queryInsights.getTopNQueriesCpuForId', params)
+            : await client('queryInsights.getTopNQueriesCpu', params);
         return response.custom({
           statusCode: 200,
           body: {
@@ -114,16 +124,21 @@ export function defineRoutes(router: IRouter) {
         query: schema.object({
           from: schema.maybe(schema.string({ defaultValue: '' })),
           to: schema.maybe(schema.string({ defaultValue: '' })),
+          id: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to } = request.query;
-        const params = { from, to };
+        const { from, to, id } = request.query;
+        const params = { from, to, id };
         const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
           .callAsCurrentUser;
-        const res = await client('queryInsights.getTopNQueriesMemory', params);
+
+        const res =
+          id != null
+            ? await client('queryInsights.getTopNQueriesMemoryForId', params)
+            : await client('queryInsights.getTopNQueriesMemory', params);
         return response.custom({
           statusCode: 200,
           body: {
