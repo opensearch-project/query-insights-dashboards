@@ -6,7 +6,6 @@
 import React, { useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import hash from 'object-hash';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
@@ -24,6 +23,7 @@ import {
   TYPE,
 } from '../../../common/constants';
 import { calculateMetric } from '../Utils/MetricUtils';
+import { parseDateString } from '../Utils/DateUtils';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
@@ -55,6 +55,9 @@ const QueryInsights = ({
   const location = useLocation();
   const [pagination, setPagination] = useState({ pageIndex: 0 });
 
+  const from = parseDateString(currStart);
+  const to = parseDateString(currEnd);
+
   useEffect(() => {
     core.chrome.setBreadcrumbs([
       {
@@ -84,8 +87,8 @@ const QueryInsights = ({
               onClick={() => {
                 const route =
                   query.group_by === 'SIMILARITY'
-                    ? `/query-group-details/${hash(query)}`
-                    : `/query-details/${hash(query)}`;
+                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}`
+                    : `/query-details?from=${from}&to=${to}&id=${query.id}`;
                 history.push(route);
               }}
             >
@@ -106,8 +109,8 @@ const QueryInsights = ({
               onClick={() => {
                 const route =
                   query.group_by === 'SIMILARITY'
-                    ? `/query-group-details/${hash(query)}`
-                    : `/query-details/${hash(query)}`;
+                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}`
+                    : `/query-details?from=${from}&to=${to}&id=${query.id}`;
                 history.push(route);
               }}
             >
@@ -145,8 +148,10 @@ const QueryInsights = ({
       render: (query: SearchQueryRecord) => {
         const isQuery = query.group_by === 'NONE';
         const linkContent = isQuery ? convertTime(query.timestamp) : '-';
-        const onClickHandler = () => history.push(`/query-details/${hash(query)}`);
-
+        const onClickHandler = () => {
+          const route = `/query-details?from=${from}&to=${to}&id=${query.id}`;
+          history.push(route);
+        };
         return (
           <span>
             <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>

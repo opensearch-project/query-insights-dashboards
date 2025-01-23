@@ -28,7 +28,18 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
   </EuiFlexItem>
 );
 
-const QuerySummary = ({ query }: { query: SearchQueryRecord }) => {
+const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
+  // If query is null, return a message indicating no data is available
+  if (!query) {
+    return (
+      <EuiPanel data-test-subj={'query-details-summary-section'}>
+        <EuiText size="xs">
+          <h2>No Data Available</h2>
+        </EuiText>
+      </EuiPanel>
+    );
+  }
+
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');

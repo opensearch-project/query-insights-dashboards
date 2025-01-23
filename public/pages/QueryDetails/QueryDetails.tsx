@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+// @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
   EuiButton,
@@ -17,26 +18,30 @@ import {
   EuiText,
   EuiTitle,
 } from '@elastic/eui';
-import hash from 'object-hash';
-import { useParams, useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import QuerySummary from './Components/QuerySummary';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { retrieveQueryById } from '../Utils/QueryUtils';
 
 const QueryDetails = ({
-  queries,
   core,
   depsStart,
 }: {
-  queries: any;
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-  const { hashedQuery } = useParams<{ hashedQuery: string }>();
-  const query = queries.find((q: SearchQueryRecord) => hash(q) === hashedQuery);
+  // Get url parameters
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const id = searchParams.get('id');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+
+  const [query, setQuery] = useState<SearchQueryRecord | null>(null);
   const history = useHistory();
 
   // Convert UNIX time to a readable format
@@ -45,6 +50,17 @@ const QueryDetails = ({
     const [_weekDay, month, day, year] = date.toDateString().split(' ');
     return `${month} ${day}, ${year} @ ${date.toLocaleTimeString('en-US')}`;
   }, []);
+
+  useEffect(() => {
+    const fetchQueryDetails = async () => {
+      const retrievedQuery = await retrieveQueryById(core, from, to, id);
+      setQuery(retrievedQuery);
+    };
+
+    if (id && from && to) {
+      fetchQueryDetails();
+    }
+  }, [id, from, to]);
 
   // Initialize the Plotly chart
   const initPlotlyChart = useCallback(() => {
@@ -83,21 +99,25 @@ const QueryDetails = ({
   }, [query]);
 
   useEffect(() => {
-    core.chrome.setBreadcrumbs([
-      {
-        text: 'Query insights',
-        href: QUERY_INSIGHTS,
-        onClick: (e) => {
-          e.preventDefault();
-          history.push(QUERY_INSIGHTS);
+    if (query) {
+      core.chrome.setBreadcrumbs([
+        {
+          text: 'Query insights',
+          href: QUERY_INSIGHTS,
+          onClick: (e) => {
+            e.preventDefault();
+            history.push(QUERY_INSIGHTS);
+          },
         },
-      },
-      { text: `Query details: ${convertTime(query.timestamp)}` },
-    ]);
-    initPlotlyChart();
+        { text: `Query details: ${convertTime(query.timestamp)}` },
+      ]);
+      initPlotlyChart();
+    }
   }, [query, history, core.chrome, convertTime, initPlotlyChart]);
 
-  const queryString = JSON.stringify(query.source, null, 2);
+  const queryString = query
+    ? JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2)
+    : '';
   const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
 
   return (
