@@ -6,7 +6,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
-import dateMath from '@elastic/datemath';
 import { CoreStart } from 'opensearch-dashboards/public';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
@@ -24,6 +23,7 @@ import {
 
 import { MetricSettingsResponse } from '../../types';
 import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
+import { parseDateString } from '../Utils/DateUtils';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -127,18 +127,13 @@ const TopNQueries = ({
     </EuiTab>
   );
 
-  const parseDateString = (dateString: string) => {
-    const date = dateMath.parse(dateString);
-    return date ? date.toDate().getTime() : new Date().getTime();
-  };
-
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       const nullResponse = { response: { top_queries: [] } };
       const params = {
         query: {
-          from: new Date(parseDateString(start)).toISOString(),
-          to: new Date(parseDateString(end)).toISOString(),
+          from: parseDateString(start),
+          to: parseDateString(end),
         },
       };
       const fetchMetric = async (endpoint: string) => {
@@ -319,11 +314,15 @@ const TopNQueries = ({
   return (
     <div style={{ padding: '35px 35px' }}>
       <Switch>
-        <Route exact path="/query-details/:hashedQuery">
-          <QueryDetails queries={queries} core={core} depsStart={depsStart} />
+        <Route exact path="/query-details">
+          {() => {
+            return <QueryDetails core={core} depsStart={depsStart} />;
+          }}
         </Route>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={queries} core={core} depsStart={depsStart} />
+        <Route exact path="/query-group-details">
+          {() => {
+            return <QueryGroupDetails core={core} depsStart={depsStart} />;
+          }}
         </Route>
         <Route exact path={QUERY_INSIGHTS}>
           <PageHeader

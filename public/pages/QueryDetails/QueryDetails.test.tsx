@@ -4,16 +4,22 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import QueryDetails from './QueryDetails';
-import Plotly from 'plotly.js-dist';
 import { MockQueries } from '../../../test/testUtils';
 import '@testing-library/jest-dom';
+// @ts-ignore
+import plotly from 'plotly.js-dist';
 import { MemoryRouter, Route } from 'react-router-dom';
 import hash from 'object-hash';
-// Mock the external dependencies
+import { retrieveQueryById } from '../Utils/QueryUtils';
+
 jest.mock('plotly.js-dist', () => ({
   newPlot: jest.fn(),
+}));
+
+jest.mock('../Utils/QueryUtils', () => ({
+  retrieveQueryById: jest.fn(),
 }));
 
 const mockCoreStart = {
@@ -24,42 +30,104 @@ const mockCoreStart = {
     get: jest.fn().mockReturnValue(false),
   },
 };
+
 const mockQuery = MockQueries()[0];
-const mockParams = { hashedQuery: hash(mockQuery) };
 
 describe('QueryDetails component', () => {
-  beforeAll(() => {
-    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
-    jest.spyOn(Date.prototype, 'toDateString').mockImplementation(() => 'Mon Jan 13 2025');
-  });
-
-  afterAll(() => {
-    jest.resetAllMocks(); // Reset all mocks after all tests
-  });
-
   beforeEach(() => {
-    jest.clearAllMocks(); // Clear all mock calls and instances before each test
+    jest.clearAllMocks();
+    (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
   });
 
-  const renderComponent = () =>
-    render(
-      <MemoryRouter initialEntries={[`/query-details/${mockParams.hashedQuery}`]}>
-        <Route path="/query-details/:hashedQuery">
-          <QueryDetails queries={MockQueries()} core={mockCoreStart} />
+  const renderQueryDetails = () => {
+    return render(
+      <MemoryRouter
+        initialEntries={[
+          `/query-details/?id=${hash(
+            mockQuery.id
+          )}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z`,
+        ]}
+      >
+        <Route path="/query-details">
+          <QueryDetails core={mockCoreStart} />
         </Route>
       </MemoryRouter>
     );
+  };
 
-  it('renders the QueryDetails page', () => {
-    const { container } = renderComponent();
-    // Check if the query details are displayed correctly
-    expect(screen.getByText('Query details')).toBeInTheDocument();
-    expect(screen.getByText('Query')).toBeInTheDocument();
+  it('renders the main components', async () => {
+    renderQueryDetails();
 
-    // Verify that the Plotly chart is rendered
-    expect(Plotly.newPlot).toHaveBeenCalledTimes(1);
-    // Verify the breadcrumbs were set correctly
-    expect(mockCoreStart.chrome.setBreadcrumbs).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('Query details')).toBeInTheDocument();
+      expect(screen.getByText('Query')).toBeInTheDocument();
+      expect(screen.getByText('Latency')).toBeInTheDocument();
+    });
+  });
+
+  const getByTestSubj = (container: HTMLElement, id: string) =>
+    container.querySelector(`[data-test-subj="${id}"]`);
+
+  it('fetches and displays query data', async () => {
+    const { container } = renderQueryDetails();
+
+    await waitFor(() => {
+      expect(retrieveQueryById).toHaveBeenCalled();
+    });
+
+    const sourceSection = getByTestSubj(container, 'query-details-source-section');
+    const latencyChart = getByTestSubj(container, 'query-details-latency-chart');
+
+    expect(sourceSection).toBeInTheDocument();
+    expect(latencyChart).toBeInTheDocument();
+  });
+
+  it('initializes the Plotly chart', async () => {
+    renderQueryDetails();
+
+    await waitFor(() => {
+      expect(plotly.newPlot).toHaveBeenCalled();
+      expect(plotly.newPlot.mock.calls[0][0]).toBe('latency');
+    });
+  });
+
+  it('sets breadcrumbs correctly', async () => {
+    renderQueryDetails();
+
+    await waitFor(() => {
+      expect(mockCoreStart.chrome.setBreadcrumbs).toHaveBeenCalled();
+      const breadcrumbs = mockCoreStart.chrome.setBreadcrumbs.mock.calls[0][0];
+      expect(breadcrumbs[0].text).toBe('Query insights');
+      expect(breadcrumbs[1].text).toContain('Query details:');
+    });
+  });
+
+  it('renders the search comparison button', async () => {
+    renderQueryDetails();
+
+    await waitFor(() => {
+      const button = screen.getByText('Open in search comparison');
+      expect(button).toBeInTheDocument();
+      expect(button.closest('a')).toHaveAttribute(
+        'href',
+        'https://playground.opensearch.org/app/searchRelevance#/'
+      );
+    });
+  });
+
+  it('matches snapshot', async () => {
+    const { container } = renderQueryDetails();
+
+    await waitFor(() => {
+      expect(retrieveQueryById).toHaveBeenCalled();
+    });
+
+    const dateElements = container.getElementsByClassName('euiText euiText--extraSmall');
+    Array.from(dateElements).forEach((element) => {
+      if (element.textContent?.includes('@')) {
+        element.textContent = 'Sep 24, 2021 @ 12:00:00 AM';
+      }
+    });
 
     expect(container).toMatchSnapshot();
   });

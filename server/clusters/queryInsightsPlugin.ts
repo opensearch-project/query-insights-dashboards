@@ -66,6 +66,69 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     method: 'GET',
   });
 
+  queryInsights.getTopNQueriesLatencyForId = ca({
+    url: {
+      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      req: {
+        from: {
+          type: 'string',
+          required: true,
+        },
+        to: {
+          type: 'string',
+          required: true,
+        },
+        id: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'GET',
+  });
+
+  queryInsights.getTopNQueriesCpuForId = ca({
+    url: {
+      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      req: {
+        from: {
+          type: 'string',
+          required: true,
+        },
+        to: {
+          type: 'string',
+          required: true,
+        },
+        id: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'GET',
+  });
+
+  queryInsights.getTopNQueriesMemoryForId = ca({
+    url: {
+      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      req: {
+        from: {
+          type: 'string',
+          required: true,
+        },
+        to: {
+          type: 'string',
+          required: true,
+        },
+        id: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'GET',
+  });
+
   queryInsights.getSettings = ca({
     url: {
       fmt: `_cluster/settings?include_defaults=true`,
