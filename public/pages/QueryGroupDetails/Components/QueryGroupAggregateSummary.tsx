@@ -40,31 +40,20 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
         <PanelItem label={ID} value={id} />
         <PanelItem
           label={AVERAGE_LATENCY}
-          value={
-            calculateMetric(measurements.latency?.number, measurements.latency?.count, 1) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(
-                  measurements.latency?.number,
-                  measurements.latency?.count,
-                  1
-                )} ms`
-          }
+          value={calculateMetric(
+            measurements.latency?.number,
+            measurements.latency?.count,
+            'ms',
+            1
+          )}
         />
         <PanelItem
           label={AVERAGE_CPU_TIME}
-          value={
-            calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 1000000)} ms`
-          }
+          value={calculateMetric(measurements.cpu?.number, measurements.cpu?.count, 'ms', 1000000)}
         />
         <PanelItem
           label={AVERAGE_MEMORY_USAGE}
-          value={
-            calculateMetric(measurements.memory?.number, measurements.memory?.count, 1) === 'N/A'
-              ? 'N/A'
-              : `${calculateMetric(measurements.memory?.number, measurements.memory?.count, 1)} B`
-          }
+          value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B', 1)}
         />
         <PanelItem label={GROUP_BY} value={groupBy !== undefined ? `${groupBy}` : 'N/A'} />
       </EuiFlexGrid>
