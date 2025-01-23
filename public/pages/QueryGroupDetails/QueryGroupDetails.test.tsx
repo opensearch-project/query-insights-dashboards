@@ -30,6 +30,9 @@ describe('QueryGroupDetails', () => {
     chrome: {
       setBreadcrumbs: jest.fn(),
     },
+    uiSettings: {
+      get: jest.fn().mockReturnValue(false),
+    },
   } as unknown) as CoreStart;
 
   const expectedHash = '8c1e50c035663459d567fa11d8eb494d';
