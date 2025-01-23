@@ -13,6 +13,8 @@ import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { PageHeader } from '../../components/PageHeader';
 import {
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
@@ -39,10 +41,12 @@ export interface GroupBySettings {
 
 const TopNQueries = ({
   core,
+  depsStart,
   initialStart = 'now-1d',
   initialEnd = 'now',
 }: {
   core: CoreStart;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
   initialStart?: string;
   initialEnd?: string;
 }) => {
@@ -316,16 +320,24 @@ const TopNQueries = ({
     <div style={{ padding: '35px 35px' }}>
       <Switch>
         <Route exact path="/query-details/:hashedQuery">
-          <QueryDetails queries={queries} core={core} />
+          <QueryDetails queries={queries} core={core} depsStart={depsStart} />
         </Route>
         <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={queries} core={core} />
+          <QueryGroupDetails queries={queries} core={core} depsStart={depsStart} />
         </Route>
         <Route exact path={QUERY_INSIGHTS}>
-          <EuiTitle size="l">
-            <h1>Query insights - Top N queries</h1>
-          </EuiTitle>
-          <EuiSpacer size="l" />
+          <PageHeader
+            coreStart={core}
+            depsStart={depsStart}
+            fallBackComponent={
+              <>
+                <EuiTitle size="l">
+                  <h1>Query insights - Top N queries</h1>
+                </EuiTitle>
+                <EuiSpacer size="l" />
+              </>
+            }
+          />
           <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
           <EuiSpacer size="l" />
           <QueryInsights
@@ -339,10 +351,19 @@ const TopNQueries = ({
           />
         </Route>
         <Route exact path={CONFIGURATION}>
-          <EuiTitle size="l">
-            <h1>Query insights - Configuration</h1>
-          </EuiTitle>
-          <EuiSpacer size="l" />
+          <PageHeader
+            coreStart={core}
+            depsStart={depsStart}
+            fallBackComponent={
+              <>
+                <EuiTitle size="l">
+                  <h1>Query insights - Configuration</h1>
+                </EuiTitle>
+                <EuiSpacer size="l" />
+              </>
+            }
+          />
+
           <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
           <EuiSpacer size="l" />
           <Configuration
