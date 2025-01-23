@@ -23,6 +23,9 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 );
 
 export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
+  if (!query) {
+    return <EuiText size="s">No query data available.</EuiText>;
+  }
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');

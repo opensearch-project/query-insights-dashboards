@@ -10,7 +10,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import React from 'react';
 import { mockQueries } from '../../../test/mocks/mockQueries';
 import '@testing-library/jest-dom/extend-expect';
-import hash from 'object-hash';
+import { retrieveQueryById } from '../Utils/QueryUtils';
 
 jest.mock('object-hash', () => jest.fn(() => '8c1e50c035663459d567fa11d8eb494d'));
 
@@ -20,10 +20,16 @@ jest.mock('plotly.js-dist', () => ({
   relayout: jest.fn(),
 }));
 
+jest.mock('../Utils/QueryUtils', () => ({
+  retrieveQueryById: jest.fn(),
+}));
+
 jest.mock('react-ace', () => ({
   __esModule: true,
   default: () => <div>Mocked Ace Editor</div>,
 }));
+
+const mockQuery = mockQueries[0];
 
 describe('QueryGroupDetails', () => {
   const coreMock = ({
@@ -35,19 +41,89 @@ describe('QueryGroupDetails', () => {
     },
   } as unknown) as CoreStart;
 
-  const expectedHash = '8c1e50c035663459d567fa11d8eb494d';
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
+  });
 
-  it('renders the QueryGroupDetails component', async () => {
-    render(
-      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={mockQueries} core={coreMock} />
+  const renderComponent = () => {
+    return render(
+      <MemoryRouter
+        initialEntries={['/query-group-details?id=mockId&from=1632441600000&to=1632528000000']}
+      >
+        <Route path="/query-group-details">
+          <QueryGroupDetails core={coreMock} />
         </Route>
       </MemoryRouter>
     );
+  };
+
+  it('renders the QueryGroupDetails component', async () => {
+    renderComponent();
 
     expect(screen.getByText('Query group details')).toBeInTheDocument();
     expect(screen.getByText('Sample query details')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith([
+        expect.objectContaining({ text: 'Query insights' }),
+        expect.objectContaining({ text: expect.stringMatching(/^Query group details: .+/) }),
+      ]);
+    });
+  });
+
+  it('fetches and displays query group data', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(retrieveQueryById).toHaveBeenCalledWith(
+        coreMock,
+        '1632441600000',
+        '1632528000000',
+        'mockId'
+      );
+    });
+
+    expect(screen.getByText('Query')).toBeInTheDocument();
+    expect(screen.getByText('Latency')).toBeInTheDocument();
+  });
+
+  it('renders latency bar chart', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Latency')).toHaveLength(1);
+    });
+
+    expect(document.getElementById('latency')).toBeInTheDocument();
+  });
+
+  it('displays query details', async () => {
+    const { container } = renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Open in search comparision')).toBeInTheDocument();
+    });
+
+    const codeBlock = container.querySelector('.euiCodeBlock__pre');
+    expect(codeBlock).toBeInTheDocument();
+
+    expect(codeBlock?.textContent).toContain('"query"');
+    expect(codeBlock?.textContent).toMatch(/{\s*"query":/);
+  });
+
+  it('renders tooltips', () => {
+    renderComponent();
+
+    const tooltips = screen.getAllByLabelText('Details tooltip');
+    expect(tooltips).toHaveLength(2);
+  });
+
+  it('renders correct breadcrumb based on query timestamp', async () => {
+    jest.spyOn(Date.prototype, 'toDateString').mockReturnValue('Mon Sep 24 2021');
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockReturnValue('12:00:00 AM');
+
+    renderComponent();
 
     await waitFor(() => {
       expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith([
@@ -57,64 +133,26 @@ describe('QueryGroupDetails', () => {
           onClick: expect.any(Function),
         },
         {
-          text: expect.stringMatching(/^Query group details: .+ @ .+$/), // Matches dynamic date/time format
+          text: 'Query group details: Sep 24, 2021 @ 12:00:00 AM',
         },
       ]);
     });
   });
 
-  it('renders latency bar chart', async () => {
-    render(
-      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={mockQueries} core={coreMock} />
-        </Route>
-      </MemoryRouter>
-    );
-    const latencyElements = await screen.findAllByText(/Latency/i);
-
-    expect(latencyElements.length).toBe(2);
-  });
-
-  it('displays query details', () => {
-    render(
-      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={mockQueries} core={coreMock} />
-        </Route>
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText('Open in search comparision')).toBeInTheDocument();
-  });
-
-  it('should find the query based on hash', () => {
-    const expectedQuery = mockQueries.find((q: any) => hash(q) === expectedHash);
-
-    if (!expectedQuery) {
-      throw new Error(`Query with hash ${expectedHash} was not found in mockQueries`);
-    }
-    expect(expectedQuery.id).toBe(expectedHash);
-  });
-
-  it('renders correct breadcrumb based on query hash', async () => {
-    render(
-      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
-        <Route exact path="/query-group-details/:hashedQuery">
-          <QueryGroupDetails queries={mockQueries} core={coreMock} />
-        </Route>
-      </MemoryRouter>
-    );
+  it('matches snapshot', async () => {
+    const { container } = renderComponent();
 
     await waitFor(() => {
-      expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          { text: 'Query insights', href: '/queryInsights', onClick: expect.any(Function) },
-          expect.objectContaining({
-            text: expect.stringMatching(/^Query group details: .+/),
-          }),
-        ])
-      );
+      expect(retrieveQueryById).toHaveBeenCalled();
     });
+
+    const dateElements = container.getElementsByClassName('euiText euiText--extraSmall');
+    Array.from(dateElements).forEach((element) => {
+      if (element.textContent?.includes('@')) {
+        element.textContent = 'Sep 24, 2021 @ 12:00:00 AM';
+      }
+    });
+
+    expect(container).toMatchSnapshot();
   });
 });

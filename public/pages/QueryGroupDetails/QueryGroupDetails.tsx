@@ -6,9 +6,8 @@
 import { CoreStart } from 'opensearch-dashboards/public';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
-import hash from 'object-hash';
-import { useParams, useHistory, useLocation } from 'react-router-dom';
-import React, { useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 import {
   EuiButton,
   EuiCodeBlock,
@@ -25,20 +24,27 @@ import {
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { QueryGroupAggregateSummary } from './Components/QueryGroupAggregateSummary';
 import { QueryGroupSampleQuerySummary } from './Components/QueryGroupSampleQuerySummary';
+
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
+import { SearchQueryRecord } from '../../../types/types';
+import { retrieveQueryById } from '../Utils/QueryUtils';
 
 export const QueryGroupDetails = ({
-  queries,
   core,
   depsStart,
 }: {
-  queries: any;
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-  const { hashedQuery } = useParams<{ hashedQuery: string }>();
-  const query = queries.find((q: any) => hash(q) === hashedQuery);
+  // Get url parameters
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const id = searchParams.get('id');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+
+  const [query, setQuery] = useState<SearchQueryRecord | null>(null);
 
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
@@ -47,62 +53,78 @@ export const QueryGroupDetails = ({
   };
 
   const history = useHistory();
-  const location = useLocation();
 
   useEffect(() => {
-    core.chrome.setBreadcrumbs([
-      {
-        text: 'Query insights',
-        href: QUERY_INSIGHTS,
-        onClick: (e) => {
-          e.preventDefault();
-          history.push(QUERY_INSIGHTS);
-        },
-      },
-      { text: `Query group details: ${convertTime(query.timestamp)}` },
-    ]);
-  }, [core.chrome, history, location, query.timestamp]);
-
-  useEffect(() => {
-    let x: number[] = Object.values(query.phase_latency_map);
-    if (x.length < 3) {
-      x = [0, 0, 0];
-    }
-    const data = [
-      {
-        x: x.reverse(),
-        y: ['Fetch    ', 'Query    ', 'Expand    '],
-        type: 'bar',
-        orientation: 'h',
-        width: 0.5,
-        marker: { color: ['#F990C0', '#1BA9F5', '#7DE2D1'] },
-        base: [x[2] + x[1], x[2], 0],
-        text: x.map((value) => `${value}ms`),
-        textposition: 'outside',
-        cliponaxis: false,
-      },
-    ];
-    const layout = {
-      autosize: true,
-      margin: { l: 80, r: 80, t: 25, b: 15, pad: 0 },
-      autorange: true,
-      height: 120,
-      xaxis: {
-        side: 'top',
-        zeroline: false,
-        ticksuffix: 'ms',
-        autorangeoptions: { clipmin: 0 },
-        tickfont: { color: '#535966' },
-        linecolor: '#D4DAE5',
-        gridcolor: '#D4DAE5',
-      },
-      yaxis: { linecolor: '#D4DAE5' },
+    const fetchQueryDetails = async () => {
+      const retrievedQuery = await retrieveQueryById(core, from, to, id);
+      setQuery(retrievedQuery);
     };
-    const config = { responsive: true };
-    Plotly.newPlot('latency', data, layout, config);
+
+    if (id && from && to) {
+      fetchQueryDetails();
+    }
+  }, [id, from, to]);
+
+  useEffect(() => {
+    if (query) {
+      core.chrome.setBreadcrumbs([
+        {
+          text: 'Query insights',
+          href: QUERY_INSIGHTS,
+          onClick: (e) => {
+            e.preventDefault();
+            history.push(QUERY_INSIGHTS);
+          },
+        },
+        { text: `Query group details: ${convertTime(query.timestamp)}` },
+      ]);
+    }
+  }, [core.chrome, history, location, query]);
+
+  useEffect(() => {
+    if (query && query.phase_latency_map) {
+      let x: number[] = Object.values(query.phase_latency_map);
+      if (x.length < 3) {
+        x = [0, 0, 0];
+      }
+      const data = [
+        {
+          x: x.reverse(),
+          y: ['Fetch    ', 'Query    ', 'Expand    '],
+          type: 'bar',
+          orientation: 'h',
+          width: 0.5,
+          marker: { color: ['#F990C0', '#1BA9F5', '#7DE2D1'] },
+          base: [x[2] + x[1], x[2], 0],
+          text: x.map((value) => `${value}ms`),
+          textposition: 'outside',
+          cliponaxis: false,
+        },
+      ];
+      const layout = {
+        autosize: true,
+        margin: { l: 80, r: 80, t: 25, b: 15, pad: 0 },
+        autorange: true,
+        height: 120,
+        xaxis: {
+          side: 'top',
+          zeroline: false,
+          ticksuffix: 'ms',
+          autorangeoptions: { clipmin: 0 },
+          tickfont: { color: '#535966' },
+          linecolor: '#D4DAE5',
+          gridcolor: '#D4DAE5',
+        },
+        yaxis: { linecolor: '#D4DAE5' },
+      };
+      const config = { responsive: true };
+      Plotly.newPlot('latency', data, layout, config);
+    }
   }, [query]);
 
-  const queryString = JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2);
+  const queryString = query
+    ? JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2)
+    : '';
   const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
 
   return (
