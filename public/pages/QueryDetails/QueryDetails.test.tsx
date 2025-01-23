@@ -21,8 +21,8 @@ const mockCoreStart = {
     setBreadcrumbs: jest.fn(),
   },
   uiSettings: {
-    get: jest.fn().mockReturnValue(false)
-  }
+    get: jest.fn().mockReturnValue(false),
+  },
 };
 const mockQuery = MockQueries()[0];
 const mockParams = { hashedQuery: hash(mockQuery) };

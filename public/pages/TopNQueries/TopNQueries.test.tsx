@@ -20,8 +20,8 @@ const mockCore = ({
     put: jest.fn(),
   },
   uiSettings: {
-    get: jest.fn().mockReturnValue(false)
-  }
+    get: jest.fn().mockReturnValue(false),
+  },
 } as unknown) as CoreStart;
 
 const setUpDefaultEnabledSettings = () => {

@@ -31,7 +31,8 @@ export class QueryInsightsDashboardsPlugin
       id: PLUGIN_NAME,
       title: 'Query Insights',
       // @ts-ignore
-      description: 'Monitor and analyze queries using the Query Insights Plugin, which ranks queries based on their resource utilization (CPU, JVM) and latencies',
+      description:
+        'Monitor and analyze queries using the Query Insights Plugin, which ranks queries based on their resource utilization (CPU, JVM) and latencies',
       category: {
         id: 'opensearch',
         label: 'OpenSearch Plugins',
