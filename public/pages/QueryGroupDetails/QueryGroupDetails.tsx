@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -29,12 +30,17 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
 export const QueryGroupDetails = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   // Get url parameters
@@ -148,6 +154,12 @@ export const QueryGroupDetails = ({
             <EuiSpacer size="l" />
           </>
         }
+      />
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
       />
       <EuiFlexItem>
         <QueryGroupAggregateSummary query={query} />

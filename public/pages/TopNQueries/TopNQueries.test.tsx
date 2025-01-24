@@ -57,7 +57,7 @@ const setUpDefaultEnabledSettings = () => {
 const renderTopNQueries = (type: string) =>
   render(
     <MemoryRouter initialEntries={[type]}>
-      <TopNQueries core={mockCore} />
+      <TopNQueries core={mockCore} depsStart={{ navigation: {} }} params={{} as any} />
     </MemoryRouter>
   );
 
@@ -179,7 +179,13 @@ describe('TopNQueries Component', () => {
     // Render with initial time range
     const { rerender } = render(
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} initialStart="now-1d" initialEnd="now" />
+        <TopNQueries
+          core={mockCore}
+          initialStart="now-1d"
+          initialEnd="now"
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+        />
       </MemoryRouter>
     );
     // Mock a new response for the time range update
@@ -190,7 +196,13 @@ describe('TopNQueries Component', () => {
     // Re-render with updated time range to simulate a change
     rerender(
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} initialStart="now-7d" initialEnd="now" />
+        <TopNQueries
+          core={mockCore}
+          initialStart="now-7d"
+          initialEnd="now"
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+        />
       </MemoryRouter>
     );
     // Verify that the component re-fetches data for the new time range

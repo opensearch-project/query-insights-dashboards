@@ -57,7 +57,7 @@ const QueryInsights = ({
   currEnd: string;
   core: CoreStart;
   params: AppMountParameters;
-  dataSourceManagement: DataSourceManagementPluginSetup;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();

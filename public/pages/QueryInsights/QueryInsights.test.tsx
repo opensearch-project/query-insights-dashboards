@@ -32,6 +32,8 @@ const renderQueryInsights = () =>
         currEnd="now"
         // @ts-ignore
         core={mockCore}
+        depsStart={{ navigation: {} }}
+        params={{} as any}
       />
     </MemoryRouter>
   );

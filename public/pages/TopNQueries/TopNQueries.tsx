@@ -286,6 +286,7 @@ const TopNQueries = ({
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
               group_by: newGroupBy,
+              dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8', // TODO: get this dynamically from the URL
             },
           });
         } catch (error) {

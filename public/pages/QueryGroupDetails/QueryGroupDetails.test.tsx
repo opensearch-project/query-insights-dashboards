@@ -52,7 +52,7 @@ describe('QueryGroupDetails', () => {
         initialEntries={['/query-group-details?id=mockId&from=1632441600000&to=1632528000000']}
       >
         <Route path="/query-group-details">
-          <QueryGroupDetails core={coreMock} />
+          <QueryGroupDetails core={coreMock} depsStart={{ navigation: {} }} params={{} as any} />
         </Route>
       </MemoryRouter>
     );

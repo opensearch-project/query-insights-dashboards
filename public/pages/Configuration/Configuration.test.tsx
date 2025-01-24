@@ -49,6 +49,8 @@ const renderConfiguration = (overrides = {}) =>
         groupBySettings={groupBySettings}
         configInfo={mockConfigInfo}
         core={mockCoreStart}
+        depsStart={{ navigation: {} }}
+        params={{} as any}
       />
     </MemoryRouter>
   );

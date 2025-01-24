@@ -23,7 +23,8 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
@@ -31,6 +32,8 @@ import {
   MINUTES_OPTIONS,
   GROUP_BY_OPTIONS,
 } from '../Utils/Constants';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const Configuration = ({
   latencySettings,
@@ -39,6 +42,9 @@ const Configuration = ({
   groupBySettings,
   configInfo,
   core,
+  depsStart,
+  params,
+  dataSourceManagement,
 }: {
   latencySettings: MetricSettings;
   cpuSettings: MetricSettings;
@@ -46,6 +52,9 @@ const Configuration = ({
   groupBySettings: GroupBySettings;
   configInfo: any;
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -170,6 +179,12 @@ const Configuration = ({
 
   return (
     <div>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+      />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
           <EuiPanel paddingSize="m">

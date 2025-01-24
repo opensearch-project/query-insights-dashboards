@@ -49,7 +49,7 @@ describe('QueryDetails component', () => {
         ]}
       >
         <Route path="/query-details">
-          <QueryDetails core={mockCoreStart} />
+          <QueryDetails core={mockCoreStart} depsStart={{ navigation: {} }} params={{} as any} />
         </Route>
       </MemoryRouter>
     );

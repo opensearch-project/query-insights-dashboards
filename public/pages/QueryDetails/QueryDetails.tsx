@@ -19,19 +19,25 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import QuerySummary from './Components/QuerySummary';
 import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
 const QueryDetails = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   // Get url parameters
@@ -134,7 +140,12 @@ const QueryDetails = ({
           </>
         }
       />
-
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+      />
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />
