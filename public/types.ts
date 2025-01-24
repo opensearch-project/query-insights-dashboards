@@ -10,7 +10,9 @@ import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/pub
 /* eslint-disable @typescript-eslint/no-empty-interface */
 export interface QueryInsightsDashboardsPluginSetup {}
 export interface QueryInsightsDashboardsPluginStart {}
-export interface QueryInsightsDashboardsPluginStartDependencies {}
+export interface QueryInsightsDashboardsPluginStartDependencies {
+  dataSource?: DataSourcePluginStart
+}
 export interface QueryInsightsDashboardsPluginSetupDependencies {
   dataSourceManagement?: DataSourceManagementPluginSetup;
 }

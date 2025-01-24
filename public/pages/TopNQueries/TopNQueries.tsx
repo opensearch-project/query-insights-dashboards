@@ -25,6 +25,7 @@ import {
 import { MetricSettingsResponse } from '../../types';
 import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
+import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -139,7 +140,7 @@ const TopNQueries = ({
         query: {
           from: parseDateString(start),
           to: parseDateString(end),
-          dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8', // TODO: get this dynamically from the URL
+          dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
         },
       };
       const fetchMetric = async (endpoint: string) => {
@@ -286,7 +287,7 @@ const TopNQueries = ({
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
               group_by: newGroupBy,
-              dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8', // TODO: get this dynamically from the URL
+              dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
             },
           });
         } catch (error) {
