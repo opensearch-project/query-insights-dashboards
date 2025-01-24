@@ -69,7 +69,7 @@ const renderConfiguration = (overrides = {}) =>
           memorySettings={defaultMemorySettings}
           groupBySettings={groupBySettings}
           configInfo={mockConfigInfo}
-          deleteAfterDaysSettings={deleteAfterDaysSettings}
+          dataRetentionSettings={deleteAfterDaysSettings}
           core={mockCoreStart}
           depsStart={{ navigation: {} }}
           params={{} as any}

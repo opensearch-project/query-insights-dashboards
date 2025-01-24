@@ -304,8 +304,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               [`search.insights.top_queries.${query.metric}.enabled`]: query.enabled,
               [`search.insights.top_queries.${query.metric}.top_n_size`]: query.top_n_size,
               [`search.insights.top_queries.${query.metric}.window_size`]: query.window_size,
-              [`search.insights.top_queries.${query.metric}.exporter.type`]:
-                query.exporterType === EXPORTER_TYPE.localIndex ? query.exporterType : null,
             },
           },
         };
@@ -313,8 +311,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           params.body.persistent['search.insights.top_queries.group_by'] = query.group_by;
         }
         if (query.delete_after_days !== '') {
-          params.body.persistent['search.insights.top_queries.delete_after_days'] =
+          params.body.persistent['search.insights.top_queries.exporter.delete_after_days'] =
             query.delete_after_days;
+        }
+        if (query.exporterType !== '') {
+          params.body.persistent['search.insights.top_queries.exporter.type'] =
+            query.exporterType === EXPORTER_TYPE.localIndex
+              ? query.exporterType
+              : EXPORTER_TYPE.none;
         }
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)

@@ -17,15 +17,18 @@ import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import {
+  DEFAULT_DELETE_AFTER_DAYS, DEFAULT_EXPORTER_TYPE,
+  DEFAULT_GROUP_BY,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
-  MetricType,
-} from '../Utils/Constants';
+  MetricType
+} from "../Utils/Constants";
 
 import { MetricSettingsResponse } from '../../types';
 import { parseDateString } from '../Utils/DateUtils';
 import {
+  getExporterTypeSetting,
   getMergedMetricSettings,
   getMergedStringSettings,
   getTimeAndUnitFromString,
@@ -41,14 +44,14 @@ export interface MetricSettings {
   currTopN: string;
   currWindowSize: string;
   currTimeUnit: string;
-  exporterType: string;
 }
 
 export interface GroupBySettings {
   groupBy: string;
 }
 
-export interface DeleteAfterDaysSettings {
+export interface DataRetentionSettings {
+  exporterType: string;
   deleteAfterDays: string;
 }
 
@@ -89,7 +92,6 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
-    exporterType: EXPORTER_TYPE.none,
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
@@ -97,7 +99,6 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
-    exporterType: EXPORTER_TYPE.none,
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
@@ -105,12 +106,12 @@ const TopNQueries = ({
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
-    exporterType: EXPORTER_TYPE.none,
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
-  const [deleteAfterDaysSettings, setDeleteAfterDaysSettings] = useState<DeleteAfterDaysSettings>({
+  const [dataRetentionSettings, setDataRetentionSettings] = useState<DataRetentionSettings>({
     deleteAfterDays: '',
+    exporterType: EXPORTER_TYPE.none,
   });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
@@ -290,10 +291,6 @@ const TopNQueries = ({
                 currTopN: metricSetting.top_n_size ?? DEFAULT_TOP_N_SIZE,
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
-                exporterType:
-                  metricSetting.exporter?.type === 'local_index'
-                    ? EXPORTER_TYPE.localIndex
-                    : EXPORTER_TYPE.none,
               });
             } else {
               setMetricSettings(metricType, {
@@ -303,18 +300,22 @@ const TopNQueries = ({
           });
           const groupBy = getMergedStringSettings(
             persistentSettings?.group_by,
-            transientSettings?.group_by
+            transientSettings?.group_by,
+            DEFAULT_GROUP_BY
           );
-          if (groupBy) {
-            setGroupBySettings({ groupBy });
-          }
+          setGroupBySettings({ groupBy });
+
           const deleteAfterDays = getMergedStringSettings(
-            persistentSettings?.delete_after_days,
-            transientSettings?.delete_after_days
+            persistentSettings?.exporter?.delete_after_days,
+            transientSettings?.exporter?.delete_after_days,
+            DEFAULT_DELETE_AFTER_DAYS
           );
-          if (deleteAfterDays) {
-            setDeleteAfterDaysSettings({ deleteAfterDays });
-          }
+          const exporterType = getMergedStringSettings(
+            persistentSettings?.exporter?.type,
+            transientSettings?.exporter?.type,
+            DEFAULT_EXPORTER_TYPE
+          );
+          setDataRetentionSettings({ deleteAfterDays, exporterType });
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -325,10 +326,12 @@ const TopNQueries = ({
             currTopN: newTopN,
             currWindowSize: newWindowSize,
             currTimeUnit: newTimeUnit,
-            exporterType: newExporterType,
           });
           setGroupBySettings({ groupBy: newGroupBy });
-          setDeleteAfterDaysSettings({ deleteAfterDays: newDeleteAfterDays });
+          setDataRetentionSettings({
+            deleteAfterDays: newDeleteAfterDays,
+            exporterType: newExporterType,
+          });
           await core.http.put('/api/update_settings', {
             query: {
               metric,
@@ -452,7 +455,7 @@ const TopNQueries = ({
               cpuSettings={cpuSettings}
               memorySettings={memorySettings}
               groupBySettings={groupBySettings}
-              deleteAfterDaysSettings={deleteAfterDaysSettings}
+              dataRetentionSettings={dataRetentionSettings}
               configInfo={retrieveConfigInfo}
               core={core}
               depsStart={depsStart}

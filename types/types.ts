@@ -52,9 +52,11 @@ export interface MetricSettingsResponse {
   enabled?: string; // Could be 'true' or 'false'
   window_size?: string; // E.g., '15m', '1h'
   top_n_size?: string;
-  exporter?: {
-    type?: string;
-  };
+}
+
+export interface ExporterSettingsResponse {
+  type?: string;
+  delete_after_days?: string;
 }
 
 export interface QueryInsightsSettingsResponse {
@@ -62,5 +64,5 @@ export interface QueryInsightsSettingsResponse {
   cpu?: MetricSettingsResponse;
   memory?: MetricSettingsResponse;
   group_by?: string;
-  delete_after_days?: string;
+  exporter?: ExporterSettingsResponse;
 }
