@@ -17,6 +17,8 @@ export interface DataSourceMenuProps {
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
   coreStart: CoreStart;
   params: AppMountParameters;
+  setDataSource: React.Dispatch<React.SetStateAction<DataSourceOption>>;
+  selectedDataSource: DataSourceOption;
 }
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
@@ -36,31 +38,36 @@ export function getDataSourceFromUrl(): DataSourceOption {
   }
 }
 
-export const QueryInsightsDataSourceMenu = (props: DataSourceMenuProps) => {
-  const { coreStart, depsStart, dataSourceManagement, params } = props;
-  const { setHeaderActionMenu } = params;
-  const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
+export const QueryInsightsDataSourceMenu = React.memo(
+  (props: DataSourceMenuProps) => {
+    const { coreStart, depsStart, dataSourceManagement, params, setDataSource,
+      selectedDataSource } = props;
+    const { setHeaderActionMenu } = params;
+    const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
 
-  const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
+    const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
-  const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
-    window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
-  };
+    const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
+      window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
+      setDataSource(dataSources[0]);
+    };
 
-  
-
-  return dataSourceEnabled ? (
-    <DataSourceMenu
-      setMenuMountPoint={setHeaderActionMenu}
-      componentType={'DataSourceSelectable'}
-      componentConfig={{
-        savedObjects: coreStart.savedObjects.client,
-        notifications: coreStart.notifications,
-        // activeOption:
-        //   selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
-        onSelectedDataSources: wrapSetDataSourceWithUpdateUrl, // TODO: update url,
-        fullWidth: true,
-      }}
-    />
-  ) : null;
-};
+    return dataSourceEnabled ? (
+      <DataSourceMenu
+        setMenuMountPoint={setHeaderActionMenu}
+        componentType={'DataSourceSelectable'}
+        componentConfig={{
+          savedObjects: coreStart.savedObjects.client,
+          notifications: coreStart.notifications,
+          activeOption:
+            selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
+          onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
+          fullWidth: true,
+        }}
+      />
+    ) : null;
+  },
+  (prevProps, newProps) =>
+    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
+    // prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
+)

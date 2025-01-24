@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
@@ -22,7 +22,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import QuerySummary from './Components/QuerySummary';
-import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
@@ -49,6 +49,7 @@ const QueryDetails = ({
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
   const history = useHistory();
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   // Convert UNIX time to a readable format
   const convertTime = useCallback((unixTime: number) => {
@@ -145,6 +146,8 @@ const QueryDetails = ({
         depsStart={depsStart}
         params={params}
         dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
       />
       <EuiFlexItem>
         <QuerySummary query={query} />

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -26,6 +26,7 @@ import { MetricSettingsResponse } from '../../types';
 import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
 import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
+import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -40,6 +41,15 @@ export interface MetricSettings {
 export interface GroupBySettings {
   groupBy: string;
 }
+
+export interface DataSourceContextType {
+  dataSource: DataSourceOption;
+  setDataSource: React.Dispatch<React.SetStateAction<DataSourceOption>>;
+}
+
+// export const LocalCluster = { label: 'Local cluster', id: '' };
+
+export const DataSourceContext = createContext<DataSourceContextType | null>(null);
 
 const TopNQueries = ({
   core,
@@ -319,81 +329,87 @@ const TopNQueries = ({
     retrieveQueries(currStart, currEnd);
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
-  return (
-    <div style={{ padding: '35px 35px' }}>
-      <Switch>
-        <Route exact path="/query-details">
-          {() => {
-            return <QueryDetails core={core} depsStart={depsStart}
-            params={params}
-            dataSourceManagement={dataSourceManagement} />;
-          }}
-        </Route>
-        <Route exact path="/query-group-details">
-          {() => {
-            return <QueryGroupDetails core={core} depsStart={depsStart} params={params}
-            dataSourceManagement={dataSourceManagement} />;
-          }}
-        </Route>
-        <Route exact path={QUERY_INSIGHTS}>
-          <PageHeader
-            coreStart={core}
-            depsStart={depsStart}
-            fallBackComponent={
-              <>
-                <EuiTitle size="l">
-                  <h1>Query insights - Top N queries</h1>
-                </EuiTitle>
-                <EuiSpacer size="l" />
-              </>
-            }
-          />
-          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          <EuiSpacer size="l" />
-          <QueryInsights
-            queries={queries}
-            loading={loading}
-            onTimeChange={onTimeChange}
-            recentlyUsedRanges={recentlyUsedRanges}
-            currStart={currStart}
-            currEnd={currEnd}
-            core={core}
-            depsStart={depsStart}
-            params={params}
-            dataSourceManagement={dataSourceManagement}
-          />
-        </Route>
-        <Route exact path={CONFIGURATION}>
-          <PageHeader
-            coreStart={core}
-            depsStart={depsStart}
-            fallBackComponent={
-              <>
-                <EuiTitle size="l">
-                  <h1>Query insights - Configuration</h1>
-                </EuiTitle>
-                <EuiSpacer size="l" />
-              </>
-            }
-          />
+  const dataSourceFromUrl = getDataSourceFromUrl();
 
-          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          <EuiSpacer size="l" />
-          <Configuration
-            latencySettings={latencySettings}
-            cpuSettings={cpuSettings}
-            memorySettings={memorySettings}
-            groupBySettings={groupBySettings}
-            configInfo={retrieveConfigInfo}
-            core={core}
-            depsStart={depsStart}
-            params={params}
-            dataSourceManagement={dataSourceManagement}
-          />
-        </Route>
-        <Redirect to={QUERY_INSIGHTS} />
-      </Switch>
-    </div>
+  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
+
+  return (
+    <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
+      <div style={{ padding: '35px 35px' }}>
+        <Switch>
+          <Route exact path="/query-details">
+            {() => {
+              return <QueryDetails core={core} depsStart={depsStart}
+                                   params={params}
+                                   dataSourceManagement={dataSourceManagement} />;
+            }}
+          </Route>
+          <Route exact path="/query-group-details">
+            {() => {
+              return <QueryGroupDetails core={core} depsStart={depsStart} params={params}
+                                        dataSourceManagement={dataSourceManagement} />;
+            }}
+          </Route>
+          <Route exact path={QUERY_INSIGHTS}>
+            <PageHeader
+              coreStart={core}
+              depsStart={depsStart}
+              fallBackComponent={
+                <>
+                  <EuiTitle size="l">
+                    <h1>Query insights - Top N queries</h1>
+                  </EuiTitle>
+                  <EuiSpacer size="l" />
+                </>
+              }
+            />
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+            <EuiSpacer size="l" />
+            <QueryInsights
+              queries={queries}
+              loading={loading}
+              onTimeChange={onTimeChange}
+              recentlyUsedRanges={recentlyUsedRanges}
+              currStart={currStart}
+              currEnd={currEnd}
+              core={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+            />
+          </Route>
+          <Route exact path={CONFIGURATION}>
+            <PageHeader
+              coreStart={core}
+              depsStart={depsStart}
+              fallBackComponent={
+                <>
+                  <EuiTitle size="l">
+                    <h1>Query insights - Configuration</h1>
+                  </EuiTitle>
+                  <EuiSpacer size="l" />
+                </>
+              }
+            />
+
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+            <EuiSpacer size="l" />
+            <Configuration
+              latencySettings={latencySettings}
+              cpuSettings={cpuSettings}
+              memorySettings={memorySettings}
+              groupBySettings={groupBySettings}
+              configInfo={retrieveConfigInfo}
+              core={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+            />
+          </Route>
+          <Redirect to={QUERY_INSIGHTS} />
+        </Switch>
+      </div>
+    </DataSourceContext.Provider>
   );
 };
 

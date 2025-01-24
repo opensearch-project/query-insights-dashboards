@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, {useCallback, useState, useEffect, useContext} from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -25,7 +25,7 @@ import {
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
+import {QUERY_INSIGHTS, MetricSettings, GroupBySettings, DataSourceContext} from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
   TIME_UNITS_TEXT,
@@ -65,6 +65,7 @@ const Configuration = ({
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
   const [groupBy, setGroupBy] = useState(groupBySettings.groupBy);
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
@@ -184,6 +185,8 @@ const Configuration = ({
         depsStart={depsStart}
         params={params}
         dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
       />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
