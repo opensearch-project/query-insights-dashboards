@@ -59,7 +59,7 @@ const QueryDetails = ({
 
   useEffect(() => {
     const fetchQueryDetails = async () => {
-      const retrievedQuery = await retrieveQueryById(core, from, to, id);
+      const retrievedQuery = await retrieveQueryById(core, '738ffbd0-d8de-11ef-9d96-eff1abd421b8', from, to, id);
       setQuery(retrievedQuery);
     };
 

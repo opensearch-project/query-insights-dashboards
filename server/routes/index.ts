@@ -128,6 +128,7 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
         const { from, to, id } = request.query;
         const params = { from, to, id };
         if (dataSoureEnabled) {
+          
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
@@ -143,6 +144,8 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
             },
           });
         } else {
+           console.log(request.query.dataSourceId)
+          console.log(params);
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           const res =
