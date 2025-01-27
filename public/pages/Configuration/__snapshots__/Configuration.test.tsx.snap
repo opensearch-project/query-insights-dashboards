@@ -440,83 +440,6 @@ exports[`Configuration Component renders with default settings: should match def
                     </div>
                   </div>
                 </div>
-                <div
-                  class="euiFlexItem"
-                >
-                  <div
-                    class="euiText euiText--extraSmall"
-                  >
-                    <h3>
-                      Exporter
-                    </h3>
-                  </div>
-                  <div
-                    class="euiText euiText--extraSmall"
-                    style="line-height: 22px; padding: 5px 0px;"
-                  >
-                    Configure exporter for latency.
-                  </div>
-                </div>
-                <div
-                  class="euiFlexItem"
-                >
-                  <div
-                    class="euiFormRow"
-                    id="random_html_id-row"
-                    style="padding: 0px 0px 20px;"
-                  >
-                    <div
-                      class="euiFormRow__fieldWrapper"
-                    >
-                      <div
-                        class="euiFormControlLayout"
-                      >
-                        <div
-                          class="euiFormControlLayout__childrenWrapper"
-                        >
-                          <select
-                            class="euiSelect"
-                            id="random_html_id"
-                            required=""
-                          >
-                            <option
-                              value="local_index"
-                            >
-                              Local Index
-                            </option>
-                            <option
-                              value="none"
-                            >
-                              None
-                            </option>
-                          </select>
-                          <div
-                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
-                          >
-                            <span
-                              class="euiFormControlLayoutCustomIcon"
-                            >
-                              <svg
-                                aria-hidden="true"
-                                class="euiIcon euiIcon--medium euiIcon-isLoading euiFormControlLayoutCustomIcon__icon"
-                                focusable="false"
-                                height="16"
-                                role="img"
-                                viewBox="0 0 16 16"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
-                                />
-                              </svg>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -905,7 +828,7 @@ exports[`Configuration Component renders with default settings: should match def
                 class="euiText euiText--small euiTitle euiTitle--small"
               >
                 <h2>
-                  Query Insights data retention settings
+                  Query Insights export and data retention settings
                 </h2>
               </div>
             </div>
@@ -923,6 +846,83 @@ exports[`Configuration Component renders with default settings: should match def
                     class="euiText euiText--extraSmall"
                   >
                     <h3>
+                      Exporter
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Configure a sink for exporting Query Insights data.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <select
+                            class="euiSelect"
+                            id="random_html_id"
+                            required=""
+                          >
+                            <option
+                              value="local_index"
+                            >
+                              Local Index
+                            </option>
+                            <option
+                              value="none"
+                            >
+                              None
+                            </option>
+                          </select>
+                          <div
+                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                          >
+                            <span
+                              class="euiFormControlLayoutCustomIcon"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiIcon-isLoading euiFormControlLayoutCustomIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M5.277 10.088c.02.014.04.03.057.047.582.55 1.134.812 1.666.812.586 0 1.84-.293 3.713-.88L9 6.212V2H7v4.212l-1.723 3.876Zm-.438.987L3.539 14h8.922l-1.32-2.969C9.096 11.677 7.733 12 7 12c-.74 0-1.463-.315-2.161-.925ZM6 2H5V1h6v1h-1v4l3.375 7.594A1 1 0 0 1 12.461 15H3.54a1 1 0 0 1-.914-1.406L6 6V2Z"
+                                />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
                       Delete After (days)
                     </h3>
                   </div>
@@ -930,7 +930,7 @@ exports[`Configuration Component renders with default settings: should match def
                     class="euiText euiText--extraSmall"
                     style="line-height: 22px; padding: 5px 0px;"
                   >
-                    Delete the Query Insights data after certain days.
+                    Number of days to retain Query Insights data.
                   </div>
                 </div>
                 <div
@@ -981,7 +981,7 @@ exports[`Configuration Component renders with default settings: should match def
               class="euiText euiText--small euiTitle euiTitle--small"
             >
               <h2>
-                Statuses for data retention settings
+                Statuses for data retention
               </h2>
             </div>
           </div>
@@ -997,7 +997,7 @@ exports[`Configuration Component renders with default settings: should match def
                 <div
                   class="euiText euiText--medium"
                 >
-                  Delete After
+                  Exporter
                 </div>
               </div>
               <div
@@ -1450,84 +1450,6 @@ exports[`Configuration Component updates state when toggling metrics and enables
                     </div>
                   </div>
                 </div>
-                <div
-                  class="euiFlexItem"
-                >
-                  <div
-                    class="euiText euiText--extraSmall"
-                  >
-                    <h3>
-                      Exporter
-                    </h3>
-                  </div>
-                  <div
-                    class="euiText euiText--extraSmall"
-                    style="line-height: 22px; padding: 5px 0px;"
-                  >
-                    Configure exporter for cpu.
-                  </div>
-                </div>
-                <div
-                  class="euiFlexItem"
-                >
-                  <div
-                    class="euiFormRow"
-                    id="random_html_id-row"
-                    style="padding: 0px 0px 20px;"
-                  >
-                    <div
-                      class="euiFormRow__fieldWrapper"
-                    >
-                      <div
-                        class="euiFormControlLayout"
-                      >
-                        <div
-                          class="euiFormControlLayout__childrenWrapper"
-                        >
-                          <select
-                            class="euiSelect"
-                            id="random_html_id"
-                            required=""
-                          >
-                            <option
-                              value="local_index"
-                            >
-                              Local Index
-                            </option>
-                            <option
-                              value="none"
-                            >
-                              None
-                            </option>
-                          </select>
-                          <div
-                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
-                          >
-                            <span
-                              class="euiFormControlLayoutCustomIcon"
-                            >
-                              <svg
-                                aria-hidden="true"
-                                class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
-                                focusable="false"
-                                height="16"
-                                role="img"
-                                viewBox="0 0 16 16"
-                                width="16"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                                  fill-rule="non-zero"
-                                />
-                              </svg>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -1925,7 +1847,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
                 class="euiText euiText--small euiTitle euiTitle--small"
               >
                 <h2>
-                  Query Insights data retention settings
+                  Query Insights export and data retention settings
                 </h2>
               </div>
             </div>
@@ -1943,6 +1865,84 @@ exports[`Configuration Component updates state when toggling metrics and enables
                     class="euiText euiText--extraSmall"
                   >
                     <h3>
+                      Exporter
+                    </h3>
+                  </div>
+                  <div
+                    class="euiText euiText--extraSmall"
+                    style="line-height: 22px; padding: 5px 0px;"
+                  >
+                    Configure a sink for exporting Query Insights data.
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiFormRow"
+                    id="random_html_id-row"
+                    style="padding: 0px 0px 20px;"
+                  >
+                    <div
+                      class="euiFormRow__fieldWrapper"
+                    >
+                      <div
+                        class="euiFormControlLayout"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <select
+                            class="euiSelect"
+                            id="random_html_id"
+                            required=""
+                          >
+                            <option
+                              value="local_index"
+                            >
+                              Local Index
+                            </option>
+                            <option
+                              value="none"
+                            >
+                              None
+                            </option>
+                          </select>
+                          <div
+                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                          >
+                            <span
+                              class="euiFormControlLayoutCustomIcon"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                  fill-rule="non-zero"
+                                />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiText euiText--extraSmall"
+                  >
+                    <h3>
                       Delete After (days)
                     </h3>
                   </div>
@@ -1950,7 +1950,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
                     class="euiText euiText--extraSmall"
                     style="line-height: 22px; padding: 5px 0px;"
                   >
-                    Delete the Query Insights data after certain days.
+                    Number of days to retain Query Insights data.
                   </div>
                 </div>
                 <div
@@ -2001,7 +2001,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
               class="euiText euiText--small euiTitle euiTitle--small"
             >
               <h2>
-                Statuses for data retention settings
+                Statuses for data retention
               </h2>
             </div>
           </div>
@@ -2017,7 +2017,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
                 <div
                   class="euiText euiText--medium"
                 >
-                  Delete After
+                  Exporter
                 </div>
               </div>
               <div

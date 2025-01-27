@@ -22,25 +22,27 @@ const defaultLatencySettings = {
   currTopN: '5',
   currWindowSize: '10',
   currTimeUnit: 'MINUTES',
-  exporterType: 'local_index',
 };
 const defaultCpuSettings = {
   isEnabled: false,
   currTopN: '10',
   currWindowSize: '1',
   currTimeUnit: 'HOURS',
-  exporterType: 'local_index',
 };
 const defaultMemorySettings = {
   isEnabled: false,
   currTopN: '15',
   currWindowSize: '2',
   currTimeUnit: 'HOURS',
-  exporterType: 'local_index',
 };
 
 const groupBySettings = {
   groupBy: 'SIMILARITY',
+};
+
+const dataRetentionSettings = {
+  exporterType: 'local_index',
+  deleteAfterDays: '179',
 };
 
 const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
@@ -55,10 +57,6 @@ const mockDataSourceContext = {
   setDataSource: jest.fn(),
 };
 
-const deleteAfterDaysSettings = {
-  deleteAfterDays: '179',
-};
-
 const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
@@ -69,7 +67,7 @@ const renderConfiguration = (overrides = {}) =>
           memorySettings={defaultMemorySettings}
           groupBySettings={groupBySettings}
           configInfo={mockConfigInfo}
-          dataRetentionSettings={deleteAfterDaysSettings}
+          dataRetentionSettings={dataRetentionSettings}
           core={mockCoreStart}
           depsStart={{ navigation: {} }}
           params={{} as any}

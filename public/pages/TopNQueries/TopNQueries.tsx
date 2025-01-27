@@ -12,23 +12,22 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public/comp
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
-import { QueryInsightsSettingsResponse, SearchQueryRecord } from '../../../types/types';
+import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import {
-  DEFAULT_DELETE_AFTER_DAYS, DEFAULT_EXPORTER_TYPE,
+  DEFAULT_DELETE_AFTER_DAYS,
+  DEFAULT_EXPORTER_TYPE,
   DEFAULT_GROUP_BY,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
-  MetricType
-} from "../Utils/Constants";
+  MetricType,
+} from '../Utils/Constants';
 
-import { MetricSettingsResponse } from '../../types';
 import { parseDateString } from '../Utils/DateUtils';
 import {
-  getExporterTypeSetting,
   getMergedMetricSettings,
   getMergedStringSettings,
   getTimeAndUnitFromString,
@@ -232,26 +231,6 @@ const TopNQueries = ({
     ) => {
       if (get) {
         try {
-          // Helper to get merged settings with transient overwriting persistent
-          const getMergedMetricSettings = (
-            persistent: MetricSettingsResponse | undefined,
-            transient: MetricSettingsResponse | undefined
-          ): MetricSettingsResponse => {
-            if (transient !== undefined) {
-              return transient;
-            }
-            return {
-              ...persistent,
-            };
-          };
-
-          const getMergedGroupBySettings = (
-            persistent: string | undefined,
-            transient: string | undefined
-          ) => {
-            return transient ?? persistent;
-          };
-
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
           const resp = await core.http.get('/api/settings', {
             query: { dataSourceId: getDataSourceFromUrl().id },

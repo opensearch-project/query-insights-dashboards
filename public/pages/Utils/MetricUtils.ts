@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DEFAULT_TIME_UNIT, DEFAULT_WINDOW_SIZE, EXPORTER_TYPE, TIME_UNIT_ABBREVIATION } from "./Constants";
+import { DEFAULT_TIME_UNIT, DEFAULT_WINDOW_SIZE, TIME_UNIT_ABBREVIATION } from './Constants';
 import { MetricSettingsResponse } from '../../../types/types';
 
 export function calculateMetric(
