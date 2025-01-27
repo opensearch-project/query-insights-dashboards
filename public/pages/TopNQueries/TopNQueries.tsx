@@ -32,7 +32,7 @@ import {
   getMergedStringSettings,
   getTimeAndUnitFromString,
 } from '../Utils/MetricUtils';
-import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
+import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
