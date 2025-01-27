@@ -68,8 +68,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        console.log('request is!!');
-        console.log(request);
         const { from, to, id } = request.query;
         const params = { from, to, id };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
@@ -131,8 +129,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         const { from, to, id } = request.query;
         const params = { from, to, id };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          console.log(request.query.dataSourceId);
-          console.log(params);
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           const res =
@@ -255,7 +251,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             },
           });
         } else {
-          console.log(request);
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );

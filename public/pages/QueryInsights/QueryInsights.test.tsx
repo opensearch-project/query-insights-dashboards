@@ -9,6 +9,7 @@ import '@testing-library/jest-dom/extend-expect';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
 import { MockQueries } from '../../../test/testUtils';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 // Mock functions and data
 const mockOnTimeChange = jest.fn();
@@ -18,23 +19,38 @@ const mockCore = {
   },
 };
 
+const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
+const dataSourceManagementMock = {
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
+};
+const mockDataSourceContext = {
+  dataSource: { id: 'test', label: 'Test' },
+  setDataSource: jest.fn(),
+};
+
 const sampleQueries = MockQueries();
 
 const renderQueryInsights = () =>
   render(
     <MemoryRouter>
-      <QueryInsights
-        queries={sampleQueries}
-        loading={false}
-        onTimeChange={mockOnTimeChange}
-        recentlyUsedRanges={[]}
-        currStart="now-15m"
-        currEnd="now"
-        // @ts-ignore
-        core={mockCore}
-        depsStart={{ navigation: {} }}
-        params={{} as any}
-      />
+      <DataSourceContext.Provider value={mockDataSourceContext}>
+        <QueryInsights
+          queries={sampleQueries}
+          loading={false}
+          onTimeChange={mockOnTimeChange}
+          recentlyUsedRanges={[]}
+          currStart="now-15m"
+          currEnd="now"
+          // @ts-ignore
+          core={mockCore}
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+          dataSourceManagement={dataSourceManagementMock}
+        />
+      </DataSourceContext.Provider>
     </MemoryRouter>
   );
 

@@ -99,7 +99,9 @@ describe('TopNQueries Component', () => {
     (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
     const container = renderTopNQueries(CONFIGURATION);
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+        query: { dataSourceId: undefined },
+      });
       expect(screen.getByText('Mocked Configuration')).toBeInTheDocument();
       expect(container).toMatchSnapshot();
     });
@@ -110,7 +112,7 @@ describe('TopNQueries Component', () => {
     const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)
@@ -153,7 +155,7 @@ describe('TopNQueries Component', () => {
     const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)
@@ -209,7 +211,7 @@ describe('TopNQueries Component', () => {
     await waitFor(() => {
       // 1 initial call for settings, 3 each for the initial rendering and re-rendering
       expect(mockCore.http.get).toHaveBeenCalledTimes(7);
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)

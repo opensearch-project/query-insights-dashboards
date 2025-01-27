@@ -143,6 +143,7 @@ const TopNQueries = ({
     </EuiTab>
   );
 
+  // TODO: refactor retrieveQueries and retrieveConfigInfo into a Util function
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       const nullResponse = { response: { top_queries: [] } };

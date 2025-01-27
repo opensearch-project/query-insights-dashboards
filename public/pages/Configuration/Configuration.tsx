@@ -241,7 +241,12 @@ const Configuration = ({
                     <EuiFormRow style={formRowPadding}>
                       <EuiFlexItem>
                         <EuiSpacer size="s" />
-                        <EuiSwitch label="" checked={isEnabled} onChange={onEnabledChange} />
+                        <EuiSwitch
+                          label=""
+                          checked={isEnabled}
+                          onChange={onEnabledChange}
+                          data-test-subj="top-n-metric-toggle"
+                        />
                       </EuiFlexItem>
                     </EuiFormRow>
                   </EuiFlexItem>
