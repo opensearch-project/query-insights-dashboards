@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useContext } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -23,29 +23,48 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
-import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import {
+  QUERY_INSIGHTS,
+  MetricSettings,
+  GroupBySettings,
+  DataSourceContext,
+  DataRetentionSettings,
+} from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
   TIME_UNITS_TEXT,
   MINUTES_OPTIONS,
   GROUP_BY_OPTIONS,
+  EXPORTER_TYPES_LIST,
+  EXPORTER_TYPE,
 } from '../Utils/Constants';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const Configuration = ({
   latencySettings,
   cpuSettings,
   memorySettings,
   groupBySettings,
+  dataRetentionSettings,
   configInfo,
   core,
+  depsStart,
+  params,
+  dataSourceManagement,
 }: {
   latencySettings: MetricSettings;
   cpuSettings: MetricSettings;
   memorySettings: MetricSettings;
   groupBySettings: GroupBySettings;
+  dataRetentionSettings: DataRetentionSettings;
   configInfo: any;
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -56,12 +75,22 @@ const Configuration = ({
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
   const [groupBy, setGroupBy] = useState(groupBySettings.groupBy);
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const [deleteAfterDays, setDeleteAfterDays] = useState(dataRetentionSettings.deleteAfterDays);
+  const [exporterType, setExporterTypeType] = useState(dataRetentionSettings.exporterType);
 
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
     cpu: cpuSettings,
     memory: memorySettings,
+  });
+
+  const [groupBySettingMap, setGroupBySettingMap] = useState({
     groupBy: groupBySettings,
+  });
+
+  const [dataRetentionSettingMap, setDataRetentionSettingMap] = useState({
+    dataRetention: dataRetentionSettings,
   });
 
   useEffect(() => {
@@ -69,10 +98,7 @@ const Configuration = ({
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-      groupBy: groupBySettings,
     });
-
-    setGroupBy(groupBySettings.groupBy);
   }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
 
   const newOrReset = useCallback(() => {
@@ -81,11 +107,27 @@ const Configuration = ({
     setWindowSize(currMetric.currWindowSize);
     setTime(currMetric.currTimeUnit);
     setIsEnabled(currMetric.isEnabled);
+    // setExporterTypeType(currMetric.exporterType);
   }, [metric, metricSettingsMap]);
 
   useEffect(() => {
     newOrReset();
   }, [newOrReset, metricSettingsMap]);
+
+  useEffect(() => {
+    setGroupBySettingMap({
+      groupBy: groupBySettings,
+    });
+    setGroupBy(groupBySettings.groupBy);
+  }, [groupBySettings]);
+
+  useEffect(() => {
+    setDataRetentionSettingMap({
+      dataRetention: dataRetentionSettings,
+    });
+    setDeleteAfterDays(dataRetentionSettings.deleteAfterDays);
+    setExporterTypeType(dataRetentionSettings.exporterType);
+  }, [dataRetentionSettings]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -122,8 +164,16 @@ const Configuration = ({
     setTime(e.target.value);
   };
 
-  const onGroupByChange = (e: any) => {
+  const onExporterTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setExporterTypeType(e.target.value);
+  };
+
+  const onGroupByChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setGroupBy(e.target.value);
+  };
+
+  const onDeleteAfterDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeleteAfterDays(e.target.value);
   };
 
   const MinutesBox = () => (
@@ -153,7 +203,9 @@ const Configuration = ({
     topNSize !== metricSettingsMap[metric].currTopN ||
     windowSize !== metricSettingsMap[metric].currWindowSize ||
     time !== metricSettingsMap[metric].currTimeUnit ||
-    groupBy !== metricSettingsMap.groupBy.groupBy;
+    groupBy !== groupBySettingMap.groupBy.groupBy ||
+    exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
+    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays;
 
   const isValid = (() => {
     const nVal = parseInt(topNSize, 10);
@@ -170,6 +222,19 @@ const Configuration = ({
 
   return (
     <div>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          configInfo(true);
+        }}
+        dataSourcePickerReadOnly={false}
+      />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
           <EuiPanel paddingSize="m">
@@ -214,7 +279,12 @@ const Configuration = ({
                     <EuiFormRow style={formRowPadding}>
                       <EuiFlexItem>
                         <EuiSpacer size="s" />
-                        <EuiSwitch label="" checked={isEnabled} onChange={onEnabledChange} />
+                        <EuiSwitch
+                          label=""
+                          checked={isEnabled}
+                          onChange={onEnabledChange}
+                          data-test-subj="top-n-metric-toggle"
+                        />
                       </EuiFlexItem>
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -382,6 +452,85 @@ const Configuration = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiFlexGroup>
+        <EuiFlexItem grow={6}>
+          <EuiPanel paddingSize="m">
+            <EuiForm>
+              <EuiFlexItem>
+                <EuiTitle size="s">
+                  <EuiText size="s">
+                    <h2>Query Insights export and data retention settings</h2>
+                  </EuiText>
+                </EuiTitle>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
+                  <EuiFlexItem>
+                    <EuiText size="xs">
+                      <h3>Exporter</h3>
+                    </EuiText>
+                    <EuiText size="xs" style={textPadding}>
+                      Configure a sink for exporting Query Insights data.
+                    </EuiText>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow style={formRowPadding}>
+                      <EuiSelect
+                        id="exporterType"
+                        required={true}
+                        options={EXPORTER_TYPES_LIST}
+                        value={exporterType}
+                        onChange={onExporterTypeChange}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiText size="xs">
+                      <h3>Delete After (days)</h3>
+                    </EuiText>
+                    <EuiText size="xs" style={textPadding}>
+                      Number of days to retain Query Insights data.
+                    </EuiText>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow style={formRowPadding}>
+                      <EuiFieldNumber
+                        disabled={exporterType !== EXPORTER_TYPE.localIndex}
+                        min={1}
+                        max={180}
+                        value={exporterType !== EXPORTER_TYPE.localIndex ? '' : deleteAfterDays}
+                        onChange={onDeleteAfterDaysChange}
+                      />
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGrid>
+              </EuiFlexItem>
+            </EuiForm>
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem grow={2}>
+          <EuiPanel paddingSize="m" grow={false}>
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <EuiText size="s">
+                  <h2>Statuses for data retention</h2>
+                </EuiText>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem>
+              <EuiFlexGroup>
+                <EuiFlexItem>
+                  <EuiText size="m">Exporter</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {exporterType === EXPORTER_TYPE.localIndex ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </EuiFlexItem>
+          </EuiPanel>
+        </EuiFlexItem>
+      </EuiFlexGroup>
       {isChanged && isValid ? (
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
@@ -398,7 +547,17 @@ const Configuration = ({
                 size="s"
                 iconType="check"
                 onClick={() => {
-                  configInfo(false, isEnabled, metric, topNSize, windowSize, time, groupBy);
+                  configInfo(
+                    false,
+                    isEnabled,
+                    metric,
+                    topNSize,
+                    windowSize,
+                    time,
+                    exporterType,
+                    groupBy,
+                    deleteAfterDays
+                  );
                   return history.push(QUERY_INSIGHTS);
                 }}
               >

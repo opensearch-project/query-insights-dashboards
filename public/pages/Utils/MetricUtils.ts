@@ -4,6 +4,7 @@
  */
 
 import { DEFAULT_TIME_UNIT, DEFAULT_WINDOW_SIZE, TIME_UNIT_ABBREVIATION } from './Constants';
+import { MetricSettingsResponse } from '../../../types/types';
 
 export function calculateMetric(
   value?: number,
@@ -37,4 +38,25 @@ export function getTimeAndUnitFromString(time: string | undefined | null): strin
     return defaultWindowSize;
   }
   return [timeAndUnit[0], getTimeUnitFromAbbreviation(timeAndUnit[1])];
+}
+
+// Helper to get merged settings with transient overwriting persistent
+export function getMergedMetricSettings(
+  persistent: MetricSettingsResponse | undefined,
+  transient: MetricSettingsResponse | undefined
+): MetricSettingsResponse {
+  if (transient !== undefined) {
+    return transient;
+  }
+  return {
+    ...persistent,
+  };
+}
+
+export function getMergedStringSettings(
+  persistent: string | undefined,
+  transient: string | undefined,
+  defaultVal: string
+): string {
+  return transient ?? persistent ?? defaultVal;
 }

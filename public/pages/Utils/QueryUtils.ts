@@ -8,6 +8,7 @@ import { SearchQueryRecord } from '../../../types/types';
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
   core: { http: { get: (endpoint: string, params: any) => Promise<any> } },
+  dataSourceId: string,
   start: string | null,
   end: string | null,
   id: string | null
@@ -15,6 +16,7 @@ export const retrieveQueryById = async (
   const nullResponse = { response: { top_queries: [] } };
   const params = {
     query: {
+      dataSourceId,
       from: start,
       to: end,
       id,

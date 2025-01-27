@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -15,15 +17,23 @@ import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import {
+  DEFAULT_DELETE_AFTER_DAYS,
+  DEFAULT_EXPORTER_TYPE,
+  DEFAULT_GROUP_BY,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
   MetricType,
 } from '../Utils/Constants';
 
-import { MetricSettingsResponse } from '../../types';
-import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
+import {
+  getMergedMetricSettings,
+  getMergedStringSettings,
+  getTimeAndUnitFromString,
+} from '../Utils/MetricUtils';
+import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
+import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -39,14 +49,32 @@ export interface GroupBySettings {
   groupBy: string;
 }
 
+export interface DataRetentionSettings {
+  exporterType: string;
+  deleteAfterDays: string;
+}
+
+export interface DataSourceContextType {
+  dataSource: DataSourceOption;
+  setDataSource: React.Dispatch<React.SetStateAction<DataSourceOption>>;
+}
+
+// export const LocalCluster = { label: 'Local cluster', id: '' };
+
+export const DataSourceContext = createContext<DataSourceContextType | null>(null);
+
 const TopNQueries = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
   initialStart = 'now-1d',
   initialEnd = 'now',
 }: {
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   initialStart?: string;
   initialEnd?: string;
 }) => {
@@ -80,6 +108,10 @@ const TopNQueries = ({
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
+  const [dataRetentionSettings, setDataRetentionSettings] = useState<DataRetentionSettings>({
+    deleteAfterDays: '',
+    exporterType: EXPORTER_TYPE.none,
+  });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
@@ -127,13 +159,15 @@ const TopNQueries = ({
     </EuiTab>
   );
 
+  // TODO: refactor retrieveQueries and retrieveConfigInfo into a Util function
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       const nullResponse = { response: { top_queries: [] } };
-      const params = {
+      const apiParams = {
         query: {
           from: parseDateString(start),
           to: parseDateString(end),
+          dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
         },
       };
       const fetchMetric = async (endpoint: string) => {
@@ -141,7 +175,7 @@ const TopNQueries = ({
           // TODO: #13 refactor the interface definitions for requests and responses
           const response: { response: { top_queries: SearchQueryRecord[] } } = await core.http.get(
             endpoint,
-            params
+            apiParams
           );
           return {
             response: {
@@ -191,31 +225,16 @@ const TopNQueries = ({
       newTopN: string = '',
       newWindowSize: string = '',
       newTimeUnit: string = '',
-      newGroupBy: string = ''
+      newExporterType: string = '',
+      newGroupBy: string = '',
+      newDeleteAfterDays: string = ''
     ) => {
       if (get) {
         try {
-          // Helper to get merged settings with transient overwriting persistent
-          const getMergedMetricSettings = (
-            persistent: MetricSettingsResponse | undefined,
-            transient: MetricSettingsResponse | undefined
-          ): MetricSettingsResponse => {
-            if (transient !== undefined) {
-              return transient;
-            }
-            return {
-              ...persistent,
-            };
-          };
-
-          const getMergedGroupBySettings = (
-            persistent: string | undefined,
-            transient: string | undefined
-          ) => {
-            return transient ?? persistent;
-          };
-
-          const resp = await core.http.get('/api/settings');
+          // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
+          const resp = await core.http.get('/api/settings', {
+            query: { dataSourceId: getDataSourceFromUrl().id },
+          });
           const persistentSettings = resp?.response?.persistent?.search?.insights?.top_queries;
           const transientSettings = resp?.response?.transient?.search?.insights?.top_queries;
           const metrics = [
@@ -252,15 +271,30 @@ const TopNQueries = ({
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
               });
+            } else {
+              setMetricSettings(metricType, {
+                isEnabled: false,
+              });
             }
           });
-          const groupBy = getMergedGroupBySettings(
+          const groupBy = getMergedStringSettings(
             persistentSettings?.group_by,
-            transientSettings?.group_by
+            transientSettings?.group_by,
+            DEFAULT_GROUP_BY
           );
-          if (groupBy) {
-            setGroupBySettings({ groupBy });
-          }
+          setGroupBySettings({ groupBy });
+
+          const deleteAfterDays = getMergedStringSettings(
+            persistentSettings?.exporter?.delete_after_days,
+            transientSettings?.exporter?.delete_after_days,
+            DEFAULT_DELETE_AFTER_DAYS
+          );
+          const exporterType = getMergedStringSettings(
+            persistentSettings?.exporter?.type,
+            transientSettings?.exporter?.type,
+            DEFAULT_EXPORTER_TYPE
+          );
+          setDataRetentionSettings({ deleteAfterDays, exporterType });
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -273,13 +307,20 @@ const TopNQueries = ({
             currTimeUnit: newTimeUnit,
           });
           setGroupBySettings({ groupBy: newGroupBy });
+          setDataRetentionSettings({
+            deleteAfterDays: newDeleteAfterDays,
+            exporterType: newExporterType,
+          });
           await core.http.put('/api/update_settings', {
             query: {
               metric,
               enabled,
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
+              exporterType: newExporterType,
               group_by: newGroupBy,
+              delete_after_days: newDeleteAfterDays,
+              dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
             },
           });
         } catch (error) {
@@ -311,72 +352,100 @@ const TopNQueries = ({
     retrieveQueries(currStart, currEnd);
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
-  return (
-    <div style={{ padding: '35px 35px' }}>
-      <Switch>
-        <Route exact path="/query-details">
-          {() => {
-            return <QueryDetails core={core} depsStart={depsStart} />;
-          }}
-        </Route>
-        <Route exact path="/query-group-details">
-          {() => {
-            return <QueryGroupDetails core={core} depsStart={depsStart} />;
-          }}
-        </Route>
-        <Route exact path={QUERY_INSIGHTS}>
-          <PageHeader
-            coreStart={core}
-            depsStart={depsStart}
-            fallBackComponent={
-              <>
-                <EuiTitle size="l">
-                  <h1>Query insights - Top N queries</h1>
-                </EuiTitle>
-                <EuiSpacer size="l" />
-              </>
-            }
-          />
-          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          <EuiSpacer size="l" />
-          <QueryInsights
-            queries={queries}
-            loading={loading}
-            onTimeChange={onTimeChange}
-            recentlyUsedRanges={recentlyUsedRanges}
-            currStart={currStart}
-            currEnd={currEnd}
-            core={core}
-          />
-        </Route>
-        <Route exact path={CONFIGURATION}>
-          <PageHeader
-            coreStart={core}
-            depsStart={depsStart}
-            fallBackComponent={
-              <>
-                <EuiTitle size="l">
-                  <h1>Query insights - Configuration</h1>
-                </EuiTitle>
-                <EuiSpacer size="l" />
-              </>
-            }
-          />
+  const dataSourceFromUrl = getDataSourceFromUrl();
 
-          <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-          <EuiSpacer size="l" />
-          <Configuration
-            latencySettings={latencySettings}
-            cpuSettings={cpuSettings}
-            memorySettings={memorySettings}
-            groupBySettings={groupBySettings}
-            configInfo={retrieveConfigInfo}
-            core={core}
-          />
-        </Route>
-        <Redirect to={QUERY_INSIGHTS} />
-      </Switch>
-    </div>
+  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
+
+  return (
+    <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
+      <div style={{ padding: '35px 35px' }}>
+        <Switch>
+          <Route exact path="/query-details">
+            {() => {
+              return (
+                <QueryDetails
+                  core={core}
+                  depsStart={depsStart}
+                  params={params}
+                  dataSourceManagement={dataSourceManagement}
+                />
+              );
+            }}
+          </Route>
+          <Route exact path="/query-group-details">
+            {() => {
+              return (
+                <QueryGroupDetails
+                  core={core}
+                  depsStart={depsStart}
+                  params={params}
+                  dataSourceManagement={dataSourceManagement}
+                />
+              );
+            }}
+          </Route>
+          <Route exact path={QUERY_INSIGHTS}>
+            <PageHeader
+              coreStart={core}
+              depsStart={depsStart}
+              fallBackComponent={
+                <>
+                  <EuiTitle size="l">
+                    <h1>Query insights - Top N queries</h1>
+                  </EuiTitle>
+                  <EuiSpacer size="l" />
+                </>
+              }
+            />
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+            <EuiSpacer size="l" />
+            <QueryInsights
+              queries={queries}
+              loading={loading}
+              onTimeChange={onTimeChange}
+              recentlyUsedRanges={recentlyUsedRanges}
+              currStart={currStart}
+              currEnd={currEnd}
+              core={core}
+              depsStart={depsStart}
+              params={params}
+              retrieveQueries={retrieveQueries}
+              dataSourceManagement={dataSourceManagement}
+            />
+          </Route>
+          <Route exact path={CONFIGURATION}>
+            <PageHeader
+              coreStart={core}
+              depsStart={depsStart}
+              fallBackComponent={
+                <>
+                  <EuiTitle size="l">
+                    <h1>Query insights - Configuration</h1>
+                  </EuiTitle>
+                  <EuiSpacer size="l" />
+                </>
+              }
+            />
+
+            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+            <EuiSpacer size="l" />
+            <Configuration
+              latencySettings={latencySettings}
+              cpuSettings={cpuSettings}
+              memorySettings={memorySettings}
+              groupBySettings={groupBySettings}
+              dataRetentionSettings={dataRetentionSettings}
+              configInfo={retrieveConfigInfo}
+              core={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+            />
+          </Route>
+          <Redirect to={QUERY_INSIGHTS} />
+        </Switch>
+      </div>
+    </DataSourceContext.Provider>
   );
 };
 

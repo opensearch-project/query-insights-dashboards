@@ -8,6 +8,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter } from 'react-router-dom';
 import Configuration from './Configuration';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 const mockConfigInfo = jest.fn();
 const mockCoreStart = {
@@ -39,22 +40,45 @@ const groupBySettings = {
   groupBy: 'SIMILARITY',
 };
 
+const dataRetentionSettings = {
+  exporterType: 'local_index',
+  deleteAfterDays: '179',
+};
+
+const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
+const dataSourceManagementMock = {
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
+};
+const mockDataSourceContext = {
+  dataSource: { id: 'test', label: 'Test' },
+  setDataSource: jest.fn(),
+};
+
 const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
-      <Configuration
-        latencySettings={{ ...defaultLatencySettings, ...overrides }}
-        cpuSettings={defaultCpuSettings}
-        memorySettings={defaultMemorySettings}
-        groupBySettings={groupBySettings}
-        configInfo={mockConfigInfo}
-        core={mockCoreStart}
-      />
+      <DataSourceContext.Provider value={mockDataSourceContext}>
+        <Configuration
+          latencySettings={{ ...defaultLatencySettings, ...overrides }}
+          cpuSettings={defaultCpuSettings}
+          memorySettings={defaultMemorySettings}
+          groupBySettings={groupBySettings}
+          configInfo={mockConfigInfo}
+          dataRetentionSettings={dataRetentionSettings}
+          core={mockCoreStart}
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+          dataSourceManagement={dataSourceManagementMock}
+        />
+      </DataSourceContext.Provider>
     </MemoryRouter>
   );
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
-const getTopNSizeConfiguration = () => screen.getByRole('spinbutton');
+const getTopNSizeConfiguration = () => screen.getAllByRole('spinbutton');
 const getEnableToggle = () => screen.getByRole('switch');
 
 describe('Configuration Component', () => {
@@ -90,7 +114,7 @@ describe('Configuration Component', () => {
 
   it('validates topNSize and windowSize inputs and disables Save button for invalid input', () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '101' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '101' } });
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
     fireEvent.change(getWindowSizeConfigurations()[1], { target: { value: '999' } });
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
@@ -98,7 +122,7 @@ describe('Configuration Component', () => {
 
   it('calls configInfo and navigates on Save button click', async () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '7' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
     fireEvent.click(screen.getByText('Save'));
     await waitFor(() => {
       expect(mockConfigInfo).toHaveBeenCalledWith(
@@ -108,15 +132,17 @@ describe('Configuration Component', () => {
         '7',
         '10',
         'MINUTES',
-        'SIMILARITY'
+        'local_index',
+        'SIMILARITY',
+        '179'
       );
     });
   });
 
   it('resets state on Cancel button click', async () => {
     renderConfiguration();
-    fireEvent.change(getTopNSizeConfiguration(), { target: { value: '7' } });
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
     fireEvent.click(screen.getByText('Cancel'));
-    expect(getTopNSizeConfiguration()).toHaveValue(5); // Resets to initial value
+    expect(getTopNSizeConfiguration()[0]).toHaveValue(5); // Resets to initial value
   });
 });

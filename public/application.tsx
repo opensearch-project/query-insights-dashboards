@@ -9,18 +9,25 @@ import { HashRouter as Router } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from '../../../src/core/public';
 import { QueryInsightsDashboardsApp } from './components/app';
 import { QueryInsightsDashboardsPluginStartDependencies } from './types';
+import { DataSourceManagementPluginSetup } from '../../../src/plugins/data_source_management/public';
 
 export const renderApp = (
   core: CoreStart,
   depsStart: QueryInsightsDashboardsPluginStartDependencies,
-  { element }: AppMountParameters
+  params: AppMountParameters,
+  dataSourceManagement?: DataSourceManagementPluginSetup
 ) => {
   ReactDOM.render(
     <Router>
-      <QueryInsightsDashboardsApp core={core} depsStart={depsStart} />
+      <QueryInsightsDashboardsApp
+        core={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+      />
     </Router>,
-    element
+    params.element
   );
 
-  return () => ReactDOM.unmountComponentAtNode(element);
+  return () => ReactDOM.unmountComponentAtNode(params.element);
 };

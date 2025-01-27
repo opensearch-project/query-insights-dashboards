@@ -11,6 +11,13 @@ const clearAll = () => {
   cy.disableTopQueries(METRICS.MEMORY);
 };
 
+const toggleMetricEnabled = async () => {
+  cy.get('button[data-test-subj="top-n-metric-toggle"]').trigger('mouseover');
+  cy.wait(1000);
+  cy.get('button[data-test-subj="top-n-metric-toggle"]').click({ force: true });
+  cy.wait(1000);
+};
+
 describe('Query Insights Configurations Page', () => {
   beforeEach(() => {
     clearAll();
@@ -29,7 +36,8 @@ describe('Query Insights Configurations Page', () => {
     cy.contains('button', 'Top N queries').should('be.visible');
     cy.contains('button', 'Configuration').should('have.class', 'euiTab-isSelected');
     // Validate the panels
-    cy.get('.euiPanel').should('have.length', 4); // 4 panels: Settings, Status, Group Settings, Group Status
+    // 6 panels: Settings, Status, Group Settings, Group Status, Delete After Settings, Delete After Status
+    cy.get('.euiPanel').should('have.length', 6);
   });
 
   /**
@@ -66,22 +74,30 @@ describe('Query Insights Configurations Page', () => {
    */
   it('should allow enabling and disabling metrics', () => {
     // Validate the switch for enabling/disabling metrics
-    cy.get('button[role="switch"]').should('exist');
-    // Toggle the switch
-    cy.get('button[role="switch"]')
-      .first()
-      .should('have.attr', 'aria-checked', 'false') // Initially disabled
-      .click()
-      .should('have.attr', 'aria-checked', 'true'); // After toggling, it should be enabled
+    cy.get('button[data-test-subj="top-n-metric-toggle"]')
+      .should('exist')
+      .and('have.attr', 'aria-checked', 'false') // Initially disabled)
+      .trigger('mouseover')
+      .click();
+    cy.wait(1000);
+
+    cy.get('button[data-test-subj="top-n-metric-toggle"]').should(
+      'have.attr',
+      'aria-checked',
+      'true'
+    ); // After toggling, it should be enabled
     // Re-enable the switch
-    cy.get('button[role="switch"]').first().click().should('have.attr', 'aria-checked', 'false');
+    cy.get('button[data-test-subj="top-n-metric-toggle"]')
+      .trigger('mouseover')
+      .click()
+      .should('have.attr', 'aria-checked', 'false');
   });
 
   /**
    * Validate the value of N (count) input
    */
   it('should allow updating the value of N (count)', () => {
-    cy.get('button[role="switch"]').first().click();
+    toggleMetricEnabled();
     // Locate the input for N
     cy.get('input[type="number"]').should('have.attr', 'value', '3'); // Default 3
     // Change the value to 50
@@ -95,7 +111,7 @@ describe('Query Insights Configurations Page', () => {
    * Validate the window size dropdowns
    */
   it('should allow selecting a window size and unit', () => {
-    cy.get('button[role="switch"]').first().click();
+    toggleMetricEnabled();
     // Validate default values
     cy.get('select#timeUnit').should('have.value', 'MINUTES'); // Default unit is "Minute(s)"
     // Test valid time unit selection
@@ -192,7 +208,7 @@ describe('Query Insights Configurations Page', () => {
    * After saving the status panel should show the correct status
    */
   it('should allow saving the configuration', () => {
-    cy.get('button[role="switch"]').first().click();
+    toggleMetricEnabled();
     cy.get('select#timeUnit').select('MINUTES');
     cy.get('select#minutes').select('5');
     cy.get('button[data-test-subj="save-config-button"]').click();
