@@ -47,3 +47,22 @@ export interface Task {
   nodeId: string;
   taskResourceUsage: TaskResourceUsage;
 }
+
+export interface MetricSettingsResponse {
+  enabled?: string; // Could be 'true' or 'false'
+  window_size?: string; // E.g., '15m', '1h'
+  top_n_size?: string;
+}
+
+export interface ExporterSettingsResponse {
+  type?: string;
+  delete_after_days?: string;
+}
+
+export interface QueryInsightsSettingsResponse {
+  latency?: MetricSettingsResponse;
+  cpu?: MetricSettingsResponse;
+  memory?: MetricSettingsResponse;
+  group_by?: string;
+  exporter?: ExporterSettingsResponse;
+}
