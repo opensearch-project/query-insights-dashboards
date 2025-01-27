@@ -30,7 +30,7 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
-import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import {getDataSourceFromUrl, QueryInsightsDataSourceMenu} from '../../components/DataSourcePicker';
 
 export const QueryGroupDetails = ({
   core,
@@ -61,12 +61,12 @@ export const QueryGroupDetails = ({
 
   const history = useHistory();
 
-  useEffect(() => {
-    const fetchQueryDetails = async () => {
-      const retrievedQuery = await retrieveQueryById(core, '738ffbd0-d8de-11ef-9d96-eff1abd421b8', from, to, id);
-      setQuery(retrievedQuery);
-    };
+  const fetchQueryDetails = async () => {
+    const retrievedQuery = await retrieveQueryById(core, getDataSourceFromUrl().id, from, to, id);
+    setQuery(retrievedQuery);
+  };
 
+  useEffect(() => {
     if (id && from && to) {
       fetchQueryDetails();
     }
@@ -164,6 +164,7 @@ export const QueryGroupDetails = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={()=>{}}
+        onSelectedDataSource={fetchQueryDetails}
       />
       <EuiFlexItem>
         <QueryGroupAggregateSummary query={query} />

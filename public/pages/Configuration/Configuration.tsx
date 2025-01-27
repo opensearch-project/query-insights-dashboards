@@ -188,7 +188,7 @@ const Configuration = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={()=>{}}
-      />
+        onSelectedDataSource={()=>{configInfo(true);}}/>
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
           <EuiPanel paddingSize="m">

@@ -58,12 +58,12 @@ const QueryDetails = ({
     return `${month} ${day}, ${year} @ ${date.toLocaleTimeString('en-US')}`;
   }, []);
 
-  useEffect(() => {
-    const fetchQueryDetails = async () => {
-      const retrievedQuery = await retrieveQueryById(core, getDataSourceFromUrl().id, from, to, id);
-      setQuery(retrievedQuery);
-    };
+  const fetchQueryDetails = async () => {
+    const retrievedQuery = await retrieveQueryById(core, getDataSourceFromUrl().id, from, to, id);
+    setQuery(retrievedQuery);
+  };
 
+  useEffect(() => {
     if (id && from && to) {
       fetchQueryDetails();
     }
@@ -149,6 +149,7 @@ const QueryDetails = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={()=>{}}
+        onSelectedDataSource={fetchQueryDetails}
       />
       <EuiFlexItem>
         <QuerySummary query={query} />

@@ -270,6 +270,10 @@ const TopNQueries = ({
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
               });
+            } else {
+              setMetricSettings(metricType, {
+                isEnabled: false,
+              });
             }
           });
           const groupBy = getMergedGroupBySettings(
@@ -376,6 +380,7 @@ const TopNQueries = ({
               core={core}
               depsStart={depsStart}
               params={params}
+              retrieveQueries={retrieveQueries}
               dataSourceManagement={dataSourceManagement}
             />
           </Route>

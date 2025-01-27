@@ -47,6 +47,7 @@ const QueryInsights = ({
   core,
   depsStart,
   params,
+  retrieveQueries,
   dataSourceManagement,
 }: {
   queries: SearchQueryRecord[];
@@ -58,6 +59,7 @@ const QueryInsights = ({
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
+  retrieveQueries?: any;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();
@@ -277,6 +279,7 @@ const QueryInsights = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={()=>{}}
+        onSelectedDataSource={()=>{retrieveQueries(currStart, currEnd);}}
       />
       <EuiInMemoryTable
         items={queries}
