@@ -187,6 +187,7 @@ const Configuration = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
+        onManageDataSource={()=>{}}
       />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>

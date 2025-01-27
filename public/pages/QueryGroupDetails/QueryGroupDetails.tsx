@@ -163,6 +163,7 @@ export const QueryGroupDetails = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
+        onManageDataSource={()=>{}}
       />
       <EuiFlexItem>
         <QueryGroupAggregateSummary query={query} />

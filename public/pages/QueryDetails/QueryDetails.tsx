@@ -148,6 +148,7 @@ const QueryDetails = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
+        onManageDataSource={()=>{}}
       />
       <EuiFlexItem>
         <QuerySummary query={query} />

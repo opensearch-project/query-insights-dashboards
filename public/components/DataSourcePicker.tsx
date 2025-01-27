@@ -19,6 +19,7 @@ export interface DataSourceMenuProps {
   params: AppMountParameters;
   setDataSource: React.Dispatch<React.SetStateAction<DataSourceOption>>;
   selectedDataSource: DataSourceOption;
+  onManageDataSource: () => void;
 }
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
@@ -41,7 +42,7 @@ export function getDataSourceFromUrl(): DataSourceOption {
 export const QueryInsightsDataSourceMenu = React.memo(
   (props: DataSourceMenuProps) => {
     const { coreStart, depsStart, dataSourceManagement, params, setDataSource,
-      selectedDataSource } = props;
+      selectedDataSource, onManageDataSource} = props;
     const { setHeaderActionMenu } = params;
     const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
 
@@ -54,6 +55,7 @@ export const QueryInsightsDataSourceMenu = React.memo(
 
     return dataSourceEnabled ? (
       <DataSourceMenu
+        onManageDataSource={onManageDataSource}
         setMenuMountPoint={setHeaderActionMenu}
         componentType={'DataSourceSelectable'}
         componentConfig={{

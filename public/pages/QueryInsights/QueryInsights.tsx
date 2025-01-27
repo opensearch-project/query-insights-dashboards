@@ -276,6 +276,7 @@ const QueryInsights = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
+        onManageDataSource={()=>{}}
       />
       <EuiInMemoryTable
         items={queries}
