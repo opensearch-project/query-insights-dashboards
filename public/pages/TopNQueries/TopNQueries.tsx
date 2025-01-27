@@ -8,6 +8,7 @@ import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-d
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -26,7 +27,6 @@ import { MetricSettingsResponse } from '../../types';
 import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
 import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
-import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -233,7 +233,9 @@ const TopNQueries = ({
           };
 
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
-          const resp = await core.http.get('/api/settings', {query: {dataSourceId: getDataSourceFromUrl().id}});
+          const resp = await core.http.get('/api/settings', {
+            query: { dataSourceId: getDataSourceFromUrl().id },
+          });
           const persistentSettings = resp?.response?.persistent?.search?.insights?.top_queries;
           const transientSettings = resp?.response?.transient?.search?.insights?.top_queries;
           const metrics = [
@@ -344,15 +346,26 @@ const TopNQueries = ({
         <Switch>
           <Route exact path="/query-details">
             {() => {
-              return <QueryDetails core={core} depsStart={depsStart}
-                                   params={params}
-                                   dataSourceManagement={dataSourceManagement} />;
+              return (
+                <QueryDetails
+                  core={core}
+                  depsStart={depsStart}
+                  params={params}
+                  dataSourceManagement={dataSourceManagement}
+                />
+              );
             }}
           </Route>
           <Route exact path="/query-group-details">
             {() => {
-              return <QueryGroupDetails core={core} depsStart={depsStart} params={params}
-                                        dataSourceManagement={dataSourceManagement} />;
+              return (
+                <QueryGroupDetails
+                  core={core}
+                  depsStart={depsStart}
+                  params={params}
+                  dataSourceManagement={dataSourceManagement}
+                />
+              );
             }}
           </Route>
           <Route exact path={QUERY_INSIGHTS}>

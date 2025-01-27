@@ -8,7 +8,7 @@ import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_managem
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import { useHistory, useLocation } from 'react-router-dom';
-import React, {useContext, useEffect, useState} from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   EuiButton,
   EuiCodeBlock,
@@ -22,7 +22,7 @@ import {
   EuiTitle,
   EuiIconTip,
 } from '@elastic/eui';
-import {DataSourceContext, QUERY_INSIGHTS} from '../TopNQueries/TopNQueries';
+import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { QueryGroupAggregateSummary } from './Components/QueryGroupAggregateSummary';
 import { QueryGroupSampleQuerySummary } from './Components/QueryGroupSampleQuerySummary';
 
@@ -30,7 +30,10 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
-import {getDataSourceFromUrl, QueryInsightsDataSourceMenu} from '../../components/DataSourcePicker';
+import {
+  getDataSourceFromUrl,
+  QueryInsightsDataSourceMenu,
+} from '../../components/DataSourcePicker';
 
 export const QueryGroupDetails = ({
   core,
@@ -163,7 +166,7 @@ export const QueryGroupDetails = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
-        onManageDataSource={()=>{}}
+        onManageDataSource={() => {}}
         onSelectedDataSource={fetchQueryDetails}
       />
       <EuiFlexItem>

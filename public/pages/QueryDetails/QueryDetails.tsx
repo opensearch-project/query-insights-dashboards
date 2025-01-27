@@ -27,7 +27,10 @@ import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
-import { getDataSourceFromUrl, QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import {
+  getDataSourceFromUrl,
+  QueryInsightsDataSourceMenu,
+} from '../../components/DataSourcePicker';
 
 const QueryDetails = ({
   core,
@@ -148,7 +151,7 @@ const QueryDetails = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
-        onManageDataSource={()=>{}}
+        onManageDataSource={() => {}}
         onSelectedDataSource={fetchQueryDetails}
       />
       <EuiFlexItem>

@@ -42,8 +42,16 @@ export function getDataSourceFromUrl(): DataSourceOption {
 
 export const QueryInsightsDataSourceMenu = React.memo(
   (props: DataSourceMenuProps) => {
-    const { coreStart, depsStart, dataSourceManagement, params, setDataSource,
-      selectedDataSource, onManageDataSource, onSelectedDataSource} = props;
+    const {
+      coreStart,
+      depsStart,
+      dataSourceManagement,
+      params,
+      setDataSource,
+      selectedDataSource,
+      onManageDataSource,
+      onSelectedDataSource,
+    } = props;
     const { setHeaderActionMenu } = params;
     const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
 
@@ -61,7 +69,7 @@ export const QueryInsightsDataSourceMenu = React.memo(
         setMenuMountPoint={setHeaderActionMenu}
         componentType={'DataSourceSelectable'}
         componentConfig={{
-          onManageDataSource: onManageDataSource,
+          onManageDataSource,
           savedObjects: coreStart.savedObjects.client,
           notifications: coreStart.notifications,
           activeOption:
@@ -72,7 +80,6 @@ export const QueryInsightsDataSourceMenu = React.memo(
       />
     ) : null;
   },
-  (prevProps, newProps) =>
-    prevProps.selectedDataSource.id === newProps.selectedDataSource.id
-    // prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
-)
+  (prevProps, newProps) => prevProps.selectedDataSource.id === newProps.selectedDataSource.id
+  // prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
+);

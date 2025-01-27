@@ -68,7 +68,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        console.log("request is!!");
+        console.log('request is!!');
         console.log(request);
         const { from, to, id } = request.query;
         const params = { from, to, id };
@@ -86,8 +86,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               response: res,
             },
           });
-        }
-        else {
+        } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
@@ -132,7 +131,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         const { from, to, id } = request.query;
         const params = { from, to, id };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          console.log(request.query.dataSourceId)
+          console.log(request.query.dataSourceId);
           console.log(params);
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -147,8 +146,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               response: res,
             },
           });
-        }
-        else {
+        } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
@@ -206,8 +204,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               response: res,
             },
           });
-        }
-        else {
+        } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
@@ -257,8 +254,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               response: res,
             },
           });
-        }
-        else {
+        } else {
           console.log(request);
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
@@ -322,8 +318,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
               response: res,
             },
           });
-        }
-       else {
+        } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );

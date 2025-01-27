@@ -11,7 +11,7 @@ import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/pub
 export interface QueryInsightsDashboardsPluginSetup {}
 export interface QueryInsightsDashboardsPluginStart {}
 export interface QueryInsightsDashboardsPluginStartDependencies {
-  dataSource?: DataSourcePluginStart
+  dataSource?: DataSourcePluginStart;
 }
 export interface QueryInsightsDashboardsPluginSetupDependencies {
   dataSourceManagement?: DataSourceManagementPluginSetup;

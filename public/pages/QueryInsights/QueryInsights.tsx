@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {useContext, useEffect, useState} from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import {DataSourceContext, QUERY_INSIGHTS} from '../TopNQueries/TopNQueries';
+import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import {
   CPU_TIME,
@@ -278,8 +278,10 @@ const QueryInsights = ({
         dataSourceManagement={dataSourceManagement}
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
-        onManageDataSource={()=>{}}
-        onSelectedDataSource={()=>{retrieveQueries(currStart, currEnd);}}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          retrieveQueries(currStart, currEnd);
+        }}
       />
       <EuiInMemoryTable
         items={queries}
