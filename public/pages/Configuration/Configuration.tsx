@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useContext } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -23,14 +23,22 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
-import { QUERY_INSIGHTS, MetricSettings, GroupBySettings } from '../TopNQueries/TopNQueries';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import {
+  QUERY_INSIGHTS,
+  MetricSettings,
+  GroupBySettings,
+  DataSourceContext,
+} from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
   TIME_UNITS_TEXT,
   MINUTES_OPTIONS,
   GROUP_BY_OPTIONS,
 } from '../Utils/Constants';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const Configuration = ({
   latencySettings,
@@ -39,6 +47,9 @@ const Configuration = ({
   groupBySettings,
   configInfo,
   core,
+  depsStart,
+  params,
+  dataSourceManagement,
 }: {
   latencySettings: MetricSettings;
   cpuSettings: MetricSettings;
@@ -46,6 +57,9 @@ const Configuration = ({
   groupBySettings: GroupBySettings;
   configInfo: any;
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -56,6 +70,7 @@ const Configuration = ({
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
   const [groupBy, setGroupBy] = useState(groupBySettings.groupBy);
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
@@ -170,6 +185,19 @@ const Configuration = ({
 
   return (
     <div>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          configInfo(true);
+        }}
+        dataSourcePickerReadOnly={false}
+      />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
           <EuiPanel paddingSize="m">
@@ -214,7 +242,12 @@ const Configuration = ({
                     <EuiFormRow style={formRowPadding}>
                       <EuiFlexItem>
                         <EuiSpacer size="s" />
-                        <EuiSwitch label="" checked={isEnabled} onChange={onEnabledChange} />
+                        <EuiSwitch
+                          label=""
+                          checked={isEnabled}
+                          onChange={onEnabledChange}
+                          data-test-subj="top-n-metric-toggle"
+                        />
                       </EuiFlexItem>
                     </EuiFormRow>
                   </EuiFlexItem>
