@@ -4,7 +4,11 @@
   "opensearchDashboardsVersion": "2.19.0",
   "server": true,
   "ui": true,
-  "requiredPlugins": ["navigation"],
-  "optionalPlugins": ["dataSource",
-    "dataSourceManagement"]
+  "requiredPlugins": [
+    "navigation"
+  ],
+  "optionalPlugins": [
+    "dataSource",
+    "dataSourceManagement"
+  ]
 }
