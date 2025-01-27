@@ -15,6 +15,11 @@ import { QueryInsightsPlugin } from './clusters/queryInsightsPlugin';
 
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { defineRoutes } from './routes';
+import { DataSourcePluginSetup } from '../../../src/plugins/data_source/server/types';
+
+export interface QueryInsightsDashboardsPluginSetupDependencies {
+  dataSource: DataSourcePluginSetup;
+}
 
 export class QueryInsightsDashboardsPlugin
   implements Plugin<QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart> {
@@ -24,8 +29,8 @@ export class QueryInsightsDashboardsPlugin
     this.logger = initializerContext.logger.get();
   }
 
-  public setup(core: CoreSetup) {
-    this.logger.debug('query-insights-dashboards: Setup');
+  public setup(core: CoreSetup, { dataSource }: QueryInsightsDashboardsPluginSetupDependencies) {
+    const dataSourceEnabled = !!dataSource;
     const router = core.http.createRouter();
     const queryInsightsClient: ILegacyCustomClusterClient = core.opensearch.legacy.createClient(
       'opensearch_queryInsights',
@@ -33,6 +38,10 @@ export class QueryInsightsDashboardsPlugin
         plugins: [QueryInsightsPlugin],
       }
     );
+    if (dataSourceEnabled) {
+      dataSource.registerCustomApiSchema(QueryInsightsPlugin);
+    }
+
     // @ts-ignore
     core.http.registerRouteHandlerContext('queryInsights_plugin', (_context, _request) => {
       return {
@@ -42,7 +51,7 @@ export class QueryInsightsDashboardsPlugin
     });
 
     // Register server side APIs
-    defineRoutes(router);
+    defineRoutes(router, dataSourceEnabled);
 
     return {};
   }

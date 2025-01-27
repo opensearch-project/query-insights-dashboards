@@ -57,7 +57,7 @@ const setUpDefaultEnabledSettings = () => {
 const renderTopNQueries = (type: string) =>
   render(
     <MemoryRouter initialEntries={[type]}>
-      <TopNQueries core={mockCore} />
+      <TopNQueries core={mockCore} depsStart={{ navigation: {} }} params={{} as any} />
     </MemoryRouter>
   );
 
@@ -99,7 +99,9 @@ describe('TopNQueries Component', () => {
     (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
     const container = renderTopNQueries(CONFIGURATION);
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+        query: { dataSourceId: undefined },
+      });
       expect(screen.getByText('Mocked Configuration')).toBeInTheDocument();
       expect(container).toMatchSnapshot();
     });
@@ -110,7 +112,7 @@ describe('TopNQueries Component', () => {
     const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)
@@ -153,7 +155,7 @@ describe('TopNQueries Component', () => {
     const container = renderTopNQueries(QUERY_INSIGHTS);
     await waitFor(() => {
       // Verify each endpoint is called
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)
@@ -179,7 +181,13 @@ describe('TopNQueries Component', () => {
     // Render with initial time range
     const { rerender } = render(
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} initialStart="now-1d" initialEnd="now" />
+        <TopNQueries
+          core={mockCore}
+          initialStart="now-1d"
+          initialEnd="now"
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+        />
       </MemoryRouter>
     );
     // Mock a new response for the time range update
@@ -190,14 +198,20 @@ describe('TopNQueries Component', () => {
     // Re-render with updated time range to simulate a change
     rerender(
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
-        <TopNQueries core={mockCore} initialStart="now-7d" initialEnd="now" />
+        <TopNQueries
+          core={mockCore}
+          initialStart="now-7d"
+          initialEnd="now"
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+        />
       </MemoryRouter>
     );
     // Verify that the component re-fetches data for the new time range
     await waitFor(() => {
       // 1 initial call for settings, 3 each for the initial rendering and re-rendering
       expect(mockCore.http.get).toHaveBeenCalledTimes(7);
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',
         expect.any(Object)

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
@@ -19,19 +19,28 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import QuerySummary from './Components/QuerySummary';
-import { QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
+import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
+import {
+  getDataSourceFromUrl,
+  QueryInsightsDataSourceMenu,
+} from '../../components/DataSourcePicker';
 
 const QueryDetails = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   // Get url parameters
@@ -43,6 +52,7 @@ const QueryDetails = ({
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
   const history = useHistory();
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   // Convert UNIX time to a readable format
   const convertTime = useCallback((unixTime: number) => {
@@ -51,12 +61,12 @@ const QueryDetails = ({
     return `${month} ${day}, ${year} @ ${date.toLocaleTimeString('en-US')}`;
   }, []);
 
-  useEffect(() => {
-    const fetchQueryDetails = async () => {
-      const retrievedQuery = await retrieveQueryById(core, from, to, id);
-      setQuery(retrievedQuery);
-    };
+  const fetchQueryDetails = async () => {
+    const retrievedQuery = await retrieveQueryById(core, getDataSourceFromUrl().id, from, to, id);
+    setQuery(retrievedQuery);
+  };
 
+  useEffect(() => {
     if (id && from && to) {
       fetchQueryDetails();
     }
@@ -134,7 +144,17 @@ const QueryDetails = ({
           </>
         }
       />
-
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={fetchQueryDetails}
+        dataSourcePickerReadOnly={true}
+      />
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />
