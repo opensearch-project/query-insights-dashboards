@@ -153,6 +153,7 @@ const QueryDetails = ({
         selectedDataSource={dataSource}
         onManageDataSource={() => {}}
         onSelectedDataSource={fetchQueryDetails}
+        dataSourcePickerReadOnly={true}
       />
       <EuiFlexItem>
         <QuerySummary query={query} />

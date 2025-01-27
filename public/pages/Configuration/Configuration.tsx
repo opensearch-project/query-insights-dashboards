@@ -196,6 +196,7 @@ const Configuration = ({
         onSelectedDataSource={() => {
           configInfo(true);
         }}
+        dataSourcePickerReadOnly={false}
       />
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>

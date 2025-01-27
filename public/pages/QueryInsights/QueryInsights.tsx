@@ -282,6 +282,7 @@ const QueryInsights = ({
         onSelectedDataSource={() => {
           retrieveQueries(currStart, currEnd);
         }}
+        dataSourcePickerReadOnly={false}
       />
       <EuiInMemoryTable
         items={queries}
