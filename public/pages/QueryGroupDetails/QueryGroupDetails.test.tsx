@@ -11,6 +11,7 @@ import React from 'react';
 import { mockQueries } from '../../../test/mocks/mockQueries';
 import '@testing-library/jest-dom/extend-expect';
 import { retrieveQueryById } from '../Utils/QueryUtils';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 jest.mock('object-hash', () => jest.fn(() => '8c1e50c035663459d567fa11d8eb494d'));
 
@@ -28,6 +29,18 @@ jest.mock('react-ace', () => ({
   __esModule: true,
   default: () => <div>Mocked Ace Editor</div>,
 }));
+
+const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
+const dataSourceManagementMock = {
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
+};
+const mockDataSourceContext = {
+  dataSource: { id: 'test', label: 'Test' },
+  setDataSource: jest.fn(),
+};
 
 const mockQuery = mockQueries[0];
 
@@ -51,9 +64,16 @@ describe('QueryGroupDetails', () => {
       <MemoryRouter
         initialEntries={['/query-group-details?id=mockId&from=1632441600000&to=1632528000000']}
       >
-        <Route path="/query-group-details">
-          <QueryGroupDetails core={coreMock} />
-        </Route>
+        <DataSourceContext.Provider value={mockDataSourceContext}>
+          <Route path="/query-group-details">
+            <QueryGroupDetails
+              core={coreMock}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </Route>
+        </DataSourceContext.Provider>
       </MemoryRouter>
     );
   };
@@ -78,6 +98,7 @@ describe('QueryGroupDetails', () => {
     await waitFor(() => {
       expect(retrieveQueryById).toHaveBeenCalledWith(
         coreMock,
+        undefined,
         '1632441600000',
         '1632528000000',
         'mockId'

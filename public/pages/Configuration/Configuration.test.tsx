@@ -8,6 +8,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter } from 'react-router-dom';
 import Configuration from './Configuration';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 const mockConfigInfo = jest.fn();
 const mockCoreStart = {
@@ -39,17 +40,34 @@ const groupBySettings = {
   groupBy: 'SIMILARITY',
 };
 
+const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
+const dataSourceManagementMock = {
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
+};
+const mockDataSourceContext = {
+  dataSource: { id: 'test', label: 'Test' },
+  setDataSource: jest.fn(),
+};
+
 const renderConfiguration = (overrides = {}) =>
   render(
     <MemoryRouter>
-      <Configuration
-        latencySettings={{ ...defaultLatencySettings, ...overrides }}
-        cpuSettings={defaultCpuSettings}
-        memorySettings={defaultMemorySettings}
-        groupBySettings={groupBySettings}
-        configInfo={mockConfigInfo}
-        core={mockCoreStart}
-      />
+      <DataSourceContext.Provider value={mockDataSourceContext}>
+        <Configuration
+          latencySettings={{ ...defaultLatencySettings, ...overrides }}
+          cpuSettings={defaultCpuSettings}
+          memorySettings={defaultMemorySettings}
+          groupBySettings={groupBySettings}
+          configInfo={mockConfigInfo}
+          core={mockCoreStart}
+          depsStart={{ navigation: {} }}
+          params={{} as any}
+          dataSourceManagement={dataSourceManagementMock}
+        />
+      </DataSourceContext.Provider>
     </MemoryRouter>
   );
 

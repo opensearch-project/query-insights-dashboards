@@ -13,6 +13,7 @@ import plotly from 'plotly.js-dist';
 import { MemoryRouter, Route } from 'react-router-dom';
 import hash from 'object-hash';
 import { retrieveQueryById } from '../Utils/QueryUtils';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 jest.mock('plotly.js-dist', () => ({
   newPlot: jest.fn(),
@@ -29,6 +30,18 @@ const mockCoreStart = {
   uiSettings: {
     get: jest.fn().mockReturnValue(false),
   },
+};
+
+const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
+const dataSourceManagementMock = {
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
+};
+const mockDataSourceContext = {
+  dataSource: { id: 'test', label: 'Test' },
+  setDataSource: jest.fn(),
 };
 
 const mockQuery = MockQueries()[0];
@@ -48,9 +61,16 @@ describe('QueryDetails component', () => {
           )}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z`,
         ]}
       >
-        <Route path="/query-details">
-          <QueryDetails core={mockCoreStart} />
-        </Route>
+        <DataSourceContext.Provider value={mockDataSourceContext}>
+          <Route path="/query-details">
+            <QueryDetails
+              core={mockCoreStart}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </Route>
+        </DataSourceContext.Provider>
       </MemoryRouter>
     );
   };
