@@ -232,7 +232,8 @@ const TopNQueries = ({
             return transient ?? persistent;
           };
 
-          const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
+          // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
+          const resp = await core.http.get('/api/settings', {query: {dataSourceId: getDataSourceFromUrl().id}});
           const persistentSettings = resp?.response?.persistent?.search?.insights?.top_queries;
           const transientSettings = resp?.response?.transient?.search?.insights?.top_queries;
           const metrics = [

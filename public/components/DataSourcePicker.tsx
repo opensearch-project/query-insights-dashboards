@@ -68,6 +68,6 @@ export const QueryInsightsDataSourceMenu = React.memo(
     ) : null;
   },
   (prevProps, newProps) =>
-    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
+    prevProps.selectedDataSource.id === newProps.selectedDataSource.id
     // prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
 )

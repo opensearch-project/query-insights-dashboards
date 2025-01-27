@@ -5,7 +5,7 @@
 
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
-export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
+export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
   router.get(
     {
       path: '/api/top_queries',
@@ -17,11 +17,11 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        if (dataSoureEnabled) {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res = await client.callAPI('queryInsights.getTopNQueries', {});
+        // data source disabled
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getTopNQueries');
           return response.custom({
             statusCode: 200,
             body: {
@@ -30,9 +30,10 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
             },
           });
         } else {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
-          const res = await client('queryInsights.getTopNQueries');
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getTopNQueries', {});
           return response.custom({
             statusCode: 200,
             body: {
@@ -67,16 +68,17 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
+        console.log("request is!!");
+        console.log(request);
         const { from, to, id } = request.query;
         const params = { from, to, id };
-        if (dataSoureEnabled) {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
           const res =
             id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesLatencyForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesLatency', params);
+              ? await client('queryInsights.getTopNQueriesLatencyForId', params)
+              : await client('queryInsights.getTopNQueriesLatency', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -84,13 +86,15 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
               response: res,
             },
           });
-        } else {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+        }
+        else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
           const res =
             id != null
-              ? await client('queryInsights.getTopNQueriesLatencyForId', params)
-              : await client('queryInsights.getTopNQueriesLatency', params);
+              ? await client.callAPI('queryInsights.getTopNQueriesLatencyForId', params)
+              : await client.callAPI('queryInsights.getTopNQueriesLatency', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -127,24 +131,8 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
       try {
         const { from, to, id } = request.query;
         const params = { from, to, id };
-        if (dataSoureEnabled) {
-          
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res =
-            id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesCpuForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesCpu', params);
-          return response.custom({
-            statusCode: 200,
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
-        } else {
-           console.log(request.query.dataSourceId)
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          console.log(request.query.dataSourceId)
           console.log(params);
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -152,6 +140,22 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
             id != null
               ? await client('queryInsights.getTopNQueriesCpuForId', params)
               : await client('queryInsights.getTopNQueriesCpu', params);
+          return response.custom({
+            statusCode: 200,
+            body: {
+              ok: true,
+              response: res,
+            },
+          });
+        }
+        else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res =
+            id != null
+              ? await client.callAPI('queryInsights.getTopNQueriesCpuForId', params)
+              : await client.callAPI('queryInsights.getTopNQueriesCpu', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -188,14 +192,13 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
       try {
         const { from, to, id } = request.query;
         const params = { from, to, id };
-        if (dataSoureEnabled) {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
           const res =
             id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesMemoryForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesMemory', params);
+              ? await client('queryInsights.getTopNQueriesMemoryForId', params)
+              : await client('queryInsights.getTopNQueriesMemory', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -203,13 +206,15 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
               response: res,
             },
           });
-        } else {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+        }
+        else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
           const res =
             id != null
-              ? await client('queryInsights.getTopNQueriesMemoryForId', params)
-              : await client('queryInsights.getTopNQueriesMemory', params);
+              ? await client.callAPI('queryInsights.getTopNQueriesMemoryForId', params)
+              : await client.callAPI('queryInsights.getTopNQueriesMemory', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -241,11 +246,10 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        if (dataSoureEnabled) {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res = await client.callAPI('queryInsights.getSettings', {});
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getSettings');
           return response.custom({
             statusCode: 200,
             body: {
@@ -253,10 +257,13 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
               response: res,
             },
           });
-        } else {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
-          const res = await client('queryInsights.getSettings');
+        }
+        else {
+          console.log(request);
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getSettings', {});
           return response.custom({
             statusCode: 200,
             body: {
@@ -304,11 +311,10 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
             },
           },
         };
-        if (dataSoureEnabled) {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res = await client.callAPI('queryInsights.setSettings', params);
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.setSettings', params);
           return response.custom({
             statusCode: 200,
             body: {
@@ -316,10 +322,12 @@ export function defineRoutes(router: IRouter, dataSoureEnabled: boolean) {
               response: res,
             },
           });
-        } else {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
-          const res = await client('queryInsights.setSettings', params);
+        }
+       else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.setSettings', params);
           return response.custom({
             statusCode: 200,
             body: {
