@@ -13,7 +13,7 @@ import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
 
 export interface DataSourceMenuProps {
-  dataSourceManagement: DataSourceManagementPluginSetup;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
   coreStart: CoreStart;
   params: AppMountParameters;

@@ -17,16 +17,23 @@ import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import {
+  DEFAULT_DELETE_AFTER_DAYS,
+  DEFAULT_EXPORTER_TYPE,
+  DEFAULT_GROUP_BY,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
   MetricType,
 } from '../Utils/Constants';
 
-import { MetricSettingsResponse } from '../../types';
-import { getTimeAndUnitFromString } from '../Utils/MetricUtils';
 import { parseDateString } from '../Utils/DateUtils';
+import {
+  getMergedMetricSettings,
+  getMergedStringSettings,
+  getTimeAndUnitFromString,
+} from '../Utils/MetricUtils';
 import { getDataSourceFromUrl } from '../../components/DataSourcePicker';
+import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -40,6 +47,11 @@ export interface MetricSettings {
 
 export interface GroupBySettings {
   groupBy: string;
+}
+
+export interface DataRetentionSettings {
+  exporterType: string;
+  deleteAfterDays: string;
 }
 
 export interface DataSourceContextType {
@@ -96,6 +108,10 @@ const TopNQueries = ({
   });
 
   const [groupBySettings, setGroupBySettings] = useState<GroupBySettings>({ groupBy: 'none' });
+  const [dataRetentionSettings, setDataRetentionSettings] = useState<DataRetentionSettings>({
+    deleteAfterDays: '',
+    exporterType: EXPORTER_TYPE.none,
+  });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
     switch (metricType) {
@@ -209,30 +225,12 @@ const TopNQueries = ({
       newTopN: string = '',
       newWindowSize: string = '',
       newTimeUnit: string = '',
-      newGroupBy: string = ''
+      newExporterType: string = '',
+      newGroupBy: string = '',
+      newDeleteAfterDays: string = ''
     ) => {
       if (get) {
         try {
-          // Helper to get merged settings with transient overwriting persistent
-          const getMergedMetricSettings = (
-            persistent: MetricSettingsResponse | undefined,
-            transient: MetricSettingsResponse | undefined
-          ): MetricSettingsResponse => {
-            if (transient !== undefined) {
-              return transient;
-            }
-            return {
-              ...persistent,
-            };
-          };
-
-          const getMergedGroupBySettings = (
-            persistent: string | undefined,
-            transient: string | undefined
-          ) => {
-            return transient ?? persistent;
-          };
-
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
           const resp = await core.http.get('/api/settings', {
             query: { dataSourceId: getDataSourceFromUrl().id },
@@ -279,13 +277,24 @@ const TopNQueries = ({
               });
             }
           });
-          const groupBy = getMergedGroupBySettings(
+          const groupBy = getMergedStringSettings(
             persistentSettings?.group_by,
-            transientSettings?.group_by
+            transientSettings?.group_by,
+            DEFAULT_GROUP_BY
           );
-          if (groupBy) {
-            setGroupBySettings({ groupBy });
-          }
+          setGroupBySettings({ groupBy });
+
+          const deleteAfterDays = getMergedStringSettings(
+            persistentSettings?.exporter?.delete_after_days,
+            transientSettings?.exporter?.delete_after_days,
+            DEFAULT_DELETE_AFTER_DAYS
+          );
+          const exporterType = getMergedStringSettings(
+            persistentSettings?.exporter?.type,
+            transientSettings?.exporter?.type,
+            DEFAULT_EXPORTER_TYPE
+          );
+          setDataRetentionSettings({ deleteAfterDays, exporterType });
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -298,13 +307,19 @@ const TopNQueries = ({
             currTimeUnit: newTimeUnit,
           });
           setGroupBySettings({ groupBy: newGroupBy });
+          setDataRetentionSettings({
+            deleteAfterDays: newDeleteAfterDays,
+            exporterType: newExporterType,
+          });
           await core.http.put('/api/update_settings', {
             query: {
               metric,
               enabled,
               top_n_size: newTopN,
               window_size: `${newWindowSize}${newTimeUnit === 'MINUTES' ? 'm' : 'h'}`,
+              exporterType: newExporterType,
               group_by: newGroupBy,
+              delete_after_days: newDeleteAfterDays,
               dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
             },
           });
@@ -419,6 +434,7 @@ const TopNQueries = ({
               cpuSettings={cpuSettings}
               memorySettings={memorySettings}
               groupBySettings={groupBySettings}
+              dataRetentionSettings={dataRetentionSettings}
               configInfo={retrieveConfigInfo}
               core={core}
               depsStart={depsStart}
