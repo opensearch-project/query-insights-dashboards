@@ -6,5 +6,7 @@
   "ui": true,
   "requiredPlugins": ["navigation"],
   "optionalPlugins": ["dataSource",
-    "dataSourceManagement"]
+    "dataSourceManagement"],
+  "supportedOSDataSourceVersions": ">=2.19.0",
+  "requiredOSDataSourcePlugins": ["query-insights"]
 }

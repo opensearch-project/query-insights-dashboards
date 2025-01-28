@@ -27,10 +27,9 @@ import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
-import {
-  getDataSourceFromUrl,
-  QueryInsightsDataSourceMenu,
-} from '../../components/DataSourcePicker';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+
+import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 
 const QueryDetails = ({
   core,
