@@ -51,9 +51,10 @@ export const EXPORTER_TYPES_LIST = [
   { value: EXPORTER_TYPE.none, text: 'None' },
 ];
 
-export const DEFAULT_TOP_N_SIZE = '3';
-export const DEFAULT_WINDOW_SIZE = '1';
+export const DEFAULT_METRIC_ENABLED = true;
+export const DEFAULT_TOP_N_SIZE = '10';
+export const DEFAULT_WINDOW_SIZE = '5';
 export const DEFAULT_TIME_UNIT = TIME_UNIT.MINUTES;
 export const DEFAULT_GROUP_BY = 'none';
-export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.none;
+export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';

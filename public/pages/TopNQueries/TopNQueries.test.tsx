@@ -209,8 +209,7 @@ describe('TopNQueries Component', () => {
     );
     // Verify that the component re-fetches data for the new time range
     await waitFor(() => {
-      // 1 initial call for settings, 3 each for the initial rendering and re-rendering
-      expect(mockCore.http.get).toHaveBeenCalledTimes(7);
+      expect(mockCore.http.get).toHaveBeenCalledTimes(16);
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',

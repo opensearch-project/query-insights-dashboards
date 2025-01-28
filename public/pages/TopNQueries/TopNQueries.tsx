@@ -20,6 +20,7 @@ import {
   DEFAULT_DELETE_AFTER_DAYS,
   DEFAULT_EXPORTER_TYPE,
   DEFAULT_GROUP_BY,
+  DEFAULT_METRIC_ENABLED,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
@@ -87,21 +88,21 @@ const TopNQueries = ({
     { start: currStart, end: currEnd },
   ]);
   const [latencySettings, setLatencySettings] = useState<MetricSettings>({
-    isEnabled: false,
+    isEnabled: DEFAULT_METRIC_ENABLED,
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
   });
 
   const [cpuSettings, setCpuSettings] = useState<MetricSettings>({
-    isEnabled: false,
+    isEnabled: DEFAULT_METRIC_ENABLED,
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
   });
 
   const [memorySettings, setMemorySettings] = useState<MetricSettings>({
-    isEnabled: false,
+    isEnabled: DEFAULT_METRIC_ENABLED,
     currTopN: DEFAULT_TOP_N_SIZE,
     currWindowSize: DEFAULT_WINDOW_SIZE,
     currTimeUnit: DEFAULT_TIME_UNIT,
@@ -263,17 +264,17 @@ const TopNQueries = ({
 
           // Process each metric
           metrics.forEach(({ metricType, metricSetting }) => {
-            if (metricSetting?.enabled === 'true') {
+            if (metricSetting?.enabled === 'false') {
+              setMetricSettings(metricType, {
+                isEnabled: false,
+              });
+            } else {
               const [time, timeUnits] = getTimeAndUnitFromString(metricSetting.window_size);
               setMetricSettings(metricType, {
                 isEnabled: true,
                 currTopN: metricSetting.top_n_size ?? DEFAULT_TOP_N_SIZE,
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
-              });
-            } else {
-              setMetricSettings(metricType, {
-                isEnabled: false,
               });
             }
           });
