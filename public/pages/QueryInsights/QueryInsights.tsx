@@ -306,7 +306,7 @@ const QueryInsights = ({
               type: 'field_value_selection',
               field: GROUP_BY_FIELD,
               name: TYPE,
-              multiSelect: true,
+              multiSelect: 'or',
               options: [
                 {
                   value: 'NONE',
@@ -325,7 +325,7 @@ const QueryInsights = ({
               type: 'field_value_selection',
               field: INDICES_FIELD,
               name: INDICES,
-              multiSelect: true,
+              multiSelect: 'or',
               options: filterDuplicates(
                 queries.map((query) => {
                   const values = Array.from(new Set(query[INDICES_FIELD].flat()));
@@ -341,7 +341,7 @@ const QueryInsights = ({
               type: 'field_value_selection',
               field: SEARCH_TYPE_FIELD,
               name: SEARCH_TYPE,
-              multiSelect: false,
+              multiSelect: 'or',
               options: filterDuplicates(
                 queries.map((query) => ({
                   value: query[SEARCH_TYPE_FIELD],
@@ -354,7 +354,7 @@ const QueryInsights = ({
               type: 'field_value_selection',
               field: NODE_ID_FIELD,
               name: NODE_ID,
-              multiSelect: true,
+              multiSelect: 'or',
               options: filterDuplicates(
                 queries.map((query) => ({
                   value: query[NODE_ID_FIELD],
