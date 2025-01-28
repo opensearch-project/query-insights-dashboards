@@ -11,6 +11,7 @@ import {
 } from 'src/plugins/data_source_management/public';
 import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
+import { getDataSourceEnabledUrl, isDataSourceCompatible } from '../utils/datasource-utils';
 
 export interface DataSourceMenuProps {
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -22,23 +23,6 @@ export interface DataSourceMenuProps {
   onManageDataSource: () => void;
   onSelectedDataSource: () => void;
   dataSourcePickerReadOnly: boolean;
-}
-
-export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
-  const url = new URL(window.location.href);
-  url.searchParams.set('dataSource', JSON.stringify(dataSource));
-  return url;
-}
-
-export function getDataSourceFromUrl(): DataSourceOption {
-  const urlParams = new URLSearchParams(window.location.search);
-  const dataSourceParam = (urlParams && urlParams.get('dataSource')) || '{}';
-  // following block is needed if the dataSource param is set to non-JSON value, say 'undefined'
-  try {
-    return JSON.parse(dataSourceParam);
-  } catch (e) {
-    return JSON.parse('{}'); // Return an empty object or some default value if parsing fails
-  }
 }
 
 export const QueryInsightsDataSourceMenu = React.memo(
@@ -78,6 +62,7 @@ export const QueryInsightsDataSourceMenu = React.memo(
             selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
           onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
           fullWidth: true,
+          dataSourceFilter: isDataSourceCompatible,
         }}
       />
     ) : null;

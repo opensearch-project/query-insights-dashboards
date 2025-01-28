@@ -30,10 +30,8 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../Utils/QueryUtils';
-import {
-  getDataSourceFromUrl,
-  QueryInsightsDataSourceMenu,
-} from '../../components/DataSourcePicker';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 
 export const QueryGroupDetails = ({
   core,
