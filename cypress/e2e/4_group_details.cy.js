@@ -4,11 +4,15 @@
  */
 
 import sampleDocument from '../fixtures/sample_document.json';
+import { METRICS } from '../support/constants';
 
 const indexName = 'sample_index';
 
 const clearAll = () => {
   cy.deleteIndexByName(indexName);
+  cy.disableTopQueries(METRICS.LATENCY);
+  cy.disableTopQueries(METRICS.CPU);
+  cy.disableTopQueries(METRICS.MEMORY);
   cy.disableGrouping();
 };
 
@@ -16,6 +20,7 @@ describe('Query Group Details Page', () => {
   beforeEach(() => {
     clearAll();
     cy.createIndexByName(indexName, sampleDocument);
+    cy.enableTopQueries(METRICS.LATENCY);
     cy.enableGrouping();
     cy.searchOnIndex(indexName);
     cy.searchOnIndex(indexName);
