@@ -398,7 +398,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
         class="euiSpacer euiSpacer--l"
       />
       <div
-        class="euiBasicTable"
+        class="euiBasicTable euiBasicTable-loading"
       >
         <div>
           <div
