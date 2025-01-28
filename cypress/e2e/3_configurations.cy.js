@@ -99,7 +99,7 @@ describe('Query Insights Configurations Page', () => {
   it('should allow updating the value of N (count)', () => {
     toggleMetricEnabled();
     // Locate the input for N
-    cy.get('input[type="number"]').should('have.attr', 'value', '3'); // Default 3
+    cy.get('input[type="number"]').should('have.attr', 'value', '10'); // Default 10
     // Change the value to 50
     cy.get('input[type="number"]').first().clear().type('50').should('have.value', '50');
     // Validate invalid input
@@ -114,6 +114,7 @@ describe('Query Insights Configurations Page', () => {
     toggleMetricEnabled();
     // Validate default values
     cy.get('select#timeUnit').should('have.value', 'MINUTES'); // Default unit is "Minute(s)"
+    cy.get('select#minutes').should('have.value', '5');
     // Test valid time unit selection
     cy.get('select#timeUnit').select('HOURS').should('have.value', 'HOURS');
     cy.get('select#timeUnit').select('MINUTES').should('have.value', 'MINUTES');

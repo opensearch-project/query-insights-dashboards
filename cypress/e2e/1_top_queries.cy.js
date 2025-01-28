@@ -59,6 +59,9 @@ describe('Query Insights Dashboard', () => {
    * Validate sorting by the "Timestamp" column works correctly
    */
   it('should sort the table by the Timestamp column', () => {
+    // waiting for the query insights queue to drain
+    cy.wait(10000);
+    cy.navigateToOverview();
     // Click the Timestamp column header to sort
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
