@@ -4,9 +4,15 @@
   "opensearchDashboardsVersion": "3.0.0",
   "server": true,
   "ui": true,
-  "requiredPlugins": ["navigation"],
-  "optionalPlugins": ["dataSource",
-    "dataSourceManagement"],
+  "requiredPlugins": [
+    "navigation"
+  ],
+  "optionalPlugins": [
+    "dataSource",
+    "dataSourceManagement"
+  ],
   "supportedOSDataSourceVersions": ">=2.19.0",
-  "requiredOSDataSourcePlugins": ["query-insights"]
+  "requiredOSDataSourcePlugins": [
+    "query-insights"
+  ]
 }
