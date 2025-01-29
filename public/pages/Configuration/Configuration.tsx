@@ -216,7 +216,6 @@ const Configuration = ({
     return windowVal >= 1 && windowVal <= 24;
   })();
 
-  const textPadding = { lineHeight: '22px', padding: '5px 0px' };
   const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
   const disabledSymb = <EuiHealth color="default">Disabled</EuiHealth>;
@@ -242,7 +241,7 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                    <h2>Top n queries monitoring configuration settings</h2>
+                  <h2>Top n queries monitoring configuration settings</h2>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -301,7 +300,8 @@ const Configuration = ({
                           listItems={[
                             {
                               title: <h3>Value of N (count)</h3>,
-                              description: 'Specify the value of N. N is the number of queries to be collected within the window size.',
+                              description:
+                                'Specify the value of N. N is the number of queries to be collected within the window size.',
                             },
                           ]}
                         />
@@ -327,7 +327,8 @@ const Configuration = ({
                           listItems={[
                             {
                               title: <h3>Window size</h3>,
-                              description: ' The duration during which the Top N queries are collected.',
+                              description:
+                                ' The duration during which the Top N queries are collected.',
                             },
                           ]}
                         />
@@ -365,7 +366,7 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                  <h2>Statuses for configuration metrics</h2>
+                <h2>Statuses for configuration metrics</h2>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
@@ -406,7 +407,7 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                    <h2>Top n queries grouping configuration settings</h2>
+                  <h2>Top n queries grouping configuration settings</h2>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -442,7 +443,7 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                  <h2>Statuses for group by</h2>
+                <h2>Statuses for group by</h2>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
@@ -465,7 +466,7 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                    <h2>Query Insights export and data retention settings</h2>
+                  <h2>Query Insights export and data retention settings</h2>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -523,7 +524,7 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                  <h2>Statuses for data retention</h2>
+                <h2>Statuses for data retention</h2>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
