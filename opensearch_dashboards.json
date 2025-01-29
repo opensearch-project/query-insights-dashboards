@@ -12,5 +12,7 @@
     "dataSourceManagement"
   ],
   "supportedOSDataSourceVersions": ">=2.19.0",
-  "requiredOSDataSourcePlugins": ["query-insights"]
+  "requiredOSDataSourcePlugins": [
+    "query-insights"
+  ]
 }
