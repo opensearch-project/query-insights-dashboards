@@ -21,6 +21,7 @@ import {
   EuiSwitch,
   EuiText,
   EuiTitle,
+  EuiDescriptionList,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -241,20 +242,21 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                  <EuiText size="s">
                     <h2>Top n queries monitoring configuration settings</h2>
-                  </EuiText>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
                   <EuiFlexItem>
-                    <EuiText size="xs">
-                      <h3>Metric Type</h3>
-                    </EuiText>
-                    <EuiText size="xs" style={textPadding}>
-                      Specify the metric type to set settings for.
-                    </EuiText>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Metric Type</h3>,
+                          description: 'Specify the metric type to set settings for.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow style={formRowPadding}>
@@ -268,12 +270,15 @@ const Configuration = ({
                     </EuiFormRow>
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiText size="xs">
-                      <h3>Enabled</h3>
-                    </EuiText>
-                    <EuiText size="xs" style={textPadding}>
-                      {`Enable/disable top N query monitoring by ${metric}.`}
-                    </EuiText>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Enabled</h3>,
+                          description: 'Enable/disable top N query monitoring by ${metric}.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow style={formRowPadding}>
@@ -291,13 +296,15 @@ const Configuration = ({
                   {isEnabled ? (
                     <>
                       <EuiFlexItem>
-                        <EuiText size="xs">
-                          <h3>Value of N (count)</h3>
-                        </EuiText>
-                        <EuiText size="xs" style={textPadding}>
-                          Specify the value of N. N is the number of queries to be collected within
-                          the window size.
-                        </EuiText>
+                        <EuiDescriptionList
+                          compressed={true}
+                          listItems={[
+                            {
+                              title: <h3>Value of N (count)</h3>,
+                              description: 'Specify the value of N. N is the number of queries to be collected within the window size.',
+                            },
+                          ]}
+                        />
                       </EuiFlexItem>
                       <EuiFlexItem>
                         <EuiFormRow
@@ -315,12 +322,15 @@ const Configuration = ({
                         </EuiFormRow>
                       </EuiFlexItem>
                       <EuiFlexItem>
-                        <EuiText size="xs">
-                          <h3>Window size</h3>
-                        </EuiText>
-                        <EuiText size="xs" style={textPadding}>
-                          The duration during which the Top N queries are collected.
-                        </EuiText>
+                        <EuiDescriptionList
+                          compressed={true}
+                          listItems={[
+                            {
+                              title: <h3>Window size</h3>,
+                              description: ' The duration during which the Top N queries are collected.',
+                            },
+                          ]}
+                        />
                       </EuiFlexItem>
                       <EuiFlexItem>
                         <EuiFormRow
@@ -355,15 +365,13 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                <EuiText size="s">
                   <h2>Statuses for configuration metrics</h2>
-                </EuiText>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
                 <EuiFlexItem>
-                  <EuiText size="m">Latency</EuiText>
+                  <EuiText size="s">Latency</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
@@ -372,7 +380,7 @@ const Configuration = ({
               </EuiFlexGroup>
               <EuiFlexGroup>
                 <EuiFlexItem>
-                  <EuiText size="m">CPU Usage</EuiText>
+                  <EuiText size="s">CPU Usage</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
@@ -381,7 +389,7 @@ const Configuration = ({
               </EuiFlexGroup>
               <EuiFlexGroup>
                 <EuiFlexItem>
-                  <EuiText size="m">Memory</EuiText>
+                  <EuiText size="s">Memory</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
@@ -398,20 +406,21 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                  <EuiText size="s">
                     <h2>Top n queries grouping configuration settings</h2>
-                  </EuiText>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
                   <EuiFlexItem>
-                    <EuiText size="xs">
-                      <h3>Group By</h3>
-                    </EuiText>
-                    <EuiText size="xs" style={textPadding}>
-                      Specify the group by type.
-                    </EuiText>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Group By</h3>,
+                          description: ' Specify the group by type.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow style={formRowPadding}>
@@ -433,15 +442,13 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                <EuiText size="s">
                   <h2>Statuses for group by</h2>
-                </EuiText>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
                 <EuiFlexItem>
-                  <EuiText size="m">Group By</EuiText>
+                  <EuiText size="s">Group By</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
@@ -458,20 +465,21 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                  <EuiText size="s">
                     <h2>Query Insights export and data retention settings</h2>
-                  </EuiText>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
                   <EuiFlexItem>
-                    <EuiText size="xs">
-                      <h3>Exporter</h3>
-                    </EuiText>
-                    <EuiText size="xs" style={textPadding}>
-                      Configure a sink for exporting Query Insights data.
-                    </EuiText>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Exporter</h3>,
+                          description: ' Configure a sink for exporting Query Insights data.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow style={formRowPadding}>
@@ -485,12 +493,15 @@ const Configuration = ({
                     </EuiFormRow>
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiText size="xs">
-                      <h3>Delete After (days)</h3>
-                    </EuiText>
-                    <EuiText size="xs" style={textPadding}>
-                      Number of days to retain Query Insights data.
-                    </EuiText>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Delete After (days)</h3>,
+                          description: ' Number of days to retain Query Insights data.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow style={formRowPadding}>
@@ -512,15 +523,13 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                <EuiText size="s">
                   <h2>Statuses for data retention</h2>
-                </EuiText>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
                 <EuiFlexItem>
-                  <EuiText size="m">Exporter</EuiText>
+                  <EuiText size="s">Exporter</EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
