@@ -24,17 +24,17 @@ import {
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
+  EXPORTER_TYPE,
   MetricType,
-} from '../Utils/Constants';
+} from '../../../common/constants';
 
-import { parseDateString } from '../Utils/DateUtils';
+import { parseDateString } from '../../../common/utils/DateUtils';
 import {
   getMergedMetricSettings,
   getMergedStringSettings,
   getTimeAndUnitFromString,
-} from '../Utils/MetricUtils';
+} from '../../../common/utils/MetricUtils';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
-import { EXPORTER_TYPE } from '../Utils/Constants';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';

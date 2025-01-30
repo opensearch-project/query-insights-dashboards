@@ -26,7 +26,7 @@ import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
-import { retrieveQueryById } from '../Utils/QueryUtils';
+import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';

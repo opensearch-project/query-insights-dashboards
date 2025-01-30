@@ -39,7 +39,7 @@ import {
   GROUP_BY_OPTIONS,
   EXPORTER_TYPES_LIST,
   EXPORTER_TYPE,
-} from '../Utils/Constants';
+} from '../../../common/constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
