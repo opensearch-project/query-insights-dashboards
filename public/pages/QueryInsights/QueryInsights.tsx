@@ -23,8 +23,8 @@ import {
   TOTAL_SHARDS,
   TYPE,
 } from '../../../common/constants';
-import { calculateMetric } from '../Utils/MetricUtils';
-import { parseDateString } from '../Utils/DateUtils';
+import { calculateMetric } from '../../../common/utils/MetricUtils';
+import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
