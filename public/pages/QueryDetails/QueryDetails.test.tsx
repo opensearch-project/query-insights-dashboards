@@ -12,14 +12,14 @@ import '@testing-library/jest-dom';
 import plotly from 'plotly.js-dist';
 import { MemoryRouter, Route } from 'react-router-dom';
 import hash from 'object-hash';
-import { retrieveQueryById } from '../Utils/QueryUtils';
+import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 jest.mock('plotly.js-dist', () => ({
   newPlot: jest.fn(),
 }));
 
-jest.mock('../Utils/QueryUtils', () => ({
+jest.mock('../../../common/utils/QueryUtils', () => ({
   retrieveQueryById: jest.fn(),
 }));
 
