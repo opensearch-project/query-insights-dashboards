@@ -10,7 +10,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import React from 'react';
 import { mockQueries } from '../../../test/mocks/mockQueries';
 import '@testing-library/jest-dom/extend-expect';
-import { retrieveQueryById } from '../Utils/QueryUtils';
+import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 jest.mock('object-hash', () => jest.fn(() => '8c1e50c035663459d567fa11d8eb494d'));
@@ -21,7 +21,7 @@ jest.mock('plotly.js-dist', () => ({
   relayout: jest.fn(),
 }));
 
-jest.mock('../Utils/QueryUtils', () => ({
+jest.mock('../../../common/utils/QueryUtils', () => ({
   retrieveQueryById: jest.fn(),
 }));
 

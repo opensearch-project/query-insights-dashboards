@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SearchQueryRecord } from '../../../types/types';
+import { SearchQueryRecord } from '../../types/types';
 
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
