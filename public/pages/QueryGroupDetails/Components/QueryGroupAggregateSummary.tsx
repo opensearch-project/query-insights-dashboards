@@ -12,7 +12,7 @@ import {
   GROUP_BY,
   ID,
 } from '../../../../common/constants';
-import { calculateMetric } from '../../Utils/MetricUtils';
+import { calculateMetric } from '../../../../common/utils/MetricUtils';
 
 // Panel component for displaying query group detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (

@@ -5,7 +5,7 @@
 
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
-import { EXPORTER_TYPE } from '../../public/pages/Utils/Constants';
+import { EXPORTER_TYPE } from '../../common/constants';
 
 export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
   router.get(
