@@ -4,7 +4,14 @@
  */
 
 import React from 'react';
-import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
+import {
+  EuiFlexGrid,
+  EuiFlexItem,
+  EuiHorizontalRule,
+  EuiPanel,
+  EuiTitle,
+  EuiDescriptionList,
+} from '@elastic/eui';
 import {
   AVERAGE_CPU_TIME,
   AVERAGE_LATENCY,
@@ -17,28 +24,37 @@ import { calculateMetric } from '../../../../common/utils/MetricUtils';
 // Panel component for displaying query group detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
-    <EuiText size="xs">
-      <h4>{label}</h4>
-    </EuiText>
-    <EuiText size="xs">{value}</EuiText>
+    <EuiDescriptionList
+      compressed={true}
+      listItems={[
+        {
+          title: <h4>{label}</h4>,
+          description: value,
+        },
+      ]}
+    />
   </EuiFlexItem>
 );
 
 export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
   if (!query) {
-    return <EuiText size="s">No query data available.</EuiText>;
+    return (
+      <EuiTitle size="s">
+        <h2>No query data available.</h2>
+      </EuiTitle>
+    );
   }
   const { measurements, id: id, group_by: groupBy } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
     <EuiPanel>
-      <EuiText size="xs">
+      <EuiTitle size="s">
         <h2>
           Aggregate summary for {queryCount} {queryCount === 1 ? 'query' : 'queries'}
         </h2>
-      </EuiText>
-      <EuiHorizontalRule margin="m" />
+      </EuiTitle>
+      <EuiHorizontalRule margin="xs" />
       <EuiFlexGrid columns={4}>
         <PanelItem label={ID} value={id} />
         <PanelItem

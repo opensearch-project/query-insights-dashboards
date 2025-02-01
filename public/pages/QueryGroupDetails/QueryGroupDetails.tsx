@@ -18,7 +18,6 @@ import {
   EuiHorizontalRule,
   EuiPanel,
   EuiSpacer,
-  EuiText,
   EuiTitle,
   EuiIconTip,
 } from '@elastic/eui';
@@ -193,12 +192,13 @@ export const QueryGroupDetails = ({
             <EuiPanel>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
                 <EuiFlexItem>
-                  <EuiText size="xs">
+                  <EuiTitle size="xs">
                     <h2>Query</h2>
-                  </EuiText>
+                  </EuiTitle>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
                   <EuiButton
+                    size="s"
                     iconSide="right"
                     iconType="popout"
                     target="_blank"
@@ -223,10 +223,10 @@ export const QueryGroupDetails = ({
           </EuiFlexItem>
           <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
             <EuiPanel>
-              <EuiText size="xs">
+              <EuiTitle size="s">
                 <h2>Latency</h2>
-              </EuiText>
-              <EuiHorizontalRule margin="m" />
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
               <div id="latency" />
             </EuiPanel>
           </EuiFlexItem>
