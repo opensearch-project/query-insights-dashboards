@@ -23,13 +23,16 @@ import {
   TOTAL_SHARDS,
   TYPE,
 } from '../../../common/constants';
-import { calculateMetric } from '../../../common/utils/MetricUtils';
+import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
+const LATENCY_FIELD = 'measurements.latency';
+const CPU_FIELD = 'measurements.cpu';
+const MEMORY_FIELD = 'measurements.memory';
 const INDICES_FIELD = 'indices';
 const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
@@ -174,48 +177,51 @@ const QueryInsights = ({
       truncateText: true,
     },
     {
-      field: MEASUREMENTS_FIELD,
+      field: LATENCY_FIELD,
       name: LATENCY,
-      render: (measurements: SearchQueryRecord['measurements']) => {
-        return calculateMetric(
-          measurements?.latency?.number,
-          measurements?.latency?.count,
-          'ms',
-          1,
-          METRIC_DEFAULT_MSG
+      render: (latency: SearchQueryRecord['measurements']['latency']) => {
+        return calculateMetric(latency?.number, latency?.count, 'ms', 1, METRIC_DEFAULT_MSG);
+      },
+      sortable: (query: SearchQueryRecord) => {
+        return calculateMetricNumber(
+          query.measurements?.latency?.number,
+          query.measurements?.latency?.count
         );
       },
-      sortable: true,
       truncateText: true,
     },
     {
-      field: MEASUREMENTS_FIELD,
+      field: CPU_FIELD,
       name: CPU_TIME,
-      render: (measurements: SearchQueryRecord['measurements']) => {
+      render: (cpu: SearchQueryRecord['measurements']['cpu']) => {
         return calculateMetric(
-          measurements?.cpu?.number,
-          measurements?.cpu?.count,
+          cpu?.number,
+          cpu?.count,
           'ms',
           1000000, // Divide by 1,000,000 for CPU time
           METRIC_DEFAULT_MSG
         );
       },
-      sortable: true,
+      sortable: (query: SearchQueryRecord) => {
+        return calculateMetricNumber(
+          query.measurements?.cpu?.number,
+          query.measurements?.cpu?.count
+        );
+      },
       truncateText: true,
     },
     {
-      field: MEASUREMENTS_FIELD,
+      field: MEMORY_FIELD,
       name: MEMORY_USAGE,
-      render: (measurements: SearchQueryRecord['measurements']) => {
-        return calculateMetric(
-          measurements?.memory?.number,
-          measurements?.memory?.count,
-          'B',
-          1,
-          METRIC_DEFAULT_MSG
+      render: (memory: SearchQueryRecord['measurements']['memory']) => {
+        return calculateMetric(memory?.number, memory?.count, 'B', 1, METRIC_DEFAULT_MSG);
+      },
+      sortable: (query: SearchQueryRecord) => {
+        return calculateMetricNumber(
+          query.measurements?.memory?.number,
+          query.measurements?.memory?.count
         );
       },
-      sortable: true,
       truncateText: true,
     },
     {
@@ -379,6 +385,9 @@ const QueryInsights = ({
           defaultFields: [
             TIMESTAMP_FIELD,
             MEASUREMENTS_FIELD,
+            LATENCY_FIELD,
+            CPU_FIELD,
+            MEMORY_FIELD,
             INDICES_FIELD,
             SEARCH_TYPE_FIELD,
             NODE_ID_FIELD,
