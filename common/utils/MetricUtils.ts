@@ -14,9 +14,16 @@ export function calculateMetric(
   defaultMsg: string = 'N/A'
 ): string {
   if (value !== undefined && count !== undefined) {
-    return `${(value / count / factor).toFixed(2)} ${unit}`;
+    return `${calculateMetricNumber(value, count, factor).toFixed(2)} ${unit}`;
   }
   return defaultMsg;
+}
+
+export function calculateMetricNumber(value?: number, count?: number, factor: number = 1): number {
+  if (value !== undefined && count !== undefined && count !== 0 && factor !== 0) {
+    return value / count / factor;
+  }
+  return 0;
 }
 
 export function getTimeUnitFromAbbreviation(timeUnit: string): string {
