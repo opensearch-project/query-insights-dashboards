@@ -162,52 +162,6 @@ const QueryInsights = ({
       },
       truncateText: true,
     },
-
-    {
-      field: MEASUREMENTS_FIELD,
-      name: LATENCY,
-      render: (measurements: SearchQueryRecord['measurements']) => {
-        return calculateMetric(
-          measurements?.latency?.number,
-          measurements?.latency?.count,
-          'ms',
-          1,
-          METRIC_DEFAULT_MSG
-        );
-      },
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      field: MEASUREMENTS_FIELD,
-      name: CPU_TIME,
-      render: (measurements: SearchQueryRecord['measurements']) => {
-        return calculateMetric(
-          measurements?.cpu?.number,
-          measurements?.cpu?.count,
-          'ms',
-          1000000, // Divide by 1,000,000 for CPU time
-          METRIC_DEFAULT_MSG
-        );
-      },
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      field: MEASUREMENTS_FIELD,
-      name: MEMORY_USAGE,
-      render: (measurements: SearchQueryRecord['measurements']) => {
-        return calculateMetric(
-          measurements?.memory?.number,
-          measurements?.memory?.count,
-          'B',
-          1,
-          METRIC_DEFAULT_MSG
-        );
-      },
-      sortable: true,
-      truncateText: true,
-    },
   ];
   const groupColumns2: Array<EuiBasicTableColumn<any>> = [
     {
