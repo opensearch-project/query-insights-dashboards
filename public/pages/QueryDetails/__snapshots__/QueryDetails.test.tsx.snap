@@ -24,7 +24,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
           Summary
         </h2>
         <hr
-          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
         />
         <div
           class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--fourths euiFlexGrid--responsive"
@@ -255,7 +255,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
               class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
             />
             <div
-              class="euiSpacer euiSpacer--xs"
+              class="euiSpacer euiSpacer--s"
             />
             <div
               class="euiCodeBlock euiCodeBlock--fontSmall euiCodeBlock--paddingMedium euiCodeBlock--hasControls prismjs language-jsx"
@@ -1171,7 +1171,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
               Latency
             </h2>
             <hr
-              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginSmall"
             />
             <div
               id="latency"

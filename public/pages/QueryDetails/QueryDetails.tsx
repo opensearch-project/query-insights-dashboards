@@ -178,7 +178,7 @@ const QueryDetails = ({
                 </EuiFlexItem>
               </EuiFlexGroup>
               <EuiHorizontalRule margin="xs" />
-              <EuiSpacer size="xs" />
+              <EuiSpacer size="s" />
               <EuiCodeBlock
                 language="jsx"
                 paddingSize="m"
@@ -195,7 +195,7 @@ const QueryDetails = ({
               <EuiTitle size="s">
                 <h2>Latency</h2>
               </EuiTitle>
-              <EuiHorizontalRule margin="xs" />
+              <EuiHorizontalRule margin="s" />
               <div id="latency" />
             </EuiPanel>
           </EuiFlexItem>

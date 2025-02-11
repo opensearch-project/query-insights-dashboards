@@ -9,8 +9,8 @@ import {
   EuiFlexItem,
   EuiHorizontalRule,
   EuiPanel,
-  EuiDescriptionList,
   EuiTitle,
+  EuiDescriptionList,
 } from '@elastic/eui';
 import { SearchQueryRecord } from '../../../../types/types';
 import {
@@ -64,7 +64,7 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
       <EuiTitle size="s">
         <h2>Summary</h2>
       </EuiTitle>
-      <EuiHorizontalRule margin="xs" />
+      <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
         <PanelItem
