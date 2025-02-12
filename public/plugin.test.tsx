@@ -53,7 +53,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
   it('should mount the application correctly', async () => {
     plugin.setup(coreSetupMock, {} as any);
 
-    const appRegistration = registerMock.mock.calls[0][0]; // Get the registered app config
+    const appRegistration = registerMock.mock.calls[0][0];
     expect(appRegistration).toBeDefined();
 
     const paramsMock = { element: document.createElement('div') };

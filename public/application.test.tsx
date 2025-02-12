@@ -49,6 +49,6 @@ describe('renderApp', () => {
     const unmount = renderApp(coreMock, depsStartMock, paramsMock, dataSourceManagementMock);
     unmount();
 
-    expect(ReactDOM.unmountComponentAtNode).toHaveBeenCalledWith(paramsMock.element); // ✅ Corrected
+    expect(ReactDOM.unmountComponentAtNode).toHaveBeenCalledWith(paramsMock.element);
   });
 });
