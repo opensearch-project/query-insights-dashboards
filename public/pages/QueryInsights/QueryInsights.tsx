@@ -38,18 +38,18 @@ const METRIC_DEFAULT_MSG = 'Not enabled';
 const GROUP_BY_FIELD = 'group_by';
 
 const QueryInsights = ({
-                         queries,
-                         loading,
-                         onTimeChange,
-                         recentlyUsedRanges,
-                         currStart,
-                         currEnd,
-                         core,
-                         depsStart,
-                         params,
-                         retrieveQueries,
-                         dataSourceManagement,
-                       }: {
+  queries,
+  loading,
+  onTimeChange,
+  recentlyUsedRanges,
+  currStart,
+  currEnd,
+  core,
+  depsStart,
+  params,
+  retrieveQueries,
+  dataSourceManagement,
+}: {
   queries: SearchQueryRecord[];
   loading: boolean;
   onTimeChange: any;
@@ -155,9 +155,9 @@ const QueryInsights = ({
       sortable: (measurements: SearchQueryRecord['measurements']) => {
         return Number(
           measurements?.latency?.count ||
-          measurements?.cpu?.count ||
-          measurements?.memory?.count ||
-          1
+            measurements?.cpu?.count ||
+            measurements?.memory?.count ||
+            1
         );
       },
       truncateText: true,

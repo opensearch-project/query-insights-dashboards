@@ -6,7 +6,6 @@
 import sampleDocument from '../fixtures/sample_document.json';
 import { METRICS } from '../support/constants';
 
-
 // Name of the test index used in tests
 const indexName = 'sample_index';
 
@@ -40,11 +39,6 @@ describe('Query Insights Dashboard', () => {
     cy.wait(10000);
     cy.navigateToOverview();
   });
-
-
-
-
-
 
   /**
    * Validate the main overview page loads correctly
@@ -138,8 +132,17 @@ describe('Query Insights Dashboard', () => {
 
   it('should render the expected column headers by default', () => {
     const expectedHeaders = [
-      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
-      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
     ];
 
     // Wait for the table to load by checking if headers are visible
@@ -151,7 +154,6 @@ describe('Query Insights Dashboard', () => {
     });
   });
 
-
   it('should render only individual query-related headers when NONE filter is applied', () => {
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
@@ -160,8 +162,17 @@ describe('Query Insights Dashboard', () => {
     cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 6);
 
     const expectedHeaders = [
-      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
-      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
     ];
 
     expectedHeaders.forEach((header) => {
@@ -171,13 +182,12 @@ describe('Query Insights Dashboard', () => {
   beforeEach(() => {
     clearAll();
     cy.createIndexByName(indexName, sampleDocument);
-    
+
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
     cy.enableTopQueries(METRICS.MEMORY);
 
     cy.enableTopQueries('SIMILARITY');
-
 
     cy.searchOnIndex(indexName);
     cy.wait(1000);
@@ -196,16 +206,12 @@ describe('Query Insights Dashboard', () => {
     // Wait for table update
     cy.get('.euiTableHeaderCell').should('have.length.lessThan', 20);
 
-    const expectedHeaders = [
-      'Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'
-    ];
+    const expectedHeaders = ['Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
 
     expectedHeaders.forEach((header) => {
       cy.contains('.euiTableHeaderCell', header).should('exist');
     });
   });
 
-
   after(() => clearAll());
-  });
-
+});

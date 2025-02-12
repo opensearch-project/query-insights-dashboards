@@ -98,8 +98,17 @@ describe('QueryInsights Component', () => {
     renderQueryInsights();
 
     const expectedHeaders = [
-      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
-      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
     ];
 
     await waitFor(() => {
@@ -114,19 +123,23 @@ describe('QueryInsights Component', () => {
 
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
     const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
-    console.log('Rendered Headers:', headers.map(h => h.textContent?.trim()));
+    console.log(
+      'Rendered Headers:',
+      headers.map((h) => h.textContent?.trim())
+    );
     const expectedHeaders = ['ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
-    expectedHeaders.forEach(header => {
-      expect(headers.some(h => h.textContent?.trim().toLowerCase() === header.toLowerCase())).toBeTruthy();
+    expectedHeaders.forEach((header) => {
+      expect(
+        headers.some((h) => h.textContent?.trim().toLowerCase() === header.toLowerCase())
+      ).toBeTruthy();
     });
-
   });
 
   it('renders only individual query-related column headers when NONE filter is applied', async () => {
     renderQueryInsights();
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
     const typeElements = screen.getAllByText('Type');
-    const typeFilterButton = typeElements.find(el => el.closest('button')); // Ensure it's a button
+    const typeFilterButton = typeElements.find((el) => el.closest('button')); // Ensure it's a button
 
     expect(typeFilterButton).toBeDefined();
     fireEvent.click(typeFilterButton!);
@@ -135,15 +148,23 @@ describe('QueryInsights Component', () => {
     fireEvent.click(queryOption);
 
     const expectedHeaders = [
-      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
-      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
     ];
 
     await waitFor(() => {
       expectedHeaders.forEach(async (header) => {
         expect(await screen.findByText(header)).toBeInTheDocument();
       });
+    });
   });
-  });
-
 });
