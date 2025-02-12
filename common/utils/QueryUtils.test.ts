@@ -22,10 +22,12 @@ describe('retrieveQueryById', () => {
       if (endpoint.includes('latency')) {
         return Promise.resolve({
           response: {
-            top_queries: [{
-              id: '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59',
-              query: JSON.stringify({ match: { user_action: "login_attempt" } })
-            }]
+            top_queries: [
+              {
+                id: '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59',
+                query: JSON.stringify({ match: { user_action: 'login_attempt' } }),
+              },
+            ],
           },
         });
       }
@@ -35,9 +37,7 @@ describe('retrieveQueryById', () => {
     const result = await retrieveQueryById(mockCore, dataSourceId, start, end, id);
     expect(result).toEqual({
       id: '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59',
-      query: JSON.stringify(
-    {"match":{"user_action":"login_attempt"}}
-  )
+      query: JSON.stringify({ match: { user_action: 'login_attempt' } }),
     });
   });
 
