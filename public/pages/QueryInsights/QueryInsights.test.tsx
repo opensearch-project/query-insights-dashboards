@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { waitFor, render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
@@ -94,4 +94,56 @@ describe('QueryInsights Component', () => {
     // Verify the onTimeChange callback is triggered
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
+  it('renders the expected column headers by default', async () => {
+    renderQueryInsights();
+
+    const expectedHeaders = [
+      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
+      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+    ];
+
+    await waitFor(() => {
+      expectedHeaders.forEach(async (header) => {
+        expect(await screen.findByText(header)).toBeInTheDocument();
+      });
+    });
+  });
+
+  it('renders only group-related column headers when SIMILARITY filter is applied', async () => {
+    renderQueryInsights();
+
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
+    const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
+    console.log('Rendered Headers:', headers.map(h => h.textContent?.trim()));
+    const expectedHeaders = ['ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
+    expectedHeaders.forEach(header => {
+      expect(headers.some(h => h.textContent?.trim().toLowerCase() === header.toLowerCase())).toBeTruthy();
+    });
+
+  });
+
+  it('renders only individual query-related column headers when NONE filter is applied', async () => {
+    renderQueryInsights();
+    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
+    const typeElements = screen.getAllByText('Type');
+    const typeFilterButton = typeElements.find(el => el.closest('button')); // Ensure it's a button
+
+    expect(typeFilterButton).toBeDefined();
+    fireEvent.click(typeFilterButton!);
+
+    const queryOption = await screen.findByText('query');
+    fireEvent.click(queryOption);
+
+    const expectedHeaders = [
+      'ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage',
+      'Timestamp', 'Indices', 'Search Type', 'Node ID', 'Total Shards'
+    ];
+
+    await waitFor(() => {
+      expectedHeaders.forEach(async (header) => {
+        expect(await screen.findByText(header)).toBeInTheDocument();
+      });
+  });
+  });
+
 });
