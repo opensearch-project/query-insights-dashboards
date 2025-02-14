@@ -115,9 +115,10 @@ Cypress.Commands.add('enableGrouping', () => {
         'search.insights.top_queries.latency.window_size': '1m',
         'search.insights.top_queries.cpu.window_size': '1m',
         'search.insights.top_queries.memory.window_size': '1m',
+        'search.insights.top_queries.exporter.type': 'none',
       },
     },
-    failOnStatusCode: false,
+    failOnStatusCode: true,
   });
 });
 
@@ -131,9 +132,10 @@ Cypress.Commands.add('disableGrouping', () => {
         'search.insights.top_queries.cpu.enabled': false,
         'search.insights.top_queries.memory.enabled': false,
         'search.insights.top_queries.group_by': 'none',
+        'search.insights.top_queries.exporter.type': 'none',
       },
     },
-    failOnStatusCode: false,
+    failOnStatusCode: true,
   });
 });
 

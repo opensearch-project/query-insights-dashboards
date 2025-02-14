@@ -4,24 +4,22 @@
  */
 
 import sampleDocument from '../fixtures/sample_document.json';
-import { METRICS } from '../support/constants';
 
 const indexName = 'sample_index';
 
 const clearAll = () => {
   cy.deleteIndexByName(indexName);
-  cy.disableTopQueries(METRICS.LATENCY);
-  cy.disableTopQueries(METRICS.CPU);
-  cy.disableTopQueries(METRICS.MEMORY);
   cy.disableGrouping();
 };
 
 describe('Query Group Details Page', () => {
   beforeEach(() => {
     clearAll();
+    cy.wait(5000);
     cy.createIndexByName(indexName, sampleDocument);
-    cy.enableTopQueries(METRICS.LATENCY);
     cy.enableGrouping();
+    // waiting for the query insights to stablize
+    cy.wait(5000);
     cy.searchOnIndex(indexName);
     cy.searchOnIndex(indexName);
     cy.searchOnIndex(indexName);
@@ -30,6 +28,7 @@ describe('Query Group Details Page', () => {
     cy.navigateToOverview();
     cy.get('.euiTableRow').first().find('button').first().trigger('mouseover');
     cy.wait(1000);
+    // Click the first button in the 'group' row
     cy.get('.euiTableRow').first().find('button').first().click(); // Navigate to details
     cy.wait(1000);
   });
