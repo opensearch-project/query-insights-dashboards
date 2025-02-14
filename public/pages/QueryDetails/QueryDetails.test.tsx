@@ -142,7 +142,7 @@ describe('QueryDetails component', () => {
       expect(retrieveQueryById).toHaveBeenCalled();
     });
 
-    const dateElements = container.getElementsByClassName('euiText euiText--extraSmall');
+    const dateElements = container.getElementsByClassName('euiDescriptionList__description');
     Array.from(dateElements).forEach((element) => {
       if (element.textContent?.includes('@')) {
         element.textContent = 'Sep 24, 2021 @ 12:00:00 AM';
