@@ -41,18 +41,16 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
       <div
         class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
       >
-        <div
-          class="euiText euiText--extraSmall"
+        <h2
+          class="euiTitle euiTitle--small"
         >
-          <h2>
-            Aggregate summary for 
-            8
-             
-            queries
-          </h2>
-        </div>
+          Aggregate summary for 
+          8
+           
+          queries
+        </h2>
         <hr
-          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
         />
         <div
           class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--fourths euiFlexGrid--responsive"
@@ -60,82 +58,102 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Id
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              8c1e50c035663459d567fa11d8eb494d
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Id
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                8c1e50c035663459d567fa11d8eb494d
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Average Latency
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              2.50 ms
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Average Latency
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                2.50 ms
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Average CPU Time
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              1.42 ms
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Average CPU Time
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                1.42 ms
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Average Memory Usage
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              16528.00 B
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Average Memory Usage
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                16528.00 B
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Group by
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              SIMILARITY
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Group by
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                SIMILARITY
+              </dd>
+            </dl>
           </div>
         </div>
       </div>
@@ -184,15 +202,13 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
       <div
         class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
       >
-        <div
-          class="euiText euiText--extraSmall"
+        <h2
+          class="euiTitle euiTitle--small"
         >
-          <h2>
-            Sample query summary
-          </h2>
-        </div>
+          Sample query summary
+        </h2>
         <hr
-          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
         />
         <div
           class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--fourths euiFlexGrid--responsive"
@@ -200,82 +216,102 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Timestamp
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              Sep 24, 2021 @ 12:00:00 AM
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Timestamp
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                Sep 24, 2021 @ 12:00:00 AM
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Indices
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              my-index
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Indices
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                my-index
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Search Type
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              query then fetch
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Search Type
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                query then fetch
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Coordinator Node ID
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              HjvgxQ4AQTiddd43OV7pJA
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Coordinator Node ID
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                HjvgxQ4AQTiddd43OV7pJA
+              </dd>
+            </dl>
           </div>
           <div
             class="euiFlexItem"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
             >
-              <h4>
-                Total Shards
-              </h4>
-            </div>
-            <div
-              class="euiText euiText--extraSmall"
-            >
-              1
-            </div>
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Total Shards
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                1
+              </dd>
+            </dl>
           </div>
         </div>
       </div>
@@ -297,19 +333,17 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
               <div
                 class="euiFlexItem"
               >
-                <div
-                  class="euiText euiText--extraSmall"
+                <h2
+                  class="euiTitle euiTitle--xsmall"
                 >
-                  <h2>
-                    Query
-                  </h2>
-                </div>
+                  Query
+                </h2>
               </div>
               <div
                 class="euiFlexItem euiFlexItem--flexGrowZero"
               >
                 <a
-                  class="euiButton euiButton--primary"
+                  class="euiButton euiButton--primary euiButton--small"
                   href="https://playground.opensearch.org/app/searchRelevance#/"
                   rel="noopener noreferrer"
                   target="_blank"
@@ -638,15 +672,13 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
           >
-            <div
-              class="euiText euiText--extraSmall"
+            <h2
+              class="euiTitle euiTitle--small"
             >
-              <h2>
-                Latency
-              </h2>
-            </div>
+              Latency
+            </h2>
             <hr
-              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginMedium"
+              class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
             />
             <div
               id="latency"
