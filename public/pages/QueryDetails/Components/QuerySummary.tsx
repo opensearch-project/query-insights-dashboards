@@ -4,7 +4,14 @@
  */
 
 import React from 'react';
-import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
+import {
+  EuiFlexGrid,
+  EuiFlexItem,
+  EuiHorizontalRule,
+  EuiPanel,
+  EuiTitle,
+  EuiDescriptionList,
+} from '@elastic/eui';
 import { SearchQueryRecord } from '../../../../types/types';
 import {
   CPU_TIME,
@@ -21,10 +28,15 @@ import { calculateMetric } from '../../../../common/utils/MetricUtils';
 // Panel component for displaying query detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
-    <EuiText size="xs">
-      <h4>{label}</h4>
-    </EuiText>
-    <EuiText size="xs">{value}</EuiText>
+    <EuiDescriptionList
+      compressed={true}
+      listItems={[
+        {
+          title: <h4>{label}</h4>,
+          description: value,
+        },
+      ]}
+    />
   </EuiFlexItem>
 );
 
@@ -33,9 +45,9 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
   if (!query) {
     return (
       <EuiPanel data-test-subj={'query-details-summary-section'}>
-        <EuiText size="xs">
+        <EuiTitle size="xs">
           <h2>No Data Available</h2>
-        </EuiText>
+        </EuiTitle>
       </EuiPanel>
     );
   }
@@ -49,9 +61,9 @@ const QuerySummary = ({ query }: { query: SearchQueryRecord | null }) => {
   const { timestamp, measurements, indices, search_type, node_id, total_shards } = query;
   return (
     <EuiPanel data-test-subj={'query-details-summary-section'}>
-      <EuiText size="xs">
+      <EuiTitle size="s">
         <h2>Summary</h2>
-      </EuiText>
+      </EuiTitle>
       <EuiHorizontalRule margin="m" />
       <EuiFlexGrid columns={4}>
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
