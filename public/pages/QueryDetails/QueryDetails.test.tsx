@@ -52,7 +52,6 @@ describe('QueryDetails component', () => {
     (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
   });
 
-
   const renderQueryDetails = () => {
     return render(
       <MemoryRouter
