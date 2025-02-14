@@ -4,7 +4,14 @@
  */
 
 import React from 'react';
-import { EuiFlexGrid, EuiFlexItem, EuiHorizontalRule, EuiPanel, EuiText } from '@elastic/eui';
+import {
+  EuiFlexGrid,
+  EuiFlexItem,
+  EuiHorizontalRule,
+  EuiPanel,
+  EuiTitle,
+  EuiDescriptionList,
+} from '@elastic/eui';
 import {
   INDICES,
   NODE_ID,
@@ -15,16 +22,25 @@ import {
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
-    <EuiText size="xs">
-      <h4>{label}</h4>
-    </EuiText>
-    <EuiText size="xs">{value}</EuiText>
+    <EuiDescriptionList
+      compressed={true}
+      listItems={[
+        {
+          title: <h4>{label}</h4>,
+          description: value,
+        },
+      ]}
+    />
   </EuiFlexItem>
 );
 
 export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
   if (!query) {
-    return <EuiText size="s">No query data available.</EuiText>;
+    return (
+      <EuiTitle size="s">
+        <h2>No query data available.</h2>
+      </EuiTitle>
+    );
   }
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
@@ -41,10 +57,10 @@ export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
   } = query;
   return (
     <EuiPanel>
-      <EuiText size="xs">
+      <EuiTitle size="s">
         <h2>Sample query summary</h2>
-      </EuiText>
-      <EuiHorizontalRule margin="m" />
+      </EuiTitle>
+      <EuiHorizontalRule margin="xs" />
       <EuiFlexGrid columns={4}>
         <PanelItem label={TIMESTAMP} value={convertTime(timestamp)} />
         <PanelItem label={INDICES} value={indices.toString()} />
