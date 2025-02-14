@@ -15,7 +15,6 @@ import {
   EuiHorizontalRule,
   EuiPanel,
   EuiSpacer,
-  EuiText,
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -162,12 +161,13 @@ const QueryDetails = ({
             <EuiPanel data-test-subj={'query-details-source-section'}>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
                 <EuiFlexItem>
-                  <EuiText size="xs">
+                  <EuiTitle size="s">
                     <h2>Query</h2>
-                  </EuiText>
+                  </EuiTitle>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
                   <EuiButton
+                    size="s"
                     iconSide="right"
                     iconType="popout"
                     target="_blank"
@@ -192,10 +192,10 @@ const QueryDetails = ({
           </EuiFlexItem>
           <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
             <EuiPanel data-test-subj={'query-details-latency-chart'}>
-              <EuiText size="xs">
+              <EuiTitle size="xs">
                 <h2>Latency</h2>
-              </EuiText>
-              <EuiHorizontalRule margin="m" />
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
               <div id="latency" />
             </EuiPanel>
           </EuiFlexItem>
