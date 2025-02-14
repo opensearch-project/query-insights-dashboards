@@ -22,7 +22,7 @@ const clearAll = () => {
 };
 
 describe('Query Insights Dashboard', () => {
-  // Setup before each test
+  // // Setup before each test
   beforeEach(() => {
     clearAll();
     cy.createIndexByName(indexName, sampleDocument);
@@ -128,6 +128,89 @@ describe('Query Insights Dashboard', () => {
     cy.wait(10000);
     cy.reload();
     cy.contains('No items found');
+  });
+
+  it('should render the expected column headers by default', () => {
+    const expectedHeaders = [
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
+    ];
+
+    // Wait for the table to load by checking if headers are visible
+    cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 6);
+
+    // Verify each expected header exists
+    expectedHeaders.forEach((header) => {
+      cy.contains('.euiTableHeaderCell', header).should('exist');
+    });
+  });
+
+  it('should render only individual query-related headers when NONE filter is applied', () => {
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('query').click();
+
+    // Wait for table update
+    cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 6);
+
+    const expectedHeaders = [
+      'ID',
+      'Type',
+      'Query Count',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Timestamp',
+      'Indices',
+      'Search Type',
+      'Node ID',
+      'Total Shards',
+    ];
+
+    expectedHeaders.forEach((header) => {
+      cy.contains('.euiTableHeaderCell', header).should('exist');
+    });
+  });
+  beforeEach(() => {
+    clearAll();
+    cy.createIndexByName(indexName, sampleDocument);
+
+    cy.enableTopQueries(METRICS.LATENCY);
+    cy.enableTopQueries(METRICS.CPU);
+    cy.enableTopQueries(METRICS.MEMORY);
+
+    cy.enableTopQueries('SIMILARITY');
+
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+
+    cy.wait(10000); // Waiting for query queue to drain
+
+    cy.navigateToOverview();
+  });
+  it('should render only group-related headers when SIMILARITY filter is applied', () => {
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('group').click();
+
+    // Wait for table update
+    cy.get('.euiTableHeaderCell').should('have.length.lessThan', 20);
+
+    const expectedHeaders = ['Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
+
+    expectedHeaders.forEach((header) => {
+      cy.contains('.euiTableHeaderCell', header).should('exist');
+    });
   });
 
   after(() => clearAll());
