@@ -3,55 +3,65 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { retrieveQueryById } from './QueryUtils'; // Update with the correct path
-const mockHttpGet = jest.fn();
-const mockCore = { http: { get: mockHttpGet } };
+import { retrieveQueryById } from './QueryUtils';
+import { mockQueries } from '../../test/mocks/mockQueries';
+import { testQueryParams } from '../../test/mocks/testConstants';
 
-describe('retrieveQueryById', () => {
-  const dataSourceId = 'test-ds';
-  const start = '2025-01-01T00:00:00Z';
-  const end = '2025-01-31T23:59:59Z';
-  const id = '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59';
+jest.unmock('../../common/utils/QueryUtils');
 
-  afterEach(() => {
+describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
+  const mockCore = {
+    http: {
+      get: jest.fn(),
+      post: jest.fn(),
+    },
+  };
+
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return the top query', async () => {
-    mockHttpGet.mockImplementation((endpoint) => {
-      if (endpoint.includes('latency')) {
-        return Promise.resolve({
-          response: {
-            top_queries: [
-              {
-                id: '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59',
-                query: JSON.stringify({ match: { user_action: 'login_attempt' } }),
-              },
-            ],
-          },
-        });
-      }
-      return Promise.resolve({ response: { top_queries: [] } });
-    });
+  const testStart = testQueryParams?.start;
+  const testEnd = testQueryParams?.end;
+  const testId = testQueryParams?.id;
+  const mockQuery = mockQueries[0];
 
-    const result = await retrieveQueryById(mockCore, dataSourceId, start, end, id);
-    expect(result).toEqual({
-      id: '1e5fde5b-c85f-419e-b8b6-3f43b3da4d59',
-      query: JSON.stringify({ match: { user_action: 'login_attempt' } }),
+  const mockResponse = {
+    response: {
+      top_queries: [mockQuery],
+    },
+  };
+
+  it('should make three GET requests to fetch different query records', async () => {
+    mockCore.http.get.mockResolvedValue(mockResponse);
+
+    await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(mockCore.http.get).toHaveBeenCalledTimes(3);
+    expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/latency', {
+      query: { from: testStart, to: testEnd, id: testId, dataSourceId: undefined },
+    });
+    expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/cpu', {
+      query: { from: testStart, to: testEnd, id: testId, dataSourceId: undefined },
+    });
+    expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/memory', {
+      query: { from: testStart, to: testEnd, id: testId, dataSourceId: undefined },
     });
   });
 
-  it('should return null if no top queries are found', async () => {
-    mockHttpGet.mockResolvedValue({ response: { top_queries: [] } });
+  it('should return the valid query result', async () => {
+    mockCore.http.get.mockResolvedValue(mockResponse);
 
-    const result = await retrieveQueryById(mockCore, dataSourceId, start, end, id);
-    expect(result).toBeNull();
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(result).toEqual(mockResponse.response.top_queries[0]);
   });
 
-  it('should handle API errors gracefully and return null', async () => {
-    mockHttpGet.mockRejectedValue(new Error('API error'));
+  it('should return null if no queries are found', async () => {
+    mockCore.http.get.mockResolvedValue({ response: { top_queries: [] } });
 
-    const result = await retrieveQueryById(mockCore, dataSourceId, start, end, id);
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
     expect(result).toBeNull();
   });
 });
