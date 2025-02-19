@@ -22,7 +22,7 @@ const clearAll = () => {
 };
 
 describe('Query Insights Dashboard', () => {
-  // // Setup before each test
+  // Setup before each test
   beforeEach(() => {
     clearAll();
     cy.createIndexByName(indexName, sampleDocument);
@@ -88,7 +88,6 @@ describe('Query Insights Dashboard', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
     }
-    // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.reload();
     cy.get('.euiPagination').should('be.visible');
@@ -119,38 +118,35 @@ describe('Query Insights Dashboard', () => {
     cy.get('.euiFieldSearch').type('random_string');
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
     cy.get('.euiFieldSearch').clear();
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0); // Validate reset
+    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
   it('should display a message when no top queries are found', () => {
-    clearAll(); // disable top n queries
-    // waiting for the query insights queue to drain
+    clearAll();
     cy.wait(10000);
     cy.reload();
     cy.contains('No items found');
   });
 
-  it('should render the expected column headers by default', () => {
+  it('should render the expected column headers in the correct order', () => {
     const expectedHeaders = [
-      'ID',
+      'Id',
       'Type',
       'Query Count',
+      'Timestamp',
       'Latency',
       'CPU Time',
       'Memory Usage',
-      'Timestamp',
       'Indices',
       'Search Type',
-      'Node ID',
+      'Coordinator Node ID',
       'Total Shards',
     ];
 
-    // Wait for the table to load by checking if headers are visible
-    cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 6);
-
-    // Verify each expected header exists
-    expectedHeaders.forEach((header) => {
-      cy.contains('.euiTableHeaderCell', header).should('exist');
+    cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
 
@@ -158,58 +154,39 @@ describe('Query Insights Dashboard', () => {
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
 
-    // Wait for table update
-    cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 6);
-
     const expectedHeaders = [
-      'ID',
+      'Id',
       'Type',
       'Query Count',
+      'Timestamp',
       'Latency',
       'CPU Time',
       'Memory Usage',
-      'Timestamp',
       'Indices',
       'Search Type',
-      'Node ID',
+      'Coordinator Node ID',
       'Total Shards',
     ];
 
-    expectedHeaders.forEach((header) => {
-      cy.contains('.euiTableHeaderCell', header).should('exist');
+    cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
-  beforeEach(() => {
-    clearAll();
-    cy.createIndexByName(indexName, sampleDocument);
 
-    cy.enableTopQueries(METRICS.LATENCY);
-    cy.enableTopQueries(METRICS.CPU);
-    cy.enableTopQueries(METRICS.MEMORY);
-
-    cy.enableTopQueries('SIMILARITY');
-
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-
-    cy.wait(10000); // Waiting for query queue to drain
-
-    cy.navigateToOverview();
-  });
-  it('should render only group-related headers when SIMILARITY filter is applied', () => {
+  it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
 
-    // Wait for table update
-    cy.get('.euiTableHeaderCell').should('have.length.lessThan', 20);
-
     const expectedHeaders = ['Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
 
-    expectedHeaders.forEach((header) => {
-      cy.contains('.euiTableHeaderCell', header).should('exist');
+    cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
 
