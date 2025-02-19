@@ -189,6 +189,32 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
+  it('should render only individual query-related headers when NONE and SIMILARITY filter are applied', () => {
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('query').click();
+    cy.get('.euiFilterSelectItem').contains('group').click();
+
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Timestamp',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Indices',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
+    ];
+
+    cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
+    });
+  });
 
   after(() => clearAll());
 });

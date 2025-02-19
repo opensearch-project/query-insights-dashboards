@@ -61,7 +61,7 @@ describe('QueryInsights Component', () => {
   });
 
   afterAll(() => {
-    jest.resetAllMocks(); // Reset all mocks after all tests
+    jest.resetAllMocks();
   });
 
   beforeEach(() => {
@@ -87,84 +87,110 @@ describe('QueryInsights Component', () => {
   it('triggers onTimeChange when the date picker changes', () => {
     renderQueryInsights();
 
-    // Find the date picker update button
     const updateButton = screen.getByRole('button', { name: /Refresh/i });
     fireEvent.click(updateButton);
 
-    // Verify the onTimeChange callback is triggered
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
-  it('renders the expected column headers by default', async () => {
-    renderQueryInsights();
 
-    const expectedHeaders = [
-      'ID',
-      'Type',
-      'Query Count',
-      'Latency',
-      'CPU Time',
-      'Memory Usage',
-      'Timestamp',
-      'Indices',
-      'Search Type',
-      'Node ID',
-      'Total Shards',
-    ];
-
-    await waitFor(() => {
-      expectedHeaders.forEach(async (header) => {
-        expect(await screen.findByText(header)).toBeInTheDocument();
-      });
-    });
-  });
-
-  it('renders only group-related column headers when SIMILARITY filter is applied', async () => {
+  it('renders the expected column headers in the correct sequence for default', async () => {
     renderQueryInsights();
 
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
+
     const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
-    console.log(
-      'Rendered Headers:',
-      headers.map((h) => h.textContent?.trim())
-    );
-    const expectedHeaders = ['ID', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
-    expectedHeaders.forEach((header) => {
-      expect(
-        headers.some((h) => h.textContent?.trim().toLowerCase() === header.toLowerCase())
-      ).toBeTruthy();
-    });
+
+    const renderedHeaders = headers.map((h) => h.textContent?.trim());
+
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Timestamp',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Indices',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
+    ];
+
+    expect(renderedHeaders).toEqual(expectedHeaders);
+  });
+
+  it('renders correct columns when SIMILARITY filter is applied', async () => {
+    renderQueryInsights();
+
+    const typeFilterButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.textContent?.trim() === 'Type');
+    fireEvent.click(typeFilterButton!);
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    const groupOption = await screen.findByText(/group/i); // Use this if options are plain text
+    fireEvent.click(groupOption);
+    const headers = await screen.findAllByRole('columnheader', { hidden: true });
+    const headerTexts = headers.map((h) => h.textContent?.trim());
+    const expectedHeaders = ['Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 
   it('renders only individual query-related column headers when NONE filter is applied', async () => {
     renderQueryInsights();
-    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
-    const typeElements = screen.getAllByText('Type');
-    const typeFilterButton = typeElements.find((el) => el.closest('button')); // Ensure it's a button
 
-    expect(typeFilterButton).toBeDefined();
+    const typeFilterButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.textContent?.trim() === 'Type');
     fireEvent.click(typeFilterButton!);
-
-    const queryOption = await screen.findByText('query');
-    fireEvent.click(queryOption);
-
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: /query/i }));
+    const headers = await screen.findAllByRole('columnheader', { hidden: true });
+    const headerTexts = headers.map((h) => h.textContent?.trim());
     const expectedHeaders = [
-      'ID',
+      'Id',
       'Type',
       'Query Count',
+      'Timestamp',
       'Latency',
       'CPU Time',
       'Memory Usage',
-      'Timestamp',
       'Indices',
       'Search Type',
-      'Node ID',
+      'Coordinator Node ID',
       'Total Shards',
     ];
 
-    await waitFor(() => {
-      expectedHeaders.forEach(async (header) => {
-        expect(await screen.findByText(header)).toBeInTheDocument();
-      });
-    });
+    expect(headerTexts).toEqual(expectedHeaders);
+  });
+
+  it('renders column headers when both NONE and SIMILARITY filter is applied', async () => {
+    renderQueryInsights();
+
+    const typeFilterButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.textContent?.trim() === 'Type');
+    fireEvent.click(typeFilterButton!);
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: /query/i }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('option', { name: /group/i }));
+    const headers = await screen.findAllByRole('columnheader', { hidden: true });
+    const headerTexts = headers.map((h) => h.textContent?.trim());
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Timestamp',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Indices',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
+    ];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 });
