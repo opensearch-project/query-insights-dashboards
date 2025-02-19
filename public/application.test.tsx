@@ -5,6 +5,7 @@
 
 import * as ReactDOM from 'react-dom';
 import { renderApp } from './application';
+import { coreMock } from '../../../src/core/public/mocks';
 
 jest.mock('react-dom', () => {
   const actualReactDOM = jest.requireActual('react-dom');
@@ -14,8 +15,9 @@ jest.mock('react-dom', () => {
     unmountComponentAtNode: jest.fn(),
   };
 });
+
 describe('renderApp', () => {
-  const coreMock = {};
+  const coreMockStart = coreMock.createStart();
   const depsStartMock = {};
   const paramsMock = { element: document.createElement('div') };
   const dataSourceManagementMock = {};
@@ -25,7 +27,7 @@ describe('renderApp', () => {
   });
 
   it('should unmount the component when the returned function is called', () => {
-    const unmount = renderApp(coreMock, depsStartMock, paramsMock, dataSourceManagementMock);
+    const unmount = renderApp(coreMockStart, depsStartMock, paramsMock, dataSourceManagementMock);
     unmount();
 
     expect(ReactDOM.unmountComponentAtNode).toHaveBeenCalledWith(paramsMock.element);

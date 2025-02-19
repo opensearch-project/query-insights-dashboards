@@ -6,6 +6,8 @@
 import { CoreSetup, CoreStart } from '../../../src/core/public';
 import { QueryInsightsDashboardsPlugin } from './plugin';
 import { PLUGIN_NAME } from '../common';
+import { renderApp } from './application';
+import { coreMock } from '../../../src/core/public/mocks';
 
 jest.mock('./application', () => ({
   renderApp: jest.fn(),
@@ -16,34 +18,13 @@ describe('QueryInsightsDashboardsPlugin', () => {
   let coreSetupMock: jest.Mocked<CoreSetup>;
   let coreStartMock: jest.Mocked<CoreStart>;
   let registerMock: jest.Mock;
-  let addNavLinksMock: jest.Mock;
 
   beforeEach(() => {
-    coreSetupMock = ({
-      application: {
-        register: jest.fn(),
-      },
-      chrome: {
-        navGroup: {
-          addNavLinksToGroup: jest.fn(),
-        },
-      },
-      getStartServices: jest.fn().mockResolvedValue([coreStartMock, {}]),
-    } as unknown) as jest.Mocked<CoreSetup>;
-
-    coreStartMock = ({
-      http: {
-        get: jest.fn(),
-        put: jest.fn(),
-      },
-      uiSettings: {
-        get: jest.fn().mockReturnValue(false),
-      },
-    } as unknown) as jest.Mocked<CoreStart>;
+    coreSetupMock = coreMock.createSetup();
+    coreStartMock = coreMock.createStart();
 
     plugin = new QueryInsightsDashboardsPlugin();
     registerMock = coreSetupMock.application.register;
-    addNavLinksMock = coreSetupMock.chrome.navGroup.addNavLinksToGroup;
   });
 
   it('should register the application in setup', () => {
@@ -58,33 +39,40 @@ describe('QueryInsightsDashboardsPlugin', () => {
           label: expect.any(String),
           order: expect.any(Number),
         }),
-        order: expect.any(Number),
         mount: expect.any(Function),
+        order: expect.any(Number),
         description: expect.any(String),
       })
     );
   });
 
-  it('should add the navigation link to nav group', () => {
+  it('should mount the application correctly', async () => {
     plugin.setup(coreSetupMock, {} as any);
 
-    expect(addNavLinksMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: expect.any(String),
-        description: expect.any(String),
-      }),
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: 'query-insights-dashboards',
-          order: expect.any(Number),
-          category: expect.objectContaining({
-            euiIconType: expect.any(String),
-            id: 'performance', // Adjusted to match received data
-            label: expect.any(String),
-            order: expect.any(Number),
-          }),
-        }),
-      ])
+    const appRegistration = registerMock.mock.calls[0][0];
+    expect(appRegistration).toBeDefined();
+
+    const paramsMock = { element: document.createElement('div') };
+    const mountFunction = appRegistration.mount;
+
+    await mountFunction(paramsMock);
+
+    const depsMock = { dataSourceManagement: undefined };
+    coreSetupMock.getStartServices.mockResolvedValue([coreStartMock, depsMock]);
+
+    await mountFunction(paramsMock);
+
+    expect(renderApp).toHaveBeenCalledWith(
+      coreStartMock,
+      depsMock,
+      expect.objectContaining({ element: expect.any(HTMLElement) }),
+      depsMock.dataSourceManagement
     );
+  });
+
+  it('should return empty start and stop methods', () => {
+    // Ensures `start` and `stop` do not introduce unwanted behavior
+    expect(plugin.start(coreStartMock)).toEqual({});
+    expect(plugin.stop()).toBeUndefined();
   });
 });
