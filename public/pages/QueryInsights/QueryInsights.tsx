@@ -276,8 +276,8 @@ const QueryInsights = ({
     },
   ];
   const columnsToShow = selectedFilter === 'SIMILARITY' ? groupColumns : queryColumns;
-  const filteredQueries = queries.filter(query =>
-    !selectedFilter || query.group_by === selectedFilter
+  const filteredQueries = queries.filter(
+    (query) => !selectedFilter || query.group_by === selectedFilter
   );
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
