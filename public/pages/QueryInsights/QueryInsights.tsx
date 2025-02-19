@@ -276,14 +276,9 @@ const QueryInsights = ({
     },
   ];
   const columnsToShow = selectedFilter === 'SIMILARITY' ? groupColumns : queryColumns;
-  const filteredQueries = queries.filter((query) => {
-    if (selectedFilter === 'SIMILARITY') {
-      return query.group_by === 'SIMILARITY';
-    } else if (selectedFilter === 'NONE') {
-      return query.group_by === 'NONE';
-    }
-    return true;
-  });
+  const filteredQueries = queries.filter(query =>
+    !selectedFilter || query.group_by === selectedFilter
+  );
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     onTimeChange({ start, end });
