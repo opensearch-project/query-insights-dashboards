@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useMemo, useContext, useEffect, useState } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -65,7 +65,7 @@ const QueryInsights = ({
   const history = useHistory();
   const location = useLocation();
   const [pagination, setPagination] = useState({ pageIndex: 0 });
-  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string[]>([]);
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
@@ -90,14 +90,21 @@ const QueryInsights = ({
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
   useEffect(() => {
-    const allAreGroups =
-      queries.length > 0 && queries.every((query) => query.group_by === 'SIMILARITY');
+    if (queries.length === 0) return; // No queries? Do nothing.
+
+    const allAreGroups = queries.every((query) => query.group_by === 'SIMILARITY');
+    const allAreQueries = queries.every((query) => query.group_by === 'NONE');
+
     if (allAreGroups) {
-      setSelectedFilter('SIMILARITY');
+      setSelectedFilter(['SIMILARITY']);
+    } else if (allAreQueries) {
+      setSelectedFilter(['NONE']);
+    } else {
+      setSelectedFilter(['SIMILARITY', 'NONE']);
     }
   }, [queries]);
 
-  const groupColumns1: Array<EuiBasicTableColumn<any>> = [
+  const baseColumns: Array<EuiBasicTableColumn<any>> = [
     {
       name: ID,
       render: (query: SearchQueryRecord) => {
@@ -142,6 +149,8 @@ const QueryInsights = ({
       sortable: (query) => query.group_by || 'query',
       truncateText: true,
     },
+  ];
+  const querycountColumn: Array<EuiBasicTableColumn<any>> = [
     {
       field: MEASUREMENTS_FIELD,
       name: QUERY_COUNT,
@@ -163,10 +172,16 @@ const QueryInsights = ({
       truncateText: true,
     },
   ];
-  const groupColumns2: Array<EuiBasicTableColumn<any>> = [
+  // @ts-ignore
+  const metricColumns: Array<EuiBasicTableColumn<any>> = [
     {
       field: MEASUREMENTS_FIELD,
-      name: LATENCY,
+      name:
+        selectedFilter.includes('SIMILARITY') && selectedFilter.includes('NONE')
+          ? `Avg ${LATENCY}/ ${LATENCY}`
+          : selectedFilter.includes('SIMILARITY')
+          ? `Average ${LATENCY}`
+          : `${LATENCY}`,
       render: (measurements: SearchQueryRecord['measurements']) => {
         return calculateMetric(
           measurements?.latency?.number,
@@ -181,7 +196,12 @@ const QueryInsights = ({
     },
     {
       field: MEASUREMENTS_FIELD,
-      name: CPU_TIME,
+      name:
+        selectedFilter.includes('SIMILARITY') && selectedFilter.includes('NONE')
+          ? `Avg ${CPU_TIME} / ${CPU_TIME}`
+          : selectedFilter.includes('SIMILARITY')
+          ? `Average ${CPU_TIME}`
+          : `${CPU_TIME}`,
       render: (measurements: SearchQueryRecord['measurements']) => {
         return calculateMetric(
           measurements?.cpu?.number,
@@ -196,7 +216,12 @@ const QueryInsights = ({
     },
     {
       field: MEASUREMENTS_FIELD,
-      name: MEMORY_USAGE,
+      name:
+        selectedFilter.includes('SIMILARITY') && selectedFilter.includes('NONE')
+          ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
+          : selectedFilter.includes('SIMILARITY')
+          ? `Average ${MEMORY_USAGE}`
+          : MEMORY_USAGE,
       render: (measurements: SearchQueryRecord['measurements']) => {
         return calculateMetric(
           measurements?.memory?.number,
@@ -210,10 +235,7 @@ const QueryInsights = ({
       truncateText: true,
     },
   ];
-  const groupColumns: Array<EuiBasicTableColumn<any>> = [...groupColumns1, ...groupColumns2];
-
-  const queryColumns: Array<EuiBasicTableColumn<any>> = [
-    ...groupColumns1,
+  const timestampColumn: Array<EuiBasicTableColumn<any>> = [
     {
       // Make into flyout instead?
       name: TIMESTAMP,
@@ -233,7 +255,8 @@ const QueryInsights = ({
       sortable: (query) => query.timestamp,
       truncateText: true,
     },
-    ...groupColumns2,
+  ];
+  const Columnsset5: Array<EuiBasicTableColumn<any>> = [
     {
       field: INDICES_FIELD,
       name: INDICES,
@@ -275,10 +298,54 @@ const QueryInsights = ({
       truncateText: true,
     },
   ];
-  const columnsToShow = selectedFilter === 'SIMILARITY' ? groupColumns : queryColumns;
-  const filteredQueries = queries.filter(
-    (query) => !selectedFilter || query.group_by === selectedFilter
-  );
+  const filteredQueries = useMemo(() => {
+    return queries.filter(
+      (query) => selectedFilter.length === 0 || selectedFilter.includes(query.group_by)
+    );
+  }, [queries, selectedFilter]);
+
+  const columnsToShow = useMemo(() => {
+    if (selectedFilter.includes('NONE') && selectedFilter.includes('SIMILARITY')) {
+      return [
+        ...baseColumns,
+        ...querycountColumn,
+        ...timestampColumn,
+        ...metricColumns,
+        ...Columnsset5,
+      ];
+    }
+    return selectedFilter.includes('SIMILARITY')
+      ? [...baseColumns, ...querycountColumn, ...metricColumns]
+      : [...baseColumns, ...timestampColumn, ...metricColumns, ...Columnsset5];
+  }, [selectedFilter]);
+
+  const onChangeFilter = ({ query: searchQuery }) => {
+    const text = searchQuery?.text || '';
+
+    const newFilters = new Set<string>();
+
+    if (
+      text.includes('group_by:(SIMILARITY)') ||
+      queries.every((q) => q.group_by === 'SIMILARITY')
+    ) {
+      newFilters.add('SIMILARITY');
+    }
+    else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
+      newFilters.add('NONE');
+    }
+    else if (
+      text.includes('group_by:(NONE or SIMILARITY)') ||
+      text.includes('group_by:(SIMILARITY or NONE)') ||
+      !text
+    ) {
+      newFilters.add('SIMILARITY');
+      newFilters.add('NONE');
+    }
+
+    if (JSON.stringify([...newFilters]) !== JSON.stringify(selectedFilter)) {
+      setSelectedFilter([...newFilters]);
+    }
+  };
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     onTimeChange({ start, end });
@@ -384,22 +451,7 @@ const QueryInsights = ({
               ),
             },
           ],
-          onChange: ({ query }) => {
-            if (!query || !query.text) {
-              setSelectedFilter(null); // No filter applied (default state)
-              return;
-            }
-
-            let newFilter = null;
-
-            if (query.text.includes('group_by:(SIMILARITY)')) {
-              newFilter = 'SIMILARITY';
-            } else if (query.text.includes('group_by:(NONE)')) {
-              newFilter = 'NONE';
-            }
-
-            setSelectedFilter(newFilter);
-          },
+          onChange: onChangeFilter,
 
           toolsRight: [
             <EuiSuperDatePicker

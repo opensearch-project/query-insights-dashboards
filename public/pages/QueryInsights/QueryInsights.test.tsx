@@ -107,9 +107,9 @@ describe('QueryInsights Component', () => {
       'Type',
       'Query Count',
       'Timestamp',
-      'Latency',
-      'CPU Time',
-      'Memory Usage',
+      'Avg Latency/ Latency',
+      'Avg CPU Time / CPU Time',
+      'Avg Memory Usage / Memory Usage',
       'Indices',
       'Search Type',
       'Coordinator Node ID',
@@ -131,7 +131,14 @@ describe('QueryInsights Component', () => {
     fireEvent.click(groupOption);
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-    const expectedHeaders = ['Id', 'Type', 'Query Count', 'Latency', 'CPU Time', 'Memory Usage'];
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Average Latency',
+      'Average CPU Time',
+      'Average Memory Usage',
+    ];
 
     expect(headerTexts).toEqual(expectedHeaders);
   });
@@ -150,7 +157,6 @@ describe('QueryInsights Component', () => {
     const expectedHeaders = [
       'Id',
       'Type',
-      'Query Count',
       'Timestamp',
       'Latency',
       'CPU Time',
@@ -182,9 +188,9 @@ describe('QueryInsights Component', () => {
       'Type',
       'Query Count',
       'Timestamp',
-      'Latency',
-      'CPU Time',
-      'Memory Usage',
+      'Avg Latency/ Latency',
+      'Avg CPU Time / CPU Time',
+      'Avg Memory Usage / Memory Usage',
       'Indices',
       'Search Type',
       'Coordinator Node ID',
