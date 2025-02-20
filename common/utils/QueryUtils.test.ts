@@ -95,5 +95,4 @@ describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
 
     expect(result).toBeNull();
   });
-
 });
