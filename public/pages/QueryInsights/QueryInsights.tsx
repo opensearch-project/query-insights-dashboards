@@ -68,6 +68,7 @@ const QueryInsights = ({
   const history = useHistory();
   const location = useLocation();
   const [pagination, setPagination] = useState({ pageIndex: 0 });
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
@@ -91,8 +92,15 @@ const QueryInsights = ({
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
+  useEffect(() => {
+    const allAreGroups =
+      queries.length > 0 && queries.every((query) => query.group_by === 'SIMILARITY');
+    if (allAreGroups) {
+      setSelectedFilter('SIMILARITY');
+    }
+  }, [queries]);
 
-  const cols: Array<EuiBasicTableColumn<any>> = [
+  const groupColumns1: Array<EuiBasicTableColumn<any>> = [
     {
       name: ID,
       render: (query: SearchQueryRecord) => {
@@ -157,25 +165,8 @@ const QueryInsights = ({
       },
       truncateText: true,
     },
-    {
-      // Make into flyout instead?
-      name: TIMESTAMP,
-      render: (query: SearchQueryRecord) => {
-        const isQuery = query.group_by === 'NONE';
-        const linkContent = isQuery ? convertTime(query.timestamp) : '-';
-        const onClickHandler = () => {
-          const route = `/query-details?from=${from}&to=${to}&id=${query.id}`;
-          history.push(route);
-        };
-        return (
-          <span>
-            <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>
-          </span>
-        );
-      },
-      sortable: (query) => query.timestamp,
-      truncateText: true,
-    },
+  ];
+  const groupColumns2: Array<EuiBasicTableColumn<any>> = [
     {
       field: LATENCY_FIELD,
       name: LATENCY,
@@ -224,6 +215,31 @@ const QueryInsights = ({
       },
       truncateText: true,
     },
+  ];
+  const groupColumns: Array<EuiBasicTableColumn<any>> = [...groupColumns1, ...groupColumns2];
+
+  const queryColumns: Array<EuiBasicTableColumn<any>> = [
+    ...groupColumns1,
+    {
+      // Make into flyout instead?
+      name: TIMESTAMP,
+      render: (query: SearchQueryRecord) => {
+        const isQuery = query.group_by === 'NONE';
+        const linkContent = isQuery ? convertTime(query.timestamp) : '-';
+        const onClickHandler = () => {
+          const route = `/query-details?from=${from}&to=${to}&id=${query.id}`;
+          history.push(route);
+        };
+        return (
+          <span>
+            <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>
+          </span>
+        );
+      },
+      sortable: (query) => query.timestamp,
+      truncateText: true,
+    },
+    ...groupColumns2,
     {
       field: INDICES_FIELD,
       name: INDICES,
@@ -265,6 +281,10 @@ const QueryInsights = ({
       truncateText: true,
     },
   ];
+  const columnsToShow = selectedFilter === 'SIMILARITY' ? groupColumns : queryColumns;
+  const filteredQueries = queries.filter(
+    (query) => !selectedFilter || query.group_by === selectedFilter
+  );
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     onTimeChange({ start, end });
@@ -291,8 +311,8 @@ const QueryInsights = ({
         dataSourcePickerReadOnly={false}
       />
       <EuiInMemoryTable
-        items={queries}
-        columns={cols}
+        items={filteredQueries}
+        columns={columnsToShow}
         sorting={{
           sort: {
             field: TIMESTAMP_FIELD,
@@ -370,6 +390,23 @@ const QueryInsights = ({
               ),
             },
           ],
+          onChange: ({ query }) => {
+            if (!query || !query.text) {
+              setSelectedFilter(null); // No filter applied (default state)
+              return;
+            }
+
+            let newFilter = null;
+
+            if (query.text.includes('group_by:(SIMILARITY)')) {
+              newFilter = 'SIMILARITY';
+            } else if (query.text.includes('group_by:(NONE)')) {
+              newFilter = 'NONE';
+            }
+
+            setSelectedFilter(newFilter);
+          },
+
           toolsRight: [
             <EuiSuperDatePicker
               start={currStart}
