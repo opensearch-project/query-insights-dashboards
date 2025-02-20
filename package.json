@@ -1,11 +1,11 @@
 {
   "name": "opensearch_query_insights_dashboards",
-  "version": "2.19.0.0",
+  "version": "2.19.1.0",
   "description": "OpenSearch Dashboards plugin for Query Insights",
   "main": "index.js",
   "opensearchDashboards": {
-    "version": "2.19.0",
-    "templateVersion": "2.19.0"
+    "version": "2.19.1",
+    "templateVersion": "2.19.1"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/opensearch-project/query-insights-dashboards",
