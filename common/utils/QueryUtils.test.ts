@@ -64,4 +64,36 @@ describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
 
     expect(result).toBeNull();
   });
+  it('should return null if API response is missing the response field', async () => {
+    mockCore.http.get.mockResolvedValue({});
+
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null if API response contains an unexpected structure', async () => {
+    mockCore.http.get.mockResolvedValue({ unexpectedKey: {} });
+
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(result).toBeNull();
+  });
+
+  it('should return null if API request fails', async () => {
+    mockCore.http.get.mockRejectedValue(new Error('API error'));
+
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(result).toBeNull();
+  });
+
+  it('should handle cases where API returns an empty object instead of expected response structure', async () => {
+    mockCore.http.get.mockResolvedValue({});
+
+    const result = await retrieveQueryById(mockCore, undefined, testStart, testEnd, testId);
+
+    expect(result).toBeNull();
+  });
+
 });
