@@ -329,11 +329,9 @@ const QueryInsights = ({
       queries.every((q) => q.group_by === 'SIMILARITY')
     ) {
       newFilters.add('SIMILARITY');
-    }
-    else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
+    } else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
       newFilters.add('NONE');
-    }
-    else if (
+    } else if (
       text.includes('group_by:(NONE or SIMILARITY)') ||
       text.includes('group_by:(SIMILARITY or NONE)') ||
       !text
