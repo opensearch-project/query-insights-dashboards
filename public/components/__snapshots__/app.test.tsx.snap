@@ -542,21 +542,29 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_measurements_3"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Latency"
+                      class="euiTableCellContent"
                     >
-                      Latency
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Latency"
+                      >
+                        Latency
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
                   aria-live="polite"

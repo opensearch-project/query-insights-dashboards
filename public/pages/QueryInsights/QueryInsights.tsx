@@ -194,6 +194,7 @@ const QueryInsights = ({
           METRIC_DEFAULT_MSG
         );
       },
+      sortable: true,
       truncateText: true,
     },
     {
