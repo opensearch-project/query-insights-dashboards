@@ -23,13 +23,16 @@ import {
   TOTAL_SHARDS,
   TYPE,
 } from '../../../common/constants';
-import { calculateMetric } from '../../../common/utils/MetricUtils';
+import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
+const LATENCY_FIELD = 'measurements.latency';
+const CPU_FIELD = 'measurements.cpu';
+const MEMORY_FIELD = 'measurements.memory';
 const INDICES_FIELD = 'indices';
 const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
@@ -191,7 +194,6 @@ const QueryInsights = ({
           METRIC_DEFAULT_MSG
         );
       },
-      sortable: true,
       truncateText: true,
     },
     {
@@ -211,7 +213,12 @@ const QueryInsights = ({
           METRIC_DEFAULT_MSG
         );
       },
-      sortable: true,
+      sortable: (query: SearchQueryRecord) => {
+        return calculateMetricNumber(
+          query.measurements?.cpu?.number,
+          query.measurements?.cpu?.count
+        );
+      },
       truncateText: true,
     },
     {
@@ -231,7 +238,6 @@ const QueryInsights = ({
           METRIC_DEFAULT_MSG
         );
       },
-      sortable: true,
       truncateText: true,
     },
   ];
@@ -329,11 +335,9 @@ const QueryInsights = ({
       queries.every((q) => q.group_by === 'SIMILARITY')
     ) {
       newFilters.add('SIMILARITY');
-    }
-    else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
+    } else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
       newFilters.add('NONE');
-    }
-    else if (
+    } else if (
       text.includes('group_by:(NONE or SIMILARITY)') ||
       text.includes('group_by:(SIMILARITY or NONE)') ||
       !text
@@ -468,6 +472,9 @@ const QueryInsights = ({
           defaultFields: [
             TIMESTAMP_FIELD,
             MEASUREMENTS_FIELD,
+            LATENCY_FIELD,
+            CPU_FIELD,
+            MEMORY_FIELD,
             INDICES_FIELD,
             SEARCH_TYPE_FIELD,
             NODE_ID_FIELD,

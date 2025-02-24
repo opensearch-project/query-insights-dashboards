@@ -542,29 +542,21 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   </button>
                 </th>
                 <th
-                  aria-live="polite"
-                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_measurements_3"
                   role="columnheader"
                   scope="col"
                 >
-                  <button
-                    class="euiTableHeaderButton"
-                    data-test-subj="tableHeaderSortButton"
-                    type="button"
+                  <span
+                    class="euiTableCellContent"
                   >
                     <span
-                      class="euiTableCellContent"
+                      class="euiTableCellContent__text"
+                      title="Latency"
                     >
-                      <span
-                        class="euiTableCellContent__text"
-                        title="Latency"
-                      >
-                        Latency
-                      </span>
+                      Latency
                     </span>
-                  </button>
+                  </span>
                 </th>
                 <th
                   aria-live="polite"
@@ -592,29 +584,21 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   </button>
                 </th>
                 <th
-                  aria-live="polite"
-                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_measurements_5"
                   role="columnheader"
                   scope="col"
                 >
-                  <button
-                    class="euiTableHeaderButton"
-                    data-test-subj="tableHeaderSortButton"
-                    type="button"
+                  <span
+                    class="euiTableCellContent"
                   >
                     <span
-                      class="euiTableCellContent"
+                      class="euiTableCellContent__text"
+                      title="Memory Usage"
                     >
-                      <span
-                        class="euiTableCellContent__text"
-                        title="Memory Usage"
-                      >
-                        Memory Usage
-                      </span>
+                      Memory Usage
                     </span>
-                  </button>
+                  </span>
                 </th>
                 <th
                   aria-live="polite"
