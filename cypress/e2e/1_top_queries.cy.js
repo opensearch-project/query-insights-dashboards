@@ -25,6 +25,7 @@ describe('Query Insights Dashboard', () => {
   // Setup before each test
   beforeEach(() => {
     clearAll();
+    cy.disableGrouping();
     cy.createIndexByName(indexName, sampleDocument);
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
