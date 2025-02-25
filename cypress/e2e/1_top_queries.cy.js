@@ -198,10 +198,7 @@ describe('Query Insights Dashboard', () => {
     ];
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      // Verify each expected header is present.
-      expectedGroupHeaders.forEach((header) => {
-        expect(actualHeaders).to.include(header);
-      });
+      expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
     });
   });
 
