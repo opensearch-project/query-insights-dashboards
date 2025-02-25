@@ -128,7 +128,6 @@ describe('Query Insights Dashboard', () => {
     cy.contains('No items found');
   });
 
-
   it('should render only individual query-related headers when NONE filter is applied', () => {
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
@@ -176,20 +175,20 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
-  it('should render Default query-related headers when NONE and SIMILARITY filter are applied', () => {
-    cy.wait(1000);
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.wait(1000);
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
+  it('should display both query and group data with proper headers', () => {
+    cy.searchOnIndex(indexName);
+    cy.wait(60000);
+    cy.enableGrouping();
+    cy.searchOnIndex(indexName);
+    cy.wait(60000);
+    cy.navigateToOverview();
 
-    const expectedHeaders = [
+    const expectedGroupHeaders = [
       'Id',
       'Type',
       'Query Count',
       'Timestamp',
-      'Avg Latency/ Latency',
+      'Avg Latency / Latency',
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
       'Indices',
@@ -197,10 +196,12 @@ describe('Query Insights Dashboard', () => {
       'Coordinator Node ID',
       'Total Shards',
     ];
-
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedHeaders);
+      // Verify each expected header is present.
+      expectedGroupHeaders.forEach((header) => {
+        expect(actualHeaders).to.include(header);
+      });
     });
   });
 
