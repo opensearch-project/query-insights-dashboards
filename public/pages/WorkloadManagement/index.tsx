@@ -11,6 +11,7 @@ import {
   EuiBasicTable,
   Criteria,
 } from '@elastic/eui';
+import QueryGroupDetails from './QueryGroupDetails';
 
 export const WORKLOAD_MANAGEMENT = '/workloadManagement';
 
@@ -48,12 +49,42 @@ const initialMemoryData: QueryGroupData[] = sortByAvgUsageDesc(
   }))
 );
 
+// Sample Node Usage Data
+interface NodeUsageData {
+  nodeId: string;
+  cpuUsage: number;
+  memoryUsage: number;
+}
+
+const nodeUsageData: NodeUsageData[] = [
+  { nodeId: 'TSpmh9W4boYB_Dw', cpuUsage: 50, memoryUsage: 80 },
+  { nodeId: 'Spmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'Upmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 90 },
+  { nodeId: 'TSpmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 90 },
+  { nodeId: 'Spmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'Upmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'TSpmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 90 },
+  { nodeId: 'Spmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'Upmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'TSpmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 90 },
+  { nodeId: 'Spmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+  { nodeId: 'Upmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
+];
+
+
 const WorkloadManagement = () => {
   const [cpuData, setCpuData] = useState<QueryGroupData[]>(initialCpuData);
   const [memoryData, setMemoryData] = useState<QueryGroupData[]>(initialMemoryData);
   const [sortField, setSortField] = useState<keyof QueryGroupData>('avgUsage');
   const [sortDirection, setSortDirection] = useState<'desc'>('desc'); // Always descending
   const [selectedTab, setSelectedTab] = useState(WORKLOAD_MANAGEMENT);
+  const [selectedQueryGroup, setSelectedQueryGroup] = useState<QueryGroupData | null>(null);
+
+  const onQueryGroupClick = (queryGroup: QueryGroupData) => {
+    setSelectedQueryGroup(queryGroup);
+  };
+
+
 
   // Pagination State
   const [pageIndex, setPageIndex] = useState(0);
@@ -162,7 +193,22 @@ const WorkloadManagement = () => {
                 style: { height: '50px' },
               })}
               columns={[
-                { field: 'queryGroup', name: 'Query Group', sortable: false },
+                {
+                  field: 'queryGroup',
+                  name: 'Query Group',
+                  render: (name: string, record: QueryGroupData) => (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onQueryGroupClick(record);
+                      }}
+                      style={{ color: 'blue', textDecoration: 'underline' }}
+                    >
+                      {name}
+                    </a>
+                  ),
+                },
                 { field: 'avgUsage', name: 'Average CPU Usage', sortable: true },
                 { field: 'limit', name: 'Usage Limit', sortable: true },
                 { field: 'rejections', name: 'Rejections', sortable: true },
@@ -187,7 +233,22 @@ const WorkloadManagement = () => {
                 style: { height: '50px' },
               })}
               columns={[
-                { field: 'queryGroup', name: 'Query Group', sortable: false },
+                {
+                  field: 'queryGroup',
+                  name: 'Query Group',
+                  render: (name: string, record: QueryGroupData) => (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onQueryGroupClick(record);
+                      }}
+                      style={{ color: 'blue', textDecoration: 'underline' }}
+                    >
+                      {name}
+                    </a>
+                  ),
+                },
                 { field: 'avgUsage', name: 'Average Memory Usage', sortable: true },
                 { field: 'limit', name: 'Usage Limit', sortable: true },
                 { field: 'rejections', name: 'Rejections', sortable: true },
@@ -200,6 +261,20 @@ const WorkloadManagement = () => {
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+
+      {selectedQueryGroup && (
+        <QueryGroupDetails
+          queryGroup={selectedQueryGroup.queryGroup}
+          cpuUsageLimit={parseInt(selectedQueryGroup.limit)}
+          memoryUsageLimit={parseInt(selectedQueryGroup.limit)}
+          totalCompletion={14}
+          totalRejections={selectedQueryGroup.rejections}
+          totalCancellations={selectedQueryGroup.cancellations}
+          nodeData={nodeUsageData}
+          onClose={() => setSelectedQueryGroup(null)}
+        />
+      )}
+
     </div>
   );
 };
