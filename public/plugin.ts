@@ -58,6 +58,36 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
+    core.application.register({
+      id: 'workloadManagement',
+      title: 'Workload Management',
+      appRoute: '/app/workloadManagement',
+      description: 'Monitor and manage workload distribution across the cluster.',
+      category: {
+        id: 'opensearch',
+        label: 'OpenSearch Plugins',
+        order: 2000,
+      },
+      order: 5100,
+      async mount(params: AppMountParameters) {
+
+        console.log("wlm is mounting...")
+        // Dynamically import the WLM page
+        const { renderApp } = await import('./application');
+        // const { WorkloadManagement } = await import('./pages/WorkloadManagement');
+
+        const [coreStart, depsStart] = await core.getStartServices();
+
+        return renderApp(
+          coreStart,
+          depsStart as QueryInsightsDashboardsPluginStartDependencies,
+          params,
+          deps.dataSourceManagement
+        );
+      },
+    });
+
+
     // Registration for new navigation
     core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
       {
@@ -69,6 +99,16 @@ export class QueryInsightsDashboardsPlugin
           euiIconType: 'managementApp',
         },
         order: 200,
+      },
+      {
+        id: 'workloadManagement',
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9100,
+          euiIconType: 'compute',
+        },
+        order: 210,
       },
     ]);
 
