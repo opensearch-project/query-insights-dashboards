@@ -178,10 +178,10 @@ describe('Query Insights Dashboard', () => {
   });
   it('should display both query and group data with proper headers', () => {
     cy.searchOnIndex(indexName);
-    cy.wait(60000);
+    cy.wait(3000);
     cy.enableGrouping();
     cy.searchOnIndex(indexName);
-    cy.wait(60000);
+    cy.wait(3000);
     cy.navigateToOverview();
 
     const expectedGroupHeaders = [

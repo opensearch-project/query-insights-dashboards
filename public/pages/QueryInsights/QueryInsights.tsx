@@ -181,7 +181,7 @@ const QueryInsights = ({
       field: MEASUREMENTS_FIELD,
       name:
         selectedFilter.includes('SIMILARITY') && selectedFilter.includes('NONE')
-          ? `Avg ${LATENCY}/ ${LATENCY}`
+          ? `Avg ${LATENCY} / ${LATENCY}`
           : selectedFilter.includes('SIMILARITY')
           ? `Average ${LATENCY}`
           : `${LATENCY}`,
