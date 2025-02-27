@@ -1,6 +1,6 @@
 {
   "name": "opensearch_query_insights_dashboards",
-  "version": "3.0.0.0",
+  "version": "3.0.0.0-alpha1",
   "description": "OpenSearch Dashboards plugin for Query Insights",
   "main": "index.js",
   "opensearchDashboards": {
