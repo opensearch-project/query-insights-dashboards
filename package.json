@@ -43,8 +43,8 @@
     "@cypress/request": "^3.0.0",
     "braces": "3.0.3",
     "micromatch": "4.0.8",
-    "serialize-javascript": "6.0.2",
-    "cross-spawn": "7.0.5"
+    "cross-spawn": "7.0.5",
+    "serialize-javascript": "6.0.2"
   },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^5.17.1",
