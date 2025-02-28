@@ -45,6 +45,7 @@
     "micromatch": "4.0.8",
     "cross-spawn": "7.0.5",
     "serialize-javascript": "6.0.2"
+
   },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^5.17.1",
