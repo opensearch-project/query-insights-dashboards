@@ -25,6 +25,7 @@ describe('Query Insights Dashboard', () => {
   // Setup before each test
   beforeEach(() => {
     clearAll();
+    cy.disableGrouping();
     cy.createIndexByName(indexName, sampleDocument);
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
@@ -88,7 +89,6 @@ describe('Query Insights Dashboard', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
     }
-    // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.reload();
     cy.get('.euiPagination').should('be.visible');
@@ -119,15 +119,88 @@ describe('Query Insights Dashboard', () => {
     cy.get('.euiFieldSearch').type('random_string');
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
     cy.get('.euiFieldSearch').clear();
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0); // Validate reset
+    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
   it('should display a message when no top queries are found', () => {
-    clearAll(); // disable top n queries
-    // waiting for the query insights queue to drain
+    clearAll();
     cy.wait(10000);
     cy.reload();
     cy.contains('No items found');
+  });
+
+  it('should render only individual query-related headers when NONE filter is applied', () => {
+    cy.wait(1000);
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('query').click();
+    cy.wait(1000);
+
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Timestamp',
+      'Latency',
+      'CPU Time',
+      'Memory Usage',
+      'Indices',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
+    ];
+
+    //cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
+    });
+  });
+
+  it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
+    cy.wait(1000);
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('group').click();
+    cy.wait(1000);
+
+    const expectedHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Average Latency',
+      'Average CPU Time',
+      'Average Memory Usage',
+    ];
+
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedHeaders);
+    });
+  });
+  it('should display both query and group data with proper headers', () => {
+    cy.searchOnIndex(indexName);
+    cy.wait(3000);
+    cy.enableGrouping();
+    cy.searchOnIndex(indexName);
+    cy.wait(3000);
+    cy.navigateToOverview();
+
+    const expectedGroupHeaders = [
+      'Id',
+      'Type',
+      'Query Count',
+      'Timestamp',
+      'Avg Latency / Latency',
+      'Avg CPU Time / CPU Time',
+      'Avg Memory Usage / Memory Usage',
+      'Indices',
+      'Search Type',
+      'Coordinator Node ID',
+      'Total Shards',
+    ];
+    cy.get('.euiTableHeaderCell').should(($headers) => {
+      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+      expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
+    });
   });
 
   after(() => clearAll());
