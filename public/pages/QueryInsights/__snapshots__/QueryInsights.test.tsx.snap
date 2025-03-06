@@ -541,9 +541,9 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     <span
                       class="euiTableCellContent__text"
-                      title="Avg Latency/ Latency"
+                      title="Avg Latency / Latency"
                     >
-                      Avg Latency/ Latency
+                      Avg Latency / Latency
                     </span>
                   </span>
                 </button>

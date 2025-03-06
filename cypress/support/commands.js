@@ -136,6 +136,21 @@ Cypress.Commands.add('disableGrouping', () => {
     failOnStatusCode: false,
   });
 });
+Cypress.Commands.add('setWindowSize', (size = '1m') => {
+  cy.request({
+    method: 'PUT',
+    url: `${Cypress.env('openSearchUrl')}/_cluster/settings`,
+    body: {
+      persistent: {
+        'search.insights.top_queries.latency.window_size': size,
+        'search.insights.top_queries.cpu.window_size': size,
+        'search.insights.top_queries.memory.window_size': size,
+      },
+    },
+    failOnStatusCode: true,
+  });
+});
+
 
 Cypress.Commands.add('createIndexByName', (indexName, body = {}) => {
   cy.request('POST', `${Cypress.env('openSearchUrl')}/${indexName}/_doc`, body);
