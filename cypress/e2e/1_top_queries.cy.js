@@ -86,7 +86,6 @@ describe('Query Insights Dashboard', () => {
    * Validate pagination works as expected
    */
 
-
   it('should switch between tabs', () => {
     // Click Configuration tab
     cy.getElementByText('.euiTab', 'Configuration').click({ force: true });
@@ -120,7 +119,6 @@ describe('Query Insights Dashboard', () => {
   });
 
   it('should render only individual query-related headers when NONE filter is applied', () => {
-
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
@@ -167,7 +165,7 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
-  it('should display both query and group data with proper headers when both are selected ', () => {
+  it('should display both query and group data with proper headers when both are selected', () => {
     cy.setWindowSize('1m');
     cy.wait(60000);
     cy.searchOnIndex(indexName);

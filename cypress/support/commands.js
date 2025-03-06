@@ -151,7 +151,6 @@ Cypress.Commands.add('setWindowSize', (size = '1m') => {
   });
 });
 
-
 Cypress.Commands.add('createIndexByName', (indexName, body = {}) => {
   cy.request('POST', `${Cypress.env('openSearchUrl')}/${indexName}/_doc`, body);
 });
