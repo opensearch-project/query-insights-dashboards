@@ -44,9 +44,9 @@
     "braces": "3.0.3",
     "micromatch": "4.0.8",
     "cross-spawn": "7.0.5",
-    "serialize-javascript": "6.0.2"
-
-  },
+    "serialize-javascript": "6.0.2",
+    "glob-parent": "5.1.2"
+},
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^5.17.1",
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
