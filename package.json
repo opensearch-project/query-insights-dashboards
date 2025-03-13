@@ -30,9 +30,9 @@
   "dependencies": {
     "object-hash": "^3.0.0",
     "plotly.js-dist": "^2.34.0",
-    "@babel/helpers": "^7.26.10",
-    "@babel/runtime": "^7.26.10",
-    "@babel/runtime-corejs3": "^7.26.10"
+    "@babel/helpers": "^7.22.9",
+    "@babel/runtime": "^7.22.9",
+    "@babel/runtime-corejs3": "^7.22.9"
   },
   "resolutions": {
     "@types/react": "^16.9.8",
@@ -49,10 +49,10 @@
     "cross-spawn": "7.0.5",
     "serialize-javascript": "6.0.2",
     "glob-parent": "5.1.2",
-    "@babel/helpers": "^7.26.10",
-    "@babel/runtime": "^7.26.10",
-    "@babel/runtime-corejs3": "^7.26.10"
-},
+    "@babel/helpers": "^7.22.9",
+    "@babel/runtime": "^7.22.9",
+    "@babel/runtime-corejs3": "^7.22.9"
+  },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^5.17.1",
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
