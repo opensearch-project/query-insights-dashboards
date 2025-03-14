@@ -274,7 +274,7 @@ const Configuration = ({
                       listItems={[
                         {
                           title: <h3>Enabled</h3>,
-                          description: 'Enable/disable top N query monitoring by ${metric}.',
+                          description: `Enable/disable top N query monitoring by ${metric}.`,
                         },
                       ]}
                     />
