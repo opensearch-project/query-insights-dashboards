@@ -17,7 +17,10 @@ Compatible with OpenSearch 3.0.0.0-Alpha1
 ### Enhancements
 
 * Unit test for QueryUtils, application, plugin ([#96](https://github.com/opensearch-project/query-insights-dashboards/pull/96))
-### Infrastructure
+
+# Infrastructure
+
+* Bump to 3.0.0-alpha1 ([#127](https://github.com/opensearch-project/query-insights-dashboards/pull/127))
 
 
 ### Documentation
