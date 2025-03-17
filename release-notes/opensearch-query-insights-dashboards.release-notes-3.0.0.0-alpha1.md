@@ -1,5 +1,5 @@
-## Version 3.0.0.Alpha1 Release Notes
-Compatible with OpenSearch 3.0.0.Alpha1
+## Version 3.0.0.0-Alpha1 Release Notes
+Compatible with OpenSearch 3.0.0.0-Alpha1
 
 ### Maintenance
 
@@ -20,4 +20,4 @@ Compatible with OpenSearch 3.0.0.Alpha1
 
 
 ### Documentation
-* 3.0.0.Alpha1 Release Notes ([#147](https://github.com/opensearch-project/query-insights-dashboards/pull/147))
+* 3.0.0.0-Alpha1 Release Notes ([#147](https://github.com/opensearch-project/query-insights-dashboards/pull/147))
