@@ -343,7 +343,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                       class="euiSuperDatePicker__prettyFormat"
                       data-test-subj="superDatePickerShowDatesButton"
                     >
-                      Last 1 day
+                      Last 1 hour
                       <span
                         class="euiSuperDatePicker__prettyFormatLink"
                       >
