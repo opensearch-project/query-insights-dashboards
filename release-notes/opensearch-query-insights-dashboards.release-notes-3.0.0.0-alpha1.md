@@ -3,10 +3,11 @@ Compatible with OpenSearch 3.0.0.0-Alpha1
 
 ### Maintenance
 
-* update @babel/helpers ([#139](https://github.com/opensearch-project/query-insights-dashboards/pull/139))
+* Update @babel/helpers ([#139](https://github.com/opensearch-project/query-insights-dashboards/pull/139))
 * Delete package-lock.json as it is duplicate with yarn.lock ([#133](https://github.com/opensearch-project/query-insights-dashboards/pull/133))
 * Upgrade actions/cache to v4 ([#130](https://github.com/opensearch-project/query-insights-dashboards/pull/130))
-* updated package.json ([#126](https://github.com/opensearch-project/query-insights-dashboards/pull/126))
+* Updated package.json ([#126](https://github.com/opensearch-project/query-insights-dashboards/pull/126))
+* Updated-glob-parent-version([#134](https://github.com/opensearch-project/query-insights-dashboards/pull/134))
 
 ### Bug Fixes
 
