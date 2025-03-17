@@ -31,13 +31,16 @@ describe('Query Insights Dashboard', () => {
     cy.enableTopQueries(METRICS.CPU);
     cy.enableTopQueries(METRICS.MEMORY);
     cy.searchOnIndex(indexName);
-    // wait for 1s to avoid same timestamp
-    cy.wait(1000);
+    cy.setWindowSize('1m');
+    cy.searchOnIndex(indexName);
+    cy.wait(3000);
+    cy.enableGrouping();
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
-    // waiting for the query insights queue to drain
-    cy.wait(10000);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(60000);
     cy.navigateToOverview();
   });
 
@@ -81,10 +84,6 @@ describe('Query Insights Dashboard', () => {
           });
       });
   });
-
-  /**
-   * Validate pagination works as expected
-   */
 
   it('should switch between tabs', () => {
     // Click Configuration tab
@@ -166,16 +165,6 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should display both query and group data with proper headers when both are selected', () => {
-    cy.setWindowSize('1m');
-    cy.wait(60000);
-    cy.searchOnIndex(indexName);
-    cy.wait(3000);
-    cy.enableGrouping();
-    cy.searchOnIndex(indexName);
-    cy.searchOnIndex(indexName);
-    cy.searchOnIndex(indexName);
-    cy.wait(3000);
-    cy.navigateToOverview();
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
@@ -200,106 +189,6 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
     });
   });
-  it('should display both query and group data with proper headers for default', () => {
-    cy.setWindowSize('1m');
-    cy.wait(60000);
-    cy.searchOnIndex(indexName);
-    cy.wait(3000);
-    cy.enableGrouping();
-    cy.searchOnIndex(indexName);
-    cy.searchOnIndex(indexName);
-    cy.searchOnIndex(indexName);
-    cy.wait(3000);
-    cy.navigateToOverview();
-    cy.wait(1000);
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
-
-    const expectedGroupHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Timestamp',
-      'Avg Latency / Latency',
-      'Avg CPU Time / CPU Time',
-      'Avg Memory Usage / Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'Total Shards',
-    ];
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
-    });
-  });
-  // it('should display both query and group data with proper headers and has only query', () => {
-  //   cy.deleteIndexByName(indexName);
-  //   cy.setWindowSize('1m');
-  //   cy.wait(60000);
-  //   cy.searchOnIndex(indexName);
-  //   cy.wait(3000);
-  //   cy.navigateToOverview();
-  //   cy.wait(1000);
-  //   cy.get('.euiFilterButton').contains('Type').click();
-  //   cy.get('.euiFilterSelectItem').contains('query').click();
-  //   cy.get('.euiFilterSelectItem').contains('group').click();
-  //   cy.wait(1000);
-  //
-  //   const expectedGroupHeaders = [
-  //     'Id',
-  //     'Type',
-  //     'Timestamp',
-  //     'Latency',
-  //     'CPU Time',
-  //     'Memory Usage',
-  //     'Indices',
-  //     'Search Type',
-  //     'Coordinator Node ID',
-  //     'Total Shards',
-  //   ];
-  //   cy.get('.euiTableHeaderCell').should(($headers) => {
-  //     const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-  //     expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
-  //   });
-  // });
-  // it('should display both query and group data with proper headers and has only group', () => {
-  //   cy.deleteIndexByName(indexName);
-  //   cy.setWindowSize('1m');
-  //   cy.wait(60000);
-  //   cy.disableGrouping();
-  //   cy.createIndexByName(indexName, sampleDocument);
-  //   cy.enableTopQueries(METRICS.LATENCY);
-  //   cy.enableTopQueries(METRICS.CPU);
-  //   cy.enableTopQueries(METRICS.MEMORY);
-  //   // waiting for the query insights queue to drain
-  //   cy.enableGrouping();
-  //   cy.searchOnIndex(indexName);
-  //   cy.searchOnIndex(indexName);
-  //   cy.searchOnIndex(indexName);
-  //   cy.wait(3000);
-  //   cy.navigateToOverview();
-  //   cy.wait(1000);
-  //   cy.get('.euiFilterButton').contains('Type').click();
-  //   cy.get('.euiFilterSelectItem').contains('query').click();
-  //   cy.get('.euiFilterSelectItem').contains('group').click();
-  //   cy.wait(1000);
-  //
-  //   const expectedGroupHeaders = [
-  //     'Id',
-  //     'Type',
-  //     'Query Count',
-  //     'Average Latency',
-  //     'Average CPU Time',
-  //     'Average Memory Usage',
-  //   ];
-  //   cy.get('.euiTableHeaderCell').should(($headers) => {
-  //     const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-  //     expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
-  //   });
-  // });
   it('should paginate the query table', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
