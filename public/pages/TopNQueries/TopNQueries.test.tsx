@@ -183,7 +183,7 @@ describe('TopNQueries Component', () => {
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
         <TopNQueries
           core={mockCore}
-          initialStart="now-1d"
+          initialStart="now-1h"
           initialEnd="now"
           depsStart={{ navigation: {} }}
           params={{} as any}
