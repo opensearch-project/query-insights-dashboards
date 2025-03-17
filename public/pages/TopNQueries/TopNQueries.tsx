@@ -69,7 +69,7 @@ const TopNQueries = ({
   depsStart,
   params,
   dataSourceManagement,
-  initialStart = 'now-1d',
+  initialStart = 'now-1h',
   initialEnd = 'now',
 }: {
   core: CoreStart;
