@@ -159,6 +159,7 @@ describe('Query Insights Dashboard', () => {
       'Average CPU Time',
       'Average Memory Usage',
     ];
+    cy.screenshot('overview_page_group');
 
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
@@ -203,6 +204,7 @@ describe('Query Insights Dashboard', () => {
       'Coordinator Node ID',
       'Total Shards',
     ];
+    cy.screenshot('overview_page_group_and_indidvual');
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
       expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
