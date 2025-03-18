@@ -30,8 +30,11 @@ describe('Query Insights Dashboard', () => {
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
     cy.enableTopQueries(METRICS.MEMORY);
-    cy.searchOnIndex(indexName);
     cy.setWindowSize('1m');
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
     cy.searchOnIndex(indexName);
     cy.wait(3000);
     cy.enableGrouping();
@@ -40,7 +43,7 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
-    cy.wait(60000);
+    cy.wait(50000);
     cy.navigateToOverview();
   });
 
@@ -65,7 +68,6 @@ describe('Query Insights Dashboard', () => {
   it('should sort the table by the Timestamp column', () => {
     // waiting for the query insights queue to drain
     cy.wait(10000);
-    cy.navigateToOverview();
     // Click the Timestamp column header to sort
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
@@ -190,6 +192,7 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should paginate the query table', () => {
+    cy.setWindowSize('5m');
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
     }
