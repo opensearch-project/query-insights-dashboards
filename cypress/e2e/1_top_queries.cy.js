@@ -30,21 +30,13 @@ describe('Query Insights Dashboard', () => {
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
     cy.enableTopQueries(METRICS.MEMORY);
-    cy.setWindowSize('1m');
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
-    cy.wait(3000);
-    cy.enableGrouping();
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(50000);
     cy.navigateToOverview();
+    cy.wait(1000);
   });
 
   /**
@@ -66,8 +58,6 @@ describe('Query Insights Dashboard', () => {
    * Validate sorting by the "Timestamp" column works correctly
    */
   it('should sort the table by the Timestamp column', () => {
-    // waiting for the query insights queue to drain
-    cy.wait(10000);
     // Click the Timestamp column header to sort
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
@@ -147,6 +137,15 @@ describe('Query Insights Dashboard', () => {
   });
 
   it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
+    cy.enableGrouping();
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.navigateToOverview();
+    cy.wait(1000);
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
@@ -167,6 +166,22 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should display both query and group data with proper headers when both are selected', () => {
+    cy.setWindowSize('1m');
+    cy.wait(40000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.enableGrouping();
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.wait(1000);
+    cy.searchOnIndex(indexName);
+    cy.navigateToOverview();
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
@@ -192,7 +207,6 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should paginate the query table', () => {
-    cy.setWindowSize('5m');
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
     }
