@@ -183,7 +183,7 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     cy.navigateToOverview();
     cy.wait(1000);
-    cy.wait(60000);
+    cy.wait(10000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
