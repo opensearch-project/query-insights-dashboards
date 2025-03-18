@@ -168,6 +168,7 @@ describe('Query Insights Dashboard', () => {
   it('should display both query and group data with proper headers when both are selected', () => {
     cy.setWindowSize('1m');
     cy.wait(40000);
+    cy.disableGrouping();
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
@@ -183,7 +184,7 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     cy.navigateToOverview();
     cy.wait(1000);
-    cy.wait(10000);
+    //cy.wait(10000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
