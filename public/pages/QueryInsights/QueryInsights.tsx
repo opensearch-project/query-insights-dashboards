@@ -327,23 +327,26 @@ const QueryInsights = ({
     const hasQueryType = selectedFilter.includes('NONE');
     const hasGroupType = selectedFilter.includes('SIMILARITY');
 
-    if (queries.length === 0) {
-      if (hasQueryType && hasGroupType) return defaultColumns;
-      if (hasGroupType) return groupTypeColumns;
-      if (hasQueryType) return queryTypeColumns;
-    } else if (queries.every((q) => q.group_by === 'NONE')) {
-      if (hasQueryType && hasGroupType) return queryTypeColumns;
-      if (hasQueryType) return queryTypeColumns;
-    } else if (queries.every((q) => q.group_by === 'SIMILARITY')) {
-      if (hasQueryType && hasGroupType) return groupTypeColumns;
-      if (hasGroupType) return groupTypeColumns;
-    } else {
-      if (hasQueryType && hasGroupType) return defaultColumns;
-      if (hasQueryType) return queryTypeColumns.filter((col) => col.name !== 'group');
-      if (hasGroupType) return groupTypeColumns.filter((col) => col.name !== 'query');
-    }
+    if (hasQueryType && hasGroupType) {
+      if (queries.length === 0) return defaultColumns;
+      else {
+        const containsOnlyQueryType = queries.every((q) => q.group_by === 'NONE');
+        const containsOnlyGroupType = queries.every((q) => q.group_by === 'SIMILARITY');
 
-    return defaultColumns; // Fallback to default columns
+        if (containsOnlyQueryType) {
+          return queryTypeColumns;
+        }
+
+        if (containsOnlyGroupType) {
+          return groupTypeColumns;
+        }
+        return defaultColumns;
+      }
+    }
+    if (hasGroupType) return groupTypeColumns;
+    if (hasQueryType) return queryTypeColumns;
+
+    return defaultColumns;
   }, [selectedFilter, queries]);
 
   const onChangeFilter = ({ query: searchQuery }) => {
