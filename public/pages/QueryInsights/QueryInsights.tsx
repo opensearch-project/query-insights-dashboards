@@ -93,12 +93,13 @@ const QueryInsights = ({
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
   useEffect(() => {
-    if (queries.length === 0) return; // No queries? Do nothing.
+    if (queries.length === 0) return;
 
     const allAreGroups = queries.every((query) => query.group_by === 'SIMILARITY');
     const allAreQueries = queries.every((query) => query.group_by === 'NONE');
 
     if (allAreGroups) {
+      console.log('SIMILARITY selected');
       setSelectedFilter(['SIMILARITY']);
     } else if (allAreQueries) {
       setSelectedFilter(['NONE']);
@@ -311,32 +312,48 @@ const QueryInsights = ({
     );
   }, [queries, selectedFilter]);
 
+  const defaultColumns = [
+    ...baseColumns,
+    ...querycountColumn,
+    ...timestampColumn,
+    ...metricColumns,
+    ...Columnsset5,
+  ];
+
+  const groupTypeColumns = [...baseColumns, ...querycountColumn, ...metricColumns];
+  const queryTypeColumns = [...baseColumns, ...timestampColumn, ...metricColumns, ...Columnsset5];
+
   const columnsToShow = useMemo(() => {
-    if (selectedFilter.includes('NONE') && selectedFilter.includes('SIMILARITY')) {
-      return [
-        ...baseColumns,
-        ...querycountColumn,
-        ...timestampColumn,
-        ...metricColumns,
-        ...Columnsset5,
-      ];
+    const hasQueryType = selectedFilter.includes('NONE');
+    const hasGroupType = selectedFilter.includes('SIMILARITY');
+
+    if (queries.length === 0) {
+      if (hasQueryType && hasGroupType) return defaultColumns;
+      if (hasGroupType) return groupTypeColumns;
+      if (hasQueryType) return queryTypeColumns;
+    } else if (queries.every((q) => q.group_by === 'NONE')) {
+      if (hasQueryType && hasGroupType) return queryTypeColumns;
+      if (hasQueryType) return queryTypeColumns;
+    } else if (queries.every((q) => q.group_by === 'SIMILARITY')) {
+      if (hasQueryType && hasGroupType) return groupTypeColumns;
+      if (hasGroupType) return groupTypeColumns;
+    } else {
+      if (hasQueryType && hasGroupType) return defaultColumns;
+      if (hasQueryType) return queryTypeColumns.filter((col) => col.name !== 'group');
+      if (hasGroupType) return groupTypeColumns.filter((col) => col.name !== 'query'); 
     }
-    return selectedFilter.includes('SIMILARITY')
-      ? [...baseColumns, ...querycountColumn, ...metricColumns]
-      : [...baseColumns, ...timestampColumn, ...metricColumns, ...Columnsset5];
-  }, [selectedFilter]);
+
+    return defaultColumns; // Fallback to default columns
+  }, [selectedFilter, queries]);
 
   const onChangeFilter = ({ query: searchQuery }) => {
     const text = searchQuery?.text || '';
 
     const newFilters = new Set<string>();
 
-    if (
-      text.includes('group_by:(SIMILARITY)') ||
-      queries.every((q) => q.group_by === 'SIMILARITY')
-    ) {
+    if (text.includes('group_by:(SIMILARITY)')) {
       newFilters.add('SIMILARITY');
-    } else if (text.includes('group_by:(NONE)') || queries.every((q) => q.group_by === 'NONE')) {
+    } else if (text.includes('group_by:(NONE)')) {
       newFilters.add('NONE');
     } else if (
       text.includes('group_by:(NONE or SIMILARITY)') ||

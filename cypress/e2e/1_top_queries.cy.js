@@ -36,7 +36,6 @@ describe('Query Insights Dashboard', () => {
     cy.wait(1000);
     cy.searchOnIndex(indexName);
     cy.navigateToOverview();
-    cy.wait(1000);
   });
 
   /**
@@ -59,6 +58,7 @@ describe('Query Insights Dashboard', () => {
    */
   it('should sort the table by the Timestamp column', () => {
     // Click the Timestamp column header to sort
+    cy.navigateToOverview();
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
     cy.get('.euiTableRow')
@@ -159,7 +159,6 @@ describe('Query Insights Dashboard', () => {
       'Average CPU Time',
       'Average Memory Usage',
     ];
-    cy.screenshot('overview_page_group');
 
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
@@ -167,25 +166,9 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should display both query and group data with proper headers when both are selected', () => {
-    cy.setWindowSize('1m');
-    cy.wait(40000);
-    cy.disableGrouping();
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.enableGrouping();
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.navigateToOverview();
-    cy.wait(1000);
-    //cy.wait(10000);
+    clearAll();
+    cy.wait(10000);
+    cy.reload();
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
@@ -204,7 +187,6 @@ describe('Query Insights Dashboard', () => {
       'Coordinator Node ID',
       'Total Shards',
     ];
-    cy.screenshot('overview_page_group_and_indidvual');
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
       expect(actualHeaders).to.deep.equal(expectedGroupHeaders);

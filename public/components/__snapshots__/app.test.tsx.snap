@@ -520,7 +520,32 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Timestamp_2"
+                  data-test-subj="tableHeaderCell_measurements_2"
+                  role="columnheader"
+                  scope="col"
+                >
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Query Count"
+                      >
+                        Query Count
+                      </span>
+                    </span>
+                  </button>
+                </th>
+                <th
+                  aria-live="polite"
+                  aria-sort="none"
+                  class="euiTableHeaderCell"
+                  data-test-subj="tableHeaderCell_Timestamp_3"
                   role="columnheader"
                   scope="col"
                 >
@@ -545,7 +570,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_3"
+                  data-test-subj="tableHeaderCell_measurements_4"
                   role="columnheader"
                   scope="col"
                 >
@@ -570,7 +595,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_4"
+                  data-test-subj="tableHeaderCell_measurements_5"
                   role="columnheader"
                   scope="col"
                 >
@@ -593,7 +618,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                 </th>
                 <th
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_5"
+                  data-test-subj="tableHeaderCell_measurements_6"
                   role="columnheader"
                   scope="col"
                 >
@@ -612,7 +637,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_indices_6"
+                  data-test-subj="tableHeaderCell_indices_7"
                   role="columnheader"
                   scope="col"
                 >
@@ -637,7 +662,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_search_type_7"
+                  data-test-subj="tableHeaderCell_search_type_8"
                   role="columnheader"
                   scope="col"
                 >
@@ -662,7 +687,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_node_id_8"
+                  data-test-subj="tableHeaderCell_node_id_9"
                   role="columnheader"
                   scope="col"
                 >
@@ -687,7 +712,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_total_shards_9"
+                  data-test-subj="tableHeaderCell_total_shards_10"
                   role="columnheader"
                   scope="col"
                 >
@@ -716,7 +741,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
               >
                 <td
                   class="euiTableRowCell euiTableRowCell--isMobileFullWidth"
-                  colspan="10"
+                  colspan="11"
                 >
                   <div
                     class="euiTableCellContent euiTableCellContent--alignCenter"
