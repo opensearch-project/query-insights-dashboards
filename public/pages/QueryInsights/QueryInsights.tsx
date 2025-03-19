@@ -340,7 +340,7 @@ const QueryInsights = ({
     } else {
       if (hasQueryType && hasGroupType) return defaultColumns;
       if (hasQueryType) return queryTypeColumns.filter((col) => col.name !== 'group');
-      if (hasGroupType) return groupTypeColumns.filter((col) => col.name !== 'query'); 
+      if (hasGroupType) return groupTypeColumns.filter((col) => col.name !== 'query');
     }
 
     return defaultColumns; // Fallback to default columns
