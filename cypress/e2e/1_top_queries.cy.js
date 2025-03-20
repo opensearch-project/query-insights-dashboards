@@ -25,16 +25,18 @@ describe('Query Insights Dashboard', () => {
   // Setup before each test
   beforeEach(() => {
     clearAll();
-    cy.disableGrouping();
     cy.createIndexByName(indexName, sampleDocument);
     cy.enableTopQueries(METRICS.LATENCY);
     cy.enableTopQueries(METRICS.CPU);
     cy.enableTopQueries(METRICS.MEMORY);
     cy.searchOnIndex(indexName);
+    // wait for 1s to avoid same timestamp
     cy.wait(1000);
     cy.searchOnIndex(indexName);
     cy.wait(1000);
     cy.searchOnIndex(indexName);
+    // waiting for the query insights queue to drain
+    cy.wait(10000);
     cy.navigateToOverview();
   });
 
@@ -57,8 +59,10 @@ describe('Query Insights Dashboard', () => {
    * Validate sorting by the "Timestamp" column works correctly
    */
   it('should sort the table by the Timestamp column', () => {
-    // Click the Timestamp column header to sort
+    // waiting for the query insights queue to drain
+    cy.wait(10000);
     cy.navigateToOverview();
+    // Click the Timestamp column header to sort
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
     cy.get('.euiTableRow')
