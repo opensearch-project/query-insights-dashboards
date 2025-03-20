@@ -19,6 +19,7 @@ const clearAll = () => {
   cy.disableTopQueries(METRICS.LATENCY);
   cy.disableTopQueries(METRICS.CPU);
   cy.disableTopQueries(METRICS.MEMORY);
+  cy.disableGrouping();
 };
 
 describe('Query Insights Dashboard', () => {
