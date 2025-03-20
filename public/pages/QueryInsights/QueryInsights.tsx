@@ -99,7 +99,6 @@ const QueryInsights = ({
     const allAreQueries = queries.every((query) => query.group_by === 'NONE');
 
     if (allAreGroups) {
-      console.log('SIMILARITY selected');
       setSelectedFilter(['SIMILARITY']);
     } else if (allAreQueries) {
       setSelectedFilter(['NONE']);
