@@ -40,7 +40,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Checkout Query Insights
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: query-insights
           repository: opensearch-project/query-insights
@@ -59,14 +59,14 @@ jobs:
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: opensearch-project/OpenSearch-Dashboards
           path: OpenSearch-Dashboards
           ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
 
       - name: Checkout Query Insights Dashboards plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards
 
