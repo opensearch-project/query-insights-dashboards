@@ -61,7 +61,7 @@ export class QueryInsightsDashboardsPlugin
     core.application.register({
       id: 'workloadManagement',
       title: 'Workload Management',
-      appRoute: '/app/workloadManagement',
+      appRoute: '/app/workload-management',
       description: 'Monitor and manage workload distribution across the cluster.',
       category: {
         id: 'opensearch',

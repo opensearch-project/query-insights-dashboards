@@ -23,7 +23,7 @@ export const QueryInsightsDashboardsApp = ({
   dataSourceManagement?: DataSourceManagementPluginSetup;
 }) => {
   const location = window.location.pathname; // Detect the URL path
-  const isWLMApp = location.includes('workloadManagement'); // Check if the path includes 'workloadManagement'
+  const isWLMApp = location.includes('workload-management'); // Check if the path includes 'workload-management'
 
   console.log("URL path:", location); // Debug log
   console.log("Is Workload Management App:", isWLMApp); // Debug log
