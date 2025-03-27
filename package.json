@@ -1,6 +1,6 @@
 {
   "name": "opensearch_query_insights_dashboards",
-  "version": "3.0.0.0-alpha1",
+  "version": "3.0.0.0-beta1",
   "description": "OpenSearch Dashboards plugin for Query Insights",
   "main": "index.js",
   "opensearchDashboards": {
@@ -54,16 +54,16 @@
     "@babel/runtime-corejs3": "^7.22.9"
   },
   "devDependencies": {
-    "@cypress/webpack-preprocessor": "^5.17.1",
+    "@cypress/webpack-preprocessor": "^6.0.1",
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
     "@elastic/eslint-import-resolver-kibana": "link:../../packages/osd-eslint-import-resolver-opensearch-dashboards",
     "@testing-library/dom": "^8.11.3",
-    "@testing-library/jest-dom": "^5.16.2",
+    "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/react-dom": "^16.9.8",
     "@types/object-hash": "^3.0.0",
     "@types/react-router-dom": "^5.3.2",
-    "cypress": "12.17.4",
+    "cypress": "^13.6.0",
     "cypress-real-events": "1.7.6",
     "cypress-recurse": "^1.27.0",
     "eslint-plugin-cypress": "^2.8.1",

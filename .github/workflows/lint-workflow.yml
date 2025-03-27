@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout OpenSearch Dashboards
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: opensearch-project/OpenSearch-Dashboards
           ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
@@ -34,7 +34,7 @@ jobs:
       - run: node -v
       - run: yarn -v
       - name: Checkout Query Insights Dashboards plugin
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards
       - name: Bootstrap plugin/opensearch-dashboards
