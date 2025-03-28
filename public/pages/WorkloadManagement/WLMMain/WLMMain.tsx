@@ -12,12 +12,13 @@ import {
   EuiIcon,
   EuiText,
   EuiFieldSearch,
+  EuiLink,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
-import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import {PageHeader} from "../../components/PageHeader";
-import {QueryInsightsDashboardsPluginStartDependencies} from "../../types";
+import { DataSourceManagementPluginSetup } from '../../../../../../src/plugins/data_source_management/public';
+import {PageHeader} from "../../../components/PageHeader";
+import {QueryInsightsDashboardsPluginStartDependencies} from "../../../types";
 import ReactECharts from 'echarts-for-react';
 
 
@@ -36,7 +37,7 @@ interface WorkloadGroupData {
   memLimit: number;
 }
 
-export const WLM = '/';
+export const WLM = '/workloadManagement';
 
 const workloadGroups: WorkloadGroupData[] = [
   {
@@ -281,7 +282,7 @@ const WorkloadManagement = ({
 
 // Function to generate Boxplot Config with Red Limit Line
   const getBoxplotOption = (boxData: number[], limit: number) => {
-    if (!boxData || boxData.length < 5) return {};
+    if (!boxData) return {};
 
     const sortedData = [...boxData].sort((a, b) => a - b);
     const minValue = sortedData[0];
@@ -301,13 +302,13 @@ const WorkloadManagement = ({
             Median: ${params.data[3]}<br/>
             Q3: ${params.data[4]}<br/>
             Max: ${params.data[5]}<br/>
-            <span style="color:red;">Limit: ${limit}</span>
+            <span style="color:#dc3545;">Limit: ${limit}</span>
           `;
           }
           return '';
         },
       },
-      grid: { left: '10%', right: '10%', top: '0%', bottom: '0%' },
+      grid: { left: '0%', right: '10%', top: '0%', bottom: '0%' },
       xAxis: {
         type: 'value',
         min: Math.min(minValue, limit) - 5,
@@ -324,7 +325,7 @@ const WorkloadManagement = ({
           name: 'Boxplot',
           type: 'boxplot',
           data: [[minValue, q1, median, q3, maxValue]],
-          itemStyle: { color: '#4A90E2', borderColor: '#2A5EBA' },
+          itemStyle: { color: '#0268BC', borderColor: '#2A5EBA' },
           boxWidth: ['40%', '50%'],
         },
         {
@@ -333,7 +334,7 @@ const WorkloadManagement = ({
           symbol: 'rect',
           symbolSize: [3, 35],
           data: [[limit, 0]],
-          itemStyle: { color: 'red' },
+          itemStyle: { color: '#dc3545' },
         },
       ],
     };
@@ -344,7 +345,16 @@ const WorkloadManagement = ({
       field: 'name',
       name: <EuiText size="m">Workload group name</EuiText>,
       sortable: true,
-      render: (name: string) => <a href="#" style={{ color: '#0073e6' }}>{name}</a>,
+      render: (name: string) => (
+        <EuiLink
+          onClick={() => {
+            history.push(`/wlm-details?id=${name}`);
+          }}
+          style={{ color: '#0073e6', textDecoration: 'none' }}
+        >
+          {name}
+        </EuiLink>
+      ),
     },
     {
       field: 'cpuUsage',
@@ -401,7 +411,7 @@ const WorkloadManagement = ({
   ];
 
   return (
-    <div style={{ padding: '20px 40px' }}>
+    <div>
       <PageHeader
         coreStart={core}
         depsStart={depsStart}
