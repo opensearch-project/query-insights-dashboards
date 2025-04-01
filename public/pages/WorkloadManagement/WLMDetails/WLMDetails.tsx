@@ -17,10 +17,10 @@ import {
   EuiFieldText,
   EuiRadioGroup,
   EuiFieldNumber,
+  EuiConfirmModal,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
-import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import { CoreStart } from 'opensearch-dashboards/public';
 import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_MAIN } from '../WorkloadManagement';
@@ -32,30 +32,14 @@ interface NodeUsageData {
   memoryUsage: number;
 }
 
-// Mock Data for Workload Groups
-const workloadGroups = {
-  group1: { name: 'group1', cpuLimit: 75, memLimit: 75, resiliencyMode: 'Soft', description: '-' },
-  group2: { name: 'group2', cpuLimit: 80, memLimit: 85, resiliencyMode: 'Enforced', description: 'Critical workloads' },
-  group3: { name: 'group3', cpuLimit: 60, memLimit: 70, resiliencyMode: 'Soft', description: 'Low priority' },
-};
-
 // Mock Node Data
-const mockNodesData: NodeUsageData[] = [
-  { nodeId: 'TSpmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 90 },
-  { nodeId: 'Spmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
-  { nodeId: 'Upmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
-  { nodeId: 'GSpmh9W4boYB_Dw', cpuUsage: 40, memoryUsage: 40 },
-];
+
 
 const WLMDetails = ({
-                      core,
-                      depsStart,
-                      params,
-                      dataSourceManagement,
-                    }: {
+  core,
+  depsStart,
+}: {
   core: CoreStart;
-  params: AppMountParameters;
-  dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
   const location = useLocation();
@@ -63,11 +47,12 @@ const WLMDetails = ({
 
   // Extract Workload Group ID from URL
   const searchParams = new URLSearchParams(location.search);
-  const groupId = searchParams.get('id');
+  const groupName = searchParams.get('name');
+  const [groupDetails, setGroupDetails] = useState<any>(null);
 
   // Get workload group details or fallback
-  const workloadGroup = workloadGroups[groupId as keyof typeof workloadGroups] || {
-    name: groupId || 'Unknown',
+  const workloadGroup = groupDetails || {
+    name: groupName || 'Unknown',
     cpuLimit: '-',
     memLimit: '-',
     resiliencyMode: '-',
@@ -81,7 +66,7 @@ const WLMDetails = ({
   ];
 
   const [resiliencyMode, setResiliencyMode] = useState(
-    workloadGroup.resiliencyMode.toLowerCase() // Convert to lowercase to match radio group IDs
+    workloadGroup.resiliencyMode.toLowerCase()
   );
   const [cpuLimit, setCpuLimit] = useState(workloadGroup.cpuLimit);
   const [memoryLimit, setMemoryLimit] = useState(workloadGroup.memLimit);
@@ -93,23 +78,45 @@ const WLMDetails = ({
   ];
 
   // Function to Save Changes
-  const saveChanges = () => {
-    workloadGroup.resiliencyMode = resiliencyMode.charAt(0).toUpperCase() + resiliencyMode.slice(1);
-    workloadGroup.cpuLimit = cpuLimit;
-    workloadGroup.memLimit = memoryLimit;
+  const saveChanges = async () => {
+    try {
+      await core.http.put(`/api/_wlm/query_group/${groupName}`, {
+        body: JSON.stringify({
+          resiliency_mode: resiliencyMode,
+          resource_limits: {
+            cpu: cpuLimit / 100,
+            memory: memoryLimit / 100,
+          },
+        }),
+      });
 
-    // backend API to send updated values
-    // Example: core.http.put('/api/workload-group/update', { resiliencyMode, cpuLimit, memoryLimit });
-
-    setIsSaved(true); // Indicate changes have been saved
+      setIsSaved(true);
+      core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
+    } catch (err) {
+      console.error('Failed to save changes:', err);
+      core.notifications.toasts.addDanger(`Failed to save changes: ${err.body?.message || err.message}`);
+    }
   };
 
-  const [nodesData, setNodesData] = useState<NodeUsageData[]>(mockNodesData);
+  const deleteGroup = async () => {
+    try {
+      await core.http.delete(`/api/_wlm/query_group/${groupName}`);
+      core.notifications.toasts.addSuccess(`Deleted workload group "${groupName}"`);
+      history.push(WLM_MAIN);
+    } catch (err) {
+      console.error('Failed to delete group:', err);
+      core.notifications.toasts.addDanger(`Failed to delete group: ${err.body?.message || err.message}`);
+    }
+  };
+
+  const [nodesData, setNodesData] = useState<NodeUsageData[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [sortField, setSortField] = useState<keyof NodeUsageData>('cpuUsage');
   const [sortedData, setSortedData] = useState<NodeUsageData[]>([]);
   const [selectedTab, setSelectedTab] = useState('resources');
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -128,6 +135,78 @@ const WLMDetails = ({
   useEffect(() => {
     setSortedData([...nodesData].sort((a, b) => b.cpuUsage - a.cpuUsage));
   }, [nodesData]);
+
+  const getGroupIdFromName = async (groupName: string) => {
+    try {
+      const res = await core.http.get('/api/_wlm/query_group');
+      const groups = res.body?.query_groups ?? res.query_groups ?? [];
+      const match = groups.find((g: any) => g.name === groupName);
+      return match?._id;
+    } catch (e) {
+      console.error('Failed to find groupId from name:', e);
+      return null;
+    }
+  };
+
+
+  useEffect(() => {
+    const fetchGroupDetails = async () => {
+      if (!groupName) return;
+      try {
+        const response = await core.http.get(`/api/_wlm/query_group/${groupName}`);
+        const queryGroup = response?.body?.query_groups?.[0];
+        if (queryGroup) {
+          setGroupDetails({
+            name: queryGroup.name,
+            cpuLimit: Math.round((queryGroup.resource_limits.cpu ?? 0) * 100),
+            memLimit: Math.round((queryGroup.resource_limits.memory ?? 0) * 100),
+            resiliencyMode: queryGroup.resiliency_mode,
+            description: '-', // Set later
+          });
+          setResiliencyMode(queryGroup.resiliency_mode.toLowerCase());
+          setCpuLimit(Math.round((queryGroup.resource_limits.cpu ?? 0) * 100));
+          setMemoryLimit(Math.round((queryGroup.resource_limits.memory ?? 0) * 100));
+        }
+      } catch (err) {
+        console.error('Failed to fetch workload group details:', err);
+      }
+    };
+
+    fetchGroupDetails();
+  }, [groupName]);
+
+  useEffect(() => {
+    const updateStats = async () => {
+      if (!groupName) return;
+
+      const groupId = await getGroupIdFromName(groupName);
+      if (!groupId) return;
+
+      try {
+        const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`);
+        const nodeStatsList = Object.entries(statsRes.body)
+          .filter(([key]) => key !== '_nodes' && key !== 'cluster_name')
+          .map(([nodeId, data]: [string, any]) => {
+            const stats = data.query_groups?.[groupId];
+            if (!stats) return null;
+
+            return {
+              nodeId,
+              cpuUsage: Math.round((stats.cpu?.current_usage ?? 0) * 100),
+              memoryUsage: Math.round((stats.memory?.current_usage ?? 0) * 100),
+            };
+          })
+          .filter(Boolean) as NodeUsageData[];
+
+        setNodesData(nodeStatsList);
+
+      } catch (err) {
+        console.error('Failed to fetch group stats', err);
+      }
+    };
+
+    updateStats();
+  }, [groupName]);
 
   const onTableChange = (criteria: Criteria<NodeUsageData>) => {
     const { sort, page } = criteria;
@@ -162,6 +241,37 @@ const WLMDetails = ({
 
   return (
     <div style={{ padding: '20px 40px' }}>
+      {isDeleteModalVisible && (
+        <EuiConfirmModal
+          title="Delete workload group"
+          onCancel={() => {
+            setDeleteConfirmation('');
+            setIsDeleteModalVisible(false);
+          }}
+          onConfirm={deleteGroup}
+          cancelButtonText="Cancel"
+          confirmButtonText="Delete"
+          buttonColor="danger"
+          defaultFocusedButton="confirm"
+          confirmButtonDisabled={deleteConfirmation.trim().toLowerCase() !== 'delete'}
+        >
+          <p>The following workload group will be permanently deleted. This action cannot be undone.</p>
+          <ul>
+            <li>{groupName}</li>
+          </ul>
+          <EuiSpacer size="s" />
+          <EuiFieldText
+            placeholder="delete"
+            value={deleteConfirmation}
+            onChange={(e) => setDeleteConfirmation(e.target.value)}
+          />
+          <EuiSpacer size="s" />
+          <EuiText size="s">
+            To confirm your action, type <strong>delete</strong>.
+          </EuiText>
+        </EuiConfirmModal>
+      )}
+
       <PageHeader
         coreStart={core}
         depsStart={depsStart}
@@ -174,7 +284,7 @@ const WLMDetails = ({
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
-                <EuiButton color="danger" iconType="trash">
+                <EuiButton color="danger" iconType="trash" onClick={() => setIsDeleteModalVisible(true)}>
                   Delete
                 </EuiButton>
               </EuiFlexItem>

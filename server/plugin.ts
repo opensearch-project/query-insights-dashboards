@@ -15,6 +15,7 @@ import { QueryInsightsPlugin } from './clusters/queryInsightsPlugin';
 
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { defineRoutes } from './routes';
+import { defineWlmRoutes } from './routes/wlmRoutes';
 import { DataSourcePluginSetup } from '../../../src/plugins/data_source/server/types';
 
 export interface QueryInsightsDashboardsPluginSetupDependencies {
@@ -52,6 +53,7 @@ export class QueryInsightsDashboardsPlugin
 
     // Register server side APIs
     defineRoutes(router, dataSourceEnabled);
+    defineWlmRoutes(router);
 
     return {};
   }
