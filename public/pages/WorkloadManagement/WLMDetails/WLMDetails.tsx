@@ -92,6 +92,7 @@ const WLMDetails = ({
 
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
+      fetchGroupDetails();
     } catch (err) {
       console.error('Failed to save changes:', err);
       core.notifications.toasts.addDanger(`Failed to save changes: ${err.body?.message || err.message}`);
@@ -148,30 +149,30 @@ const WLMDetails = ({
     }
   };
 
+  const fetchGroupDetails = async () => {
+    if (!groupName) return;
+    if (groupName === 'DEFAULT_QUERY_GROUP') return; // Need to fix the exception later
+    try {
+      const response = await core.http.get(`/api/_wlm/query_group/${groupName}`);
+      const queryGroup = response?.body?.query_groups?.[0];
+      if (queryGroup) {
+        setGroupDetails({
+          name: queryGroup.name,
+          cpuLimit: Math.round((queryGroup.resource_limits.cpu ?? 0) * 100),
+          memLimit: Math.round((queryGroup.resource_limits.memory ?? 0) * 100),
+          resiliencyMode: queryGroup.resiliency_mode,
+          description: '-', // Set later
+        });
+        setResiliencyMode(queryGroup.resiliency_mode.toLowerCase());
+        setCpuLimit(Math.round((queryGroup.resource_limits.cpu ?? 0) * 100));
+        setMemoryLimit(Math.round((queryGroup.resource_limits.memory ?? 0) * 100));
+      }
+    } catch (err) {
+      console.error('Failed to fetch workload group details:', err);
+    }
+  };
 
   useEffect(() => {
-    const fetchGroupDetails = async () => {
-      if (!groupName) return;
-      try {
-        const response = await core.http.get(`/api/_wlm/query_group/${groupName}`);
-        const queryGroup = response?.body?.query_groups?.[0];
-        if (queryGroup) {
-          setGroupDetails({
-            name: queryGroup.name,
-            cpuLimit: Math.round((queryGroup.resource_limits.cpu ?? 0) * 100),
-            memLimit: Math.round((queryGroup.resource_limits.memory ?? 0) * 100),
-            resiliencyMode: queryGroup.resiliency_mode,
-            description: '-', // Set later
-          });
-          setResiliencyMode(queryGroup.resiliency_mode.toLowerCase());
-          setCpuLimit(Math.round((queryGroup.resource_limits.cpu ?? 0) * 100));
-          setMemoryLimit(Math.round((queryGroup.resource_limits.memory ?? 0) * 100));
-        }
-      } catch (err) {
-        console.error('Failed to fetch workload group details:', err);
-      }
-    };
-
     fetchGroupDetails();
   }, [groupName]);
 

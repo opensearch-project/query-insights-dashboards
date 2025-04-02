@@ -138,57 +138,48 @@ const WorkloadManagement = ({
 
   const fetchStatsForNode = async (nodeId: string) => {
     setLoading(true);
-    try {
-      const queryGroupsRes = await core.http.get('/api/_wlm/query_group');
-      const groupList = queryGroupsRes.body?.query_groups ?? queryGroupsRes.query_groups ?? [];
-      const idToName: Record<string, string> = {};
-      for (const group of groupList) {
-        idToName[group._id] = group.name;
-      }
 
-      const statsRes = await core.http.get(`/api/_wlm/${nodeId}/stats`);
-      const stats = statsRes.body ?? statsRes;
-      const queryGroups = stats[nodeId]?.query_groups ?? {};
+    try {
+      const idToName = await fetchQueryGroupNameMap();
+      const queryGroups = await fetchQueryGroupsForNode(nodeId);
+      const allStats = await fetchAllNodeStats();
+      allStats[nodeId] = { ...allStats[nodeId], query_groups: queryGroups };
 
       const result: WorkloadGroupData[] = [];
 
-      let totalGroups = 0, totalCompletions = 0, totalRejections = 0, totalCancellations = 0, overLimit = 0;
+      let totalGroups = 0,
+        totalCompletions = 0,
+        totalRejections = 0,
+        totalCancellations = 0,
+        overLimit = 0;
 
       for (const [groupId, groupStats] of Object.entries(queryGroups) as [string, GroupStats][]) {
+        const {
+          cpuUsage,
+          memoryUsage,
+          cpuLimit,
+          memLimit,
+          cpuStats,
+          memStats,
+        } = await processGroupStats(groupId, groupStats, idToName, allStats);
+
         totalGroups += 1;
         totalCompletions += groupStats.total_completions ?? 0;
         totalRejections += groupStats.total_rejections ?? 0;
         totalCancellations += groupStats.total_cancellations ?? 0;
-
-        const cpu = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
-        const mem = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
-
-        let cpuLimit = 100, memLimit = 100;
-
-        if (groupId !== 'DEFAULT_QUERY_GROUP') {
-          try {
-            const limitRes = await core.http.get(`/api/_wlm/query_group/${idToName[groupId]}`);
-            const limits = limitRes.body?.query_groups?.[0]?.resource_limits;
-            cpuLimit = limits?.cpu ? Math.round(limits.cpu * 100) : cpuLimit;
-            memLimit = limits?.memory ? Math.round(limits.memory * 100) : memLimit;
-          } catch (err) {
-            console.warn(`Limit fetch failed for ${groupId}:`, err);
-          }
-        }
-
-        if (cpu > cpuLimit || mem > memLimit) overLimit++;
+        if (cpuUsage > cpuLimit || memoryUsage > memLimit) overLimit++;
 
         const name = groupId === 'DEFAULT_QUERY_GROUP' ? groupId : idToName[groupId];
         result.push({
           name,
-          cpuUsage: cpu,
-          memoryUsage: mem,
+          cpuUsage,
+          memoryUsage,
           totalCompletion: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
           topQueriesLink: `/query-group-details?id=${groupId}`,
-          cpuStats: [10, 25, 50, 75, 90],
-          memStats: [10, 25, 50, 75, 90],
+          cpuStats,
+          memStats,
           cpuLimit,
           memLimit,
         });
@@ -206,10 +197,95 @@ const WorkloadManagement = ({
     } catch (err) {
       console.error(`Failed to fetch node stats:`, err);
     }
+
     setLoading(false);
   };
 
   // === Helpers ===
+  const fetchQueryGroupNameMap = async (): Promise<Record<string, string>> => {
+    const res = await core.http.get('/api/_wlm/query_group');
+    const groups = res.body?.query_groups ?? res.query_groups ?? [];
+    const map: Record<string, string> = {};
+    for (const group of groups) {
+      map[group._id] = group.name;
+    }
+    return map;
+  };
+
+  const fetchQueryGroupsForNode = async (nodeId: string): Promise<Record<string, GroupStats>> => {
+    const res = await core.http.get(`/api/_wlm/${nodeId}/stats`);
+    return (res.body ?? res)[nodeId]?.query_groups ?? {};
+  };
+
+  const fetchAllNodeStats = async (): Promise<any> => {
+    return await core.http.get('/api/_wlm/stats');
+  };
+
+  const fetchResourceLimits = async (groupId: string, idToName: Record<string, string>) => {
+    let cpuLimit = 100, memLimit = 100;
+    if (groupId === 'DEFAULT_QUERY_GROUP') return { cpuLimit, memLimit };
+
+    try {
+      const res = await core.http.get(`/api/_wlm/query_group/${idToName[groupId]}`);
+      const limits = res.body?.query_groups?.[0]?.resource_limits;
+      cpuLimit = limits?.cpu ? Math.round(limits.cpu * 100) : cpuLimit;
+      memLimit = limits?.memory ? Math.round(limits.memory * 100) : memLimit;
+    } catch (err) {
+      console.warn(`Limit fetch failed for ${groupId}:`, err);
+    }
+
+    return { cpuLimit, memLimit };
+  };
+
+  const computeBoxStats = (arr: number[]): number[] => {
+    if (arr.length === 0) return [0, 0, 0, 0, 0];
+    const sorted = [...arr].sort((a, b) => a - b);
+    return [
+      sorted[0],
+      sorted[Math.floor(sorted.length * 0.25)],
+      sorted[Math.floor(sorted.length * 0.5)],
+      sorted[Math.floor(sorted.length * 0.75)],
+      sorted[sorted.length - 1],
+    ];
+  };
+
+  const gatherUsageAcrossNodes = (
+    allStats: any,
+    groupId: string
+  ): { cpuStats: number[]; memStats: number[] } => {
+    const cpuUsages: number[] = [];
+    const memUsages: number[] = [];
+
+    for (const nodeId in allStats) {
+      if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+      const stats = allStats[nodeId]?.query_groups?.[groupId];
+      if (stats) {
+        cpuUsages.push((stats.cpu?.current_usage ?? 0) * 100);
+        memUsages.push((stats.memory?.current_usage ?? 0) * 100);
+      }
+    }
+
+    return {
+      cpuStats: computeBoxStats(cpuUsages),
+      memStats: computeBoxStats(memUsages),
+    };
+  };
+
+  const processGroupStats = async (
+    groupId: string,
+    groupStats: GroupStats,
+    idToName: Record<string, string>,
+    allStats: any
+  ) => {
+    const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
+    const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
+
+    const { cpuLimit, memLimit } = await fetchResourceLimits(groupId, idToName);
+    const { cpuStats, memStats } = gatherUsageAcrossNodes(allStats, groupId);
+
+    return { cpuUsage, memoryUsage, cpuLimit, memLimit, cpuStats, memStats };
+  };
+
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -223,11 +299,20 @@ const WorkloadManagement = ({
     return {
       tooltip: {
         trigger: 'item',
+        appendToBody: true,
+        className: 'echarts-tooltip',
         formatter: (params: any) => {
-          return params.seriesType === 'boxplot'
-            ? `Min: ${params.data[1]}<br/>Q1: ${params.data[2]}<br/>Median: ${params.data[3]}<br/>Q3: ${params.data[4]}<br/>Max: ${params.data[5]}<br/><span style="color:#dc3545;">Limit: ${limit}</span>`
-            : '';
-        },
+          if (params.seriesType !== 'boxplot') return '';
+          const [min, q1, median, q3, max] = params.data.slice(1, 6).map((v: number) => v.toFixed(2));
+          const formattedLimit = Number(limit).toFixed(2);
+          return `<strong>Usage across nodes</strong><br/>
+                  Min: ${min}%<br/>
+                  Q1: ${q1}%<br/>
+                  Median: ${median}%<br/>
+                  Q3: ${q3}%<br/>
+                  Max: ${max}%<br/>
+                  <span style="color:#dc3545;">Limit: ${formattedLimit}%</span>`;
+                      }
       },
       grid: { left: '0%', right: '10%', top: '0%', bottom: '0%' },
       xAxis: { type: 'value', min: Math.min(min, limit) - 5, max: Math.max(max, limit) + 5, show: false },
@@ -256,6 +341,18 @@ const WorkloadManagement = ({
   useEffect(() => {
     fetchDataFromBackend();
   }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchDataFromBackend();
+      core.notifications.toasts.addSuccess({
+        title: 'Data refreshed',
+        text: 'Workload stats have been updated automatically every 1 minute.',
+      });
+    }, 600000);
+
+    return () => clearInterval(intervalId);
+  }, [selectedNode]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
