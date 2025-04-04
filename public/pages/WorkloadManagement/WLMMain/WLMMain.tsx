@@ -67,6 +67,7 @@ const WorkloadManagement = ({
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [sortField, setSortField] = useState<keyof WorkloadGroupData>('cpuUsage');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const [nodeIds, setNodeIds] = useState<string[]>([]);
   const [selectedNode, setSelectedNode] = useState<string>('');
@@ -83,31 +84,25 @@ const WorkloadManagement = ({
     pageIndex,
     pageSize,
     totalItemCount: filteredData.length,
-    pageSizeOptions: [5, 10, 15],
+    pageSizeOptions: [1, 5, 10, 15, 50],
   };
 
   const onTableChange = (criteria: Criteria<WorkloadGroupData>) => {
     const { sort, page } = criteria;
 
-    let updated = [...filteredData];
     if (sort) {
       const field = sort.field as keyof WorkloadGroupData;
-      updated.sort((a, b) => {
-        const aVal = a[field];
-        const bVal = b[field];
-        return typeof aVal === 'number' && typeof bVal === 'number'
-          ? (bVal as number) - (aVal as number)
-          : String(bVal).localeCompare(String(aVal));
-      });
+      const direction = sort.direction as 'asc' | 'desc';
+      const sorted = sortData(filteredData, field, direction);
       setSortField(field);
+      setSortDirection(direction);
+      setFilteredData(sorted);
     }
 
     if (page) {
       setPageIndex(page.index);
       setPageSize(page.size);
     }
-
-    setFilteredData(updated);
   };
 
   // === API Calls ===
@@ -115,6 +110,7 @@ const WorkloadManagement = ({
     setLoading(true);
     try {
       const res = await core.http.get('/api/_wlm/stats');
+      const response = res.body ?? res;
       const response = res.body ?? res;
       const nodes: string[] = [];
 
@@ -177,7 +173,7 @@ const WorkloadManagement = ({
           totalCompletion: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
-          topQueriesLink: `/query-group-details?id=${groupId}`,
+          topQueriesLink: `/query-group-details?id=${groupId}`, // not available yet
           cpuStats,
           memStats,
           cpuLimit,
@@ -185,8 +181,10 @@ const WorkloadManagement = ({
         });
       }
 
-      setData(result);
-      setFilteredData(result);
+      const sorted = sortData(result, sortField, sortDirection);
+
+      setData(sorted);
+      setFilteredData(sorted);
       setSummaryStats({
         totalGroups,
         totalCompletions,
@@ -202,6 +200,25 @@ const WorkloadManagement = ({
   };
 
   // === Helpers ===
+  const sortData = (
+    data: WorkloadGroupData[],
+    field: keyof WorkloadGroupData,
+    direction: 'asc' | 'desc'
+  ): WorkloadGroupData[] => {
+    return [...data].sort((a, b) => {
+      const aVal = a[field];
+      const bVal = b[field];
+
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+
+      return direction === 'asc'
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    });
+  };
+
   const fetchQueryGroupNameMap = async (): Promise<Record<string, string>> => {
     const res = await core.http.get('/api/_wlm/query_group');
     const groups = res.body?.query_groups ?? res.query_groups ?? [];
@@ -523,9 +540,15 @@ const WorkloadManagement = ({
             </EuiFlexGroup>
             <EuiSpacer size="xs" />
             <EuiBasicTable<WorkloadGroupData>
+              data-testid="workload-table"
               items={filteredData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
               columns={columns}
-              sorting={{ sort: { field: sortField as keyof WorkloadGroupData, direction: 'desc' } }} // Always descending
+              sorting={{
+                sort: {
+                  field: sortField,
+                  direction: sortDirection,
+                },
+              }}
               onChange={onTableChange}
               pagination={pagination}
             />
