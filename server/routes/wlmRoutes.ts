@@ -239,4 +239,23 @@ export function defineWlmRoutes(router: IRouter) {
       }
     }
   );
+
+  router.get(
+    {
+      path: '/api/_wlm_proxy/_nodes',
+      validate: false,
+    },
+    async (context, request, response) => {
+      const esClient = context.core.opensearch.client.asCurrentUser;
+      try {
+        const result = await esClient.nodes.info();
+        return response.ok({ body: result });
+      } catch (e) {
+        return response.customError({
+          statusCode: e.statusCode || 500,
+          body: e.message,
+        });
+      }
+    }
+  );
 }

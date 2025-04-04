@@ -109,15 +109,10 @@ const WorkloadManagement = ({
   const fetchDataFromBackend = async () => {
     setLoading(true);
     try {
-      const res = await core.http.get('/api/_wlm/stats');
+      // Use /_nodes to get all node IDs
+      const res = await core.http.get('/api/_wlm_proxy/_nodes');
       const response = res.body ?? res;
-      const response = res.body ?? res;
-      const nodes: string[] = [];
-
-      for (const nodeId in response) {
-        if (nodeId === "_nodes" || nodeId === "cluster_name") continue;
-        nodes.push(nodeId);
-      }
+      const nodes: string[] = Object.keys(response.nodes || {});
 
       setNodeIds(nodes);
 
@@ -127,7 +122,7 @@ const WorkloadManagement = ({
         await fetchStatsForNode(defaultNode);
       }
     } catch (err) {
-      console.error('Error fetching WLM stats:', err);
+      console.error('Error fetching node list:', err);
     }
     setLoading(false);
   };
@@ -138,58 +133,74 @@ const WorkloadManagement = ({
     try {
       const idToName = await fetchQueryGroupNameMap();
       const queryGroups = await fetchQueryGroupsForNode(nodeId);
-      const allStats = await fetchAllNodeStats();
-      allStats[nodeId] = { ...allStats[nodeId], query_groups: queryGroups };
 
-      const result: WorkloadGroupData[] = [];
-
-      let totalGroups = 0,
-        totalCompletions = 0,
-        totalRejections = 0,
-        totalCancellations = 0,
-        overLimit = 0;
+      // Build raw group data first (skip cpuStats/memStats for now)
+      const rawData: WorkloadGroupData[] = [];
 
       for (const [groupId, groupStats] of Object.entries(queryGroups) as [string, GroupStats][]) {
-        const {
-          cpuUsage,
-          memoryUsage,
-          cpuLimit,
-          memLimit,
-          cpuStats,
-          memStats,
-        } = await processGroupStats(groupId, groupStats, idToName, allStats);
-
-        totalGroups += 1;
-        totalCompletions += groupStats.total_completions ?? 0;
-        totalRejections += groupStats.total_rejections ?? 0;
-        totalCancellations += groupStats.total_cancellations ?? 0;
-        if (cpuUsage > cpuLimit || memoryUsage > memLimit) overLimit++;
-
         const name = groupId === 'DEFAULT_QUERY_GROUP' ? groupId : idToName[groupId];
-        result.push({
+        const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
+        const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
+        const { cpuLimit, memLimit } = await fetchResourceLimits(groupId, idToName);
+
+        rawData.push({
           name,
           cpuUsage,
           memoryUsage,
           totalCompletion: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
-          topQueriesLink: `/query-group-details?id=${groupId}`, // not available yet
-          cpuStats,
-          memStats,
+          topQueriesLink: `/query-group-details?id=${groupId}`,
+          cpuStats: [],
+          memStats: [],
           cpuLimit,
           memLimit,
         });
       }
 
-      const sorted = sortData(result, sortField, sortDirection);
+      // Sort & paginate
+      const sorted = sortData(rawData, sortField, sortDirection);
+      const paged = sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
+
+      // Fetch only the stats needed for visible QGs (with /_wlm/stats/{queryGroupId})
+      for (const group of paged) {
+        const groupId =
+          Object.keys(idToName).find((key) => idToName[key] === group.name) ?? group.name;
+
+        try {
+          const res = await core.http.get(`/api/_wlm/stats/${groupId}`);
+          const stats = res.body ?? res;
+
+          const cpuUsages: number[] = [];
+          const memUsages: number[] = [];
+
+          for (const nodeId in stats) {
+            if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+            const nodeStats = stats[nodeId]?.query_groups?.[groupId];
+            if (nodeStats) {
+              cpuUsages.push((nodeStats.cpu?.current_usage ?? 0) * 100);
+              memUsages.push((nodeStats.memory?.current_usage ?? 0) * 100);
+            }
+          }
+
+          group.cpuStats = computeBoxStats(cpuUsages);
+          group.memStats = computeBoxStats(memUsages);
+        } catch (err) {
+          console.warn(`Failed to fetch boxplot stats for ${groupId}:`, err);
+        }
+      }
+
+      const overLimit = rawData.filter(
+        (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
+      ).length;
 
       setData(sorted);
       setFilteredData(sorted);
       setSummaryStats({
-        totalGroups,
-        totalCompletions,
-        totalRejections,
-        totalCancellations,
+        totalGroups: sorted.length,
+        totalCompletions: rawData.reduce((sum, g) => sum + g.totalCompletion, 0),
+        totalRejections: rawData.reduce((sum, g) => sum + g.totalRejections, 0),
+        totalCancellations: rawData.reduce((sum, g) => sum + g.totalCancellations, 0),
         groupsExceedingLimits: overLimit,
       });
     } catch (err) {
@@ -234,10 +245,6 @@ const WorkloadManagement = ({
     return (res.body ?? res)[nodeId]?.query_groups ?? {};
   };
 
-  const fetchAllNodeStats = async (): Promise<any> => {
-    return await core.http.get('/api/_wlm/stats');
-  };
-
   const fetchResourceLimits = async (groupId: string, idToName: Record<string, string>) => {
     let cpuLimit = 100, memLimit = 100;
     if (groupId === 'DEFAULT_QUERY_GROUP') return { cpuLimit, memLimit };
@@ -264,43 +271,6 @@ const WorkloadManagement = ({
       sorted[Math.floor(sorted.length * 0.75)],
       sorted[sorted.length - 1],
     ];
-  };
-
-  const gatherUsageAcrossNodes = (
-    allStats: any,
-    groupId: string
-  ): { cpuStats: number[]; memStats: number[] } => {
-    const cpuUsages: number[] = [];
-    const memUsages: number[] = [];
-
-    for (const nodeId in allStats) {
-      if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
-      const stats = allStats[nodeId]?.query_groups?.[groupId];
-      if (stats) {
-        cpuUsages.push((stats.cpu?.current_usage ?? 0) * 100);
-        memUsages.push((stats.memory?.current_usage ?? 0) * 100);
-      }
-    }
-
-    return {
-      cpuStats: computeBoxStats(cpuUsages),
-      memStats: computeBoxStats(memUsages),
-    };
-  };
-
-  const processGroupStats = async (
-    groupId: string,
-    groupStats: GroupStats,
-    idToName: Record<string, string>,
-    allStats: any
-  ) => {
-    const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
-    const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
-
-    const { cpuLimit, memLimit } = await fetchResourceLimits(groupId, idToName);
-    const { cpuStats, memStats } = gatherUsageAcrossNodes(allStats, groupId);
-
-    return { cpuUsage, memoryUsage, cpuLimit, memLimit, cpuStats, memStats };
   };
 
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -361,12 +331,14 @@ const WorkloadManagement = ({
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      fetchDataFromBackend();
-      core.notifications.toasts.addSuccess({
-        title: 'Data refreshed',
-        text: 'Workload stats have been updated automatically every 1 minute.',
-      });
-    }, 600000);
+      if (selectedNode) {
+        fetchStatsForNode(selectedNode);
+        core.notifications.toasts.addSuccess({
+          title: 'Data refreshed',
+          text: 'Workload stats for the current node have been updated.',
+        });
+      }
+    }, 60000);
 
     return () => clearInterval(intervalId);
   }, [selectedNode]);
@@ -533,7 +505,7 @@ const WorkloadManagement = ({
                 />
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
-                <EuiButton onClick={fetchDataFromBackend} iconType="refresh" isLoading={loading}>
+                <EuiButton onClick={() => fetchStatsForNode(selectedNode)} iconType="refresh" isLoading={loading}>
                   Refresh
                 </EuiButton>
               </EuiFlexItem>

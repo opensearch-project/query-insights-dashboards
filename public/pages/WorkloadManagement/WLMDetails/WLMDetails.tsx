@@ -171,55 +171,32 @@ const WLMDetails = ({
   const updateStats = async () => {
     if (!groupName) return;
 
-    if (isDefaultGroup) {
-      try {
-        const statsRes = await core.http.get(`/api/_wlm/stats`);
-        const nodeStatsList: NodeUsageData[] = [];
+    const groupId =
+      groupName === DEFAULT_QUERY_GROUP ? DEFAULT_QUERY_GROUP : await getGroupIdFromName(groupName);
 
-        for (const [nodeId, data] of Object.entries(statsRes.body)) {
-          if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
-
-          const stats = (data as any)?.query_groups?.[DEFAULT_QUERY_GROUP];
-          if (stats) {
-            nodeStatsList.push({
-              nodeId,
-              cpuUsage: Math.round((stats.cpu?.current_usage ?? 0) * 100),
-              memoryUsage: Math.round((stats.memory?.current_usage ?? 0) * 100),
-            });
-          }
-        }
-
-        setNodesData(nodeStatsList);
-        return;
-      } catch (err) {
-        console.error('Failed to fetch DEFAULT_QUERY_GROUP stats:', err);
-        core.notifications.toasts.addDanger('Could not load DEFAULT_QUERY_GROUP stats.');
-        return;
-      }
-    }
-
-    const groupId = await getGroupIdFromName(groupName);
     if (!groupId) return;
 
     try {
       const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`);
-      const nodeStatsList = Object.entries(statsRes.body)
-        .filter(([key]) => key !== '_nodes' && key !== 'cluster_name')
-        .map(([nodeId, data]: [string, any]) => {
-          const stats = data.query_groups?.[groupId];
-          if (!stats) return null;
+      const nodeStatsList: NodeUsageData[] = [];
 
-          return {
+      for (const [nodeId, data] of Object.entries(statsRes.body)) {
+        if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+
+        const stats = (data as any)?.query_groups?.[groupId];
+        if (stats) {
+          nodeStatsList.push({
             nodeId,
             cpuUsage: Math.round((stats.cpu?.current_usage ?? 0) * 100),
             memoryUsage: Math.round((stats.memory?.current_usage ?? 0) * 100),
-          };
-        })
-        .filter(Boolean) as NodeUsageData[];
+          });
+        }
+      }
 
       setNodesData(nodeStatsList);
     } catch (err) {
       console.error('Failed to fetch group stats', err);
+      core.notifications.toasts.addDanger('Could not load workload group stats.');
     }
   };
 
