@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 describe('WLM Main Page', () => {
   beforeEach(() => {
     cy.visit('/app/workload-management#/workloadManagement');
@@ -61,9 +66,7 @@ describe('WLM Main Page', () => {
   });
 
   it('should display CPU and memory usage tooltips on hover', () => {
-    cy.get('.echarts-for-react')
-      .first()
-      .trigger('mousemove', { clientX: 10, clientY: 10 });
+    cy.get('.echarts-for-react').first().trigger('mousemove', { clientX: 10, clientY: 10 });
   });
 
   it('should switch nodes using the dropdown and refresh data', () => {
@@ -94,4 +97,3 @@ describe('WLM Main Page', () => {
     cy.contains('Workload group name', { timeout: 10000 }).should('exist');
   });
 });
-

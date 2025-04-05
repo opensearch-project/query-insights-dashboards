@@ -1,9 +1,28 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React, { useEffect, useState } from 'react';
 import {
-  EuiButton, EuiFlexGroup, EuiFlexItem, EuiHorizontalRule,
-  EuiPanel, EuiSpacer, EuiTitle, EuiText, EuiBasicTable,
-  Pagination, Criteria, EuiTab, EuiTabs, EuiFormRow,
-  EuiFieldText, EuiRadioGroup, EuiFieldNumber, EuiConfirmModal
+  EuiButton,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiHorizontalRule,
+  EuiPanel,
+  EuiSpacer,
+  EuiTitle,
+  EuiText,
+  EuiBasicTable,
+  Pagination,
+  Criteria,
+  EuiTab,
+  EuiTabs,
+  EuiFormRow,
+  EuiFieldText,
+  EuiRadioGroup,
+  EuiFieldNumber,
+  EuiConfirmModal,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
@@ -21,7 +40,7 @@ interface NodeUsageData {
 }
 
 // === Main Component ===
-const WLMDetails = ({
+export const WLMDetails = ({
   core,
   depsStart,
 }: {
@@ -102,11 +121,11 @@ const WLMDetails = ({
   }, [groupName]);
 
   // === Data Fetching ===
-  const getGroupIdFromName = async (groupName: string) => {
+  const getGroupIdFromName = async (groupNameLocal: string) => {
     try {
       const res = await core.http.get('/api/_wlm/query_group');
       const groups = res.body?.query_groups ?? res.query_groups ?? [];
-      const match = groups.find((g: any) => g.name === groupName);
+      const match = groups.find((g: any) => g.name === groupNameLocal);
       return match?._id;
     } catch (e) {
       console.error('Failed to find groupId from name:', e);
@@ -202,10 +221,7 @@ const WLMDetails = ({
 
   // === Actions ===
   const saveChanges = async () => {
-    if (
-      cpuLimit <= 0 || cpuLimit > 100 ||
-      memoryLimit <= 0 || memoryLimit > 100
-    ) {
+    if (cpuLimit <= 0 || cpuLimit > 100 || memoryLimit <= 0 || memoryLimit > 100) {
       core.notifications.toasts.addDanger('CPU and Memory limits must be between 0 and 100');
       return;
     }
@@ -226,7 +242,9 @@ const WLMDetails = ({
       fetchGroupDetails();
     } catch (err) {
       console.error('Failed to save changes:', err);
-      core.notifications.toasts.addDanger(`Failed to save changes: ${err.body?.message || err.message}`);
+      core.notifications.toasts.addDanger(
+        `Failed to save changes: ${err.body?.message || err.message}`
+      );
     }
   };
 
@@ -237,7 +255,9 @@ const WLMDetails = ({
       history.push(WLM_MAIN);
     } catch (err) {
       console.error('Failed to delete group:', err);
-      core.notifications.toasts.addDanger(`Failed to delete group: ${err.body?.message || err.message}`);
+      core.notifications.toasts.addDanger(
+        `Failed to delete group: ${err.body?.message || err.message}`
+      );
     }
   };
 
@@ -281,7 +301,9 @@ const WLMDetails = ({
           defaultFocusedButton="confirm"
           confirmButtonDisabled={deleteConfirmation.trim().toLowerCase() !== 'delete'}
         >
-          <p>The following workload group will be permanently deleted. This action cannot be undone.</p>
+          <p>
+            The following workload group will be permanently deleted. This action cannot be undone.
+          </p>
           <ul>
             <li>{groupName}</li>
           </ul>
@@ -392,8 +414,21 @@ const WLMDetails = ({
               render: (cpuUsage: number) => (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span>{cpuUsage}%</span>
-                  <div style={{ marginLeft: '10px', width: '100px', height: '10px', background: '#ccc' }}>
-                    <div style={{ width: `${cpuUsage}%`, height: '100%', background: cpuUsage > 80 ? '#C43D35' : '#0268BC' }} />
+                  <div
+                    style={{
+                      marginLeft: '10px',
+                      width: '100px',
+                      height: '10px',
+                      background: '#ccc',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${cpuUsage}%`,
+                        height: '100%',
+                        background: cpuUsage > 80 ? '#C43D35' : '#0268BC',
+                      }}
+                    />
                   </div>
                 </div>
               ),
@@ -405,8 +440,21 @@ const WLMDetails = ({
               render: (memoryUsage: number) => (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <span>{memoryUsage}%</span>
-                  <div style={{ marginLeft: '10px', width: '100px', height: '10px', background: '#ccc' }}>
-                    <div style={{ width: `${memoryUsage}%`, height: '100%', background: memoryUsage > 80 ? '#C43D35' : '#0268BC' }} />
+                  <div
+                    style={{
+                      marginLeft: '10px',
+                      width: '100px',
+                      height: '10px',
+                      background: '#ccc',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${memoryUsage}%`,
+                        height: '100%',
+                        background: memoryUsage > 80 ? '#C43D35' : '#0268BC',
+                      }}
+                    />
                   </div>
                 </div>
               ),
@@ -443,7 +491,10 @@ const WLMDetails = ({
               <EuiSpacer size="m" />
 
               {/* Resiliency Mode */}
-              <EuiFormRow label={<strong>Resiliency mode</strong>} helpText="Select resiliency mode">
+              <EuiFormRow
+                label={<strong>Resiliency mode</strong>}
+                helpText="Select resiliency mode"
+              >
                 <EuiRadioGroup
                   options={resiliencyOptions}
                   idSelected={resiliencyMode}
@@ -504,11 +555,7 @@ const WLMDetails = ({
               <EuiSpacer size="m" />
 
               {/* Apply Changes Button */}
-              <EuiButton
-                onClick={saveChanges}
-                color="primary"
-                isDisabled={isSaved}
-              >
+              <EuiButton onClick={saveChanges} color="primary" isDisabled={isSaved}>
                 Apply Changes
               </EuiButton>
             </>
@@ -518,5 +565,3 @@ const WLMDetails = ({
     </div>
   );
 };
-
-export default WLMDetails;

@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   EuiTitle,
@@ -18,11 +23,9 @@ import {
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
-import {PageHeader} from "../../../components/PageHeader";
-import {QueryInsightsDashboardsPluginStartDependencies} from "../../../types";
 import ReactECharts from 'echarts-for-react';
-
-
+import { PageHeader } from '../../../components/PageHeader';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 
 export const WLM = '/workloadManagement';
 
@@ -48,7 +51,7 @@ interface GroupStats {
   memory?: { current_usage?: number };
 }
 
-const WorkloadManagement = ({
+export const WorkloadManagementMain = ({
   core,
   depsStart,
 }: {
@@ -72,11 +75,11 @@ const WorkloadManagement = ({
   const [nodeIds, setNodeIds] = useState<string[]>([]);
   const [selectedNode, setSelectedNode] = useState<string>('');
   const [summaryStats, setSummaryStats] = useState({
-    totalGroups: "-" as string | number,
-    totalCompletions: "-" as string | number,
-    totalRejections: "-" as string | number,
-    totalCancellations: "-" as string | number,
-    groupsExceedingLimits: "-" as string | number,
+    totalGroups: '-' as string | number,
+    totalCompletions: '-' as string | number,
+    totalRejections: '-' as string | number,
+    totalCancellations: '-' as string | number,
+    groupsExceedingLimits: '-' as string | number,
   });
 
   // === Table Sorting / Pagination ===
@@ -84,7 +87,7 @@ const WorkloadManagement = ({
     pageIndex,
     pageSize,
     totalItemCount: filteredData.length,
-    pageSizeOptions: [1, 5, 10, 15, 50],
+    pageSizeOptions: [5, 10, 15, 50],
   };
 
   const onTableChange = (criteria: Criteria<WorkloadGroupData>) => {
@@ -137,7 +140,9 @@ const WorkloadManagement = ({
       // Build raw group data first (skip cpuStats/memStats for now)
       const rawData: WorkloadGroupData[] = [];
 
-      for (const [groupId, groupStats] of Object.entries(queryGroups) as [string, GroupStats][]) {
+      for (const [groupId, groupStats] of Object.entries(queryGroups) as Array<
+        [string, GroupStats]
+      >) {
         const name = groupId === 'DEFAULT_QUERY_GROUP' ? groupId : idToName[groupId];
         const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
         const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
@@ -174,9 +179,9 @@ const WorkloadManagement = ({
           const cpuUsages: number[] = [];
           const memUsages: number[] = [];
 
-          for (const nodeId in stats) {
-            if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
-            const nodeStats = stats[nodeId]?.query_groups?.[groupId];
+          for (const currentNodeId in stats) {
+            if (currentNodeId === '_nodes' || currentNodeId === 'cluster_name') continue;
+            const nodeStats = stats[currentNodeId]?.query_groups?.[groupId];
             if (nodeStats) {
               cpuUsages.push((nodeStats.cpu?.current_usage ?? 0) * 100);
               memUsages.push((nodeStats.memory?.current_usage ?? 0) * 100);
@@ -190,9 +195,8 @@ const WorkloadManagement = ({
         }
       }
 
-      const overLimit = rawData.filter(
-        (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
-      ).length;
+      const overLimit = rawData.filter((g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit)
+        .length;
 
       setData(sorted);
       setFilteredData(sorted);
@@ -212,11 +216,11 @@ const WorkloadManagement = ({
 
   // === Helpers ===
   const sortData = (
-    data: WorkloadGroupData[],
+    rawData: WorkloadGroupData[],
     field: keyof WorkloadGroupData,
     direction: 'asc' | 'desc'
   ): WorkloadGroupData[] => {
-    return [...data].sort((a, b) => {
+    return [...rawData].sort((a, b) => {
       const aVal = a[field];
       const bVal = b[field];
 
@@ -246,7 +250,8 @@ const WorkloadManagement = ({
   };
 
   const fetchResourceLimits = async (groupId: string, idToName: Record<string, string>) => {
-    let cpuLimit = 100, memLimit = 100;
+    let cpuLimit = 100;
+    let memLimit = 100;
     if (groupId === 'DEFAULT_QUERY_GROUP') return { cpuLimit, memLimit };
 
     try {
@@ -282,7 +287,7 @@ const WorkloadManagement = ({
 
   const getBoxplotOption = (box: number[], limit: number) => {
     const sorted = [...box].sort((a, b) => a - b);
-    const [min, q1, median, q3, max] = sorted;
+    const [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
     return {
       tooltip: {
         trigger: 'item',
@@ -290,25 +295,32 @@ const WorkloadManagement = ({
         className: 'echarts-tooltip',
         formatter: (params: any) => {
           if (params.seriesType !== 'boxplot') return '';
-          const [min, q1, median, q3, max] = params.data.slice(1, 6).map((v: number) => v.toFixed(2));
+          const [fMin, fQ1, fMedian, fQ3, fMax] = params.data
+            .slice(1, 6)
+            .map((v: number) => v.toFixed(2));
           const formattedLimit = Number(limit).toFixed(2);
           return `<strong>Usage across nodes</strong><br/>
-                  Min: ${min}%<br/>
-                  Q1: ${q1}%<br/>
-                  Median: ${median}%<br/>
-                  Q3: ${q3}%<br/>
-                  Max: ${max}%<br/>
+                  Min: ${fMin}%<br/>
+                  Q1: ${fQ1}%<br/>
+                  Median: ${fMedian}%<br/>
+                  Q3: ${fQ3}%<br/>
+                  Max: ${fMax}%<br/>
                   <span style="color:#dc3545;">Limit: ${formattedLimit}%</span>`;
-                      }
+        },
       },
       grid: { left: '0%', right: '10%', top: '0%', bottom: '0%' },
-      xAxis: { type: 'value', min: Math.min(min, limit) - 5, max: Math.max(max, limit) + 5, show: false },
+      xAxis: {
+        type: 'value',
+        min: Math.min(boxMin, limit) - 5,
+        max: Math.max(boxMax, limit) + 5,
+        show: false,
+      },
       yAxis: { type: 'category', data: ['Boxplot'], show: false },
       series: [
         {
           name: 'Boxplot',
           type: 'boxplot',
-          data: [[min, q1, median, q3, max]],
+          data: [[boxMin, boxQ1, boxMedian, boxQ3, boxMax]],
           itemStyle: { color: '#0268BC', borderColor: 'black' },
           boxWidth: ['40%', '50%'],
         },
@@ -363,10 +375,12 @@ const WorkloadManagement = ({
       name: <EuiText size="m">Workload group name</EuiText>,
       sortable: true,
       render: (name: string) => (
-        <EuiLink onClick={() => history.push(`/wlm-details?name=${name}`)} style={{ color: '#0073e6' }}>
+        <EuiLink
+          onClick={() => history.push(`/wlm-details?name=${name}`)}
+          style={{ color: '#0073e6' }}
+        >
           {name}
         </EuiLink>
-
       ),
     },
     {
@@ -416,7 +430,12 @@ const WorkloadManagement = ({
       field: 'topQueriesLink',
       name: <EuiText size="m">Top N Queries</EuiText>,
       render: (link: string) => (
-        <a href={link} style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }} target="_blank" rel="noopener noreferrer">
+        <a
+          href={link}
+          style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           View <EuiIcon type="popout" size="s" />
         </a>
       ),
@@ -453,9 +472,9 @@ const WorkloadManagement = ({
                   options={nodeIds.map((id) => ({ value: id, text: id }))}
                   value={selectedNode || ''}
                   onChange={(e) => {
-                    const nodeId = e.target.value;
-                    setSelectedNode(nodeId);
-                    fetchStatsForNode(nodeId);
+                    const selectedNodeId = e.target.value;
+                    setSelectedNode(selectedNodeId);
+                    fetchStatsForNode(selectedNodeId);
                   }}
                   compressed
                 />
@@ -482,11 +501,35 @@ const WorkloadManagement = ({
 
       {/* Statistics Panel */}
       <EuiFlexGroup gutterSize="l">
-        <EuiFlexItem><EuiPanel paddingSize="m"><EuiStat title={summaryStats.totalGroups} description="Total workload groups" /></EuiPanel></EuiFlexItem>
-        <EuiFlexItem><EuiPanel paddingSize="m"><EuiStat title={summaryStats.groupsExceedingLimits} description="Total groups exceeding limits" titleColor="danger" /></EuiPanel></EuiFlexItem>
-        <EuiFlexItem><EuiPanel paddingSize="m"><EuiStat title={summaryStats.totalCompletions} description="Total completion" /></EuiPanel></EuiFlexItem>
-        <EuiFlexItem><EuiPanel paddingSize="m"><EuiStat title={summaryStats.totalRejections} description="Total rejections" /></EuiPanel></EuiFlexItem>
-        <EuiFlexItem><EuiPanel paddingSize="m"><EuiStat title={summaryStats.totalCancellations} description="Total cancellations" /></EuiPanel></EuiFlexItem>
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiStat title={summaryStats.totalGroups} description="Total workload groups" />
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiStat
+              title={summaryStats.groupsExceedingLimits}
+              description="Total groups exceeding limits"
+              titleColor="danger"
+            />
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiStat title={summaryStats.totalCompletions} description="Total completion" />
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiStat title={summaryStats.totalRejections} description="Total rejections" />
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiStat title={summaryStats.totalCancellations} description="Total cancellations" />
+          </EuiPanel>
+        </EuiFlexItem>
       </EuiFlexGroup>
       <EuiSpacer size="xl" />
 
@@ -505,7 +548,11 @@ const WorkloadManagement = ({
                 />
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
-                <EuiButton onClick={() => fetchStatsForNode(selectedNode)} iconType="refresh" isLoading={loading}>
+                <EuiButton
+                  onClick={() => fetchStatsForNode(selectedNode)}
+                  iconType="refresh"
+                  isLoading={loading}
+                >
                   Refresh
                 </EuiButton>
               </EuiFlexItem>
@@ -530,6 +577,3 @@ const WorkloadManagement = ({
     </div>
   );
 };
-
-export default WorkloadManagement;
-

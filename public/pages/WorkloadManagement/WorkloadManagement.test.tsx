@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /**
  * @jest-environment jsdom
  */
@@ -6,7 +11,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route } from 'react-router-dom';
 import '@testing-library/jest-dom/extend-expect';
-import WorkloadManagement, { WLM_MAIN, WLM_DETAILS } from './WorkloadManagement';
+import { WorkloadManagement, WLM_MAIN, WLM_DETAILS } from './WorkloadManagement';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 

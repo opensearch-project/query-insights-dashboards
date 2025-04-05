@@ -1,8 +1,13 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React, { createContext, useState } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
-import WorkloadManagementMain from './WLMMain/WLMMain';
+import { WorkloadManagementMain } from './WLMMain/WLMMain';
 import WLMDetails from './WLMDetails/WLMDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
@@ -17,7 +22,7 @@ export interface DataSourceContextType {
 // Context for data source management
 export const DataSourceContext = createContext<DataSourceContextType | null>(null);
 
-const WorkloadManagement = ({
+export const WorkloadManagement = ({
   core,
   depsStart,
 }: {
@@ -33,21 +38,13 @@ const WorkloadManagement = ({
         <Switch>
           {/* Workload Management Main Page */}
           <Route exact path={WLM_MAIN}>
-            <WorkloadManagementMain
-              core={core}
-              depsStart={depsStart}
-            />
+            <WorkloadManagementMain core={core} depsStart={depsStart} />
           </Route>
 
           {/* Workload Management Details Page */}
           <Route exact path={WLM_DETAILS}>
             {() => {
-              return (
-                <WLMDetails
-                  core={core}
-                  depsStart={depsStart}
-                />
-              );
+              return <WLMDetails core={core} depsStart={depsStart} />;
             }}
           </Route>
 
@@ -58,5 +55,3 @@ const WorkloadManagement = ({
     </DataSourceContext.Provider>
   );
 };
-
-export default WorkloadManagement;

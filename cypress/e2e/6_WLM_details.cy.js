@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 describe('WLM Details Page', () => {
   const groupName = `test_group_${Date.now()}`; // Unique name for each run
 

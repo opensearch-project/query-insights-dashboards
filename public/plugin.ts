@@ -70,8 +70,7 @@ export class QueryInsightsDashboardsPlugin
       },
       order: 5100,
       async mount(params: AppMountParameters) {
-
-        console.log("wlm is mounting...")
+        console.log('wlm is mounting...');
         // Dynamically import the WLM page
         const { renderApp } = await import('./application');
         // const { WorkloadManagement } = await import('./pages/WorkloadManagement');
@@ -86,7 +85,6 @@ export class QueryInsightsDashboardsPlugin
         );
       },
     });
-
 
     // Registration for new navigation
     core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [

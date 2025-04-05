@@ -1,15 +1,20 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /**
  * @jest-environment jsdom
  */
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import WLMDetails from './WLMDetails';
+import { WLMDetails } from './WLMDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { MemoryRouter, Route } from 'react-router-dom';
 import '@testing-library/jest-dom';
 
-const mockCore = {
+const mockCore = ({
   http: {
     get: jest.fn(),
     put: jest.fn(),
@@ -28,7 +33,7 @@ const mockCore = {
     navigateToApp: jest.fn(),
     getUrlForApp: jest.fn(() => '/app/query-insights'),
   },
-} as unknown as CoreStart;
+} as unknown) as CoreStart;
 
 const mockDeps = {};
 
@@ -73,7 +78,6 @@ jest.mock('../../../components/PageHeader', () => ({
   PageHeader: () => <div data-testid="mock-page-header" />,
 }));
 
-
 describe('WLMDetails Component', () => {
   it('renders workload group name', () => {
     renderComponent();
@@ -108,9 +112,11 @@ describe('WLMDetails Component', () => {
 
   it('handles no stats returned gracefully', async () => {
     // overwrite mock temporarily
-    (mockCore.http.get as jest.Mock).mockImplementationOnce(() =>
-      Promise.resolve({ body: { query_groups: [{ name: 'test-group', _id: 'abc123' }] } })
-    ).mockImplementationOnce(() => Promise.resolve({ body: {} }));
+    (mockCore.http.get as jest.Mock)
+      .mockImplementationOnce(() =>
+        Promise.resolve({ body: { query_groups: [{ name: 'test-group', _id: 'abc123' }] } })
+      )
+      .mockImplementationOnce(() => Promise.resolve({ body: {} }));
 
     renderComponent();
 
@@ -128,9 +134,7 @@ describe('WLMDetails Component', () => {
     });
 
     // Expect node ID and usage values to be displayed
-    expect(
-      screen.getByText((content) => content.includes('node-1'))
-    ).toBeInTheDocument();
+    expect(screen.getByText((content) => content.includes('node-1'))).toBeInTheDocument();
 
     expect(screen.getByText((content) => content.includes('50'))).toBeInTheDocument();
     expect(screen.getByText((content) => content.includes('30'))).toBeInTheDocument();
@@ -146,9 +150,7 @@ describe('WLMDetails Component', () => {
 
     renderComponent('non-existent-group');
     await waitFor(() => {
-      expect(
-        screen.getByText(/Workload group name/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Workload group name/i)).toBeInTheDocument();
     });
   });
 
@@ -172,4 +174,3 @@ describe('WLMDetails Component', () => {
     expect(screen.getByText(/No items found/i)).toBeInTheDocument();
   });
 });
-

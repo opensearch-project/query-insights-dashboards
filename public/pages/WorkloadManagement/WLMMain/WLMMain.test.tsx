@@ -1,10 +1,15 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /**
  * @jest-environment jsdom
  */
 
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import WorkloadManagement from './WLMMain';
+import { WorkloadManagementMain } from './WLMMain';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
@@ -16,7 +21,7 @@ jest.mock('../../../components/PageHeader', () => ({
   PageHeader: () => <div>Mocked PageHeader</div>,
 }));
 
-const mockCore = {
+const mockCore = ({
   http: {
     get: jest.fn(),
   },
@@ -28,7 +33,7 @@ const mockCore = {
   chrome: {
     setBreadcrumbs: jest.fn(),
   },
-} as unknown as CoreStart;
+} as unknown) as CoreStart;
 
 const mockDepsStart = {} as any;
 
@@ -101,9 +106,7 @@ const mockQueryGroups = {
 };
 
 const mockGroupDetails = {
-  query_groups: [
-    { resource_limits: { cpu: 0.5, memory: 0.5 } },
-  ],
+  query_groups: [{ resource_limits: { cpu: 0.5, memory: 0.5 } }],
 };
 
 beforeEach(() => {
@@ -122,7 +125,7 @@ beforeEach(() => {
 const renderComponent = () =>
   render(
     <MemoryRouter>
-      <WorkloadManagement core={mockCore} depsStart={mockDepsStart} />
+      <WorkloadManagementMain core={mockCore} depsStart={mockDepsStart} />
     </MemoryRouter>
   );
 

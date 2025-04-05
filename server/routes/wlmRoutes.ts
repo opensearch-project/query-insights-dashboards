@@ -1,5 +1,10 @@
-import { IRouter } from '../../../../src/core/server';
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { schema } from '@osd/config-schema';
+import { IRouter } from '../../../../src/core/server';
 
 export function defineWlmRoutes(router: IRouter) {
   router.get(
@@ -58,24 +63,27 @@ export function defineWlmRoutes(router: IRouter) {
   );
 
   // dashboards server-side route
-  router.get({
-    path: '/api/_wlm/query_group',
-    validate: false,
-  }, async (context, request, response) => {
-    try {
-      const client = context.core.opensearch.client.asCurrentUser;
-      const result = await client.transport.request({
-        method: 'GET',
-        path: '/_wlm/query_group',
-      });
-      return response.ok({ body: result });
-    } catch (error: any) {
-      return response.customError({
-        statusCode: 500,
-        body: { message: `Failed to fetch query groups: ${error.message}` },
-      });
+  router.get(
+    {
+      path: '/api/_wlm/query_group',
+      validate: false,
+    },
+    async (context, request, response) => {
+      try {
+        const client = context.core.opensearch.client.asCurrentUser;
+        const result = await client.transport.request({
+          method: 'GET',
+          path: '/_wlm/query_group',
+        });
+        return response.ok({ body: result });
+      } catch (error: any) {
+        return response.customError({
+          statusCode: 500,
+          body: { message: `Failed to fetch query groups: ${error.message}` },
+        });
+      }
     }
-  });
+  );
 
   router.get(
     {
