@@ -245,12 +245,16 @@
     regenerator-runtime "^0.14.0"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 "@babel/runtime@^7.12.5", "@babel/runtime@^7.26.10", "@babel/runtime@^7.9.2":
   version "7.27.3"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.27.3.tgz#10491113799fb8d77e1d9273384d5d68deeea8f6"
   integrity sha512-7EYtGezsdiDMyY80+65EzwiGmcJqpmcZCojSXaRgdrBaGtWTgDZKq69cPIVped6MkIM78cTQ2GOiEYjwOlG4xw==
 =======
 "@babel/runtime@^7.12.5", "@babel/runtime@^7.22.9", "@babel/runtime@^7.9.2":
+=======
+"@babel/runtime@^7.12.5", "@babel/runtime@^7.26.10", "@babel/runtime@^7.9.2":
+>>>>>>> 9ec5e11 (Fix: Align dev dependency versions with OpenSearch Dashboards core again)
   version "7.27.0"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.27.0.tgz#fbee7cf97c709518ecc1f590984481d5460d4762"
   integrity sha512-VtPOkrdPHZsKc/clNqyi9WUA8TINkZ4cGk63UUE3u4pmB2k+ZMQRDuIOagv8UVd6j7k0T3+RRIb7beKTebNbcw==
@@ -307,10 +311,14 @@
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 "@cypress/request@^3.0.0", "@cypress/request@^3.0.6":
 =======
 "@cypress/request@2.88.12", "@cypress/request@^3.0.0":
 >>>>>>> d0314a3 (Fix: Align dev dependency versions with OpenSearch Dashboards core)
+=======
+"@cypress/request@^3.0.0":
+>>>>>>> 9ec5e11 (Fix: Align dev dependency versions with OpenSearch Dashboards core again)
   version "3.0.8"
   resolved "https://registry.yarnpkg.com/@cypress/request/-/request-3.0.8.tgz#992f1f42ba03ebb14fa5d97290abe9d015ed0815"
   integrity sha512-h0NFgh1mJmm1nr4jCwkGHwKneVYKghUyWe6TMNrk0B9zsjAJxpg8C4/+BAcmLgCPa1vj1V8rNUaILl+zYRUWBQ==
@@ -334,14 +342,15 @@
     tunnel-agent "^0.6.0"
     uuid "^8.3.2"
 
-"@cypress/webpack-preprocessor@^5.17.1":
-  version "5.17.1"
-  resolved "https://registry.yarnpkg.com/@cypress/webpack-preprocessor/-/webpack-preprocessor-5.17.1.tgz#19c3f6ceb89e156824917b4ec31717ade34592ec"
-  integrity sha512-FE/e8ikPc8z4EVopJCaior3RGy0jd2q9Xcp5NtiwNG4XnLfEnUFTZlAGwXe75sEh4fNMPrBJW1KIz77PX5vGAw==
+"@cypress/webpack-preprocessor@^6.0.1":
+  version "6.0.4"
+  resolved "https://registry.yarnpkg.com/@cypress/webpack-preprocessor/-/webpack-preprocessor-6.0.4.tgz#537f6bee2a971979adf35d925609a86f9e4aff30"
+  integrity sha512-ly+EcabWWbhrSPr2J/njQX7Y3da+QqOmFg8Og/MVmLxhDLKIzr2WhTdgzDYviPTLx/IKsdb41cc2RLYp6mSBRA==
   dependencies:
     bluebird "3.7.1"
     debug "^4.3.4"
     lodash "^4.17.20"
+    semver "^7.3.2"
 
 "@cypress/xvfb@^1.2.4":
   version "1.2.4"
@@ -758,7 +767,7 @@
     lz-string "^1.5.0"
     pretty-format "^27.0.2"
 
-"@testing-library/jest-dom@^5.16.2":
+"@testing-library/jest-dom@^5.17.0":
   version "5.17.0"
   resolved "https://registry.yarnpkg.com/@testing-library/jest-dom/-/jest-dom-5.17.0.tgz#5e97c8f9a15ccf4656da00fecab505728de81e0c"
   integrity sha512-ynmNeT7asXyH3aSVv4vvX4Rb+0qjOhdNHnO/3vuZNqPmhDpV/+rCSGwQ7bLcmU2cJ4dvoheIO85LQj0IbJHEtg==
@@ -892,11 +901,20 @@
     undici-types "~6.20.0"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 "@types/node@^16.18.39":
   version "16.18.126"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.126.tgz#27875faa2926c0f475b39a8bb1e546c0176f8d4b"
   integrity sha512-OTcgaiwfGFBKacvfwuHzzn1KLxH/er8mluiy8/uM3sGXHaRe73RrSIj01jow9t4kJEW633Ov+cOexXeiApTyAw==
+=======
+"@types/node@^18.17.5":
+  version "18.19.86"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.86.tgz#a7e1785289c343155578b9d84a0e3e924deb948b"
+  integrity sha512-fifKayi175wLyKyc5qUfyENhQ1dCNI1UNjp653d8kuYcPQN5JhX3dGuP/XmvPTg/xRBn1VTLpbmi+H/Mr7tLfQ==
+  dependencies:
+    undici-types "~5.26.4"
+>>>>>>> 9ec5e11 (Fix: Align dev dependency versions with OpenSearch Dashboards core again)
 
 >>>>>>> d0314a3 (Fix: Align dev dependency versions with OpenSearch Dashboards core)
 "@types/object-hash@^3.0.0":
@@ -2167,6 +2185,7 @@ cypress-recurse@^1.27.0:
     humanize-duration "^3.27.3"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 cypress@^13.6.0:
   version "13.17.0"
   resolved "https://registry.yarnpkg.com/cypress/-/cypress-13.17.0.tgz#34c3d68080c4497eace0f353bd1629587a5f600d"
@@ -2179,11 +2198,21 @@ cypress@12.17.4:
   version "12.17.4"
   resolved "https://registry.yarnpkg.com/cypress/-/cypress-12.17.4.tgz#b4dadf41673058493fa0d2362faa3da1f6ae2e6c"
   integrity sha512-gAN8Pmns9MA5eCDFSDJXWKUpaL3IDd89N9TtIupjYnzLSmlpVr+ZR+vb4U/qaMp+lB6tBvAmt7504c3Z4RU5KQ==
+=======
+cypress@13.6.0:
+  version "13.6.0"
+  resolved "https://registry.yarnpkg.com/cypress/-/cypress-13.6.0.tgz#b98b7b837679012ed09c7ecee5565bf7b31d4982"
+  integrity sha512-quIsnFmtj4dBUEJYU4OH0H12bABJpSujvWexC24Ju1gTlKMJbeT6tTO0vh7WNfiBPPjoIXLN+OUqVtiKFs6SGw==
+>>>>>>> 9ec5e11 (Fix: Align dev dependency versions with OpenSearch Dashboards core again)
   dependencies:
-    "@cypress/request" "2.88.12"
+    "@cypress/request" "^3.0.0"
     "@cypress/xvfb" "^1.2.4"
+<<<<<<< HEAD
     "@types/node" "^16.18.39"
 >>>>>>> d0314a3 (Fix: Align dev dependency versions with OpenSearch Dashboards core)
+=======
+    "@types/node" "^18.17.5"
+>>>>>>> 9ec5e11 (Fix: Align dev dependency versions with OpenSearch Dashboards core again)
     "@types/sinonjs__fake-timers" "8.1.1"
     "@types/sizzle" "^2.3.2"
     arch "^2.2.0"
@@ -6311,6 +6340,11 @@ unbox-primitive@^1.1.0:
     has-bigints "^1.0.2"
     has-symbols "^1.1.0"
     which-boxed-primitive "^1.1.1"
+
+undici-types@~5.26.4:
+  version "5.26.5"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-5.26.5.tgz#bcd539893d00b56e964fd2657a4866b221a65617"
+  integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
 
 undici-types@~6.20.0:
   version "6.20.0"
