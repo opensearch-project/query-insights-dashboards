@@ -183,7 +183,7 @@ describe('TopNQueries Component', () => {
       <MemoryRouter initialEntries={[QUERY_INSIGHTS]}>
         <TopNQueries
           core={mockCore}
-          initialStart="now-1d"
+          initialStart="now-1h"
           initialEnd="now"
           depsStart={{ navigation: {} }}
           params={{} as any}
@@ -209,7 +209,7 @@ describe('TopNQueries Component', () => {
     );
     // Verify that the component re-fetches data for the new time range
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledTimes(16);
+      expect(mockCore.http.get).toHaveBeenCalledTimes(7);
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith(
         '/api/top_queries/latency',

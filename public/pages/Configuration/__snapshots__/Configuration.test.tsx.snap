@@ -132,7 +132,7 @@ exports[`Configuration Component renders with default settings: should match def
                     <dd
                       class="euiDescriptionList__description"
                     >
-                      Enable/disable top N query monitoring by \${metric}.
+                      Enable/disable top N query monitoring by latency.
                     </dd>
                   </dl>
                 </div>
@@ -1189,7 +1189,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
                     <dd
                       class="euiDescriptionList__description"
                     >
-                      Enable/disable top N query monitoring by \${metric}.
+                      Enable/disable top N query monitoring by cpu.
                     </dd>
                   </dl>
                 </div>
