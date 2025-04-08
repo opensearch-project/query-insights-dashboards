@@ -2,8 +2,7 @@
 Compatible with OpenSearch 3.0.0.0-beta1
 
 ### Maintenance
-
-### Bug Fixes
+* Update babel/runtime version ([#156](https://github.com/opensearch-project/query-insights-dashboards/pull/156))
 
 ### Enhancements
 * Update Default Time Range from 1 Day to 1 Hour in TopNQueries Component ([#148](https://github.com/opensearch-project/query-insights-dashboards/pull/148))
