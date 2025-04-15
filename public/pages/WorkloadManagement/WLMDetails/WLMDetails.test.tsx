@@ -79,6 +79,10 @@ jest.mock('../../../components/PageHeader', () => ({
 }));
 
 describe('WLMDetails Component', () => {
+  beforeEach(() => {
+    jest.resetAllMocks(); // Reset mock function calls
+  });
+
   it('renders workload group name', () => {
     renderComponent();
     expect(screen.getByText(/test-group/i)).toBeInTheDocument();
@@ -91,6 +95,10 @@ describe('WLMDetails Component', () => {
     expect(screen.getByText(/Description/i)).toBeInTheDocument();
     expect(screen.getByText(/CPU usage limit/i)).toBeInTheDocument();
     expect(screen.getByText(/Memory usage limit/i)).toBeInTheDocument();
+
+    expect(screen.getByText('test-group')).toBeInTheDocument();
+    expect(screen.getByText('50')).toBeInTheDocument();
+    expect(screen.getByText('30')).toBeInTheDocument();
   });
 
   it('renders tabs and switches to Settings tab', () => {

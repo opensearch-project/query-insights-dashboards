@@ -41,6 +41,7 @@ interface WorkloadGroupData {
   memStats: number[];
   cpuLimit: number;
   memLimit: number;
+  groupId: string;
 }
 
 interface GroupStats {
@@ -49,6 +50,48 @@ interface GroupStats {
   total_cancellations?: number;
   cpu?: { current_usage?: number };
   memory?: { current_usage?: number };
+}
+
+interface QueryGroup {
+  _id: string;
+  name: string;
+  resource_limits?: {
+    cpu: number;
+    memory: number;
+  };
+}
+
+interface NodeStats {
+  cpu?: {
+    current_usage?: number;
+  };
+  memory?: {
+    current_usage?: number;
+  };
+  query_groups?: {
+    [groupId: string]: {
+      cpu?: { current_usage?: number };
+      memory?: { current_usage?: number };
+    };
+  };
+}
+
+// --- Pagination Constants ---
+const DEFAULT_PAGE_INDEX = 0;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 50];
+
+const SUMMARY_STATS_KEYS = {
+  totalGroups: 'totalGroups',
+  totalCompletions: 'totalCompletions',
+  totalRejections: 'totalRejections',
+  totalCancellations: 'totalCancellations',
+  groupsExceedingLimits: 'groupsExceedingLimits',
+};
+
+enum SortDirection {
+  ASC = 'asc',
+  DESC = 'desc',
 }
 
 export const WorkloadManagementMain = ({
@@ -67,19 +110,19 @@ export const WorkloadManagementMain = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageIndex, setPageIndex] = useState(DEFAULT_PAGE_INDEX);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortField, setSortField] = useState<keyof WorkloadGroupData>('cpuUsage');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>(SortDirection.DESC);
 
   const [nodeIds, setNodeIds] = useState<string[]>([]);
   const [selectedNode, setSelectedNode] = useState<string>('');
   const [summaryStats, setSummaryStats] = useState({
-    totalGroups: '-' as string | number,
-    totalCompletions: '-' as string | number,
-    totalRejections: '-' as string | number,
-    totalCancellations: '-' as string | number,
-    groupsExceedingLimits: '-' as string | number,
+    [SUMMARY_STATS_KEYS.totalGroups]: '-' as string | number,
+    [SUMMARY_STATS_KEYS.totalCompletions]: '-' as string | number,
+    [SUMMARY_STATS_KEYS.totalRejections]: '-' as string | number,
+    [SUMMARY_STATS_KEYS.totalCancellations]: '-' as string | number,
+    [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
 
   // === Table Sorting / Pagination ===
@@ -87,7 +130,7 @@ export const WorkloadManagementMain = ({
     pageIndex,
     pageSize,
     totalItemCount: filteredData.length,
-    pageSizeOptions: [5, 10, 15, 50],
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
   };
 
   const onTableChange = (criteria: Criteria<WorkloadGroupData>) => {
@@ -95,11 +138,16 @@ export const WorkloadManagementMain = ({
 
     if (sort) {
       const field = sort.field as keyof WorkloadGroupData;
-      const direction = sort.direction as 'asc' | 'desc';
-      const sorted = sortData(filteredData, field, direction);
+      const direction = sort.direction as SortDirection;
+      const sorted = sortData(data, field, direction);
+
+      const filteredSortedData = searchQuery
+        ? sorted.filter((g) => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : sorted;
+
       setSortField(field);
       setSortDirection(direction);
-      setFilteredData(sorted);
+      setFilteredData(filteredSortedData);
     }
 
     if (page) {
@@ -114,7 +162,7 @@ export const WorkloadManagementMain = ({
     try {
       // Use /_nodes to get all node IDs
       const res = await core.http.get('/api/_wlm_proxy/_nodes');
-      const response = res.body ?? res;
+      const response = res.body;
       const nodes: string[] = Object.keys(response.nodes || {});
 
       setNodeIds(nodes);
@@ -130,12 +178,38 @@ export const WorkloadManagementMain = ({
     setLoading(false);
   };
 
+  const fetchQueryGroupsWithLimits = async () => {
+    try {
+      const res = await core.http.get('/api/_wlm/query_group');
+      const queryGroups: QueryGroup[] = res.body?.query_groups ?? [];
+
+      // Map groupId to the resource limits, using NaN for unavailable limits
+      const groupIdToLimits = queryGroups.reduce<Record<string, { cpuLimit: number, memLimit: number }>>(
+        (acc, group) => {
+          // If resource limits are available, convert them to numbers; otherwise, use NaN
+          const cpuLimit = group.resource_limits?.cpu ? Math.round(group.resource_limits.cpu * 100) : NaN;
+          const memLimit = group.resource_limits?.memory ? Math.round(group.resource_limits.memory * 100) : NaN;
+
+          acc[group._id] = { cpuLimit, memLimit };
+          return acc;
+        },
+        {}
+      );
+
+      return groupIdToLimits;
+    } catch (err) {
+      console.warn('Failed to fetch query groups with limits:', err);
+      return {};
+    }
+  };
+
   const fetchStatsForNode = async (nodeId: string) => {
     setLoading(true);
 
     try {
       const idToName = await fetchQueryGroupNameMap();
       const queryGroups = await fetchQueryGroupsForNode(nodeId);
+      const groupIdToLimits = await fetchQueryGroupsWithLimits();
 
       // Build raw group data first (skip cpuStats/memStats for now)
       const rawData: WorkloadGroupData[] = [];
@@ -146,7 +220,7 @@ export const WorkloadManagementMain = ({
         const name = groupId === 'DEFAULT_QUERY_GROUP' ? groupId : idToName[groupId];
         const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
         const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
-        const { cpuLimit, memLimit } = await fetchResourceLimits(groupId, idToName);
+        const { cpuLimit = 100, memLimit = 100 } = groupIdToLimits[groupId] || {};
 
         rawData.push({
           name,
@@ -155,26 +229,30 @@ export const WorkloadManagementMain = ({
           totalCompletion: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
-          topQueriesLink: `/query-group-details?id=${groupId}`,
+          topQueriesLink: "", // not available yet
           cpuStats: [],
           memStats: [],
           cpuLimit,
           memLimit,
+          groupId,
         });
       }
 
+      const filteredRawData = searchQuery
+        ? rawData.filter((g) => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : rawData;
+
       // Sort & paginate
-      const sorted = sortData(rawData, sortField, sortDirection);
+      const sorted = sortData(filteredRawData, sortField, sortDirection);
       const paged = sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
       // Fetch only the stats needed for visible QGs (with /_wlm/stats/{queryGroupId})
       for (const group of paged) {
-        const groupId =
-          Object.keys(idToName).find((key) => idToName[key] === group.name) ?? group.name;
+        const groupId = group.groupId;
 
         try {
           const res = await core.http.get(`/api/_wlm/stats/${groupId}`);
-          const stats = res.body ?? res;
+          const stats: Record <string, NodeStats> = res.body;
 
           const cpuUsages: number[] = [];
           const memUsages: number[] = [];
@@ -195,16 +273,16 @@ export const WorkloadManagementMain = ({
         }
       }
 
-      const overLimit = rawData.filter((g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit)
+      const overLimit = filteredRawData.filter((g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit)
         .length;
 
       setData(sorted);
       setFilteredData(sorted);
       setSummaryStats({
         totalGroups: sorted.length,
-        totalCompletions: rawData.reduce((sum, g) => sum + g.totalCompletion, 0),
-        totalRejections: rawData.reduce((sum, g) => sum + g.totalRejections, 0),
-        totalCancellations: rawData.reduce((sum, g) => sum + g.totalCancellations, 0),
+        totalCompletions: filteredRawData.reduce((sum, g) => sum + g.totalCompletion, 0),
+        totalRejections: filteredRawData.reduce((sum, g) => sum + g.totalRejections, 0),
+        totalCancellations: filteredRawData.reduce((sum, g) => sum + g.totalCancellations, 0),
         groupsExceedingLimits: overLimit,
       });
     } catch (err) {
@@ -236,7 +314,7 @@ export const WorkloadManagementMain = ({
 
   const fetchQueryGroupNameMap = async (): Promise<Record<string, string>> => {
     const res = await core.http.get('/api/_wlm/query_group');
-    const groups = res.body?.query_groups ?? res.query_groups ?? [];
+    const groups = res.body?.query_groups ?? [];
     const map: Record<string, string> = {};
     for (const group of groups) {
       map[group._id] = group.name;
@@ -246,7 +324,7 @@ export const WorkloadManagementMain = ({
 
   const fetchQueryGroupsForNode = async (nodeId: string): Promise<Record<string, GroupStats>> => {
     const res = await core.http.get(`/api/_wlm/${nodeId}/stats`);
-    return (res.body ?? res)[nodeId]?.query_groups ?? {};
+    return (res.body)[nodeId]?.query_groups ?? {};
   };
 
   const fetchResourceLimits = async (groupId: string, idToName: Record<string, string>) => {
@@ -267,7 +345,7 @@ export const WorkloadManagementMain = ({
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
-    if (arr.length === 0) return [0, 0, 0, 0, 0];
+    if (arr.length === 0) return [NaN, NaN, NaN, NaN, NaN];
     const sorted = [...arr].sort((a, b) => a - b);
     return [
       sorted[0],

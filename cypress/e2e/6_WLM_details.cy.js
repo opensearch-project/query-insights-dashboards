@@ -7,6 +7,9 @@ describe('WLM Details Page', () => {
   const groupName = `test_group_${Date.now()}`; // Unique name for each run
 
   before(() => {
+    const groupName = `test_group_${Date.now()}`;
+    Cypress.env('groupName', groupName);
+
     // Clean up existing non-default groups
     cy.request({
       method: 'GET',
@@ -43,7 +46,8 @@ describe('WLM Details Page', () => {
 
   beforeEach(() => {
     cy.visit(`/app/workload-management#/wlm-details?name=${groupName}`);
-    cy.wait(5000); // wait for data and rendering
+    // Wait until rows render
+    cy.get('.euiBasicTable .euiTableRow').should('have.length.greaterThan', 0);
   });
 
   it('should display workload group summary panel', () => {

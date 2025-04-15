@@ -6,7 +6,7 @@
 describe('WLM Main Page', () => {
   beforeEach(() => {
     cy.visit('/app/workload-management#/workloadManagement');
-    cy.wait(5000); // wait for data to load
+    cy.get('.euiBasicTable .euiTableRow').should('have.length.greaterThan', 0);
   });
 
   it('should display the WLM page with the workload group table', () => {
@@ -28,7 +28,33 @@ describe('WLM Main Page', () => {
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
-  it('should display summary stat cards', () => {
+  it('should switch between nodes using dropdown', () => {
+    cy.get('select').should('exist');
+    cy.get('select option').then((options) => {
+      if (options.length > 1) {
+        cy.get('select').select(options[1].value);
+        cy.wait(2000);
+        cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+      }
+    });
+  });
+
+  it('should not switch nodes if only one node is available', () => {
+    cy.get('select').should('exist');
+    cy.get('select option').then((options) => {
+      if (options.length === 1) {
+        cy.get('select').should('have.value', options[0].value);
+        cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+      }
+    });
+  });
+
+  it('should display the WLM main page with workload group table and summary stats', () => {
+    // Confirm table exists
+    cy.get('.euiBasicTable').should('be.visible');
+    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+
+    // Confirm stat cards exist
     const titles = [
       'Total workload groups',
       'Total groups exceeding limits',
@@ -42,31 +68,15 @@ describe('WLM Main Page', () => {
     });
   });
 
-  it('should switch between nodes using dropdown', () => {
-    cy.get('select').should('exist');
-    cy.get('select option').then((options) => {
-      if (options.length > 1) {
-        cy.get('select').select(options[1].value);
-        cy.wait(2000);
-        cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-      }
-    });
-  });
-
-  it('should display the WLM main page with workload group table and summary stats', () => {
-    cy.visit('/app/workload-management#/workloadManagement');
-
-    // Table is visible
-    cy.get('.euiBasicTable').should('be.visible');
-
-    // Stat panels are rendered
-    cy.contains('Total workload groups').should('exist');
-    cy.contains('Total completion').should('exist');
-    cy.contains('Total rejections').should('exist');
-  });
-
   it('should display CPU and memory usage tooltips on hover', () => {
-    cy.get('.echarts-for-react').first().trigger('mousemove', { clientX: 10, clientY: 10 });
+    cy.get('.echarts-for-react')
+      .first()
+      .trigger('mouseover', { force: true })
+      .then(() => {
+        cy.get('.echarts-tooltip')
+          .should('exist')
+          .and('contain.text', 'Usage across nodes');
+      });
   });
 
   it('should switch nodes using the dropdown and refresh data', () => {
@@ -75,9 +85,19 @@ describe('WLM Main Page', () => {
     cy.get('select').then(($select) => {
       const options = $select.find('option');
       if (options.length > 1) {
+        const initialTableRows = [];
+
+        cy.get('.euiTableRow').each(($row) => {
+          initialTableRows.push($row.text());
+        });
+
         cy.wrap($select).select(options[1].value);
-        cy.wait(1000); // allow for backend fetch
-        cy.get('.euiBasicTable').should('be.visible');
+        cy.wait(1000);
+
+        cy.get('.euiTableRow').then(($newRows) => {
+          const newRowTexts = [...$newRows].map((row) => row.textContent || '');
+          expect(newRowTexts).to.not.deep.equal(initialTableRows);
+        });
       }
     });
   });

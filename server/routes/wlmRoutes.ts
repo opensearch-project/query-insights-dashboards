@@ -21,9 +21,11 @@ export function defineWlmRoutes(router: IRouter) {
         });
         return response.ok({ body: stats });
       } catch (error: any) {
-        console.error('Failed to fetch WLM stats:', error);
+        context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
+          error: error,
+        });
         return response.custom({
-          statusCode: 500,
+          statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch WLM stats: ${error.message}`,
           },
@@ -53,7 +55,7 @@ export function defineWlmRoutes(router: IRouter) {
       } catch (error: any) {
         console.error(`Failed to fetch stats for node ${request.params.nodeId}:`, error);
         return response.custom({
-          statusCode: 500,
+          statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch stats for node ${request.params.nodeId}: ${error.message}`,
           },
@@ -78,7 +80,7 @@ export function defineWlmRoutes(router: IRouter) {
         return response.ok({ body: result });
       } catch (error: any) {
         return response.customError({
-          statusCode: 500,
+          statusCode: error.statusCode || 500,
           body: { message: `Failed to fetch query groups: ${error.message}` },
         });
       }
@@ -105,7 +107,7 @@ export function defineWlmRoutes(router: IRouter) {
         return response.ok({ body: result });
       } catch (error: any) {
         return response.custom({
-          statusCode: 500,
+          statusCode: error.statusCode || 500,
           body: { message: `Error fetching query group: ${error.message}` },
         });
       }
@@ -239,7 +241,7 @@ export function defineWlmRoutes(router: IRouter) {
       } catch (error: any) {
         console.error(`Failed to fetch WLM stats for group ${request.params.queryGroupId}:`, error);
         return response.custom({
-          statusCode: 500,
+          statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch WLM stats for group ${request.params.queryGroupId}: ${error.message}`,
           },

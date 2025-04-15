@@ -22,8 +22,7 @@ export const QueryInsightsDashboardsApp = ({
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
 }) => {
-  const location = window.location.pathname; // Detect the URL path
-  const isWLMApp = location.includes('workload-management'); // Check if the path includes 'workload-management'
+  const isWLMApp = params.appBasePath.includes('workload-management'); // Check if the path includes 'workload-management'
 
   return (
     <Switch>

@@ -32,11 +32,86 @@ import { WLM_MAIN } from '../WorkloadManagement';
 
 // === Constants & Types ===
 const DEFAULT_QUERY_GROUP = 'DEFAULT_QUERY_GROUP';
+const DEFAULT_RESOURCE_LIMIT = 100;
+
+// --- Pagination Constants ---
+const DEFAULT_PAGE_INDEX = 0;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 50];
+
+// --- Sort Fields ---
+type SortField = 'cpuUsage' | 'memoryUsage';
+
+// --- Tabs ---
+export enum WLMTabs {
+  RESOURCES = 'resources',
+  SETTINGS = 'settings',
+}
+
+export enum ResiliencyMode {
+  SOFT = 'soft',
+  ENFORCED = 'enforced',
+}
 
 interface NodeUsageData {
   nodeId: string;
   cpuUsage: number;
   memoryUsage: number;
+}
+
+interface WorkloadGroupDetails {
+  name: string;
+  cpuLimit: number | string;
+  memLimit: number | string;
+  resiliencyMode: 'soft' | 'enforced';
+  description: string;
+}
+
+interface QueryGroup {
+  _id: string;
+  name: string;
+  resource_limits?: {
+    cpu?: number;
+    memory?: number;
+  };
+  resiliency_mode?: string;
+}
+
+interface QueryGroupByNameResponse {
+  body: {
+    query_groups: QueryGroup[];
+  };
+  statusCode: number;
+  headers: Record<string, string>;
+  meta: any;
+}
+
+interface NodeStats {
+  cpu: {
+    current_usage: number;
+  };
+  memory: {
+    current_usage: number;
+  };
+  query_groups: {
+    [groupId: string]: GroupStats;
+  };
+}
+
+interface GroupStats {
+  cpu?: {
+    current_usage: number;
+  };
+  memory?: {
+    current_usage: number;
+  };
+  total_completions?: number;
+  total_rejections?: number;
+  total_cancellations?: number;
+}
+
+interface StatsResponse {
+  [nodeId: string]: NodeStats;
 }
 
 // === Main Component ===
@@ -54,35 +129,31 @@ export const WLMDetails = ({
   const groupName = searchParams.get('name');
 
   // === State ===
-  const [groupDetails, setGroupDetails] = useState<any>(null);
-  const [resiliencyMode, setResiliencyMode] = useState('soft');
-  const [cpuLimit, setCpuLimit] = useState(100);
-  const [memoryLimit, setMemoryLimit] = useState(100);
+  const [groupDetails, setGroupDetails] = useState<WorkloadGroupDetails | null>(null);
+  const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
+  const [cpuLimit, setCpuLimit] = useState(DEFAULT_RESOURCE_LIMIT);
+  const [memoryLimit, setMemoryLimit] = useState(DEFAULT_RESOURCE_LIMIT);
   const [isSaved, setIsSaved] = useState(true);
   const [nodesData, setNodesData] = useState<NodeUsageData[]>([]);
   const [sortedData, setSortedData] = useState<NodeUsageData[]>([]);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [sortField, setSortField] = useState<keyof NodeUsageData>('cpuUsage');
-  const [selectedTab, setSelectedTab] = useState('resources');
+  const [pageIndex, setPageIndex] = useState(DEFAULT_PAGE_INDEX);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [sortField, setSortField] = useState<SortField>('cpuUsage');
+  const [selectedTab, setSelectedTab] = useState<WLMTabs>(WLMTabs.RESOURCES);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   // === Helpers ===
-  const tabs = [
-    { id: 'resources', name: 'Resources' },
-    { id: 'settings', name: 'Settings' },
-  ];
   const resiliencyOptions = [
-    { id: 'soft', label: 'Soft' },
-    { id: 'enforced', label: 'Enforced' },
+    { id: ResiliencyMode.SOFT, label: 'Soft' },
+    { id: ResiliencyMode.ENFORCED, label: 'Enforced' },
   ];
   const isDefaultGroup = groupName === DEFAULT_QUERY_GROUP;
-  const workloadGroup = groupDetails || {
+  const workloadGroup: WorkloadGroupDetails = groupDetails || {
     name: groupName || 'Unknown',
-    cpuLimit: '-',
-    memLimit: '-',
-    resiliencyMode: '-',
+    cpuLimit: 0,
+    memLimit: 0,
+    resiliencyMode: 'soft',
     description: '-',
   };
 
@@ -90,7 +161,7 @@ export const WLMDetails = ({
     pageIndex,
     pageSize,
     totalItemCount: sortedData.length,
-    pageSizeOptions: [5, 10, 15, 50],
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
   };
 
   // === Lifecycle Hooks ===
@@ -121,35 +192,18 @@ export const WLMDetails = ({
   }, [groupName]);
 
   // === Data Fetching ===
-  const getGroupIdFromName = async (groupNameLocal: string) => {
-    try {
-      const res = await core.http.get('/api/_wlm/query_group');
-      const groups = res.body?.query_groups ?? res.query_groups ?? [];
-      const match = groups.find((g: any) => g.name === groupNameLocal);
-      return match?._id;
-    } catch (e) {
-      console.error('Failed to find groupId from name:', e);
-      return null;
-    }
-  };
+  const fetchDefaultGroupDetails = () => {
+    setGroupDetails({
+      name: DEFAULT_QUERY_GROUP,
+      cpuLimit: 100,
+      memLimit: 100,
+      resiliencyMode: 'soft',
+      description: 'System default workload group',
+    });
+    setCpuLimit(DEFAULT_RESOURCE_LIMIT);
+    setMemoryLimit(DEFAULT_RESOURCE_LIMIT);
+    setResiliencyMode(ResiliencyMode.SOFT);
 
-  const fetchDefaultGroupDetails = async () => {
-    try {
-      setGroupDetails({
-        name: DEFAULT_QUERY_GROUP,
-        cpuLimit: 100,
-        memLimit: 100,
-        resiliencyMode: 'soft',
-        description: 'System default workload group',
-      });
-      setCpuLimit(100);
-      setMemoryLimit(100);
-      setResiliencyMode('soft');
-    } catch (err) {
-      console.error('Failed to fetch DEFAULT_QUERY_GROUP stats:', err);
-      core.notifications.toasts.addDanger('Could not load DEFAULT_QUERY_GROUP stats.');
-      history.push(WLM_MAIN);
-    }
   };
 
   const fetchGroupDetails = async () => {
@@ -170,44 +224,65 @@ export const WLMDetails = ({
       if (queryGroup) {
         setGroupDetails({
           name: queryGroup.name,
-          cpuLimit: Math.round((queryGroup.resource_limits?.cpu ?? 0) * 100),
-          memLimit: Math.round((queryGroup.resource_limits?.memory ?? 0) * 100),
+          cpuLimit: queryGroup.resource_limits?.cpu != null
+            ? formatLimit(queryGroup.resource_limits.cpu)
+            : '-',
+          memLimit: queryGroup.resource_limits?.memory != null
+            ? formatLimit(queryGroup.resource_limits.memory)
+            : '-',
           resiliencyMode: queryGroup.resiliency_mode,
           description: '-',
         });
         setResiliencyMode(queryGroup.resiliency_mode.toLowerCase());
-        setCpuLimit(Math.round((queryGroup.resource_limits.cpu ?? 0) * 100));
-        setMemoryLimit(Math.round((queryGroup.resource_limits.memory ?? 0) * 100));
+        setCpuLimit(formatLimit(queryGroup.resource_limits.cpu));
+        setMemoryLimit(formatLimit(queryGroup.resource_limits.memory));
       }
     } catch (err) {
       console.error('Failed to fetch workload group details:', err);
-      core.notifications.toasts.addDanger(`Workload group "${groupName}" not found.`);
-      history.push(WLM_MAIN);
       setGroupDetails(null);
+      history.push(WLM_MAIN);
+      core.notifications.toasts.addDanger(`Workload group "${groupName}" not found.`);
     }
   };
 
   const updateStats = async () => {
     if (!groupName) return;
 
-    const groupId =
-      groupName === DEFAULT_QUERY_GROUP ? DEFAULT_QUERY_GROUP : await getGroupIdFromName(groupName);
+    let groupId: string = DEFAULT_QUERY_GROUP;
 
-    if (!groupId) return;
+    if (groupName !== DEFAULT_QUERY_GROUP) {
+      try {
+        const response: QueryGroupByNameResponse = await core.http.get(`/api/_wlm/query_group/${groupName}`);
+        const matchedGroup = response.body?.query_groups?.[0];
+
+        if (!matchedGroup?._id) {
+          throw new Error('Group ID not found');
+        }
+
+        groupId = matchedGroup._id;
+      } catch (err) {
+        console.error('Failed to get group ID by name:', err);
+        core.notifications.toasts.addDanger(`Failed to find workload group "${groupName}"`);
+        return;
+      }
+    }
 
     try {
       const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`);
+      const stats: StatsResponse = statsRes.body ?? statsRes;
+
       const nodeStatsList: NodeUsageData[] = [];
 
-      for (const [nodeId, data] of Object.entries(statsRes.body)) {
+      for (const [nodeId, data] of Object.entries(stats)) {
         if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
 
-        const stats = (data as any)?.query_groups?.[groupId];
-        if (stats) {
+        const statsForGroup = data.query_groups[groupId];
+
+        if (statsForGroup) {
           nodeStatsList.push({
             nodeId,
-            cpuUsage: Math.round((stats.cpu?.current_usage ?? 0) * 100),
-            memoryUsage: Math.round((stats.memory?.current_usage ?? 0) * 100),
+            cpuUsage: formatLimit(statsForGroup.cpu?.current_usage),
+            memoryUsage: formatLimit(statsForGroup.memory?.current_usage),
           });
         }
       }
@@ -222,7 +297,7 @@ export const WLMDetails = ({
   // === Actions ===
   const saveChanges = async () => {
     if (cpuLimit <= 0 || cpuLimit > 100 || memoryLimit <= 0 || memoryLimit > 100) {
-      core.notifications.toasts.addDanger('CPU and Memory limits must be between 0 and 100');
+      core.notifications.toasts.addDanger('CPU and Memory limits must be between 0 and 100 (exclusive of 0)');
       return;
     }
 
@@ -241,10 +316,8 @@ export const WLMDetails = ({
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
       fetchGroupDetails();
     } catch (err) {
-      console.error('Failed to save changes:', err);
-      core.notifications.toasts.addDanger(
-        `Failed to save changes: ${err.body?.message || err.message}`
-      );
+      const errorMessage = err?.body?.message || err?.message || String(err);
+      core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);
     }
   };
 
@@ -265,7 +338,7 @@ export const WLMDetails = ({
     const { sort, page } = criteria;
 
     if (sort) {
-      const sorted = [...sortedData].sort((a, b) => {
+      const sorted = [...nodesData].sort((a, b) => {
         const valA = a[sort.field];
         const valB = b[sort.field];
 
@@ -275,7 +348,9 @@ export const WLMDetails = ({
         return String(valB).localeCompare(String(valA));
       });
 
-      setSortField(sort.field);
+      if (sort.field === 'cpuUsage' || sort.field === 'memoryUsage') {
+        setSortField(sort.field);
+      }
       setSortedData(sorted);
     }
 
@@ -283,6 +358,10 @@ export const WLMDetails = ({
       setPageIndex(page.index);
       setPageSize(page.size);
     }
+  };
+
+  const formatLimit = (usage?: number, defaultValue: number = 0): number => {
+    return Math.round((usage ?? defaultValue) * 100);
   };
 
   return (
@@ -372,13 +451,13 @@ export const WLMDetails = ({
             <EuiText size="s">
               <strong>CPU usage limit</strong>
             </EuiText>
-            <EuiText size="m">{workloadGroup.cpuLimit}%</EuiText>
+            <EuiText size="m">{typeof workloadGroup.cpuLimit === 'number' ? `${workloadGroup.cpuLimit}%` : '-'}</EuiText>
           </EuiFlexItem>
           <EuiFlexItem>
             <EuiText size="s">
               <strong>Memory usage limit</strong>
             </EuiText>
-            <EuiText size="m">{workloadGroup.memLimit}%</EuiText>
+            <EuiText size="m">{typeof workloadGroup.memLimit === 'number' ? `${workloadGroup.memLimit}%` : '-'}</EuiText>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiPanel>
@@ -388,13 +467,13 @@ export const WLMDetails = ({
 
       {/* Tabs Section */}
       <EuiTabs>
-        {tabs.map((tab) => (
+        {Object.values(WLMTabs).map((tab) => (
           <EuiTab
-            key={tab.id}
-            isSelected={selectedTab === tab.id}
-            onClick={() => setSelectedTab(tab.id)}
+            key={tab}
+            isSelected={selectedTab === tab}
+            onClick={() => setSelectedTab(tab)}
           >
-            {tab.name}
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </EuiTab>
         ))}
       </EuiTabs>
@@ -469,7 +548,7 @@ export const WLMDetails = ({
       {/* Settings Panel */}
       {selectedTab === 'settings' && (
         <EuiPanel paddingSize="m">
-          {groupName === 'DEFAULT_QUERY_GROUP' ? (
+          {isDefaultGroup ? (
             <EuiText color="subdued">
               Settings are not available for the DEFAULT_QUERY_GROUP.
             </EuiText>
@@ -499,7 +578,7 @@ export const WLMDetails = ({
                   options={resiliencyOptions}
                   idSelected={resiliencyMode}
                   onChange={(id) => {
-                    setResiliencyMode(id);
+                    setResiliencyMode(id as ResiliencyMode);
                     setIsSaved(false);
                   }}
                 />

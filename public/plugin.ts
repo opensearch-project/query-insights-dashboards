@@ -7,7 +7,6 @@ import {
   AppMountParameters,
   CoreSetup,
   CoreStart,
-  DEFAULT_NAV_GROUPS,
   Plugin,
 } from '../../../src/core/public';
 import {
@@ -70,10 +69,8 @@ export class QueryInsightsDashboardsPlugin
       },
       order: 5100,
       async mount(params: AppMountParameters) {
-        console.log('wlm is mounting...');
         // Dynamically import the WLM page
         const { renderApp } = await import('./application');
-        // const { WorkloadManagement } = await import('./pages/WorkloadManagement');
 
         const [coreStart, depsStart] = await core.getStartServices();
 
@@ -85,30 +82,6 @@ export class QueryInsightsDashboardsPlugin
         );
       },
     });
-
-    // Registration for new navigation
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
-      {
-        id: PLUGIN_NAME,
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          order: 9000,
-          euiIconType: 'managementApp',
-        },
-        order: 200,
-      },
-      {
-        id: 'workloadManagement',
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          order: 9100,
-          euiIconType: 'compute',
-        },
-        order: 210,
-      },
-    ]);
 
     return {};
   }
