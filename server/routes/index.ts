@@ -19,7 +19,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        // data source disabled
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -45,7 +44,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
             ok: false,
@@ -65,16 +63,20 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
-        if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+        const { from, to, id, verbose } = request.query;
+
+        const params = { from, to, id, verbose };
+
+        const isDefaultClient = !dataSourceEnabled || !request.query?.dataSourceId;
+        if (isDefaultClient) {
+          const scopedClient = context.queryInsights_plugin.queryInsightsClient.asScoped(request);
+          const client = scopedClient.callAsCurrentUser;
           const res =
             id != null
               ? await client('queryInsights.getTopNQueriesLatencyForId', params)
@@ -94,6 +96,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client.callAPI('queryInsights.getTopNQueriesLatencyForId', params)
               : await client.callAPI('queryInsights.getTopNQueriesLatency', params);
+
           return response.custom({
             statusCode: 200,
             body: {
@@ -103,7 +106,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to get top queries (latency): ', error);
         return response.ok({
           body: {
             ok: false,
@@ -123,13 +125,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
+        const { from, to, id, verbose } = request.query;
+        const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -161,7 +164,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to get top queries (cpu): ', error);
         return response.ok({
           body: {
             ok: false,
@@ -181,13 +183,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
+        const { from, to, id, verbose } = request.query;
+        const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -219,7 +222,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to get top queries (memory): ', error);
         return response.ok({
           body: {
             ok: false,
@@ -266,7 +268,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
             ok: false,
@@ -343,7 +344,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           });
         }
       } catch (error) {
-        console.error('Unable to set settings: ', error);
         return response.ok({
           body: {
             ok: false,

@@ -17,7 +17,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesLatency = ca({
     url: {
-      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%>`,
+      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -25,6 +25,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         to: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },
@@ -34,7 +38,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesCpu = ca({
     url: {
-      fmt: `/_insights/top_queries?type=cpu&from=<%=from%>&to=<%=to%>`,
+      fmt: `/_insights/top_queries?type=cpu&from=<%=from%>&to=<%=to%>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -42,6 +46,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         to: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },
@@ -51,7 +59,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesMemory = ca({
     url: {
-      fmt: `/_insights/top_queries?type=memory&from=<%=from%>&to=<%=to%>`,
+      fmt: `/_insights/top_queries?type=memory&from=<%=from%>&to=<%=to%>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -59,6 +67,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         to: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },
