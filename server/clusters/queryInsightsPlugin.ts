@@ -122,7 +122,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesMemoryForId = ca({
     url: {
-      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      fmt: `/_insights/top_queries?type=memory&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
       req: {
         from: {
           type: 'string',
