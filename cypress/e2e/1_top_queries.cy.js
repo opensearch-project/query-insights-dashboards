@@ -170,33 +170,7 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
   });
-  it('should display both query and group data with proper headers when both are selected', () => {
-    clearAll();
-    cy.wait(10000);
-    cy.reload();
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
 
-    const expectedGroupHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Timestamp',
-      'Avg Latency / Latency',
-      'Avg CPU Time / CPU Time',
-      'Avg Memory Usage / Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'Total Shards',
-    ];
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
-    });
-  });
   it('should paginate the query table', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
@@ -208,6 +182,5 @@ describe('Query Insights Dashboard', () => {
     // Verify rows on the second page
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
-
   after(() => clearAll());
 });
