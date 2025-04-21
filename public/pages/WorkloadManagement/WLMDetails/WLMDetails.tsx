@@ -31,7 +31,7 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_MAIN } from '../WorkloadManagement';
 
 // === Constants & Types ===
-const DEFAULT_QUERY_GROUP = 'DEFAULT_QUERY_GROUP';
+const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
 const DEFAULT_RESOURCE_LIMIT = 100;
 
 // --- Pagination Constants ---
@@ -67,7 +67,7 @@ interface WorkloadGroupDetails {
   description: string;
 }
 
-interface QueryGroup {
+interface WorkloadGroup {
   _id: string;
   name: string;
   resource_limits?: {
@@ -77,9 +77,9 @@ interface QueryGroup {
   resiliency_mode?: string;
 }
 
-interface QueryGroupByNameResponse {
+interface WorkloadGroupByNameResponse {
   body: {
-    query_groups: QueryGroup[];
+    workload_groups: WorkloadGroup[];
   };
   statusCode: number;
   headers: Record<string, string>;
@@ -93,7 +93,7 @@ interface NodeStats {
   memory: {
     current_usage: number;
   };
-  query_groups: {
+  workload_groups: {
     [groupId: string]: GroupStats;
   };
 }
@@ -148,7 +148,7 @@ export const WLMDetails = ({
     { id: ResiliencyMode.SOFT, label: 'Soft' },
     { id: ResiliencyMode.ENFORCED, label: 'Enforced' },
   ];
-  const isDefaultGroup = groupName === DEFAULT_QUERY_GROUP;
+  const isDefaultGroup = groupName === DEFAULT_WORKLOAD_GROUP;
   const workloadGroup: WorkloadGroupDetails = groupDetails || {
     name: groupName || 'Unknown',
     cpuLimit: 0,
@@ -194,7 +194,7 @@ export const WLMDetails = ({
   // === Data Fetching ===
   const fetchDefaultGroupDetails = () => {
     setGroupDetails({
-      name: DEFAULT_QUERY_GROUP,
+      name: DEFAULT_WORKLOAD_GROUP,
       cpuLimit: 100,
       memLimit: 100,
       resiliencyMode: 'soft',
@@ -219,23 +219,23 @@ export const WLMDetails = ({
     }
 
     try {
-      const response = await core.http.get(`/api/_wlm/query_group/${groupName}`);
-      const queryGroup = response?.body?.query_groups?.[0];
-      if (queryGroup) {
+      const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`);
+      const workloadGroup = response?.body?.workload_groups?.[0];
+      if (workloadGroup) {
         setGroupDetails({
-          name: queryGroup.name,
-          cpuLimit: queryGroup.resource_limits?.cpu != null
-            ? formatLimit(queryGroup.resource_limits.cpu)
+          name: workloadGroup.name,
+          cpuLimit: workloadGroup.resource_limits?.cpu != null
+            ? formatLimit(workloadGroup.resource_limits.cpu)
             : '-',
-          memLimit: queryGroup.resource_limits?.memory != null
-            ? formatLimit(queryGroup.resource_limits.memory)
+          memLimit: workloadGroup.resource_limits?.memory != null
+            ? formatLimit(workloadGroup.resource_limits.memory)
             : '-',
-          resiliencyMode: queryGroup.resiliency_mode,
+          resiliencyMode: workloadGroup.resiliency_mode,
           description: '-',
         });
-        setResiliencyMode(queryGroup.resiliency_mode.toLowerCase());
-        setCpuLimit(formatLimit(queryGroup.resource_limits.cpu));
-        setMemoryLimit(formatLimit(queryGroup.resource_limits.memory));
+        setResiliencyMode(workloadGroup.resiliency_mode.toLowerCase());
+        setCpuLimit(formatLimit(workloadGroup.resource_limits.cpu));
+        setMemoryLimit(formatLimit(workloadGroup.resource_limits.memory));
       }
     } catch (err) {
       console.error('Failed to fetch workload group details:', err);
@@ -248,12 +248,12 @@ export const WLMDetails = ({
   const updateStats = async () => {
     if (!groupName) return;
 
-    let groupId: string = DEFAULT_QUERY_GROUP;
+    let groupId: string = DEFAULT_WORKLOAD_GROUP;
 
-    if (groupName !== DEFAULT_QUERY_GROUP) {
+    if (groupName !== DEFAULT_WORKLOAD_GROUP) {
       try {
-        const response: QueryGroupByNameResponse = await core.http.get(`/api/_wlm/query_group/${groupName}`);
-        const matchedGroup = response.body?.query_groups?.[0];
+        const response: WorkloadGroupByNameResponse = await core.http.get(`/api/_wlm/workload_group/${groupName}`);
+        const matchedGroup = response.body?.workload_groups?.[0];
 
         if (!matchedGroup?._id) {
           throw new Error('Group ID not found');
@@ -276,7 +276,7 @@ export const WLMDetails = ({
       for (const [nodeId, data] of Object.entries(stats)) {
         if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
 
-        const statsForGroup = data.query_groups[groupId];
+        const statsForGroup = data.workload_groups[groupId];
 
         if (statsForGroup) {
           nodeStatsList.push({
@@ -302,7 +302,7 @@ export const WLMDetails = ({
     }
 
     try {
-      await core.http.put(`/api/_wlm/query_group/${groupName}`, {
+      await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
         body: JSON.stringify({
           resiliency_mode: resiliencyMode,
           resource_limits: {
@@ -323,7 +323,7 @@ export const WLMDetails = ({
 
   const deleteGroup = async () => {
     try {
-      await core.http.delete(`/api/_wlm/query_group/${groupName}`);
+      await core.http.delete(`/api/_wlm/workload_group/${groupName}`);
       core.notifications.toasts.addSuccess(`Deleted workload group "${groupName}"`);
       history.push(WLM_MAIN);
     } catch (err) {
@@ -415,7 +415,7 @@ export const WLMDetails = ({
                   color="danger"
                   iconType="trash"
                   onClick={() => setIsDeleteModalVisible(true)}
-                  isDisabled={groupName === 'DEFAULT_QUERY_GROUP'}
+                  isDisabled={groupName === 'DEFAULT_WORKLOAD_GROUP'}
                 >
                   Delete
                 </EuiButton>
@@ -550,7 +550,7 @@ export const WLMDetails = ({
         <EuiPanel paddingSize="m">
           {isDefaultGroup ? (
             <EuiText color="subdued">
-              Settings are not available for the DEFAULT_QUERY_GROUP.
+              Settings are not available for the DEFAULT_WORKLOAD_GROUP.
             </EuiText>
           ) : (
             <>

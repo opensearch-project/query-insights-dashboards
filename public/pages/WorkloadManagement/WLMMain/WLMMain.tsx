@@ -52,7 +52,7 @@ interface GroupStats {
   memory?: { current_usage?: number };
 }
 
-interface QueryGroup {
+interface WorkloadGroup {
   _id: string;
   name: string;
   resource_limits?: {
@@ -68,7 +68,7 @@ interface NodeStats {
   memory?: {
     current_usage?: number;
   };
-  query_groups?: {
+  workload_groups?: {
     [groupId: string]: {
       cpu?: { current_usage?: number };
       memory?: { current_usage?: number };
@@ -178,13 +178,13 @@ export const WorkloadManagementMain = ({
     setLoading(false);
   };
 
-  const fetchQueryGroupsWithLimits = async () => {
+  const fetchWorkloadGroupsWithLimits = async () => {
     try {
-      const res = await core.http.get('/api/_wlm/query_group');
-      const queryGroups: QueryGroup[] = res.body?.query_groups ?? [];
+      const res = await core.http.get('/api/_wlm/workload_group');
+      const workloadGroups: WorkloadGroup[] = res.body?.workload_groups ?? [];
 
       // Map groupId to the resource limits, using NaN for unavailable limits
-      const groupIdToLimits = queryGroups.reduce<Record<string, { cpuLimit: number, memLimit: number }>>(
+      const groupIdToLimits = workloadGroups.reduce<Record<string, { cpuLimit: number, memLimit: number }>>(
         (acc, group) => {
           // If resource limits are available, convert them to numbers; otherwise, use NaN
           const cpuLimit = group.resource_limits?.cpu ? Math.round(group.resource_limits.cpu * 100) : NaN;
@@ -198,7 +198,7 @@ export const WorkloadManagementMain = ({
 
       return groupIdToLimits;
     } catch (err) {
-      console.warn('Failed to fetch query groups with limits:', err);
+      console.warn('Failed to fetch workload groups with limits:', err);
       return {};
     }
   };
@@ -207,17 +207,17 @@ export const WorkloadManagementMain = ({
     setLoading(true);
 
     try {
-      const idToName = await fetchQueryGroupNameMap();
-      const queryGroups = await fetchQueryGroupsForNode(nodeId);
-      const groupIdToLimits = await fetchQueryGroupsWithLimits();
+      const idToName = await fetchWorkloadGroupNameMap();
+      const workloadGroups = await fetchWorkloadGroupsForNode(nodeId);
+      const groupIdToLimits = await fetchWorkloadGroupsWithLimits();
 
       // Build raw group data first (skip cpuStats/memStats for now)
       const rawData: WorkloadGroupData[] = [];
 
-      for (const [groupId, groupStats] of Object.entries(queryGroups) as Array<
+      for (const [groupId, groupStats] of Object.entries(workloadGroups) as Array<
         [string, GroupStats]
       >) {
-        const name = groupId === 'DEFAULT_QUERY_GROUP' ? groupId : idToName[groupId];
+        const name = groupId === 'DEFAULT_WORKLOAD_GROUP' ? groupId : idToName[groupId];
         const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
         const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
         const { cpuLimit = 100, memLimit = 100 } = groupIdToLimits[groupId] || {};
@@ -246,7 +246,7 @@ export const WorkloadManagementMain = ({
       const sorted = sortData(filteredRawData, sortField, sortDirection);
       const paged = sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
-      // Fetch only the stats needed for visible QGs (with /_wlm/stats/{queryGroupId})
+      // Fetch only the stats needed for visible QGs (with /_wlm/stats/{workloadGroupId})
       for (const group of paged) {
         const groupId = group.groupId;
 
@@ -259,7 +259,7 @@ export const WorkloadManagementMain = ({
 
           for (const currentNodeId in stats) {
             if (currentNodeId === '_nodes' || currentNodeId === 'cluster_name') continue;
-            const nodeStats = stats[currentNodeId]?.query_groups?.[groupId];
+            const nodeStats = stats[currentNodeId]?.workload_groups?.[groupId];
             if (nodeStats) {
               cpuUsages.push((nodeStats.cpu?.current_usage ?? 0) * 100);
               memUsages.push((nodeStats.memory?.current_usage ?? 0) * 100);
@@ -312,9 +312,9 @@ export const WorkloadManagementMain = ({
     });
   };
 
-  const fetchQueryGroupNameMap = async (): Promise<Record<string, string>> => {
-    const res = await core.http.get('/api/_wlm/query_group');
-    const groups = res.body?.query_groups ?? [];
+  const fetchWorkloadGroupNameMap = async (): Promise<Record<string, string>> => {
+    const res = await core.http.get('/api/_wlm/workload_group');
+    const groups = res.body?.workload_groups ?? [];
     const map: Record<string, string> = {};
     for (const group of groups) {
       map[group._id] = group.name;
@@ -322,26 +322,9 @@ export const WorkloadManagementMain = ({
     return map;
   };
 
-  const fetchQueryGroupsForNode = async (nodeId: string): Promise<Record<string, GroupStats>> => {
+  const fetchWorkloadGroupsForNode = async (nodeId: string): Promise<Record<string, GroupStats>> => {
     const res = await core.http.get(`/api/_wlm/${nodeId}/stats`);
-    return (res.body)[nodeId]?.query_groups ?? {};
-  };
-
-  const fetchResourceLimits = async (groupId: string, idToName: Record<string, string>) => {
-    let cpuLimit = 100;
-    let memLimit = 100;
-    if (groupId === 'DEFAULT_QUERY_GROUP') return { cpuLimit, memLimit };
-
-    try {
-      const res = await core.http.get(`/api/_wlm/query_group/${idToName[groupId]}`);
-      const limits = res.body?.query_groups?.[0]?.resource_limits;
-      cpuLimit = limits?.cpu ? Math.round(limits.cpu * 100) : cpuLimit;
-      memLimit = limits?.memory ? Math.round(limits.memory * 100) : memLimit;
-    } catch (err) {
-      console.warn(`Limit fetch failed for ${groupId}:`, err);
-    }
-
-    return { cpuLimit, memLimit };
+    return (res.body)[nodeId]?.workload_groups ?? {};
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
@@ -357,10 +340,10 @@ export const WorkloadManagementMain = ({
   };
 
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-    if (!query) setFilteredData(data);
-    else setFilteredData(data.filter((g) => g.name.toLowerCase().includes(query)));
+    const workload = e.target.value.toLowerCase();
+    setSearchQuery(workload);
+    if (!workload) setFilteredData(data);
+    else setFilteredData(data.filter((g) => g.name.toLowerCase().includes(workload)));
   };
 
   const getBoxplotOption = (box: number[], limit: number) => {
