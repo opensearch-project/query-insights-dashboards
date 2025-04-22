@@ -9,10 +9,12 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 import { WorkloadManagementMain } from './WLMMain/WLMMain';
 import { WLMDetails } from './WLMDetails/WLMDetails';
+import { WLMCreate } from './WLMCreate/WLMCreate';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 export const WLM_MAIN = '/workloadManagement';
 export const WLM_DETAILS = '/wlm-details';
+export const WLM_CREATE = '/wlm-create';
 
 export interface DataSourceContextType {
   dataSource: DataSourceOption;
@@ -46,6 +48,11 @@ export const WorkloadManagement = ({
             {() => {
               return <WLMDetails core={core} depsStart={depsStart} />;
             }}
+          </Route>
+
+          {/* Workload Management Create Page */}
+          <Route exact path={WLM_CREATE}>
+            {() => <WLMCreate core={core} depsStart={depsStart} />}
           </Route>
 
           {/* Redirect to Main Page */}

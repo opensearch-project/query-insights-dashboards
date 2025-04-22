@@ -22,7 +22,7 @@ export function defineWlmRoutes(router: IRouter) {
         return response.ok({ body: stats });
       } catch (error: any) {
         context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
-          error: error,
+          error,
         });
         return response.custom({
           statusCode: error.statusCode || 500,
@@ -239,7 +239,10 @@ export function defineWlmRoutes(router: IRouter) {
 
         return response.ok({ body: result });
       } catch (error: any) {
-        console.error(`Failed to fetch WLM stats for group ${request.params.workloadGroupId}:`, error);
+        console.error(
+          `Failed to fetch WLM stats for group ${request.params.workloadGroupId}:`,
+          error
+        );
         return response.custom({
           statusCode: error.statusCode || 500,
           body: {

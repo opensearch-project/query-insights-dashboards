@@ -3,12 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  AppMountParameters,
-  CoreSetup,
-  CoreStart,
-  Plugin,
-} from '../../../src/core/public';
+import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,

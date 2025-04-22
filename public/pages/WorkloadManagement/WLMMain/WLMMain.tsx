@@ -26,6 +26,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import ReactECharts from 'echarts-for-react';
 import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
+import { WLM_CREATE } from '../WorkloadManagement';
 
 export const WLM = '/workloadManagement';
 
@@ -184,17 +185,20 @@ export const WorkloadManagementMain = ({
       const workloadGroups: WorkloadGroup[] = res.body?.workload_groups ?? [];
 
       // Map groupId to the resource limits, using NaN for unavailable limits
-      const groupIdToLimits = workloadGroups.reduce<Record<string, { cpuLimit: number, memLimit: number }>>(
-        (acc, group) => {
-          // If resource limits are available, convert them to numbers; otherwise, use NaN
-          const cpuLimit = group.resource_limits?.cpu ? Math.round(group.resource_limits.cpu * 100) : NaN;
-          const memLimit = group.resource_limits?.memory ? Math.round(group.resource_limits.memory * 100) : NaN;
+      const groupIdToLimits = workloadGroups.reduce<
+        Record<string, { cpuLimit: number; memLimit: number }>
+      >((acc, group) => {
+        // If resource limits are available, convert them to numbers; otherwise, use NaN
+        const cpuLimit = group.resource_limits?.cpu
+          ? Math.round(group.resource_limits.cpu * 100)
+          : NaN;
+        const memLimit = group.resource_limits?.memory
+          ? Math.round(group.resource_limits.memory * 100)
+          : NaN;
 
-          acc[group._id] = { cpuLimit, memLimit };
-          return acc;
-        },
-        {}
-      );
+        acc[group._id] = { cpuLimit, memLimit };
+        return acc;
+      }, {});
 
       return groupIdToLimits;
     } catch (err) {
@@ -229,7 +233,7 @@ export const WorkloadManagementMain = ({
           totalCompletion: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
-          topQueriesLink: "", // not available yet
+          topQueriesLink: '', // not available yet
           cpuStats: [],
           memStats: [],
           cpuLimit,
@@ -252,7 +256,7 @@ export const WorkloadManagementMain = ({
 
         try {
           const res = await core.http.get(`/api/_wlm/stats/${groupId}`);
-          const stats: Record <string, NodeStats> = res.body;
+          const stats: Record<string, NodeStats> = res.body;
 
           const cpuUsages: number[] = [];
           const memUsages: number[] = [];
@@ -273,8 +277,9 @@ export const WorkloadManagementMain = ({
         }
       }
 
-      const overLimit = filteredRawData.filter((g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit)
-        .length;
+      const overLimit = filteredRawData.filter(
+        (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
+      ).length;
 
       setData(sorted);
       setFilteredData(sorted);
@@ -322,9 +327,11 @@ export const WorkloadManagementMain = ({
     return map;
   };
 
-  const fetchWorkloadGroupsForNode = async (nodeId: string): Promise<Record<string, GroupStats>> => {
+  const fetchWorkloadGroupsForNode = async (
+    nodeId: string
+  ): Promise<Record<string, GroupStats>> => {
     const res = await core.http.get(`/api/_wlm/${nodeId}/stats`);
-    return (res.body)[nodeId]?.workload_groups ?? {};
+    return res.body[nodeId]?.workload_groups ?? {};
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
@@ -543,14 +550,7 @@ export const WorkloadManagementMain = ({
             </EuiFlexItem>
 
             <EuiFlexItem grow={false}>
-              <EuiButton
-                fill
-                style={{
-                  backgroundColor: '#0268BC',
-                  borderColor: '#0268BC',
-                  color: 'white',
-                }}
-              >
+              <EuiButton fill color="success" onClick={() => history.push(WLM_CREATE)}>
                 + Create workload group
               </EuiButton>
             </EuiFlexItem>

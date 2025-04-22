@@ -203,7 +203,6 @@ export const WLMDetails = ({
     setCpuLimit(DEFAULT_RESOURCE_LIMIT);
     setMemoryLimit(DEFAULT_RESOURCE_LIMIT);
     setResiliencyMode(ResiliencyMode.SOFT);
-
   };
 
   const fetchGroupDetails = async () => {
@@ -220,22 +219,22 @@ export const WLMDetails = ({
 
     try {
       const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`);
-      const workloadGroup = response?.body?.workload_groups?.[0];
-      if (workloadGroup) {
+      const workload = response?.body?.workload_groups?.[0];
+      if (workload) {
         setGroupDetails({
-          name: workloadGroup.name,
-          cpuLimit: workloadGroup.resource_limits?.cpu != null
-            ? formatLimit(workloadGroup.resource_limits.cpu)
-            : '-',
-          memLimit: workloadGroup.resource_limits?.memory != null
-            ? formatLimit(workloadGroup.resource_limits.memory)
-            : '-',
-          resiliencyMode: workloadGroup.resiliency_mode,
+          name: workload.name,
+          cpuLimit:
+            workload.resource_limits?.cpu != null ? formatLimit(workload.resource_limits.cpu) : '-',
+          memLimit:
+            workload.resource_limits?.memory != null
+              ? formatLimit(workload.resource_limits.memory)
+              : '-',
+          resiliencyMode: workload.resiliency_mode,
           description: '-',
         });
-        setResiliencyMode(workloadGroup.resiliency_mode.toLowerCase());
-        setCpuLimit(formatLimit(workloadGroup.resource_limits.cpu));
-        setMemoryLimit(formatLimit(workloadGroup.resource_limits.memory));
+        setResiliencyMode(workload.resiliency_mode.toLowerCase());
+        setCpuLimit(formatLimit(workload.resource_limits.cpu));
+        setMemoryLimit(formatLimit(workload.resource_limits.memory));
       }
     } catch (err) {
       console.error('Failed to fetch workload group details:', err);
@@ -252,7 +251,9 @@ export const WLMDetails = ({
 
     if (groupName !== DEFAULT_WORKLOAD_GROUP) {
       try {
-        const response: WorkloadGroupByNameResponse = await core.http.get(`/api/_wlm/workload_group/${groupName}`);
+        const response: WorkloadGroupByNameResponse = await core.http.get(
+          `/api/_wlm/workload_group/${groupName}`
+        );
         const matchedGroup = response.body?.workload_groups?.[0];
 
         if (!matchedGroup?._id) {
@@ -297,7 +298,9 @@ export const WLMDetails = ({
   // === Actions ===
   const saveChanges = async () => {
     if (cpuLimit <= 0 || cpuLimit > 100 || memoryLimit <= 0 || memoryLimit > 100) {
-      core.notifications.toasts.addDanger('CPU and Memory limits must be between 0 and 100 (exclusive of 0)');
+      core.notifications.toasts.addDanger(
+        'CPU and Memory limits must be between 0 and 100 (exclusive of 0)'
+      );
       return;
     }
 
@@ -451,13 +454,17 @@ export const WLMDetails = ({
             <EuiText size="s">
               <strong>CPU usage limit</strong>
             </EuiText>
-            <EuiText size="m">{typeof workloadGroup.cpuLimit === 'number' ? `${workloadGroup.cpuLimit}%` : '-'}</EuiText>
+            <EuiText size="m">
+              {typeof workloadGroup.cpuLimit === 'number' ? `${workloadGroup.cpuLimit}%` : '-'}
+            </EuiText>
           </EuiFlexItem>
           <EuiFlexItem>
             <EuiText size="s">
               <strong>Memory usage limit</strong>
             </EuiText>
-            <EuiText size="m">{typeof workloadGroup.memLimit === 'number' ? `${workloadGroup.memLimit}%` : '-'}</EuiText>
+            <EuiText size="m">
+              {typeof workloadGroup.memLimit === 'number' ? `${workloadGroup.memLimit}%` : '-'}
+            </EuiText>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiPanel>
@@ -468,11 +475,7 @@ export const WLMDetails = ({
       {/* Tabs Section */}
       <EuiTabs>
         {Object.values(WLMTabs).map((tab) => (
-          <EuiTab
-            key={tab}
-            isSelected={selectedTab === tab}
-            onClick={() => setSelectedTab(tab)}
-          >
+          <EuiTab key={tab} isSelected={selectedTab === tab} onClick={() => setSelectedTab(tab)}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </EuiTab>
         ))}

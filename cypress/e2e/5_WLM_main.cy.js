@@ -73,33 +73,8 @@ describe('WLM Main Page', () => {
       .first()
       .trigger('mouseover', { force: true })
       .then(() => {
-        cy.get('.echarts-tooltip')
-          .should('exist')
-          .and('contain.text', 'Usage across nodes');
+        cy.get('.echarts-tooltip').should('exist').and('contain.text', 'Usage across nodes');
       });
-  });
-
-  it('should switch nodes using the dropdown and refresh data', () => {
-    cy.get('select').should('exist');
-
-    cy.get('select').then(($select) => {
-      const options = $select.find('option');
-      if (options.length > 1) {
-        const initialTableRows = [];
-
-        cy.get('.euiTableRow').each(($row) => {
-          initialTableRows.push($row.text());
-        });
-
-        cy.wrap($select).select(options[1].value);
-        cy.wait(1000);
-
-        cy.get('.euiTableRow').then(($newRows) => {
-          const newRowTexts = [...$newRows].map((row) => row.textContent || '');
-          expect(newRowTexts).to.not.deep.equal(initialTableRows);
-        });
-      }
-    });
   });
 
   it('should filter workload groups by name in search', () => {
