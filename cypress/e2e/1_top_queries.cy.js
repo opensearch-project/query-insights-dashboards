@@ -114,7 +114,6 @@ describe('Query Insights Dashboard', () => {
     cy.contains('No items found');
   });
 
-
   it('should paginate the query table', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
