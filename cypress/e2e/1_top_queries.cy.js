@@ -10,9 +10,9 @@ import { METRICS } from '../support/constants';
 const indexName = 'sample_index';
 
 /**
-  Helper function to clean up the environment:
-  - Deletes the test index.
-  - Disables the top queries features.
+ Helper function to clean up the environment:
+ - Deletes the test index.
+ - Disables the top queries features.
  */
 const clearAll = () => {
   cy.deleteIndexByName(indexName);
@@ -114,6 +114,34 @@ describe('Query Insights Dashboard', () => {
     cy.contains('No items found');
   });
 
+  it('should paginate the query table', () => {
+    for (let i = 0; i < 20; i++) {
+      cy.searchOnIndex(indexName);
+    }
+    cy.wait(10000);
+    cy.reload();
+    cy.get('.euiPagination').should('be.visible');
+    cy.get('.euiPagination__item').contains('2').click();
+    // Verify rows on the second page
+    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+  });
+  after(() => clearAll());
+});
+
+describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', () => {
+  beforeEach(() => {
+    cy.fixture('stub_top_queries.json').then((stubResponse) => {
+      cy.intercept('GET', '**/api/top_queries/*', {
+        statusCode: 200,
+        body: stubResponse,
+      }).as('getTopQueries');
+    });
+
+    cy.navigateToOverview();
+    cy.wait(1000);
+    cy.wait('@getTopQueries');
+  });
+
   it('should render only individual query-related headers when NONE filter is applied', () => {
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
@@ -142,16 +170,6 @@ describe('Query Insights Dashboard', () => {
   });
 
   it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
-    cy.enableGrouping();
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.navigateToOverview();
-    cy.wait(1000);
-    cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
     cy.wait(1000);
@@ -171,9 +189,6 @@ describe('Query Insights Dashboard', () => {
     });
   });
   it('should display both query and group data with proper headers when both are selected', () => {
-    clearAll();
-    cy.wait(10000);
-    cy.reload();
     cy.get('.euiFilterButton').contains('Type').click();
     cy.get('.euiFilterSelectItem').contains('query').click();
     cy.get('.euiFilterSelectItem').contains('group').click();
@@ -197,17 +212,4 @@ describe('Query Insights Dashboard', () => {
       expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
     });
   });
-  it('should paginate the query table', () => {
-    for (let i = 0; i < 20; i++) {
-      cy.searchOnIndex(indexName);
-    }
-    cy.wait(10000);
-    cy.reload();
-    cy.get('.euiPagination').should('be.visible');
-    cy.get('.euiPagination__item').contains('2').click();
-    // Verify rows on the second page
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-  });
-
-  after(() => clearAll());
 });
