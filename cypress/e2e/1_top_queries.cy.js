@@ -84,12 +84,12 @@ describe('Query Insights Dashboard', () => {
 
   it('should switch between tabs', () => {
     // Click Configuration tab
-    cy.getElementByText('.euiTab', 'Configuration').click({ force: true });
+    cy.getElementByText('.euiTab', 'Configuration').click({force: true});
     cy.contains('Query insights - Configuration');
     cy.url().should('include', '/configuration');
 
     // Click back to Query Insights tab
-    cy.getElementByText('.euiTab', 'Top N queries').click({ force: true });
+    cy.getElementByText('.euiTab', 'Top N queries').click({force: true});
     cy.url().should('include', '/queryInsights');
   });
 
@@ -183,91 +183,92 @@ describe('Query Insights Dashboard', () => {
         });
       });
 
-  after(() => clearAll());
+    after(() => clearAll());
+  });
 });
 
-describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', () => {
-  beforeEach(() => {
-    cy.fixture('stub_top_queries.json').then((stubResponse) => {
-      cy.intercept('GET', '**/api/top_queries/*', {
-        statusCode: 200,
-        body: stubResponse,
-      }).as('getTopQueries');
+  describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', () => {
+    beforeEach(() => {
+      cy.fixture('stub_top_queries.json').then((stubResponse) => {
+        cy.intercept('GET', '**/api/top_queries/*', {
+          statusCode: 200,
+          body: stubResponse,
+        }).as('getTopQueries');
+      });
+
+      cy.navigateToOverview();
+      cy.wait(1000);
+      cy.wait('@getTopQueries');
     });
 
-    cy.navigateToOverview();
-    cy.wait(1000);
-    cy.wait('@getTopQueries');
-  });
+    it('should render only individual query-related headers when NONE filter is applied', () => {
+      cy.wait(1000);
+      cy.get('.euiFilterButton').contains('Type').click();
+      cy.get('.euiFilterSelectItem').contains('query').click();
+      cy.wait(1000);
 
-  it('should render only individual query-related headers when NONE filter is applied', () => {
-    cy.wait(1000);
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.wait(1000);
+      const expectedHeaders = [
+        'Id',
+        'Type',
+        'Timestamp',
+        'Latency',
+        'CPU Time',
+        'Memory Usage',
+        'Indices',
+        'Search Type',
+        'Coordinator Node ID',
+        'Total Shards',
+      ];
 
-    const expectedHeaders = [
-      'Id',
-      'Type',
-      'Timestamp',
-      'Latency',
-      'CPU Time',
-      'Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'Total Shards',
-    ];
+      cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
 
-    //cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+      cy.get('.euiTableHeaderCell').should(($headers) => {
+        const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+        expect(actualHeaders).to.deep.equal(expectedHeaders);
+      });
+    });
 
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedHeaders);
+    it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
+      cy.get('.euiFilterButton').contains('Type').click();
+      cy.get('.euiFilterSelectItem').contains('group').click();
+      cy.wait(1000);
+
+      const expectedHeaders = [
+        'Id',
+        'Type',
+        'Query Count',
+        'Average Latency',
+        'Average CPU Time',
+        'Average Memory Usage',
+      ];
+
+      cy.get('.euiTableHeaderCell').should(($headers) => {
+        const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+        expect(actualHeaders).to.deep.equal(expectedHeaders);
+      });
+    });
+    it('should display both query and group data with proper headers when both are selected', () => {
+      cy.get('.euiFilterButton').contains('Type').click();
+      cy.get('.euiFilterSelectItem').contains('query').click();
+      cy.get('.euiFilterSelectItem').contains('group').click();
+      cy.wait(1000);
+
+      const expectedGroupHeaders = [
+        'Id',
+        'Type',
+        'Query Count',
+        'Timestamp',
+        'Avg Latency / Latency',
+        'Avg CPU Time / CPU Time',
+        'Avg Memory Usage / Memory Usage',
+        'Indices',
+        'Search Type',
+        'Coordinator Node ID',
+        'Total Shards',
+      ];
+      cy.get('.euiTableHeaderCell').should(($headers) => {
+        const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
+        expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
+      });
     });
   });
-
-  it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
-
-    const expectedHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Average Latency',
-      'Average CPU Time',
-      'Average Memory Usage',
-    ];
-
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedHeaders);
-    });
-  });
-  it('should display both query and group data with proper headers when both are selected', () => {
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
-
-    const expectedGroupHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Timestamp',
-      'Avg Latency / Latency',
-      'Avg CPU Time / CPU Time',
-      'Avg Memory Usage / Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'Total Shards',
-    ];
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
-    });
-  });
-
