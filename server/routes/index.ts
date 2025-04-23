@@ -131,6 +131,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       try {
         const { from, to, id, verbose } = request.query;
         const params = { from, to, id, verbose };
+
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;

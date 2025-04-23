@@ -117,8 +117,8 @@ const QueryInsights = ({
               onClick={() => {
                 const route =
                   query.group_by === 'SIMILARITY'
-                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}`
-                    : `/query-details?from=${from}&to=${to}&id=${query.id}`;
+                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}&verbose=${true}`
+                    : `/query-details?from=${from}&to=${to}&id=${query.id}&verbose=${true}`;
                 history.push(route);
               }}
             >
@@ -139,8 +139,8 @@ const QueryInsights = ({
               onClick={() => {
                 const route =
                   query.group_by === 'SIMILARITY'
-                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}`
-                    : `/query-details?from=${from}&to=${to}&id=${query.id}`;
+                    ? `/query-group-details?from=${from}&to=${to}&id=${query.id}&verbose=${true}`
+                    : `/query-details?from=${from}&to=${to}&id=${query.id}&verbose=${true}`;
                 history.push(route);
               }}
             >
@@ -250,7 +250,7 @@ const QueryInsights = ({
         const isQuery = query.group_by === 'NONE';
         const linkContent = isQuery ? convertTime(query.timestamp) : '-';
         const onClickHandler = () => {
-          const route = `/query-details?from=${from}&to=${to}&id=${query.id}`;
+          const route = `/query-details?from=${from}&to=${to}&id=${query.id}&verbose=true`;
           history.push(route);
         };
         return (

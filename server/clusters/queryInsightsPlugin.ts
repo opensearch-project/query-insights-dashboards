@@ -80,7 +80,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesLatencyForId = ca({
     url: {
-      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      fmt: `/_insights/top_queries?type=latency&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -92,6 +92,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         id: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },
@@ -101,7 +105,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesCpuForId = ca({
     url: {
-      fmt: `/_insights/top_queries?type=cpu&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      fmt: `/_insights/top_queries?type=cpu&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -113,6 +117,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         id: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },
@@ -122,7 +130,7 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getTopNQueriesMemoryForId = ca({
     url: {
-      fmt: `/_insights/top_queries?type=memory&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>`,
+      fmt: `/_insights/top_queries?type=memory&from=<%=from%>&to=<%=to%><% if (id) { %>&id=<%=id%><% } %>&verbose=<%=verbose%>`,
       req: {
         from: {
           type: 'string',
@@ -134,6 +142,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
         },
         id: {
           type: 'string',
+          required: true,
+        },
+        verbose: {
+          type: 'boolean',
           required: true,
         },
       },

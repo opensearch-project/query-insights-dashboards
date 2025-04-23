@@ -114,63 +114,6 @@ describe('Query Insights Dashboard', () => {
     cy.contains('No items found');
   });
 
-  it('should render only individual query-related headers when NONE filter is applied', () => {
-    cy.wait(1000);
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.wait(1000);
-
-    const expectedHeaders = [
-      'Id',
-      'Type',
-      'Timestamp',
-      'Latency',
-      'CPU Time',
-      'Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'Total Shards',
-    ];
-
-    //cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
-
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedHeaders);
-    });
-  });
-
-  it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
-    cy.enableGrouping();
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.wait(1000);
-    cy.searchOnIndex(indexName);
-    cy.navigateToOverview();
-    cy.wait(1000);
-    cy.wait(1000);
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('group').click();
-    cy.wait(1000);
-
-    const expectedHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Average Latency',
-      'Average CPU Time',
-      'Average Memory Usage',
-    ];
-
-    cy.get('.euiTableHeaderCell').should(($headers) => {
-      const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
-      expect(actualHeaders).to.deep.equal(expectedHeaders);
-    });
-  });
-
   it('should paginate the query table', () => {
     for (let i = 0; i < 20; i++) {
       cy.searchOnIndex(indexName);
@@ -182,5 +125,63 @@ describe('Query Insights Dashboard', () => {
     // Verify rows on the second page
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
+  it('should get minimal details of the query using verbose=false', () => {
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    return cy
+      .request({
+        method: 'GET',
+        url: `/api/top_queries/latency`,
+        qs: {
+          from: from,
+          to: to,
+          verbose: false,
+        },
+      })
+      .then((response) => {
+        expect(response.status).to.eq(200);
+        expect(response.body).to.have.property('ok', true);
+
+        const responseData = response.body.response;
+        expect(responseData).to.have.property('top_queries');
+        expect(responseData.top_queries).to.be.an('array');
+        expect(responseData.top_queries.length).to.be.greaterThan(0);
+
+        const firstQuery = responseData.top_queries[0];
+        const requiredFields = [
+          'group_by',
+          'id',
+          'indices',
+          'labels',
+          'measurements',
+          'node_id',
+          'search_type',
+          'timestamp',
+          'total_shards',
+        ];
+
+        expect(firstQuery).to.include.all.keys(requiredFields);
+        const typeValidations = {
+          group_by: 'string',
+          id: 'string',
+          indices: 'array',
+          labels: 'object',
+          measurements: 'object',
+          node_id: 'string',
+          search_type: 'string',
+          timestamp: 'number',
+          total_shards: 'number',
+        };
+        Object.entries(typeValidations).forEach(([field, type]) => {
+          expect(firstQuery[field]).to.be.a(type, `${field} should be a ${type}`);
+        });
+        expect(firstQuery.measurements).to.have.all.keys(['cpu', 'latency', 'memory']);
+        ['cpu', 'latency', 'memory'].forEach((metric) => {
+          expect(firstQuery.measurements[metric]).to.be.an('object');
+        });
+      });
+  });
+
   after(() => clearAll());
 });

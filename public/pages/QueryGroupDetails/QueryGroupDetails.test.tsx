@@ -62,7 +62,9 @@ describe('QueryGroupDetails', () => {
   const renderComponent = () => {
     return render(
       <MemoryRouter
-        initialEntries={['/query-group-details?id=mockId&from=1632441600000&to=1632528000000']}
+        initialEntries={[
+          '/query-group-details?id=mockId&from=1632441600000&to=1632528000000&verbose=true',
+        ]}
       >
         <DataSourceContext.Provider value={mockDataSourceContext}>
           <Route path="/query-group-details">
@@ -101,7 +103,8 @@ describe('QueryGroupDetails', () => {
         undefined,
         '1632441600000',
         '1632528000000',
-        'mockId'
+        'mockId',
+        true
       );
     });
 
