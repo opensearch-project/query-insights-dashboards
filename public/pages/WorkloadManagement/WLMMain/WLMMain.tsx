@@ -110,6 +110,7 @@ export const WorkloadManagementMain = ({
   const [filteredData, setFilteredData] = useState<WorkloadGroupData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const [pageIndex, setPageIndex] = useState(DEFAULT_PAGE_INDEX);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -290,6 +291,7 @@ export const WorkloadManagementMain = ({
         totalCancellations: filteredRawData.reduce((sum, g) => sum + g.totalCancellations, 0),
         groupsExceedingLimits: overLimit,
       });
+      setLastUpdated(new Date());
     } catch (err) {
       console.error(`Failed to fetch node stats:`, err);
     }
@@ -413,10 +415,6 @@ export const WorkloadManagementMain = ({
     const intervalId = setInterval(() => {
       if (selectedNode) {
         fetchStatsForNode(selectedNode);
-        core.notifications.toasts.addSuccess({
-          title: 'Data refreshed',
-          text: 'Workload stats for the current node have been updated.',
-        });
       }
     }, 60000);
 
@@ -607,6 +605,13 @@ export const WorkloadManagementMain = ({
                   onChange={onSearchChange}
                   fullWidth
                 />
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiText color="subdued" size="s">
+                  <p>
+                    Last updated {lastUpdated?.toLocaleDateString()} @ {lastUpdated?.toLocaleTimeString()}
+                  </p>
+                </EuiText>
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
                 <EuiButton
