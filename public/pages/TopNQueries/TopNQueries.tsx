@@ -171,6 +171,7 @@ const TopNQueries = ({
           from: parseDateString(start),
           to: parseDateString(end),
           dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
+          verbose: false,
         },
       };
       const fetchMetric = async (endpoint: string) => {
