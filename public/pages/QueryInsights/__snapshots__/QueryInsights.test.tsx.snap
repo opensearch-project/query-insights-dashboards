@@ -477,7 +477,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_2"
+                data-test-subj="tableHeaderCell_Query Count_2"
                 role="columnheader"
                 scope="col"
               >
@@ -527,7 +527,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_4"
+                data-test-subj="tableHeaderCell_Avg Latency / Latency_4"
                 role="columnheader"
                 scope="col"
               >
@@ -552,7 +552,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 aria-live="polite"
                 aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_5"
+                data-test-subj="tableHeaderCell_Avg CPU Time / CPU Time_5"
                 role="columnheader"
                 scope="col"
               >
@@ -574,21 +574,29 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 </button>
               </th>
               <th
+                aria-live="polite"
+                aria-sort="none"
                 class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_measurements_6"
+                data-test-subj="tableHeaderCell_Avg Memory Usage / Memory Usage_6"
                 role="columnheader"
                 scope="col"
               >
-                <span
-                  class="euiTableCellContent"
+                <button
+                  class="euiTableHeaderButton"
+                  data-test-subj="tableHeaderSortButton"
+                  type="button"
                 >
                   <span
-                    class="euiTableCellContent__text"
-                    title="Avg Memory Usage / Memory Usage"
+                    class="euiTableCellContent"
                   >
-                    Avg Memory Usage / Memory Usage
+                    <span
+                      class="euiTableCellContent__text"
+                      title="Avg Memory Usage / Memory Usage"
+                    >
+                      Avg Memory Usage / Memory Usage
+                    </span>
                   </span>
-                </span>
+                </button>
               </th>
               <th
                 aria-live="polite"
