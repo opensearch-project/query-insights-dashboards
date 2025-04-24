@@ -47,6 +47,7 @@ const QueryDetails = ({
   const id = searchParams.get('id');
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const verbose = Boolean(searchParams.get('verbose'));
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
   const history = useHistory();
@@ -60,15 +61,22 @@ const QueryDetails = ({
   }, []);
 
   const fetchQueryDetails = async () => {
-    const retrievedQuery = await retrieveQueryById(core, getDataSourceFromUrl().id, from, to, id);
+    const retrievedQuery = await retrieveQueryById(
+      core,
+      getDataSourceFromUrl().id,
+      from,
+      to,
+      id,
+      verbose
+    );
     setQuery(retrievedQuery);
   };
 
   useEffect(() => {
-    if (id && from && to) {
+    if (id && from && to && verbose != null) {
       fetchQueryDetails();
     }
-  }, [id, from, to]);
+  }, [id, from, to, verbose]);
 
   // Initialize the Plotly chart
   const initPlotlyChart = useCallback(() => {
