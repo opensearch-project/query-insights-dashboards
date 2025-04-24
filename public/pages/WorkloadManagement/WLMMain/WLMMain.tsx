@@ -481,16 +481,19 @@ export const WorkloadManagementMain = ({
       field: 'totalCompletion',
       name: <EuiText size="m">Total completion</EuiText>,
       sortable: true,
+      render: (val: number) => val.toLocaleString(),
     },
     {
       field: 'totalRejections',
       name: <EuiText size="m">Total rejections</EuiText>,
       sortable: true,
+      render: (val: number) => val.toLocaleString(),
     },
     {
       field: 'totalCancellations',
       name: <EuiText size="m">Total cancellations</EuiText>,
       sortable: true,
+      render: (val: number) => val.toLocaleString(),
     },
     {
       field: 'topQueriesLink',
@@ -562,13 +565,16 @@ export const WorkloadManagementMain = ({
       <EuiFlexGroup gutterSize="l">
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
-            <EuiStat title={summaryStats.totalGroups} description="Total workload groups" />
+            <EuiStat
+              title={Number(summaryStats.totalGroups).toLocaleString()}
+              description="Total workload groups"
+            />
           </EuiPanel>
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
             <EuiStat
-              title={summaryStats.groupsExceedingLimits}
+              title={Number(summaryStats.groupsExceedingLimits).toLocaleString()}
               description="Total groups exceeding limits"
               titleColor="danger"
             />
@@ -576,17 +582,26 @@ export const WorkloadManagementMain = ({
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
-            <EuiStat title={summaryStats.totalCompletions} description="Total completion" />
+            <EuiStat
+              title={Number(summaryStats.totalCompletions).toLocaleString()}
+              description="Total completion"
+            />
           </EuiPanel>
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
-            <EuiStat title={summaryStats.totalRejections} description="Total rejections" />
+            <EuiStat
+              title={Number(summaryStats.totalRejections).toLocaleString()}
+              description="Total rejections"
+            />
           </EuiPanel>
         </EuiFlexItem>
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
-            <EuiStat title={summaryStats.totalCancellations} description="Total cancellations" />
+            <EuiStat
+              title={Number(summaryStats.totalCancellations).toLocaleString()}
+              description="Total cancellations"
+            />
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
@@ -609,7 +624,8 @@ export const WorkloadManagementMain = ({
               <EuiFlexItem grow={false}>
                 <EuiText color="subdued" size="s">
                   <p>
-                    Last updated {lastUpdated?.toLocaleDateString()} @ {lastUpdated?.toLocaleTimeString()}
+                    Last updated {lastUpdated?.toLocaleDateString()} @{' '}
+                    {lastUpdated?.toLocaleTimeString()}
                   </p>
                 </EuiText>
               </EuiFlexItem>
