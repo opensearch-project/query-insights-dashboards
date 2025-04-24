@@ -187,7 +187,7 @@ describe('Query Insights Dashboard', () => {
   });
 });
 
-describe('Query Insights Dashboard - Dynamic Columns with Intercepted Top Queries', () => {
+describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top Queries', () => {
   beforeEach(() => {
     cy.fixture('stub_top_queries.json').then((stubResponse) => {
       cy.intercept('GET', '**/api/top_queries/*', {
