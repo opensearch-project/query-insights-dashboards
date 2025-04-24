@@ -142,6 +142,32 @@ describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', 
     cy.wait('@getTopQueries');
   });
 
+  const testMetricSorting = (columnLabel, columnIndex) => {
+    cy.get('.euiTableHeaderCell').contains(columnLabel).click();
+    cy.wait(1000);
+
+    cy.get('.euiTableRow').then(($rows) => {
+      const values = [...$rows].map(($row) => {
+        const rawText = Cypress.$($row).find('td').eq(columnIndex).text().trim();
+        return parseFloat(rawText.replace(/[^\d.]/g, '')); // remove 'ms'/'B'
+      });
+      const sortedAsc = [...values].sort((a, b) => a - b);
+      expect(values).to.deep.equal(sortedAsc);
+    });
+
+    cy.get('.euiTableHeaderCell').contains(columnLabel).click();
+    cy.wait(1000);
+
+    cy.get('.euiTableRow').then(($rows) => {
+      const values = [...$rows].map(($row) => {
+        const rawText = Cypress.$($row).find('td').eq(columnIndex).text().trim();
+        return parseFloat(rawText.replace(/[^\d.]/g, ''));
+      });
+      const sortedDesc = [...values].sort((a, b) => b - a);
+      expect(values).to.deep.equal(sortedDesc);
+    });
+  };
+
   it('should render only individual query-related headers when NONE filter is applied', () => {
     cy.wait(1000);
     cy.get('.euiFilterButton').contains('Type').click();
@@ -161,12 +187,16 @@ describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', 
       'Total Shards',
     ];
 
-    //cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
+    cy.get('.euiTableHeaderCell').should('have.length', expectedHeaders.length);
 
     cy.get('.euiTableHeaderCell').should(($headers) => {
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
+    testMetricSorting('Timestamp', 2);
+    testMetricSorting('Latency', 3);
+    testMetricSorting('CPU Time', 4);
+    testMetricSorting('Memory Usage', 5);
   });
 
   it('should render only group-related headers in the correct order when SIMILARITY filter is applied', () => {
@@ -187,6 +217,10 @@ describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', 
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
       expect(actualHeaders).to.deep.equal(expectedHeaders);
     });
+    testMetricSorting('Query Count', 2);
+    testMetricSorting('Average Latency', 3);
+    testMetricSorting('Average CPU Time', 4);
+    testMetricSorting('Average Memory Usage', 5);
   });
   it('should display both query and group data with proper headers when both are selected', () => {
     cy.get('.euiFilterButton').contains('Type').click();
@@ -211,5 +245,10 @@ describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', 
       const actualHeaders = $headers.map((index, el) => Cypress.$(el).text().trim()).get();
       expect(actualHeaders).to.deep.equal(expectedGroupHeaders);
     });
+    testMetricSorting('Query Count', 2);
+    testMetricSorting('Timestamp', 3);
+    testMetricSorting('Avg Latency / Latency', 4);
+    testMetricSorting('Avg CPU Time / CPU Time', 5);
+    testMetricSorting('Avg Memory Usage / Memory Usage', 6);
   });
 });
