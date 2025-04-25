@@ -38,7 +38,7 @@
     "eslint-utils": "^1.4.2",
     "async": "^3.2.3",
     "json5": "^2.2.3",
-    "@babel/core": "^7.20.12",
+    "@babel/core": "^7.26.10",
     "@babel/traverse": "^7.20.12",
     "@cypress/request": "^3.0.0"
   },
