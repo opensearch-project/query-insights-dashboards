@@ -163,6 +163,8 @@ const TopNQueries = ({
   // TODO: refactor retrieveQueries and retrieveConfigInfo into a Util function
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
+      if (loading) return;
+      setLoading(true);
       const nullResponse = { response: { top_queries: [] } };
       const apiParams = {
         query: {
@@ -191,7 +193,6 @@ const TopNQueries = ({
         }
       };
       try {
-        setLoading(true);
         const respLatency = latencySettings.isEnabled
           ? await fetchMetric('/api/top_queries/latency')
           : nullResponse;
@@ -350,13 +351,16 @@ const TopNQueries = ({
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
     retrieveConfigInfo(true);
-    retrieveQueries(start, end);
   };
 
   useEffect(() => {
     onTimeChange({ start: currStart, end: currEnd });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currStart, currEnd]);
+
+  useEffect(() => {
+    retrieveQueries(currStart, currEnd);
+  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
   const dataSourceFromUrl = getDataSourceFromUrl();
 
