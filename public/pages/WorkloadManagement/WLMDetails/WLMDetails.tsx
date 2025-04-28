@@ -475,7 +475,7 @@ export const WLMDetails = ({
       {/* Tabs Section */}
       <EuiTabs>
         {Object.values(WLMTabs).map((tab) => (
-          <EuiTab key={tab} isSelected={selectedTab === tab} onClick={() => setSelectedTab(tab)}>
+          <EuiTab key={tab} isSelected={selectedTab === tab} onClick={() => setSelectedTab(tab)} data-testid={`wlm-tab-${tab}`}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </EuiTab>
         ))}
