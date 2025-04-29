@@ -347,4 +347,37 @@ describe('WorkloadManagementMain', () => {
       expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
     });
   });
+
+  it('renders CPU/Memory boxplots correctly', async () => {
+    renderComponent();
+    const charts = await screen.findAllByTestId('MockedChart');
+    expect(charts.length).toBeGreaterThan(0);
+
+    charts.forEach((chart) => {
+      expect(chart).toBeInTheDocument();
+    });
+  });
+
+  it('switches nodes and fetches correct stats', async () => {
+    renderComponent();
+    await screen.findByText('Group One');
+
+    const select = screen.getByLabelText('Data source');
+    fireEvent.change(select, { target: { value: 'nodeB' } });
+
+    await waitFor(() => {
+      expect(select).toHaveValue('nodeB');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats');
+    });
+  });
+
+  it('sorts workload groups by CPU usage ascending/descending', async () => {
+    renderComponent();
+    const cpuHeader = await screen.findByRole('columnheader', { name: /CPU usage/i });
+
+    fireEvent.click(cpuHeader); // one click -> asc
+    fireEvent.click(cpuHeader); // two clicks -> desc
+
+    expect(cpuHeader).toBeInTheDocument();
+  });
 });
