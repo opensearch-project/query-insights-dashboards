@@ -8,8 +8,6 @@ Compatible with OpenSearch 2.19.2
 ### Bug Fixes
 * Fix Placeholder metric Not Replaced with Actual Metric Type ([#140](https://github.com/opensearch-project/query-insights-dashboards/pull/140))
 * Fix duplicated requests on refreshing the overview ([#138](https://github.com/opensearch-project/query-insights-dashboards/pull/138))
-
-### Enhancements
 * Update Default Time Range from 1 Day to 1 Hour in TopNQueries Component ([#148](https://github.com/opensearch-project/query-insights-dashboards/pull/148))
 
 ### Documentation
