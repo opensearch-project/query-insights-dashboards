@@ -159,7 +159,6 @@ describe('WLMDetails Component', () => {
     });
   });
 
-
   it('does not crash if stats are missing', async () => {
     mockCore.http.get = jest.fn((path: string) => {
       if (path === '/api/_wlm/workload_group') {
@@ -222,7 +221,7 @@ describe('WLMDetails Component', () => {
     });
 
     await waitFor(() => {
-      const applyButton = screen.getByRole('button', { name: /apply changes/i })
+      const applyButton = screen.getByRole('button', { name: /apply changes/i });
       expect(applyButton).not.toBeDisabled();
     });
 
@@ -241,7 +240,9 @@ describe('WLMDetails Component', () => {
 
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.includes('/_wlm/workload_group')) {
-        return Promise.resolve({ body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] } });
+        return Promise.resolve({
+          body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] },
+        });
       }
       if (path.includes('/_wlm/stats/abc123')) {
         return Promise.reject(new Error('Stats fetch failed'));
@@ -268,7 +269,9 @@ describe('WLMDetails Component', () => {
     renderComponent('test-group');
 
     const deleteButtons = screen.getAllByRole('button');
-    const openDeleteButton = deleteButtons.find(btn => btn.textContent?.toLowerCase().includes('delete'));
+    const openDeleteButton = deleteButtons.find((btn) =>
+      btn.textContent?.toLowerCase().includes('delete')
+    );
 
     expect(openDeleteButton).toBeDefined();
 
@@ -281,7 +284,9 @@ describe('WLMDetails Component', () => {
     fireEvent.change(screen.getByPlaceholderText('delete'), { target: { value: 'delete' } });
 
     const confirmDeleteButton = await screen.findAllByRole('button');
-    const realConfirmDeleteButton = confirmDeleteButton.find(btn => btn.textContent?.toLowerCase() === 'delete');
+    const realConfirmDeleteButton = confirmDeleteButton.find(
+      (btn) => btn.textContent?.toLowerCase() === 'delete'
+    );
 
     expect(realConfirmDeleteButton).toBeDefined();
 
@@ -300,7 +305,9 @@ describe('WLMDetails Component', () => {
     renderComponent();
 
     const allDeleteButtons = screen.getAllByRole('button');
-    const openDeleteButton = allDeleteButtons.find(btn => btn.textContent?.toLowerCase().includes('delete'));
+    const openDeleteButton = allDeleteButtons.find((btn) =>
+      btn.textContent?.toLowerCase().includes('delete')
+    );
 
     expect(openDeleteButton).toBeDefined();
     fireEvent.click(openDeleteButton!);
@@ -312,7 +319,9 @@ describe('WLMDetails Component', () => {
     fireEvent.change(screen.getByPlaceholderText('delete'), { target: { value: 'delete' } });
 
     const allConfirmButtons = await screen.findAllByRole('button');
-    const confirmDeleteButton = allConfirmButtons.find(btn => btn.textContent?.toLowerCase() === 'delete');
+    const confirmDeleteButton = allConfirmButtons.find(
+      (btn) => btn.textContent?.toLowerCase() === 'delete'
+    );
 
     expect(confirmDeleteButton).toBeDefined();
     fireEvent.click(confirmDeleteButton!);
@@ -336,7 +345,9 @@ describe('WLMDetails Component', () => {
     renderComponent('test-group');
 
     await waitFor(() => {
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(expect.stringContaining('Failed to find workload group'));
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to find workload group')
+      );
     });
   });
 
@@ -349,7 +360,9 @@ describe('WLMDetails Component', () => {
       expect(screen.getByLabelText('Reject queries when CPU usage is over')).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Reject queries when CPU usage is over'), { target: { value: '200' } });
+    fireEvent.change(screen.getByLabelText('Reject queries when CPU usage is over'), {
+      target: { value: '200' },
+    });
 
     const applyButton = screen.getByRole('button', { name: /apply changes/i });
 
@@ -404,7 +417,9 @@ describe('WLMDetails Component', () => {
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Settings are not available for the DEFAULT_WORKLOAD_GROUP/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Settings are not available for the DEFAULT_WORKLOAD_GROUP/i)
+      ).toBeInTheDocument();
     });
   });
 

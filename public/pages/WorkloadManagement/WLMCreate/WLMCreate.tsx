@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   EuiTitle,
   EuiSpacer,
@@ -17,16 +17,25 @@ import {
   EuiText,
 } from '@elastic/eui';
 import { useHistory } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE, WLM_MAIN } from '../WorkloadManagement';
+import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { DataSourceContext } from '../WorkloadManagement';
+import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
+import { PageHeader } from '../../../components/PageHeader';
 
 export const WLMCreate = ({
   core,
-  depsStart: _depsStart,
+  depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
 }) => {
   const history = useHistory();
 
@@ -34,11 +43,16 @@ export const WLMCreate = ({
   const [description, setDescription] = useState('');
   const [indexWildcard, setIndexWildcard] = useState('');
   // add wild card later
-  const isFormValid = name.trim() !== '';
-  const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>('soft');
-  const [cpuThreshold, setCpuThreshold] = useState(70);
-  const [memThreshold, setMemThreshold] = useState(70);
+  const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
+  const [cpuThreshold, setCpuThreshold] = useState<number | undefined>(undefined);
+  const [memThreshold, setMemThreshold] = useState<number | undefined>(undefined);
+  const isFormValid =
+    name.trim() !== '' &&
+    resiliencyMode?.trim() !== '' &&
+    ((cpuThreshold != null && cpuThreshold > 0 && cpuThreshold <= 100) ||
+      (memThreshold != null && memThreshold > 0 && memThreshold <= 100));
   const [loading, setLoading] = useState(false);
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -57,17 +71,35 @@ export const WLMCreate = ({
   const handleCreate = async () => {
     setLoading(true);
     try {
-      const body = {
+      const resourceLimits: Record<string, number> = {};
+
+      const validCpu = typeof cpuThreshold === 'number' && cpuThreshold > 0 && cpuThreshold <= 100;
+      const validMem = typeof memThreshold === 'number' && memThreshold > 0 && memThreshold <= 100;
+
+      if (validCpu) {
+        resourceLimits.cpu = cpuThreshold / 100;
+      }
+      if (validMem) {
+        resourceLimits.memory = memThreshold / 100;
+      }
+
+      const body: Record<string, any> = {
         name,
-        resource_limits: {
-          cpu: cpuThreshold / 100,
-          memory: memThreshold / 100,
-        },
-        resiliency_mode: resiliencyMode.toUpperCase(),
+        resiliency_mode: resiliencyMode?.toUpperCase(),
       };
 
+      if (Object.keys(resourceLimits).length > 0) {
+        body.resource_limits = resourceLimits;
+      }
+
+      console.log('Request payload:', body, resourceLimits.memory);
+
       await core.http.put('/api/_wlm/workload_group', {
+        query: { dataSourceId: dataSource.id },
         body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       core.notifications.toasts.addSuccess(`Workload group "${name}" created successfully.`);
@@ -85,11 +117,32 @@ export const WLMCreate = ({
 
   return (
     <div style={{ padding: '24px' }}>
+      <PageHeader
+        coreStart={core}
+        depsStart={depsStart}
+        fallBackComponent={
+          <>
+            <QueryInsightsDataSourceMenu
+              coreStart={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+              setDataSource={setDataSource}
+              selectedDataSource={dataSource}
+              onManageDataSource={() => {}}
+              onSelectedDataSource={() => {
+                window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+              }}
+              dataSourcePickerReadOnly={false}
+            />
+          </>
+        }
+      />
       <EuiTitle size="l">
-        <h1>Create Workload group</h1>
+        <h1>Create workload group</h1>
       </EuiTitle>
       <EuiText color="subdued" size="s">
-        Use query groups to manage resource usage on associated queries.{' '}
+        Use query groups to manage resource usage in associated queries.{' '}
         <a
           href="https://docs.opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/workload-management/wlm-feature-overview/"
           target="_blank"
@@ -112,11 +165,11 @@ export const WLMCreate = ({
         </EuiFormRow>
 
         <EuiFormRow
-          label="Description (optional)"
-          helpText="Describe the the purpose of the worlload group."
+          label="Description (Optional)"
+          helpText="Describe the the purpose of the workload group."
         >
           <EuiTextArea
-            placeholder="Describe workload group"
+            placeholder="Describe the workload group"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -144,15 +197,15 @@ export const WLMCreate = ({
 
         {/* CPU Usage Limit */}
         <EuiFormRow
-          label="Reject queries when CPU usage is over"
-          isInvalid={cpuThreshold <= 0 || cpuThreshold > 100}
+          label="Reject queries when CPU usage exceeds"
+          isInvalid={cpuThreshold !== undefined && (cpuThreshold <= 0 || cpuThreshold > 100)}
           error="Value must be between 0 and 100"
         >
           <EuiFieldNumber
             value={cpuThreshold}
-            onChange={(e) => {
-              setCpuThreshold(Number(e.target.value));
-            }}
+            onChange={(e) =>
+              setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
+            }
             append="%"
             min={0}
             max={100}
@@ -163,15 +216,15 @@ export const WLMCreate = ({
 
         {/* Memory Usage Limit */}
         <EuiFormRow
-          label="Reject queries when memory usage is over"
-          isInvalid={memThreshold <= 0 || memThreshold > 100}
+          label="Reject queries when memory usage exceeds"
+          isInvalid={memThreshold !== undefined && (memThreshold <= 0 || memThreshold > 100)}
           error="Value must be between 0 and 100"
         >
           <EuiFieldNumber
             value={memThreshold}
-            onChange={(e) => {
-              setMemThreshold(Number(e.target.value));
-            }}
+            onChange={(e) =>
+              setMemThreshold(e.target.value === '' ? undefined : Number(e.target.value))
+            }
             append="%"
             min={0}
             max={100}

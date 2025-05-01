@@ -28,7 +28,12 @@ export const QueryInsightsDashboardsApp = ({
     <Switch>
       {isWLMApp && (
         <Route path="/">
-          <WorkloadManagement core={core} depsStart={depsStart} />
+          <WorkloadManagement
+            core={core}
+            depsStart={depsStart}
+            params={params}
+            dataSourceManagement={dataSourceManagement}
+          />
         </Route>
       )}
 

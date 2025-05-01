@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   EuiTitle,
   EuiSpacer,
@@ -22,11 +22,15 @@ import {
   EuiFormRow,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import ReactECharts from 'echarts-for-react';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE } from '../WorkloadManagement';
+import { DataSourceContext } from '../WorkloadManagement';
+import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 
 export const WLM = '/workloadManagement';
 
@@ -34,7 +38,7 @@ interface WorkloadGroupData {
   name: string;
   cpuUsage: number;
   memoryUsage: number;
-  totalCompletion: number;
+  totalCompletions: number;
   totalRejections: number;
   totalCancellations: number;
   topQueriesLink: string;
@@ -98,9 +102,13 @@ enum SortDirection {
 export const WorkloadManagementMain = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -111,6 +119,7 @@ export const WorkloadManagementMain = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   const [pageIndex, setPageIndex] = useState(DEFAULT_PAGE_INDEX);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -163,7 +172,9 @@ export const WorkloadManagementMain = ({
     setLoading(true);
     try {
       // Use /_nodes to get all node IDs
-      const res = await core.http.get('/api/_wlm_proxy/_nodes');
+      const res = await core.http.get('/api/_wlm_proxy/_nodes', {
+        query: { dataSourceId: dataSource.id },
+      });
       const response = res.body;
       const nodes: string[] = Object.keys(response.nodes || {});
 
@@ -182,7 +193,9 @@ export const WorkloadManagementMain = ({
 
   const fetchWorkloadGroupsWithLimits = async () => {
     try {
-      const res = await core.http.get('/api/_wlm/workload_group');
+      const res = await core.http.get('/api/_wlm/workload_group', {
+        query: { dataSourceId: dataSource.id },
+      });
       const workloadGroups: WorkloadGroup[] = res.body?.workload_groups ?? [];
 
       // Map groupId to the resource limits, using NaN for unavailable limits
@@ -231,7 +244,7 @@ export const WorkloadManagementMain = ({
           name,
           cpuUsage,
           memoryUsage,
-          totalCompletion: groupStats.total_completions ?? 0,
+          totalCompletions: groupStats.total_completions ?? 0,
           totalRejections: groupStats.total_rejections ?? 0,
           totalCancellations: groupStats.total_cancellations ?? 0,
           topQueriesLink: '', // not available yet
@@ -256,7 +269,9 @@ export const WorkloadManagementMain = ({
         const groupId = group.groupId;
 
         try {
-          const res = await core.http.get(`/api/_wlm/stats/${groupId}`);
+          const res = await core.http.get(`/api/_wlm/stats/${groupId}`, {
+            query: { dataSourceId: dataSource.id },
+          });
           const stats: Record<string, NodeStats> = res.body;
 
           const cpuUsages: number[] = [];
@@ -286,7 +301,7 @@ export const WorkloadManagementMain = ({
       setFilteredData(sorted);
       setSummaryStats({
         totalGroups: sorted.length,
-        totalCompletions: filteredRawData.reduce((sum, g) => sum + g.totalCompletion, 0),
+        totalCompletions: filteredRawData.reduce((sum, g) => sum + g.totalCompletions, 0),
         totalRejections: filteredRawData.reduce((sum, g) => sum + g.totalRejections, 0),
         totalCancellations: filteredRawData.reduce((sum, g) => sum + g.totalCancellations, 0),
         groupsExceedingLimits: overLimit,
@@ -320,7 +335,9 @@ export const WorkloadManagementMain = ({
   };
 
   const fetchWorkloadGroupNameMap = async (): Promise<Record<string, string>> => {
-    const res = await core.http.get('/api/_wlm/workload_group');
+    const res = await core.http.get('/api/_wlm/workload_group', {
+      query: { dataSourceId: dataSource.id },
+    });
     const groups = res.body?.workload_groups ?? [];
     const map: Record<string, string> = {};
     for (const group of groups) {
@@ -332,7 +349,9 @@ export const WorkloadManagementMain = ({
   const fetchWorkloadGroupsForNode = async (
     nodeId: string
   ): Promise<Record<string, GroupStats>> => {
-    const res = await core.http.get(`/api/_wlm/${nodeId}/stats`);
+    const res = await core.http.get(`/api/_wlm/${nodeId}/stats`, {
+      query: { dataSourceId: dataSource.id },
+    });
     return res.body[nodeId]?.workload_groups ?? {};
   };
 
@@ -363,9 +382,9 @@ export const WorkloadManagementMain = ({
         trigger: 'item',
         appendToBody: true,
         className: 'echarts-tooltip',
-        formatter: (params: any) => {
-          if (params.seriesType !== 'boxplot') return '';
-          const [fMin, fQ1, fMedian, fQ3, fMax] = params.data
+        formatter: (localParams: any) => {
+          if (localParams.seriesType !== 'boxplot') return '';
+          const [fMin, fQ1, fMedian, fQ3, fMax] = localParams.data
             .slice(1, 6)
             .map((v: number) => v.toFixed(2));
           const formattedLimit = Number(limit).toFixed(2);
@@ -409,7 +428,7 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     fetchDataFromBackend();
-  }, []);
+  }, [dataSource]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -478,8 +497,8 @@ export const WorkloadManagementMain = ({
       ),
     },
     {
-      field: 'totalCompletion',
-      name: <EuiText size="m">Total completion</EuiText>,
+      field: 'totalCompletions',
+      name: <EuiText size="m">Total completions</EuiText>,
       sortable: true,
       render: (val: number) => val.toLocaleString(),
     },
@@ -517,11 +536,23 @@ export const WorkloadManagementMain = ({
         coreStart={core}
         depsStart={depsStart}
         fallBackComponent={
-          <>
-            <EuiSpacer size="l" />
-          </>
+          <QueryInsightsDataSourceMenu
+            coreStart={core}
+            depsStart={depsStart}
+            params={params}
+            dataSourceManagement={dataSourceManagement}
+            setDataSource={setDataSource}
+            selectedDataSource={dataSource}
+            onManageDataSource={() => {}}
+            onSelectedDataSource={() => {
+              window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+              if (selectedNode) fetchStatsForNode(selectedNode);
+            }}
+            dataSourcePickerReadOnly={false}
+          />
         }
       />
+      <EuiSpacer size="l" />
 
       {/* Page Title and Create Button */}
       <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
@@ -584,7 +615,7 @@ export const WorkloadManagementMain = ({
           <EuiPanel paddingSize="m">
             <EuiStat
               title={Number(summaryStats.totalCompletions).toLocaleString()}
-              description="Total completion"
+              description="Total completions"
             />
           </EuiPanel>
         </EuiFlexItem>

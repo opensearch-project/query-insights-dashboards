@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   EuiButton,
   EuiFlexGroup,
@@ -25,10 +25,13 @@ import {
   EuiConfirmModal,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
-import { WLM_MAIN } from '../WorkloadManagement';
+import { WLM_MAIN, DataSourceContext } from '../WorkloadManagement';
+import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 
 // === Constants & Types ===
 const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
@@ -118,9 +121,13 @@ interface StatsResponse {
 export const WLMDetails = ({
   core,
   depsStart,
+  params,
+  dataSourceManagement,
 }: {
   core: CoreStart;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
 }) => {
   // === Router & Setup ===
   const location = useLocation();
@@ -142,6 +149,7 @@ export const WLMDetails = ({
   const [selectedTab, setSelectedTab] = useState<WLMTabs>(WLMTabs.RESOURCES);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   // === Helpers ===
   const resiliencyOptions = [
@@ -185,11 +193,8 @@ export const WLMDetails = ({
 
   useEffect(() => {
     fetchGroupDetails();
-  }, [groupName]);
-
-  useEffect(() => {
     updateStats();
-  }, [groupName]);
+  }, [groupName, dataSource]);
 
   // === Data Fetching ===
   const fetchDefaultGroupDetails = () => {
@@ -218,7 +223,9 @@ export const WLMDetails = ({
     }
 
     try {
-      const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`);
+      const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`, {
+        query: { dataSourceId: dataSource.id },
+      });
       const workload = response?.body?.workload_groups?.[0];
       if (workload) {
         setGroupDetails({
@@ -252,7 +259,10 @@ export const WLMDetails = ({
     if (groupName !== DEFAULT_WORKLOAD_GROUP) {
       try {
         const response: WorkloadGroupByNameResponse = await core.http.get(
-          `/api/_wlm/workload_group/${groupName}`
+          `/api/_wlm/workload_group/${groupName}`,
+          {
+            query: { dataSourceId: dataSource.id },
+          }
         );
         const matchedGroup = response.body?.workload_groups?.[0];
 
@@ -269,7 +279,9 @@ export const WLMDetails = ({
     }
 
     try {
-      const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`);
+      const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`, {
+        query: { dataSourceId: dataSource.id },
+      });
       const stats: StatsResponse = statsRes.body ?? statsRes;
 
       const nodeStatsList: NodeUsageData[] = [];
@@ -306,6 +318,7 @@ export const WLMDetails = ({
 
     try {
       await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
+        query: { dataSourceId: dataSource.id },
         body: JSON.stringify({
           resiliency_mode: resiliencyMode,
           resource_limits: {
@@ -326,7 +339,9 @@ export const WLMDetails = ({
 
   const deleteGroup = async () => {
     try {
-      await core.http.delete(`/api/_wlm/workload_group/${groupName}`);
+      await core.http.delete(`/api/_wlm/workload_group/${groupName}`, {
+        query: { dataSourceId: dataSource.id },
+      });
       core.notifications.toasts.addSuccess(`Deleted workload group "${groupName}"`);
       history.push(WLM_MAIN);
     } catch (err) {
@@ -407,27 +422,42 @@ export const WLMDetails = ({
         depsStart={depsStart}
         fallBackComponent={
           <>
-            <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
-              <EuiFlexItem>
-                <EuiTitle size="l">
-                  <h1>{workloadGroup.name}</h1>
-                </EuiTitle>
-              </EuiFlexItem>
-              <EuiFlexItem grow={false}>
-                <EuiButton
-                  color="danger"
-                  iconType="trash"
-                  onClick={() => setIsDeleteModalVisible(true)}
-                  isDisabled={groupName === 'DEFAULT_WORKLOAD_GROUP'}
-                >
-                  Delete
-                </EuiButton>
-              </EuiFlexItem>
-            </EuiFlexGroup>
-            <EuiSpacer size="l" />
+            <QueryInsightsDataSourceMenu
+              coreStart={core}
+              depsStart={depsStart}
+              params={params}
+              dataSourceManagement={dataSourceManagement}
+              setDataSource={setDataSource}
+              selectedDataSource={dataSource}
+              onManageDataSource={() => {}}
+              onSelectedDataSource={() => {
+                window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+              }}
+              dataSourcePickerReadOnly={false}
+            />
           </>
         }
       />
+
+      <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
+        <EuiFlexItem>
+          <EuiTitle size="l">
+            <h1>{workloadGroup.name}</h1>
+          </EuiTitle>
+        </EuiFlexItem>
+        <EuiFlexItem grow={false}>
+          <EuiButton
+            color="danger"
+            iconType="trash"
+            onClick={() => setIsDeleteModalVisible(true)}
+            isDisabled={groupName === 'DEFAULT_WORKLOAD_GROUP'}
+          >
+            Delete
+          </EuiButton>
+        </EuiFlexItem>
+      </EuiFlexGroup>
+
+      <EuiSpacer size="l" />
 
       {/* Summary Panel */}
       <EuiPanel paddingSize="m">
@@ -470,12 +500,16 @@ export const WLMDetails = ({
       </EuiPanel>
 
       <EuiSpacer size="m" />
-      <EuiHorizontalRule />
 
       {/* Tabs Section */}
       <EuiTabs>
         {Object.values(WLMTabs).map((tab) => (
-          <EuiTab key={tab} isSelected={selectedTab === tab} onClick={() => setSelectedTab(tab)} data-testid={`wlm-tab-${tab}`}>
+          <EuiTab
+            key={tab}
+            isSelected={selectedTab === tab}
+            onClick={() => setSelectedTab(tab)}
+            data-testid={`wlm-tab-${tab}`}
+          >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </EuiTab>
         ))}
@@ -560,11 +594,11 @@ export const WLMDetails = ({
               <EuiTitle size="m">
                 <h2>Workload group settings</h2>
               </EuiTitle>
-              <EuiSpacer size="m" />
+              <EuiHorizontalRule />
 
               {/* Index Wildcard */}
               <EuiFormRow
-                label={<strong>Associate queries by index wild card</strong>}
+                label={<strong>Index wildcard</strong>}
                 helpText="You can use (*) to define a wildcard."
               >
                 <EuiFieldText placeholder="security_logs*" />
@@ -575,7 +609,7 @@ export const WLMDetails = ({
               {/* Resiliency Mode */}
               <EuiFormRow
                 label={<strong>Resiliency mode</strong>}
-                helpText="Select resiliency mode"
+                helpText="Select resiliency mode."
               >
                 <EuiRadioGroup
                   options={resiliencyOptions}
@@ -598,7 +632,7 @@ export const WLMDetails = ({
 
               {/* CPU Usage Limit */}
               <EuiFormRow
-                label="Reject queries when CPU usage is over"
+                label="Reject queries when CPU usage exceeds"
                 isInvalid={cpuLimit <= 0 || cpuLimit > 100}
                 error="Value must be between 0 and 100"
               >
@@ -618,7 +652,7 @@ export const WLMDetails = ({
 
               {/* Memory Usage Limit */}
               <EuiFormRow
-                label="Reject queries when memory usage is over"
+                label="Reject queries when memory usage exceeds"
                 isInvalid={memoryLimit <= 0 || memoryLimit > 100}
                 error="Value must be between 0 and 100"
               >
