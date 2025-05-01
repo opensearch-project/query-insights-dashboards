@@ -356,4 +356,50 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+  router.get(
+    {
+      path: '/api/live_queries',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getLiveQueries');
+          return response.custom({
+            statusCode: 200,
+            body: {
+              ok: true,
+              response: res,
+            },
+          });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getLiveQueries', {});
+          return response.custom({
+            statusCode: 200,
+            body: {
+              ok: true,
+              response: res,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Unable to get top queries: ', error);
+        return response.ok({
+          body: {
+            ok: false,
+            response: error.message,
+          },
+        });
+      }
+    }
+  );
 }
