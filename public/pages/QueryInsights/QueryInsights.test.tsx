@@ -57,7 +57,6 @@ const renderQueryInsights = () =>
     </MemoryRouter>
   );
 
-
 describe('QueryInsights Component', () => {
   beforeAll(() => {
     jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
