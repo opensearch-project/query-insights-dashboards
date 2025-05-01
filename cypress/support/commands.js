@@ -106,7 +106,7 @@ Cypress.Commands.add('enableGrouping', () => {
         'search.insights.top_queries.cpu.enabled': true,
         'search.insights.top_queries.memory.enabled': true,
         'search.insights.top_queries.grouping.group_by': 'similarity',
-        'search.insights.top_queries.max_groups_excluding_topn': 100,
+        'search.insights.top_queries.grouping.max_groups_excluding_topn': 100,
         'search.insights.top_queries.grouping.attributes.field_name': true,
         'search.insights.top_queries.grouping.attributes.field_type': true,
         'search.insights.top_queries.latency.top_n_size': 5,
