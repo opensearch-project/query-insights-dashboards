@@ -33,6 +33,8 @@ const mockDataSourceContext = {
 
 const sampleQueries = MockQueries();
 
+const mockRetrieveQueries = jest.fn();
+
 const renderQueryInsights = () =>
   render(
     <MemoryRouter>
@@ -44,6 +46,7 @@ const renderQueryInsights = () =>
           recentlyUsedRanges={[]}
           currStart="now-15m"
           currEnd="now"
+          retrieveQueries={mockRetrieveQueries}
           // @ts-ignore
           core={mockCore}
           depsStart={{ navigation: {} }}
@@ -53,6 +56,7 @@ const renderQueryInsights = () =>
       </DataSourceContext.Provider>
     </MemoryRouter>
   );
+
 
 describe('QueryInsights Component', () => {
   beforeAll(() => {

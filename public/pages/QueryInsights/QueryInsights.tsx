@@ -379,11 +379,7 @@ const QueryInsights = ({
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     onTimeChange({ start, end });
-    if (retrieveQueries) {
-      retrieveQueries(start, end);
-    } else {
-      console.warn('retrieveQueries is undefined');
-    }
+    retrieveQueries(start, end);
   };
 
   const filterDuplicates = (options: any[]) =>
