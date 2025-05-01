@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import {
   EuiTitle,
   EuiSpacer,
@@ -53,6 +53,7 @@ export const WLMCreate = ({
       (memThreshold != null && memThreshold > 0 && memThreshold <= 100));
   const [loading, setLoading] = useState(false);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const isMounted = useRef(true);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -67,6 +68,12 @@ export const WLMCreate = ({
       { text: `Create` },
     ]);
   }, [core.chrome, history]);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleCreate = async () => {
     setLoading(true);
@@ -102,6 +109,7 @@ export const WLMCreate = ({
 
       core.notifications.toasts.addSuccess(`Workload group "${name}" created successfully.`);
       history.push('/workloadManagement');
+      return;
     } catch (err) {
       console.error(err);
       core.notifications.toasts.addDanger({
@@ -109,7 +117,9 @@ export const WLMCreate = ({
         text: err?.body?.message || 'Something went wrong',
       });
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
