@@ -92,8 +92,6 @@ export const WLMCreate = ({
         body.resource_limits = resourceLimits;
       }
 
-      console.log('Request payload:', body, resourceLimits.memory);
-
       await core.http.put('/api/_wlm/workload_group', {
         query: { dataSourceId: dataSource.id },
         body: JSON.stringify(body),
