@@ -1,0 +1,173 @@
+{
+  "ok": true,
+  "response": {
+    "live_queries": [
+      {
+        "timestamp": 1746147037494,
+        "id": "a23fvIkHTVuE3LkB_001",
+        "node_id": "node_1",
+        "description": "indices[customers], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":1000000}}}}]",
+        "measurements": {
+          "cpu": {"number": 657000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 9256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 5174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "b45fvIkHTVuE3LkB_002",
+        "node_id": "node_2",
+        "description": "indices[orders], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":500000}}}}]",
+        "measurements": {
+          "cpu": {"number": 957000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 13256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 8174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "c67fvIkHTVuE3LkB_003",
+        "node_id": "node_3",
+        "description": "indices[products], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":750000}}}}]",
+        "measurements": {
+          "cpu": {"number": 757000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 15256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 6174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "d89fvIkHTVuE3LkB_004",
+        "node_id": "node_4",
+        "description": "indices[inventory], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":600000}}}}]",
+        "measurements": {
+          "cpu": {"number": 857000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 11256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 7174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "e01fvIkHTVuE3LkB_005",
+        "node_id": "node_5",
+        "description": "indices[users], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":800000}}}}]",
+        "measurements": {
+          "cpu": {"number": 557000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 17256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 4174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "f12fvIkHTVuE3LkB_006",
+        "node_id": "node_1",
+        "description": "indices[sales], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":900000}}}}]",
+        "measurements": {
+          "cpu": {"number": 457000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 19256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 3174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "g23fvIkHTVuE3LkB_007",
+        "node_id": "node_2",
+        "description": "indices[reports], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":550000}}}}]",
+        "measurements": {
+          "cpu": {"number": 357000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 21256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 2174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "h34fvIkHTVuE3LkB_008",
+        "node_id": "node_3",
+        "description": "indices[analytics], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":650000}}}}]",
+        "measurements": {
+          "cpu": {"number": 257000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 23256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 1174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "i45fvIkHTVuE3LkB_009",
+        "node_id": "node_4",
+        "description": "indices[logs], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":450000}}}}]",
+        "measurements": {
+          "cpu": {"number": 157000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 25256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 9174478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "j56fvIkHTVuE3LkB_010",
+        "node_id": "node_5",
+        "description": "indices[metrics], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":350000}}}}]",
+        "measurements": {
+          "cpu": {"number": 757000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 27256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 5574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "k67fvIkHTVuE3LkB_011",
+        "node_id": "node_1",
+        "description": "indices[events], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":250000}}}}]",
+        "measurements": {
+          "cpu": {"number": 857000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 29256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 6574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "l78fvIkHTVuE3LkB_012",
+        "node_id": "node_2",
+        "description": "indices[audit], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":150000}}}}]",
+        "measurements": {
+          "cpu": {"number": 957000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 31256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 7574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "m89fvIkHTVuE3LkB_013",
+        "node_id": "node_3",
+        "description": "indices[cache], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":950000}}}}]",
+        "measurements": {
+          "cpu": {"number": 657000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 33256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 8574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "n90fvIkHTVuE3LkB_014",
+        "node_id": "node_4",
+        "description": "indices[queue], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":850000}}}}]",
+        "measurements": {
+          "cpu": {"number": 557000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 35256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 9574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      },
+      {
+        "timestamp": 1746147037494,
+        "id": "o01fvIkHTVuE3LkB_015",
+        "node_id": "node_5",
+        "description": "indices[tasks], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":750000}}}}]",
+        "measurements": {
+          "cpu": {"number": 457000, "count": 1, "aggregationType": "NONE"},
+          "memory": {"number": 37256, "count": 1, "aggregationType": "NONE"},
+          "latency": {"number": 4574478333, "count": 1, "aggregationType": "NONE"}
+        }
+      }
+    ]
+  }
+}
+
