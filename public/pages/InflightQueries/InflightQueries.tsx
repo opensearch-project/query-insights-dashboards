@@ -45,10 +45,31 @@ const inflightQueries = ({
   const [query, setQuery] = useState<LiveSearchQueryResponse| null>(null);
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const [nodeCounts, setNodeCounts] = useState({});
+  const [indexCounts, setIndexCounts] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core);
     setQuery(retrievedQueries);
+    const nodeCount = {};
+    const indexCount = {};
+
+    query.response.live_queries.forEach(query => {
+      // Count nodes
+      nodeCount[query.node_id] = (nodeCount[query.node_id] || 0) + 1;
+
+      // Extract and count indices
+      const indexMatch = query.description.match(/indices\[(.*?)\]/);
+      if (indexMatch) {
+        const index = indexMatch[1];
+        indexCount[index] = (indexCount[index] || 0) + 1;
+      }
+    });
+
+    setNodeCounts(nodeCount);
+    setIndexCounts(indexCount);
   };
 
   useEffect(() => {
@@ -74,26 +95,21 @@ const inflightQueries = ({
   ];
 
   const [selectedChartIdByIndex, setSelectedChartIdByIndex] = useState('donut');
-  const [selectedChartIdByUser, setSelectedChartIdByUser] = useState('donut');
   const [selectedChartIdByNode, setSelectedChartIdByNode] = useState('donut');
 
   const onChartChangeByIndex = (optionId: string) => {
     setSelectedChartIdByIndex(optionId);
-    console.log('Chart type changed to:', optionId);
-  };
-
-  const onChartChangeByUser = (optionId: string) => {
-    setSelectedChartIdByUser(optionId);
-    console.log('Chart type changed to:', optionId);
   };
 
   const onChartChangeByNode = (optionId: string) => {
     setSelectedChartIdByNode(optionId);
-    console.log('Chart type changed to:', optionId);
   };
 
 
+
+
   const metrics = React.useMemo(() => {
+    console.log(query);
     if (!query || !query.response?.live_queries?.length) return null;
 
     const queries = query.response.live_queries;
@@ -131,6 +147,9 @@ const inflightQueries = ({
   }, [query]);
 
 
+
+
+
   const getChartSpec = (type: string): VisualizationSpec => {
     const isDonut = type.includes('donut'); // Donut is at index 0
 
@@ -149,7 +168,6 @@ const inflightQueries = ({
           x: { field: 'a', type: 'ordinal', axis: { labelAngle: 0 } },
           y: { field: 'b', type: 'quantitative' },
         },
-      data: { name: 'table' },
     };
   };
 
@@ -163,7 +181,6 @@ const inflightQueries = ({
   };
   const chartRefByNode = useRef<HTMLDivElement>(null);
   const chartRefByIndex = useRef<HTMLDivElement>(null);
-  const chartRefByUser = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (chartRefByNode.current) {
@@ -180,6 +197,7 @@ const inflightQueries = ({
 
 
   useEffect(() => {
+    console.log([{ name: 'table', values: data.table }],);
     if (chartRefByIndex.current) {
       embed(chartRefByIndex.current, {
         ...getChartSpec(selectedChartIdByIndex),
@@ -188,242 +206,6 @@ const inflightQueries = ({
     }
   }, [data, selectedChartIdByIndex]);
 
-
-  useEffect(() => {
-    if (chartRefByUser.current) {
-      embed(chartRefByUser.current, {
-        ...getChartSpec(selectedChartIdByUser),
-        data: { values: data.table },
-      }, { actions: false }).catch(console.error);
-    }
-  }, [data, selectedChartIdByUser]);
-
-
-  // const getChartSpec = (type: string): VisualizationSpec => {
-  //   const isDonut = type.includes('donut'); // Donut is at index 0
-  //
-  //   return {
-  //     width: 400,
-  //     height: 300,
-  //     mark: isDonut
-  //       ? { type: 'arc', innerRadius: 50 }  // donut
-  //       : { type: 'bar' },                  // bar
-  //     encoding: isDonut
-  //       ? {
-  //         theta: { field: 'b', type: 'quantitative' },
-  //         color: { field: 'a', type: 'nominal' },
-  //       }
-  //       : {
-  //         x: { field: 'a', type: 'ordinal', axis: { labelAngle: 0 } },
-  //         y: { field: 'b', type: 'quantitative' },
-  //       },
-  //     data: { name: 'table' },
-  //   };
-  // };
-  //
-  const buildChartData = (query,
-    groupBy: 'node_id' | 'user' | 'indices'
-  ): { a: string; b: number }[] => {
-    if (!query?.response?.live_queries) return [];
-
-    const groups: Record<string, number> = {};
-
-    for (const q of query.response.live_queries) {
-      let keys: string[] = [];
-
-      if (groupBy === 'node_id') {
-        keys = [q.node_id ?? 'unknown'];}
-
-      for (const key of keys) {
-        groups[key] = (groups[key] || 0) + 1;
-      }
-    }
-
-    return Object.entries(groups).map(([a, b]) => ({ a, b }));
-  };
-
-
-  //
-  //
-  // const chartRefByNode = useRef<HTMLDivElement>(null);
-  // const chartRefByIndex = useRef<HTMLDivElement>(null);
-  // const chartRefByUser = useRef<HTMLDivElement>(null);
-  //
-  // useEffect(() => {
-  //   if (chartRefByNode.current) {
-  //     const table = buildChartData('node_id');
-  //     console.log(table);
-  //     embed(
-  //       chartRefByNode.current,
-  //       {
-  //         ...getChartSpec(selectedChartIdByNode),
-  //         data: [{ name: 'table', values: table }],
-  //       },
-  //       { actions: false }
-  //     ).catch(console.error);
-  //   }
-  // }, [query, selectedChartIdByNode]);
-  //
-  //
-  // useEffect(() => {
-  //   if (chartRefByIndex.current) {
-  //     const table = buildChartData('node_id');
-  //     embed(chartRefByIndex.current, {
-  //       ...getChartSpec(selectedChartIdByIndex),
-  //       data: [{ name: 'table', values: table }],
-  //     }, { actions: false }).catch(console.error);
-  //   }
-  // }, [query, selectedChartIdByIndex]);
-  //
-  //
-  // useEffect(() => {
-  //   if (chartRefByUser.current) {
-  //     const table = buildChartData('node_id');
-  //     embed(chartRefByUser.current, {
-  //       ...getChartSpec(selectedChartIdByUser),
-  //       data: [{ name: 'table', values: table }],
-  //     }, { actions: false }).catch(console.error);
-  //   }
-  // }, [query, selectedChartIdByUser]);
-
-
-
-  // const MyCollapsibleTablePanel = () => {
-  //   const [isTableVisible, setIsTableVisible] = useState(false);
-  //
-  //   const toggleContent = () => {
-  //     setIsTableVisible(!isTableVisible);
-  //   };
-  //
-  //   const items = [
-  //     { status: 'Running (agg)', Shard_ID: 'Shard-01', Phase_timeline: '' },
-  //   ];
-  //
-  //   const columns = [
-  //     { field: 'status', name: 'Status', truncateText: true },
-  //     { field: 'Shard_ID', name: 'Shard ID', truncateText: true },
-  //     { field: 'Phase_timeline', name: 'Phase timeline (Growing)', truncateText: true },
-  //   ];
-  //
-  //
-  //   return (
-  //     <EuiPanel paddingSize="m">
-  //       <EuiFlexGroup>
-  //       <EuiButton
-  //         onClick={toggleContent}
-  //         size="s"
-  //         color="text"
-  //         fill={false}
-  //         style={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none' }}
-  //       >
-  //         <EuiIcon type={isTableVisible ? 'arrowDown' : 'arrowRight'} />
-  //       </EuiButton>
-  //         <EuiFlexGroup gutterSize="s" alignItems="center">
-  //           <EuiFlexItem grow={false}><EuiText>ID</EuiText></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiBadge>Index:</EuiBadge></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiText>archive_data</EuiText></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiBadge>Node:</EuiBadge></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiText>Node1</EuiText></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiBadge>User:</EuiBadge></EuiFlexItem>
-  //           <EuiFlexItem grow={false}><EuiText>batch_processor</EuiText></EuiFlexItem>
-  //         </EuiFlexGroup>
-  //       </EuiFlexGroup>
-  //
-  //
-  //       {!isTableVisible && (
-  //         <>
-  //           <EuiHorizontalRule margin="m" />
-  //         </>
-  //       )}
-  //       <EuiFlexGroup gutterSize="s" alignItems="center" justifyContent="spaceBetween">
-  //
-  //           <EuiText style={{ marginTop: '16px' }}>Shard Completion Progress</EuiText>
-  //           <EuiText style={{ marginTop: '16px' }}>30% 20/80</EuiText>
-  //
-  //
-  //         </EuiFlexGroup>
-  //       <EuiSpacer size="m" />
-  //       <EuiProgress value={30} max={100} size="m" />
-  //       <EuiSpacer size="m" />
-  //
-  //       <EuiFlexGroup gutterSize="s" wrap justifyContent="spaceBetween">
-  //         <EuiFlexItem grow={false}>
-  //           <EuiFlexGroup gutterSize="xs" alignItems="center" responsive={false}>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiBadge>Time Elapsed:</EuiBadge>
-  //             </EuiFlexItem>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiText size="s">2m 30s</EuiText>
-  //             </EuiFlexItem>
-  //           </EuiFlexGroup>
-  //         </EuiFlexItem>
-  //
-  //         <EuiFlexItem grow={false}>
-  //           <EuiFlexGroup gutterSize="xs" alignItems="center" responsive={false}>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiBadge>CPU:</EuiBadge>
-  //             </EuiFlexItem>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiText size="s">30%</EuiText>
-  //             </EuiFlexItem>
-  //           </EuiFlexGroup>
-  //         </EuiFlexItem>
-  //
-  //         <EuiFlexItem grow={false}>
-  //           <EuiFlexGroup gutterSize="xs" alignItems="center" responsive={false}>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiBadge>Memory Peak:</EuiBadge>
-  //             </EuiFlexItem>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiText size="s">500MB</EuiText>
-  //             </EuiFlexItem>
-  //           </EuiFlexGroup>
-  //         </EuiFlexItem>
-  //
-  //         <EuiFlexItem grow={false}>
-  //           <EuiFlexGroup gutterSize="xs" alignItems="center" responsive={false}>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiBadge>Active Shards:</EuiBadge>
-  //             </EuiFlexItem>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiText size="s">20</EuiText>
-  //             </EuiFlexItem>
-  //           </EuiFlexGroup>
-  //         </EuiFlexItem>
-  //       </EuiFlexGroup>
-  //       <EuiSpacer size="m" />
-  //
-  //
-  //       {isTableVisible && (
-  //         <>
-  //           <EuiHorizontalRule margin="m" />
-  //         </>
-  //       )}
-  //
-  //       {/* Collapsible Table */}
-  //       {isTableVisible && (
-  //         <div>
-  //         <EuiText> Active shard Details</EuiText>
-  //         <EuiBasicTable
-  //           compressed
-  //           items={items}
-  //           columns={columns}
-  //           tableLayout="fixed"
-  //         />
-  //           <EuiFlexGroup gutterSize="s">
-  //             <EuiFlexItem grow={false}>
-  //               <EuiButton size="s" color="primary">View Query Details</EuiButton>
-  //             </EuiFlexItem>
-  //             <EuiFlexItem grow={false}>
-  //               <EuiButton size="s" color="danger">Kill Query</EuiButton>
-  //             </EuiFlexItem>
-  //           </EuiFlexGroup>
-  //
-  //         </div>
-  //       )}
-  //     </EuiPanel>
-  //   );
-  // };
 
 
   return (
@@ -583,76 +365,10 @@ const inflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
 
-        {/* Queries by User */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
-              <EuiTitle size="m">
-                <h3><b>Queries by User</b></h3>
-              </EuiTitle>
-              <EuiButtonGroup
-                legend="Chart Type"
-                options={chartOptions}
-                idSelected={selectedChartIdByUser}
-                onChange={onChartChangeByUser}
-                color="primary"
-              />
-            </EuiFlexGroup>
-            <EuiHorizontalRule margin="xs" />
-            <EuiSpacer size="xs" />
-            <div ref={chartRefByUser} />
-
-          </EuiPanel>
-        </EuiFlexItem>
       </EuiFlexGroup>
-
-      <EuiFlexGroup>
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Succeeded</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2><b>205</b></h2>
-                </EuiTitle>
-                <EuiText size="s">
-                  <p>(Last 5 min*)</p>
-                </EuiText>
-              </EuiTextAlign>
-            </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Failed</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2><b>3</b></h2>
-                </EuiTitle>
-                <EuiText size="s">
-                  <p>(Last 5 min*)</p>
-                </EuiText>
-              </EuiTextAlign>
-            </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-      {/*<EuiFlexGroup>*/}
-      {/*  <EuiFlexItem>*/}
-      {/*    <MyCollapsibleTablePanel />*/}
-      {/*  </EuiFlexItem>*/}
-      {/*</EuiFlexGroup>*/}
     </div>
   );
 };
-
-
-
 
 // eslint-disable-next-line import/no-default-export
 export default inflightQueries;
