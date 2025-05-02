@@ -3,13 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  AppMountParameters,
-  CoreSetup,
-  CoreStart,
-  DEFAULT_NAV_GROUPS,
-  Plugin,
-} from '../../../src/core/public';
+import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -58,19 +52,31 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    // Registration for new navigation
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
-      {
-        id: PLUGIN_NAME,
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          order: 9000,
-          euiIconType: 'managementApp',
-        },
-        order: 200,
+    core.application.register({
+      id: 'workloadManagement',
+      title: 'Workload Management',
+      appRoute: '/app/workload-management',
+      description: 'Monitor and manage workload distribution across the cluster.',
+      category: {
+        id: 'opensearch',
+        label: 'OpenSearch Plugins',
+        order: 2000,
       },
-    ]);
+      order: 5100,
+      async mount(params: AppMountParameters) {
+        // Dynamically import the WLM page
+        const { renderApp } = await import('./application');
+
+        const [coreStart, depsStart] = await core.getStartServices();
+
+        return renderApp(
+          coreStart,
+          depsStart as QueryInsightsDashboardsPluginStartDependencies,
+          params,
+          deps.dataSourceManagement
+        );
+      },
+    });
 
     return {};
   }
