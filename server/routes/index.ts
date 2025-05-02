@@ -309,7 +309,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           },
         };
         if (query.group_by !== '') {
-          params.body.persistent['search.insights.top_queries.group_by'] = query.group_by;
+          params.body.persistent['search.insights.top_queries.grouping.group_by'] = query.group_by;
         }
         if (query.delete_after_days !== '') {
           params.body.persistent['search.insights.top_queries.exporter.delete_after_days'] =
