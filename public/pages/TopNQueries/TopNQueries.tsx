@@ -351,7 +351,6 @@ const TopNQueries = ({
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
     retrieveConfigInfo(true);
-    retrieveQueries(start, end);
   };
 
   useEffect(() => {
