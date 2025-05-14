@@ -39,7 +39,7 @@ import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
-export const LIVE_QUERIES = '/InflightQueries'
+export const LIVE_QUERIES = '/LiveQueries';
 
 export interface MetricSettings {
   isEnabled: boolean;
