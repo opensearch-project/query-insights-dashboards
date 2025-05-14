@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {useEffect, useContext, useState, useRef} from 'react';
+import React, {useEffect,  useState, useRef} from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -18,14 +18,8 @@ import {
   EuiSpacer,
 } from '@elastic/eui';
 import embed, { VisualizationSpec } from 'vega-embed';
-import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import {
-  QUERY_INSIGHTS,
-  DataSourceContext,
-} from '../TopNQueries/TopNQueries';
-import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import {LiveSearchQueryResponse} from "../../../types/types";
 import {retrieveLiveQueries} from "../../../common/utils/QueryUtils";
@@ -40,54 +34,113 @@ const inflightQueries = ({
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-  const history = useHistory();
-  const location = useLocation();
   const [query, setQuery] = useState<LiveSearchQueryResponse| null>(null);
 
-  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const fetchliveQueries = async () => {
-    const retrievedQueries = await retrieveLiveQueries(core);
-    setQuery(retrievedQueries);
-    const nodeCount = {};
-    const indexCount = {};
-
-    query.response.live_queries.forEach(query => {
-      // Count nodes
-      nodeCount[query.node_id] = (nodeCount[query.node_id] || 0) + 1;
-
-      // Extract and count indices
-      const indexMatch = query.description.match(/indices\[(.*?)\]/);
-      if (indexMatch) {
-        const index = indexMatch[1];
-        indexCount[index] = (indexCount[index] || 0) + 1;
-      }
-    });
-
-    setNodeCounts(nodeCount);
-    setIndexCounts(indexCount);
-  };
-
+  const chartRefByNode = useRef<HTMLDivElement>(null);
+  const chartRefByIndex = useRef<HTMLDivElement>(null);
   useEffect(() => {
     fetchliveQueries();
-  }, []);
+    const interval = setInterval(() => {
+      fetchliveQueries();
+    }, 2000);
 
-  useEffect(() => {
-    core.chrome.setBreadcrumbs([
-      {
-        text: 'Query insights',
-        href: QUERY_INSIGHTS,
-        onClick: (e) => {
-          e.preventDefault();
-          history.push(QUERY_INSIGHTS);
-        },
-      },
-    ]);
-  }, [core.chrome, history, location]);
+    return () => clearInterval(interval);
+  }, [core]);
+
+  const fetchliveQueries = async () => {
+    try {
+      setIsLoading(true);
+      const retrievedQueries = await retrieveLiveQueries(core);
+      setQuery(retrievedQueries);
+
+      if (retrievedQueries?.response?.live_queries) {
+        const tempNodeCount = {};
+        const indexCount = {};
+
+        // Count occurrences
+        retrievedQueries.response.live_queries.forEach(query => {
+          tempNodeCount[query.node_id] = (tempNodeCount[query.node_id] || 0) + 1;
+
+          const indexMatch = query.description.match(/indices\[(.*?)\]/);
+          if (indexMatch) {
+            const index = indexMatch[1];
+            indexCount[index] = (indexCount[index] || 0) + 1;
+          }
+        });
+
+        // Sort nodes by count and limit to top 9
+        const sortedNodes = Object.entries(tempNodeCount)
+            .sort(([, a], [, b]) => b - a);
+
+        const nodeCount = {};
+        let othersCount = 0;
+
+        sortedNodes.forEach(([nodeId, count], index) => {
+          if (index < 9) {
+            nodeCount[nodeId] = count;
+          } else {
+            othersCount += count;
+          }
+        });
+
+        if (othersCount > 0) {
+          nodeCount['others'] = othersCount;
+        }
+
+        setNodeCounts(nodeCount);
+        setIndexCounts(indexCount);
+      }
+    } catch (err) {
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const formatTime = (seconds: number): string => {
+    if (seconds < 0.001) {
+      return `${(seconds * 1000000).toFixed(2)} µs`;
+    } else if (seconds < 1) {
+      return `${(seconds * 1000).toFixed(2)} ms`;
+    } else if (seconds < 60) {
+      return `${seconds.toFixed(2)} s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds.toFixed(2)}s`;
+    } else if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      return `${hours}h ${minutes}m ${remainingSeconds.toFixed(2)}s`;
+    } else {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      return `${days}d ${hours}h ${minutes}m ${remainingSeconds.toFixed(2)}s`;
+    }
+  };
+
+
+  const formatMemory = (bytes: number): string => {
+    if (bytes < 1024) {
+      return `${bytes.toFixed(2)} B`;
+    } else if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(2)} KB`;
+    } else if (bytes < 1024 * 1024 * 1024) {
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    } else {
+      return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+    }
+  };
+
+
 
   const chartOptions = [
     { id: 'donut', label: 'Donut', iconType: 'visPie' },
@@ -104,9 +157,6 @@ const inflightQueries = ({
   const onChartChangeByNode = (optionId: string) => {
     setSelectedChartIdByNode(optionId);
   };
-
-
-
 
   const metrics = React.useMemo(() => {
     console.log(query);
@@ -146,81 +196,89 @@ const inflightQueries = ({
     };
   }, [query]);
 
+  const getChartData = (counts: Record<string, number>, type: 'node' | 'index') => {
+    return Object.entries(counts).map(([key, value]) => ({
+      label: type === 'node' ? `${key}` : key, // Use descriptive label instead of 'a'
+      value: value // Use 'value' instead of 'b' for clarity
+    }));
+  };
 
-
-
-
-  const getChartSpec = (type: string): VisualizationSpec => {
-    const isDonut = type.includes('donut'); // Donut is at index 0
+  const getChartSpec = (type: string, chartType: 'node' | 'index'): VisualizationSpec => {
+    const isDonut = type.includes('donut');
 
     return {
       width: 400,
       height: 300,
       mark: isDonut
-        ? { type: 'arc', innerRadius: 50 }  // donut
-        : { type: 'bar' },                  // bar
+          ? { type: 'arc', innerRadius: 50 }
+          : { type: 'bar' },
       encoding: isDonut
-        ? {
-          theta: { field: 'b', type: 'quantitative' },
-          color: { field: 'a', type: 'nominal' },
-        }
-        : {
-          x: { field: 'a', type: 'ordinal', axis: { labelAngle: 0 } },
-          y: { field: 'b', type: 'quantitative' },
-        },
+          ? {
+            theta: { field: 'value', type: 'quantitative' },
+            color: {
+              field: 'label',
+              type: 'nominal',
+              title: chartType === 'node' ? 'Nodes' : 'Indices'
+            },
+            tooltip: [
+              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
+              { field: 'value', type: 'quantitative', title: 'Count' }
+            ]
+          }
+          : {
+            y: {
+              field: 'value',
+              type: 'quantitative',
+              axis: { title: 'Count' }
+            },
+            x: {
+              field: 'label',
+              type: 'nominal',
+              axis: { labelAngle: -45, title: chartType === 'node' ? 'Nodes' : 'Indices' }
+            },
+            color: {
+              field: 'label',
+              type: 'nominal',
+              title: chartType === 'node' ? 'Nodes' : 'Indices'
+            },
+            tooltip: [
+              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
+              { field: 'value', type: 'quantitative', title: 'Count' }
+            ]
+          },
     };
   };
 
-  const data = {
-    table: [
-      { a: 'A', b: 28 },
-      { a: 'B', b: 55 },
-      { a: 'C', b: 43 },
-      { a: 'D', b: 91 },
-    ],
-  };
-  const chartRefByNode = useRef<HTMLDivElement>(null);
-  const chartRefByIndex = useRef<HTMLDivElement>(null);
-
+// Update the embed calls
   useEffect(() => {
     if (chartRefByNode.current) {
       embed(
-        chartRefByNode.current,
-        {
-          ...getChartSpec(selectedChartIdByNode),
-          data: { values: data.table },
-        },
-        { actions: false }
+          chartRefByNode.current,
+          {
+            ...getChartSpec(selectedChartIdByNode, 'node'),
+            data: { values: getChartData(nodeCounts, 'node') },
+          },
+          { actions: false }
       ).catch(console.error);
     }
-  }, [data, selectedChartIdByNode]); // 🧠 key fix: add selectedChartIdByNode
-
+  }, [nodeCounts, selectedChartIdByNode]);
 
   useEffect(() => {
-    console.log([{ name: 'table', values: data.table }],);
     if (chartRefByIndex.current) {
-      embed(chartRefByIndex.current, {
-        ...getChartSpec(selectedChartIdByIndex),
-        data: { values: data.table },
-      }, { actions: false }).catch(console.error);
+      embed(
+          chartRefByIndex.current,
+          {
+            ...getChartSpec(selectedChartIdByIndex, 'index'),
+            data: { values: getChartData(indexCounts, 'index') },
+          },
+          { actions: false }
+      ).catch(console.error);
     }
-  }, [data, selectedChartIdByIndex]);
-
+  }, [indexCounts, selectedChartIdByIndex]);
 
 
   return (
     <div>
-      <QueryInsightsDataSourceMenu
-        coreStart={core}
-        depsStart={depsStart}
-        params={params}
-        dataSourceManagement={dataSourceManagement}
-        setDataSource={setDataSource}
-        selectedDataSource={dataSource}
-        onManageDataSource={() => {}}
-        onSelectedDataSource= {fetchliveQueries}
-        dataSourcePickerReadOnly={true}
-      />
       <EuiFlexGroup>
         {/* Active Queries */}
         <EuiFlexItem>
@@ -248,7 +306,7 @@ const inflightQueries = ({
                   <p>Avg. elapsed time</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? metrics.avgElapsedSec.toFixed(2) + ' s' : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.avgElapsedSec) : 'N/A'}</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
                   <p>(Avg. across {metrics?.activeQueries ?? 'N/A'})</p>
@@ -267,7 +325,7 @@ const inflightQueries = ({
                   <p>Longest running query</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? metrics.longestElapsedSec.toFixed(2) + ' s' : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.longestElapsedSec) : 'N/A'}</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
                   <p>ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 'N/A'}</EuiLink></p>
@@ -286,7 +344,7 @@ const inflightQueries = ({
                   <p>Total CPU usage</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? metrics.totalCPUSec.toFixed(2) + ' s' : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.totalCPUSec) : 'N/A'}</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
                   <p>(Sum across {metrics?.activeQueries ?? 'N/A'})</p>
@@ -306,9 +364,7 @@ const inflightQueries = ({
                 </EuiText>
                 <EuiTitle size="l">
                   <h2><b>
-                    {metrics
-                      ? (metrics.totalMemoryBytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'
-                      : 'N/A'}
+                    {metrics ? formatMemory(metrics.totalMemoryBytes) : 'N/A'}
                   </b></h2>
                 </EuiTitle>
                 <EuiText size="s">
@@ -320,6 +376,7 @@ const inflightQueries = ({
         </EuiFlexItem>
       </EuiFlexGroup>
       <EuiFlexGroup>
+
         {/* Queries by Node */}
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
@@ -328,16 +385,26 @@ const inflightQueries = ({
                 <h3><b>Queries by Node</b></h3>
               </EuiTitle>
               <EuiButtonGroup
-                legend="Chart Type"
-                options={chartOptions}
-                idSelected={selectedChartIdByNode}
-                onChange={onChartChangeByNode}
-                color="primary"
+                  legend="Chart Type"
+                  options={chartOptions}
+                  idSelected={selectedChartIdByNode}
+                  onChange={onChartChangeByNode}
+                  color="primary"
               />
             </EuiFlexGroup>
             <EuiHorizontalRule margin="xs" />
             <EuiSpacer size="xs" />
-            <div ref={chartRefByNode} />
+            {Object.keys(nodeCounts).length > 0 ? (
+                <div ref={chartRefByNode} />
+            ) : (
+                <EuiTextAlign textAlign="center">
+                  <EuiSpacer size="xl" />
+                  <EuiText color="subdued">
+                    <p>No data available</p>
+                  </EuiText>
+                  <EuiSpacer size="xl" />
+                </EuiTextAlign>
+            )}
           </EuiPanel>
         </EuiFlexItem>
 
@@ -349,19 +416,26 @@ const inflightQueries = ({
                 <h3><b>Queries by Index</b></h3>
               </EuiTitle>
               <EuiButtonGroup
-                legend="Chart Type"
-                options={chartOptions}
-                idSelected={selectedChartIdByIndex}
-                onChange={onChartChangeByIndex}
-                color="primary"
+                  legend="Chart Type"
+                  options={chartOptions}
+                  idSelected={selectedChartIdByIndex}
+                  onChange={onChartChangeByIndex}
+                  color="primary"
               />
             </EuiFlexGroup>
             <EuiHorizontalRule margin="xs" />
             <EuiSpacer size="xs" />
-            <div ref={chartRefByIndex} />
-
-
-
+            {Object.keys(indexCounts).length > 0 ? (
+                <div ref={chartRefByIndex} />
+            ) : (
+                <EuiTextAlign textAlign="center">
+                  <EuiSpacer size="xl" />
+                  <EuiText color="subdued">
+                    <p>No data available</p>
+                  </EuiText>
+                  <EuiSpacer size="xl" />
+                </EuiTextAlign>
+            )}
           </EuiPanel>
         </EuiFlexItem>
 

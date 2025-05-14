@@ -11,8 +11,7 @@ export const retrieveQueryById = async (
   dataSourceId: string,
   start: string | null,
   end: string | null,
-  id: string | null,
-  verbose: boolean
+  id: string | null
 ): Promise<SearchQueryRecord | null> => {
   const nullResponse = { response: { top_queries: [] } };
   const params = {
@@ -21,7 +20,6 @@ export const retrieveQueryById = async (
       from: start,
       to: end,
       id,
-      verbose,
     },
   };
 
@@ -45,19 +43,12 @@ export const retrieveQueryById = async (
   };
 
   try {
-    const endpoints = [
-      `/api/top_queries/latency`,
-      `/api/top_queries/cpu`,
-      `/api/top_queries/memory`,
-    ];
-
-    for (const endpoint of endpoints) {
-      const result = await fetchMetric(endpoint);
-      if (result.response.top_queries.length > 0) {
-        return result.response.top_queries[0];
-      }
-    }
-    return null;
+    const topQueriesResponse = await Promise.any([
+      fetchMetric(`/api/top_queries/latency`),
+      fetchMetric(`/api/top_queries/cpu`),
+      fetchMetric(`/api/top_queries/memory`),
+    ]);
+    return topQueriesResponse.response.top_queries[0] || null;
   } catch (error) {
     console.error('Error retrieving query details:', error);
     return null;
