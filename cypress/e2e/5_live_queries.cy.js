@@ -281,7 +281,6 @@ describe('Inflight Queries Dashboard', () => {
         cy.get('h2').contains(/2\.00\s*MB/);
       });
   });
-  
 
   it('handles error states', () => {
     cy.intercept('GET', '**/api/live_queries', {
