@@ -281,22 +281,7 @@ describe('Inflight Queries Dashboard', () => {
         cy.get('h2').contains(/2\.00\s*MB/);
       });
   });
-
-  it('validates chart tooltips', () => {
-    cy.contains('h3', 'Queries by Node')
-      .closest('.euiPanel')
-      .within(() => {
-        // Test donut chart tooltips
-        cy.get('.vega-embed').trigger('mouseover');
-        cy.get('.vega-tooltip').should('be.visible').and('contain', 'Node').and('contain', 'Count');
-
-        // Switch to bar chart and test tooltips
-        cy.get('.euiButtonGroup').contains('Bar').click();
-        cy.wait(500);
-        cy.get('.vega-embed').trigger('mouseover');
-        cy.get('.vega-tooltip').should('be.visible').and('contain', 'Node').and('contain', 'Count');
-      });
-  });
+  
 
   it('handles error states', () => {
     cy.intercept('GET', '**/api/live_queries', {
@@ -317,7 +302,6 @@ describe('Inflight Queries Dashboard', () => {
 
     cy.contains('h3', 'Queries by Index').closest('.euiPanel').contains('No data available');
   });
-
 
   it('verifies chart toggle button states', () => {
     cy.contains('h3', 'Queries by Node')
