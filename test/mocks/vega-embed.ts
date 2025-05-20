@@ -3,5 +3,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const embedMock = jest.fn();
-export { embedMock };
+export const embed = jest.fn().mockResolvedValue({});

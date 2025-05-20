@@ -7,7 +7,12 @@ import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import InflightQueries from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
-import { embedMock } from 'vega-embed';
+jest.mock('vega-embed', () => {
+  return {
+    __esModule: true,
+    default: jest.fn().mockResolvedValue({}),
+  };
+});
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
@@ -88,17 +93,6 @@ describe('InflightQueries', () => {
       },
     },
   };
-
-  const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
-
-  const dataSourceManagementMock = {
-    ui: {
-      getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
-    },
-  };
-
-  const mockParams = {};
-  const mockDepsStart = {};
 
   const mockLiveQueriesResponse = {
     ok: true,
@@ -291,22 +285,14 @@ describe('InflightQueries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (retrieveLiveQueries as jest.Mock).mockResolvedValue(mockLiveQueriesResponse);
-    embedMock.mockResolvedValue({});
   });
 
   const renderInflightQueries = () => {
-    return render(
-      <InflightQueries
-        core={mockCoreStart}
-        params={mockParams}
-        depsStart={mockDepsStart}
-        dataSourceManagement={dataSourceManagementMock}
-      />
-    );
+    return render(<InflightQueries core={mockCoreStart} />);
   };
 
   it('renders the component with initial metrics', async () => {
-    renderInflightQueries();
+    const { container } = renderInflightQueries();
 
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
@@ -316,6 +302,7 @@ describe('InflightQueries', () => {
       expect(screen.getByText('9.25 ms')).toBeInTheDocument();
       expect(screen.getByText('340.66 KB')).toBeInTheDocument();
     });
+    expect(container).toMatchSnapshot();
   });
 
   it('shows 0 when there are no queries', async () => {
@@ -323,11 +310,12 @@ describe('InflightQueries', () => {
       response: { live_queries: [] },
     });
 
-    renderInflightQueries();
+    const { container } = renderInflightQueries();
 
     await waitFor(() => {
-      expect(screen.getAllByText('0')).toHaveLength(6);
+      expect(screen.getAllByText('0')).toHaveLength(5);
     });
+    expect(container).toMatchSnapshot();
   });
 
   it('updates data periodically', async () => {
@@ -353,11 +341,7 @@ describe('InflightQueries', () => {
       response: {
         live_queries: [
           {
-            timestamp: 1746147037494,
-            id: 'o01fvIkHTVuE3LkB_015',
-            node_id: 'node_5',
-            description:
-              'indices[tasks], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":750000}}}}]',
+            id: 'query1',
             measurements: {
               latency: { number: 500 },
               cpu: { number: 1000000 },
