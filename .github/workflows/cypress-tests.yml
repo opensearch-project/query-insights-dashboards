@@ -130,14 +130,14 @@ jobs:
           key: cypress-cache-${{ runner.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
           restore-keys: |
             cypress-cache-${{ runner.os }}-
-      
+
       # for now just chrome, use matrix to do all browsers later
       - name: Cypress tests
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
           command: yarn run cypress run
-          wait-on: 'http://localhost:5601/dlw'
+          wait-on: 'http://localhost:5601'
           wait-on-timeout: 600
           browser: chrome
         env:
