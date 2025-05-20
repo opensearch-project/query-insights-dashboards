@@ -16,7 +16,8 @@ import {
   EuiHorizontalRule,
   EuiSpacer,
 } from '@elastic/eui';
-import embed, { VisualizationSpec } from 'vega-embed';
+import embed from 'vega-embed';
+import type { VisualizationSpec } from 'vega-embed';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';

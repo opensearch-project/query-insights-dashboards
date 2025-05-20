@@ -7,12 +7,11 @@ import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import InflightQueries from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
-jest.mock('vega-embed', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockResolvedValue({}),
-  };
-});
+jest.mock('vega-embed', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue({}),
+}));
+
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
