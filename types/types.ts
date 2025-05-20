@@ -85,4 +85,3 @@ export interface LiveSearchQueryResponse {
     live_queries: LiveSearchQueryRecord[];
   };
 }
-

@@ -1,3 +1,9 @@
-const embed = jest.fn().mockResolvedValue({});
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-export default embed;
+const embedMock = jest.fn();
+export default embedMock;
+export { embedMock };
+
