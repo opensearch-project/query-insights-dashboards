@@ -92,7 +92,6 @@ const InflightQueries = ({ core }: { core: CoreStart }) => {
         }
 
         setIndexCounts(topIndexCount);
-
       }
     };
 
@@ -330,9 +329,9 @@ const InflightQueries = ({ core }: { core: CoreStart }) => {
                   </h2>
                 </EuiTitle>
                 {metrics?.longestQueryId && (
-                    <EuiText size="s">
-                      <p>ID: {metrics.longestQueryId}</p>
-                    </EuiText>
+                  <EuiText size="s">
+                    <p>ID: {metrics.longestQueryId}</p>
+                  </EuiText>
                 )}
               </EuiTextAlign>
             </EuiFlexItem>
