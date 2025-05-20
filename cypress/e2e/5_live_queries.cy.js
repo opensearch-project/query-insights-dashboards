@@ -132,30 +132,29 @@ describe('Inflight Queries Dashboard', () => {
 
     cy.navigateToLiveQueries();
     cy.wait('@getEmptyQueries');
-    // Check all metrics panels show N/A
     cy.get('.euiPanel').eq(0).within(() => {
       cy.contains('Active queries');
-      cy.get('h2').contains('N/A');
+      cy.get('h2').contains('0');
     });
 
     cy.get('.euiPanel').eq(1).within(() => {
       cy.contains('Avg. elapsed time');
-      cy.get('h2').contains('N/A');
+      cy.get('h2').contains('0');
     });
 
     cy.get('.euiPanel').eq(2).within(() => {
       cy.contains('Longest running query');
-      cy.get('h2').contains('N/A');
+      cy.get('h2').contains('0');
     });
 
     cy.get('.euiPanel').eq(3).within(() => {
       cy.contains('Total CPU usage');
-      cy.get('h2').contains('N/A');
+      cy.get('h2').contains('0');
     });
 
     cy.get('.euiPanel').eq(4).within(() => {
       cy.contains('Total memory usage');
-      cy.get('h2').contains('N/A');
+      cy.get('h2').contains('0');
     });
 
     cy.contains('h3', 'Queries by Node')
@@ -281,14 +280,12 @@ describe('Inflight Queries Dashboard', () => {
     cy.navigateToLiveQueries();
     cy.wait('@getErrorResponse');
 
-    // Verify error handling in metrics panels
     cy.get('.euiPanel').each(($panel) => {
       cy.wrap($panel).within(() => {
-        cy.get('h2').contains('N/A');
+        cy.get('h2').contains('0');
       });
     });
-
-    // Verify error handling in charts
+    
     cy.contains('h3', 'Queries by Node')
         .closest('.euiPanel')
         .contains('No data available');

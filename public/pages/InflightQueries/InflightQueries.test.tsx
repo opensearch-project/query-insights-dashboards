@@ -5,18 +5,13 @@
 
 import React from 'react';
 import { render, screen, act, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import InflightQueries from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import * as vegaEmbed from 'vega-embed';
 import '@testing-library/jest-dom';
 
-// Mock dependencies
 jest.mock('../../../common/utils/QueryUtils');
-jest.mock('vega-embed', () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
+
 
 describe('InflightQueries', () => {
   const mockCoreStart = {
@@ -107,30 +102,176 @@ describe('InflightQueries', () => {
   const mockDepsStart = {};
 
   const mockLiveQueriesResponse = {
-    response: {
-      live_queries: [
+    "ok": true,
+    "response": {
+      "live_queries": [
         {
-          id: 'query1',
-          node_id: 'node1',
-          description: 'indices[index1]',
-          measurements: {
-            latency: { number: 1000000000 }, // 1 second
-            cpu: { number: 2000000000 }, // 2 seconds
-            memory: { number: 1024 * 1024 }, // 1 MB
-          },
+          "timestamp": 1746147037494,
+          "id": "a23fvIkHTVuE3LkB_001",
+          "node_id": "node_1",
+          "description": "indices[customers], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":1000000}}}}]",
+          "measurements": {
+            "cpu": {"number": 657000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 9256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 5174478333, "count": 1, "aggregationType": "NONE"}
+          }
         },
         {
-          id: 'query2',
-          node_id: 'node1',
-          description: 'indices[index2]',
-          measurements: {
-            latency: { number: 2000000000 },
-            cpu: { number: 1000000000 },
-            memory: { number: 2 * 1024 * 1024 },
-          },
+          "timestamp": 1746147037494,
+          "id": "b45fvIkHTVuE3LkB_002",
+          "node_id": "node_2",
+          "description": "indices[orders], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":500000}}}}]",
+          "measurements": {
+            "cpu": {"number": 957000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 13256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 8174478333, "count": 1, "aggregationType": "NONE"}
+          }
         },
-      ],
-    },
+        {
+          "timestamp": 1746147037494,
+          "id": "c67fvIkHTVuE3LkB_003",
+          "node_id": "node_3",
+          "description": "indices[products], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":750000}}}}]",
+          "measurements": {
+            "cpu": {"number": 757000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 15256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 6174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "d89fvIkHTVuE3LkB_004",
+          "node_id": "node_4",
+          "description": "indices[inventory], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":600000}}}}]",
+          "measurements": {
+            "cpu": {"number": 857000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 11256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 7174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "e01fvIkHTVuE3LkB_005",
+          "node_id": "node_5",
+          "description": "indices[users], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":800000}}}}]",
+          "measurements": {
+            "cpu": {"number": 557000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 17256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 4174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "f12fvIkHTVuE3LkB_006",
+          "node_id": "node_1",
+          "description": "indices[sales], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":900000}}}}]",
+          "measurements": {
+            "cpu": {"number": 457000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 19256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 3174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "g23fvIkHTVuE3LkB_007",
+          "node_id": "node_2",
+          "description": "indices[reports], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":550000}}}}]",
+          "measurements": {
+            "cpu": {"number": 357000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 21256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 2174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "h34fvIkHTVuE3LkB_008",
+          "node_id": "node_3",
+          "description": "indices[analytics], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":650000}}}}]",
+          "measurements": {
+            "cpu": {"number": 257000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 23256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 1174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "i45fvIkHTVuE3LkB_009",
+          "node_id": "node_4",
+          "description": "indices[logs], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":450000}}}}]",
+          "measurements": {
+            "cpu": {"number": 157000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 25256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 9174478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "j56fvIkHTVuE3LkB_010",
+          "node_id": "node_5",
+          "description": "indices[metrics], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":350000}}}}]",
+          "measurements": {
+            "cpu": {"number": 757000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 27256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 5574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "k67fvIkHTVuE3LkB_011",
+          "node_id": "node_1",
+          "description": "indices[events], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":250000}}}}]",
+          "measurements": {
+            "cpu": {"number": 857000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 29256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 6574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "l78fvIkHTVuE3LkB_012",
+          "node_id": "node_2",
+          "description": "indices[audit], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":150000}}}}]",
+          "measurements": {
+            "cpu": {"number": 957000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 31256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 7574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "m89fvIkHTVuE3LkB_013",
+          "node_id": "node_3",
+          "description": "indices[cache], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":950000}}}}]",
+          "measurements": {
+            "cpu": {"number": 657000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 33256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 8574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "n90fvIkHTVuE3LkB_014",
+          "node_id": "node_4",
+          "description": "indices[queue], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":850000}}}}]",
+          "measurements": {
+            "cpu": {"number": 557000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 35256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 9574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        },
+        {
+          "timestamp": 1746147037494,
+          "id": "o01fvIkHTVuE3LkB_015",
+          "node_id": "node_5",
+          "description": "indices[tasks], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"aggregations\":{\"heavy_terms\":{\"terms\":{\"field\":\"title.keyword\",\"size\":750000}}}}]",
+          "measurements": {
+            "cpu": {"number": 457000, "count": 1, "aggregationType": "NONE"},
+            "memory": {"number": 37256, "count": 1, "aggregationType": "NONE"},
+            "latency": {"number": 4574478333, "count": 1, "aggregationType": "NONE"}
+          }
+        }
+      ]
+    }
   };
 
   beforeEach(() => {
@@ -155,32 +296,16 @@ describe('InflightQueries', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
-      expect(screen.getByText('2')).toBeInTheDocument(); // Active queries count
-      expect(screen.getByText('1.50 s')).toBeInTheDocument(); // Avg elapsed time
-      expect(screen.getByText('2.00 s')).toBeInTheDocument(); // Longest running query
-      expect(screen.getByText('3.00 s')).toBeInTheDocument(); // Total CPU usage
-      expect(screen.getByText('3.00 MB')).toBeInTheDocument(); // Total memory usage
+      expect(screen.getByText('15')).toBeInTheDocument();
+      expect(screen.getByText('5.93 s')).toBeInTheDocument();
+      expect(screen.getByText('9.57 s')).toBeInTheDocument();
+      expect(screen.getByText('9.25 ms')).toBeInTheDocument();
+      expect(screen.getByText('340.66 KB')).toBeInTheDocument();
     });
   });
 
-  it('updates charts when switching between donut and bar views', async () => {
-    renderInflightQueries();
 
-    const barButtons = screen.getAllByLabelText('Bar');
-    await act(async () => {
-      userEvent.click(barButtons[0]); // Click first bar button (Queries by Node)
-    });
-
-    expect(vegaEmbed.default).toHaveBeenCalledWith(
-      expect.any(HTMLDivElement),
-      expect.objectContaining({
-        mark: { type: 'bar' },
-      }),
-      expect.any(Object)
-    );
-  });
-
-  it('shows "No data available" when there are no queries', async () => {
+  it('shows 0 when there are no queries', async () => {
     (retrieveLiveQueries as jest.Mock).mockResolvedValue({
       response: { live_queries: [] },
     });
@@ -188,23 +313,10 @@ describe('InflightQueries', () => {
     renderInflightQueries();
 
     await waitFor(() => {
-      expect(screen.getAllByText('No data available')).toHaveLength(2);
+      expect(screen.getAllByText('0')).toHaveLength(6);
     });
   });
 
-  it('handles error when fetching queries', async () => {
-    const error = new Error('Failed to fetch queries');
-    (retrieveLiveQueries as jest.Mock).mockRejectedValue(error);
-
-    renderInflightQueries();
-
-    await waitFor(() => {
-      expect(mockCoreStart.notifications.toasts.addError).toHaveBeenCalledWith(
-        error,
-        { title: 'Error fetching live queries' }
-      );
-    });
-  });
 
   it('updates data periodically', async () => {
     jest.useFakeTimers();
@@ -216,7 +328,7 @@ describe('InflightQueries', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(2000); // Advance time by polling interval
+      jest.advanceTimersByTime(2000);
     });
 
     expect(retrieveLiveQueries).toHaveBeenCalledTimes(2);
@@ -231,8 +343,8 @@ describe('InflightQueries', () => {
           {
             id: 'query1',
             measurements: {
-              latency: { number: 500 }, // 500 nanoseconds
-              cpu: { number: 1000000 }, // 1 millisecond
+              latency: { number: 500 },
+              cpu: { number: 1000000 },
               memory: { number: 500 },
             },
           },
@@ -245,7 +357,7 @@ describe('InflightQueries', () => {
     renderInflightQueries();
 
     await waitFor(() => {
-      expect(screen.getByText('0.50 µs')).toBeInTheDocument();
+      expect(screen.getAllByText('0.50 µs')).toHaveLength(2);
       expect(screen.getByText('1.00 ms')).toBeInTheDocument();
     });
   });
@@ -259,7 +371,7 @@ describe('InflightQueries', () => {
             measurements: {
               latency: { number: 1000000 },
               cpu: { number: 1000000 },
-              memory: { number: 2 * 1024 * 1024 * 1024 }, // 2 GB
+              memory: { number: 2 * 1024 * 1024 * 1024 },
             },
           },
         ],

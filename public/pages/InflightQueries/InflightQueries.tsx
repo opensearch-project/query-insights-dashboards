@@ -289,7 +289,7 @@ const inflightQueries = ({
                   <p>Active queries</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics?.activeQueries ?? 'N/A'}</b></h2>
+                  <h2><b>{metrics?.activeQueries ?? 0 }</b></h2>
                 </EuiTitle>
                 <EuiIcon type="visGauge"/>
               </EuiTextAlign>
@@ -306,10 +306,10 @@ const inflightQueries = ({
                   <p>Avg. elapsed time</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.avgElapsedSec) : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.avgElapsedSec) : 0}</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Avg. across {metrics?.activeQueries ?? 'N/A'})</p>
+                  <p>(Avg. across {metrics?.activeQueries ?? 0 })</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -325,10 +325,10 @@ const inflightQueries = ({
                   <p>Longest running query</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.longestElapsedSec) : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.longestElapsedSec) : 0 }</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 'N/A'}</EuiLink></p>
+                  <p>ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 0 }</EuiLink></p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -344,10 +344,10 @@ const inflightQueries = ({
                   <p>Total CPU usage</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.totalCPUSec) : 'N/A'}</b></h2>
+                  <h2><b>{metrics ? formatTime(metrics.totalCPUSec) : 0 }</b></h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 'N/A'})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0 })</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -364,11 +364,11 @@ const inflightQueries = ({
                 </EuiText>
                 <EuiTitle size="l">
                   <h2><b>
-                    {metrics ? formatMemory(metrics.totalMemoryBytes) : 'N/A'}
+                    {metrics ? formatMemory(metrics.totalMemoryBytes) : 0 }
                   </b></h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 'N/A'})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0 })</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
