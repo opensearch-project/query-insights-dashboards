@@ -4,6 +4,4 @@
  */
 
 const embedMock = jest.fn();
-export default embedMock;
 export { embedMock };
-

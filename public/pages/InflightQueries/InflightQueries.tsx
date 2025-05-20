@@ -8,7 +8,6 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiPanel,
-  EuiLink,
   EuiText,
   EuiTitle,
   EuiTextAlign,
@@ -35,24 +34,30 @@ const InflightQueries = ({ core }: { core: CoreStart }) => {
       setQuery(retrievedQueries);
 
       if (retrievedQueries?.response?.live_queries) {
-        const tempNodeCount = {};
-        const indexCount = {};
+        const tempNodeCount: Record<string, number> = {};
+        const indexCount: Record<string, number> = {};
 
         // Count occurrences
         retrievedQueries.response.live_queries.forEach((liveQuery) => {
-          tempNodeCount[liveQuery.node_id] = (tempNodeCount[liveQuery.node_id] || 0) + 1;
+          // Count node usage
+          const nodeId = liveQuery.node_id;
+          tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
 
-          const indexMatch = liveQuery.description.match(/indices\[(.*?)\]/);
-          if (indexMatch) {
-            const index = indexMatch[1];
-            indexCount[index] = (indexCount[index] || 0) + 1;
+          // Parse index from description safely
+          const description = liveQuery.description;
+          if (typeof description === 'string') {
+            const indexMatch = description.match(/indices\[(.*?)\]/);
+            if (indexMatch) {
+              const index = indexMatch[1];
+              indexCount[index] = (indexCount[index] || 0) + 1;
+            }
           }
         });
 
         // Sort nodes by count and limit to top 9
         const sortedNodes = Object.entries(tempNodeCount).sort(([, a], [, b]) => b - a);
 
-        const nodeCount = {};
+        const nodeCount: Record<string, number> = {};
         let othersCount = 0;
 
         sortedNodes.forEach(([nodeId, count], index) => {
@@ -68,9 +73,29 @@ const InflightQueries = ({ core }: { core: CoreStart }) => {
         }
 
         setNodeCounts(nodeCount);
-        setIndexCounts(indexCount);
+        // Sort index counts and limit to top 9
+        const sortedIndices = Object.entries(indexCount).sort(([, a], [, b]) => b - a);
+
+        const topIndexCount: Record<string, number> = {};
+        let indexOthersCount = 0;
+
+        sortedIndices.forEach(([indexName, count], i) => {
+          if (i < 9) {
+            topIndexCount[indexName] = count;
+          } else {
+            indexOthersCount += count;
+          }
+        });
+
+        if (indexOthersCount > 0) {
+          topIndexCount.others = indexOthersCount;
+        }
+
+        setIndexCounts(topIndexCount);
+
       }
     };
+
     fetchliveQueries();
     const interval = setInterval(() => {
       fetchliveQueries();
@@ -304,11 +329,11 @@ const InflightQueries = ({ core }: { core: CoreStart }) => {
                     <b>{metrics ? formatTime(metrics.longestElapsedSec) : 0}</b>
                   </h2>
                 </EuiTitle>
-                <EuiText size="s">
-                  <p>
-                    ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 0}</EuiLink>
-                  </p>
-                </EuiText>
+                {metrics?.longestQueryId && (
+                    <EuiText size="s">
+                      <p>ID: {metrics.longestQueryId}</p>
+                    </EuiText>
+                )}
               </EuiTextAlign>
             </EuiFlexItem>
           </EuiPanel>
