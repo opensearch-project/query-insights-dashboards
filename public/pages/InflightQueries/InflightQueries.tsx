@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {useEffect,  useState, useRef} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -18,42 +18,19 @@ import {
   EuiSpacer,
 } from '@elastic/eui';
 import embed, { VisualizationSpec } from 'vega-embed';
-import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
-import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
-import {LiveSearchQueryResponse} from "../../../types/types";
-import {retrieveLiveQueries} from "../../../common/utils/QueryUtils";
-const inflightQueries = ({
-                           core,
-                           depsStart,
-                           params,
-                           dataSourceManagement,
-                         }: {
-  core: CoreStart;
-  params: AppMountParameters;
-  dataSourceManagement?: DataSourceManagementPluginSetup;
-  depsStart: QueryInsightsDashboardsPluginStartDependencies;
-}) => {
-  const [query, setQuery] = useState<LiveSearchQueryResponse| null>(null);
+import { CoreStart } from 'opensearch-dashboards/public';
+import { LiveSearchQueryResponse } from '../../../types/types';
+import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+const InflightQueries = ({ core }: { core: CoreStart }) => {
+  const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
 
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+
   const chartRefByNode = useRef<HTMLDivElement>(null);
   const chartRefByIndex = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    fetchliveQueries();
-    const interval = setInterval(() => {
-      fetchliveQueries();
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [core]);
-
-  const fetchliveQueries = async () => {
-    try {
-      setIsLoading(true);
+    const fetchliveQueries = async () => {
       const retrievedQueries = await retrieveLiveQueries(core);
       setQuery(retrievedQueries);
 
@@ -62,10 +39,10 @@ const inflightQueries = ({
         const indexCount = {};
 
         // Count occurrences
-        retrievedQueries.response.live_queries.forEach(query => {
-          tempNodeCount[query.node_id] = (tempNodeCount[query.node_id] || 0) + 1;
+        retrievedQueries.response.live_queries.forEach((liveQuery) => {
+          tempNodeCount[liveQuery.node_id] = (tempNodeCount[liveQuery.node_id] || 0) + 1;
 
-          const indexMatch = query.description.match(/indices\[(.*?)\]/);
+          const indexMatch = liveQuery.description.match(/indices\[(.*?)\]/);
           if (indexMatch) {
             const index = indexMatch[1];
             indexCount[index] = (indexCount[index] || 0) + 1;
@@ -73,8 +50,7 @@ const inflightQueries = ({
         });
 
         // Sort nodes by count and limit to top 9
-        const sortedNodes = Object.entries(tempNodeCount)
-            .sort(([, a], [, b]) => b - a);
+        const sortedNodes = Object.entries(tempNodeCount).sort(([, a], [, b]) => b - a);
 
         const nodeCount = {};
         let othersCount = 0;
@@ -88,19 +64,20 @@ const inflightQueries = ({
         });
 
         if (othersCount > 0) {
-          nodeCount['others'] = othersCount;
+          nodeCount.others = othersCount;
         }
 
         setNodeCounts(nodeCount);
         setIndexCounts(indexCount);
       }
-    } catch (err) {
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    fetchliveQueries();
+    const interval = setInterval(() => {
+      fetchliveQueries();
+    }, 2000);
 
+    return () => clearInterval(interval);
+  }, [core]);
 
   const formatTime = (seconds: number): string => {
     if (seconds < 0.001) {
@@ -127,7 +104,6 @@ const inflightQueries = ({
     }
   };
 
-
   const formatMemory = (bytes: number): string => {
     if (bytes < 1024) {
       return `${bytes.toFixed(2)} B`;
@@ -139,8 +115,6 @@ const inflightQueries = ({
       return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
     }
   };
-
-
 
   const chartOptions = [
     { id: 'donut', label: 'Donut', iconType: 'visPie' },
@@ -171,7 +145,7 @@ const inflightQueries = ({
     let longestLatency = 0;
     let longestQueryId = '';
 
-    queries.forEach(q => {
+    queries.forEach((q) => {
       const latency = q.measurements?.latency?.number ?? 0;
       const cpu = q.measurements?.cpu?.number ?? 0;
       const memory = q.measurements?.memory?.number ?? 0;
@@ -199,7 +173,7 @@ const inflightQueries = ({
   const getChartData = (counts: Record<string, number>, type: 'node' | 'index') => {
     return Object.entries(counts).map(([key, value]) => ({
       label: type === 'node' ? `${key}` : key, // Use descriptive label instead of 'a'
-      value: value // Use 'value' instead of 'b' for clarity
+      value, // Use 'value' instead of 'b' for clarity
     }));
   };
 
@@ -209,56 +183,54 @@ const inflightQueries = ({
     return {
       width: 400,
       height: 300,
-      mark: isDonut
-          ? { type: 'arc', innerRadius: 50 }
-          : { type: 'bar' },
+      mark: isDonut ? { type: 'arc', innerRadius: 50 } : { type: 'bar' },
       encoding: isDonut
-          ? {
+        ? {
             theta: { field: 'value', type: 'quantitative' },
             color: {
               field: 'label',
               type: 'nominal',
-              title: chartType === 'node' ? 'Nodes' : 'Indices'
+              title: chartType === 'node' ? 'Nodes' : 'Indices',
             },
             tooltip: [
               { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' }
-            ]
+              { field: 'value', type: 'quantitative', title: 'Count' },
+            ],
           }
-          : {
+        : {
             y: {
               field: 'value',
               type: 'quantitative',
-              axis: { title: 'Count' }
+              axis: { title: 'Count' },
             },
             x: {
               field: 'label',
               type: 'nominal',
-              axis: { labelAngle: -45, title: chartType === 'node' ? 'Nodes' : 'Indices' }
+              axis: { labelAngle: -45, title: chartType === 'node' ? 'Nodes' : 'Indices' },
             },
             color: {
               field: 'label',
               type: 'nominal',
-              title: chartType === 'node' ? 'Nodes' : 'Indices'
+              title: chartType === 'node' ? 'Nodes' : 'Indices',
             },
             tooltip: [
               { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' }
-            ]
+              { field: 'value', type: 'quantitative', title: 'Count' },
+            ],
           },
     };
   };
 
-// Update the embed calls
+  // Update the embed calls
   useEffect(() => {
     if (chartRefByNode.current) {
       embed(
-          chartRefByNode.current,
-          {
-            ...getChartSpec(selectedChartIdByNode, 'node'),
-            data: { values: getChartData(nodeCounts, 'node') },
-          },
-          { actions: false }
+        chartRefByNode.current,
+        {
+          ...getChartSpec(selectedChartIdByNode, 'node'),
+          data: { values: getChartData(nodeCounts, 'node') },
+        },
+        { actions: false }
       ).catch(console.error);
     }
   }, [nodeCounts, selectedChartIdByNode]);
@@ -266,16 +238,15 @@ const inflightQueries = ({
   useEffect(() => {
     if (chartRefByIndex.current) {
       embed(
-          chartRefByIndex.current,
-          {
-            ...getChartSpec(selectedChartIdByIndex, 'index'),
-            data: { values: getChartData(indexCounts, 'index') },
-          },
-          { actions: false }
+        chartRefByIndex.current,
+        {
+          ...getChartSpec(selectedChartIdByIndex, 'index'),
+          data: { values: getChartData(indexCounts, 'index') },
+        },
+        { actions: false }
       ).catch(console.error);
     }
   }, [indexCounts, selectedChartIdByIndex]);
-
 
   return (
     <div>
@@ -289,9 +260,11 @@ const inflightQueries = ({
                   <p>Active queries</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics?.activeQueries ?? 0 }</b></h2>
+                  <h2>
+                    <b>{metrics?.activeQueries ?? 0}</b>
+                  </h2>
                 </EuiTitle>
-                <EuiIcon type="visGauge"/>
+                <EuiIcon type="visGauge" />
               </EuiTextAlign>
             </EuiFlexItem>
           </EuiPanel>
@@ -306,10 +279,12 @@ const inflightQueries = ({
                   <p>Avg. elapsed time</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.avgElapsedSec) : 0}</b></h2>
+                  <h2>
+                    <b>{metrics ? formatTime(metrics.avgElapsedSec) : 0}</b>
+                  </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Avg. across {metrics?.activeQueries ?? 0 })</p>
+                  <p>(Avg. across {metrics?.activeQueries ?? 0})</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -325,10 +300,14 @@ const inflightQueries = ({
                   <p>Longest running query</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.longestElapsedSec) : 0 }</b></h2>
+                  <h2>
+                    <b>{metrics ? formatTime(metrics.longestElapsedSec) : 0}</b>
+                  </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 0 }</EuiLink></p>
+                  <p>
+                    ID: <EuiLink href="#/navigation/">{metrics?.longestQueryId ?? 0}</EuiLink>
+                  </p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -344,10 +323,12 @@ const inflightQueries = ({
                   <p>Total CPU usage</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>{metrics ? formatTime(metrics.totalCPUSec) : 0 }</b></h2>
+                  <h2>
+                    <b>{metrics ? formatTime(metrics.totalCPUSec) : 0}</b>
+                  </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0 })</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -363,12 +344,12 @@ const inflightQueries = ({
                   <p>Total memory usage</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2><b>
-                    {metrics ? formatMemory(metrics.totalMemoryBytes) : 0 }
-                  </b></h2>
+                  <h2>
+                    <b>{metrics ? formatMemory(metrics.totalMemoryBytes) : 0}</b>
+                  </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0 })</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -376,34 +357,35 @@ const inflightQueries = ({
         </EuiFlexItem>
       </EuiFlexGroup>
       <EuiFlexGroup>
-
         {/* Queries by Node */}
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="m">
-                <h3><b>Queries by Node</b></h3>
+                <h3>
+                  <b>Queries by Node</b>
+                </h3>
               </EuiTitle>
               <EuiButtonGroup
-                  legend="Chart Type"
-                  options={chartOptions}
-                  idSelected={selectedChartIdByNode}
-                  onChange={onChartChangeByNode}
-                  color="primary"
+                legend="Chart Type"
+                options={chartOptions}
+                idSelected={selectedChartIdByNode}
+                onChange={onChartChangeByNode}
+                color="primary"
               />
             </EuiFlexGroup>
             <EuiHorizontalRule margin="xs" />
             <EuiSpacer size="xs" />
             {Object.keys(nodeCounts).length > 0 ? (
-                <div ref={chartRefByNode} />
+              <div ref={chartRefByNode} />
             ) : (
-                <EuiTextAlign textAlign="center">
-                  <EuiSpacer size="xl" />
-                  <EuiText color="subdued">
-                    <p>No data available</p>
-                  </EuiText>
-                  <EuiSpacer size="xl" />
-                </EuiTextAlign>
+              <EuiTextAlign textAlign="center">
+                <EuiSpacer size="xl" />
+                <EuiText color="subdued">
+                  <p>No data available</p>
+                </EuiText>
+                <EuiSpacer size="xl" />
+              </EuiTextAlign>
             )}
           </EuiPanel>
         </EuiFlexItem>
@@ -413,37 +395,37 @@ const inflightQueries = ({
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="m">
-                <h3><b>Queries by Index</b></h3>
+                <h3>
+                  <b>Queries by Index</b>
+                </h3>
               </EuiTitle>
               <EuiButtonGroup
-                  legend="Chart Type"
-                  options={chartOptions}
-                  idSelected={selectedChartIdByIndex}
-                  onChange={onChartChangeByIndex}
-                  color="primary"
+                legend="Chart Type"
+                options={chartOptions}
+                idSelected={selectedChartIdByIndex}
+                onChange={onChartChangeByIndex}
+                color="primary"
               />
             </EuiFlexGroup>
             <EuiHorizontalRule margin="xs" />
             <EuiSpacer size="xs" />
             {Object.keys(indexCounts).length > 0 ? (
-                <div ref={chartRefByIndex} />
+              <div ref={chartRefByIndex} />
             ) : (
-                <EuiTextAlign textAlign="center">
-                  <EuiSpacer size="xl" />
-                  <EuiText color="subdued">
-                    <p>No data available</p>
-                  </EuiText>
-                  <EuiSpacer size="xl" />
-                </EuiTextAlign>
+              <EuiTextAlign textAlign="center">
+                <EuiSpacer size="xl" />
+                <EuiText color="subdued">
+                  <p>No data available</p>
+                </EuiText>
+                <EuiSpacer size="xl" />
+              </EuiTextAlign>
             )}
           </EuiPanel>
         </EuiFlexItem>
-
       </EuiFlexGroup>
     </div>
   );
 };
 
 // eslint-disable-next-line import/no-default-export
-export default inflightQueries;
-
+export default InflightQueries;
