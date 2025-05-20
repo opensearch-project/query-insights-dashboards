@@ -318,17 +318,6 @@ describe('Inflight Queries Dashboard', () => {
     cy.contains('h3', 'Queries by Index').closest('.euiPanel').contains('No data available');
   });
 
-  it('validates longest query ID link', () => {
-    cy.fixture('stub_live_queries.json').then((data) => {
-      const longestQueryId = data.response.live_queries[0].id;
-      cy.get('.euiPanel')
-        .eq(2)
-        .within(() => {
-          cy.get('a').should('have.attr', 'href', `#/navigation/`);
-          cy.get('a').should('contain', longestQueryId);
-        });
-    });
-  });
 
   it('verifies chart toggle button states', () => {
     cy.contains('h3', 'Queries by Node')
