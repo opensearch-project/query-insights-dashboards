@@ -62,10 +62,9 @@ export const retrieveQueryById = async (
   }
 };
 
-
-export const retrieveLiveQueries = async (
-  core: { http: { get: (endpoint: string) => Promise<any> } },
-): Promise<LiveSearchQueryResponse> => {
+export const retrieveLiveQueries = async (core: {
+  http: { get: (endpoint: string) => Promise<any> };
+}): Promise<LiveSearchQueryResponse> => {
   const nullResponse: LiveSearchQueryResponse = {
     ok: false,
     response: { live_queries: [] },
@@ -73,9 +72,7 @@ export const retrieveLiveQueries = async (
 
   try {
     const response: LiveSearchQueryResponse = await core.http.get(`/api/live_queries`);
-    return response && Array.isArray(response.response?.live_queries)
-      ? response
-      : nullResponse;
+    return response && Array.isArray(response.response?.live_queries) ? response : nullResponse;
   } catch (error) {
     console.error('Error retrieving live queries:', error);
     return nullResponse;
