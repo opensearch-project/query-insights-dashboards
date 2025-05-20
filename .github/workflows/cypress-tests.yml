@@ -121,7 +121,7 @@ jobs:
         run: |
           version=$(jq -r '.dependencies.cypress' OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json)
           echo "cypress_version=$version" >> $GITHUB_OUTPUT
-      
+
 
       - name: Cache Cypress
         id: cache-cypress
@@ -139,7 +139,7 @@ jobs:
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
           command: yarn run cypress run
-          wait-on: 'http://localhost:5601/dlw'
+          wait-on: 'http://localhost:5601'
           wait-on-timeout: 600
           browser: chrome
         env:
