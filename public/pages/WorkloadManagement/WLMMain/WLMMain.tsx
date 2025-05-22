@@ -376,52 +376,82 @@ export const WorkloadManagementMain = ({
 
   const getBoxplotOption = (box: number[], limit: number) => {
     const sorted = [...box].sort((a, b) => a - b);
-    const [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
+    let [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
+    const AXIS_MIN = 0;
+    const AXIS_MAX = 100;
+
     return {
       tooltip: {
-        trigger: 'item',
-        appendToBody: true,
+        trigger: 'axis',
         className: 'echarts-tooltip',
-        formatter: (localParams: any) => {
-          if (localParams.seriesType !== 'boxplot') return '';
-          const [fMin, fQ1, fMedian, fQ3, fMax] = localParams.data
-            .slice(1, 6)
-            .map((v: number) => v.toFixed(2));
-          const formattedLimit = Number(limit).toFixed(2);
-          return `<strong>Usage across nodes</strong><br/>
-                  Min: ${fMin}%<br/>
-                  Q1: ${fQ1}%<br/>
-                  Median: ${fMedian}%<br/>
-                  Q3: ${fQ3}%<br/>
-                  Max: ${fMax}%<br/>
-                  <span style="color:#dc3545;">Limit: ${formattedLimit}%</span>`;
-        },
+        formatter: (params: any[]) => {
+          const box = params.find(p => p.seriesType === 'boxplot');
+
+          let tooltip = '';
+          if (box) {
+            const [fMin, fQ1, fMedian, fQ3, fMax] = box.data.slice(1, 6).map((v: number) => v.toFixed(2));
+            tooltip += `<strong>Usage across nodes (boxplot)</strong><br/>
+                Min: ${fMin}%<br/>
+                Q1: ${fQ1}%<br/>
+                Median: ${fMedian}%<br/>
+                Q3: ${fQ3}%<br/>
+                Max: ${fMax}%<br/>`;
+          }
+
+          tooltip += `<span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
+
+          return tooltip;
+        }
       },
-      grid: { left: '0%', right: '10%', top: '0%', bottom: '0%' },
+      animation: false,
+      grid: { left: '5%', right: '5%', top: '-1%', bottom: '-1%' },
       xAxis: {
         type: 'value',
-        min: Math.min(boxMin, limit) - 5,
-        max: Math.max(boxMax, limit) + 5,
-        show: false,
+        min: AXIS_MIN,
+        max: AXIS_MAX,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { show: false },
+        splitLine: {
+          show: true,
+          lineStyle: {
+            color: ['#000000', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#000000'],
+            type: 'solid',
+            width: 1,
+          },
+        },
       },
-      yAxis: { type: 'category', data: ['Boxplot'], show: false },
+      yAxis: {
+        type: 'category',
+        data: ['Boxplot'],
+        axisLabel: { show: false },
+      },
       series: [
         {
-          name: 'Boxplot',
+          name: 'Usage Distribution',
           type: 'boxplot',
           data: [[boxMin, boxQ1, boxMedian, boxQ3, boxMax]],
-          itemStyle: { color: '#0268BC', borderColor: 'black' },
+          itemStyle: { color: '#79AAD9', borderColor: '#000', borderWidth: 1.25 },
           boxWidth: ['40%', '50%'],
+
+          markLine: {
+            symbol: 'none',
+            label: {
+              formatter: '#DC3545',
+              position: 'end',
+              color: "danger",
+            },
+            lineStyle: {
+              color: '#DC3545',
+              type: 'solid',
+              width: 2,
+            },
+            data: [
+              { xAxis: limit }
+            ],
+          },
         },
-        {
-          name: 'Limit',
-          type: 'scatter',
-          symbol: 'rect',
-          symbolSize: [3, 35],
-          data: [[limit, 0]],
-          itemStyle: { color: '#dc3545' },
-        },
-      ],
+      ]
     };
   };
 
@@ -567,7 +597,7 @@ export const WorkloadManagementMain = ({
         <EuiFlexItem grow={false}>
           <EuiFlexGroup gutterSize="m" alignItems="center" responsive={false}>
             <EuiFlexItem grow={false}>
-              <EuiFormRow label="Data source" display="columnCompressed">
+              <EuiFormRow label="Node selection" display="columnCompressed">
                 <EuiSelect
                   options={nodeIds.map((id) => ({ value: id, text: id }))}
                   value={selectedNode || ''}

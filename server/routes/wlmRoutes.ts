@@ -159,8 +159,8 @@ export function defineWlmRoutes(router: IRouter) {
         body: schema.object({
           resiliency_mode: schema.string(),
           resource_limits: schema.object({
-            cpu: schema.number(),
-            memory: schema.number(),
+            cpu: schema.maybe(schema.number()),
+            memory: schema.maybe(schema.number()),
           }),
         }),
       },

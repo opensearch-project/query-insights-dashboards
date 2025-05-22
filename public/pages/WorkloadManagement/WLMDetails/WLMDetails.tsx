@@ -64,8 +64,8 @@ interface NodeUsageData {
 
 interface WorkloadGroupDetails {
   name: string;
-  cpuLimit: number | string;
-  memLimit: number | string;
+  cpuLimit: number | undefined;
+  memLimit: number | undefined;
   resiliencyMode: 'soft' | 'enforced';
   description: string;
 }
@@ -138,8 +138,8 @@ export const WLMDetails = ({
   // === State ===
   const [groupDetails, setGroupDetails] = useState<WorkloadGroupDetails | null>(null);
   const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
-  const [cpuLimit, setCpuLimit] = useState(DEFAULT_RESOURCE_LIMIT);
-  const [memoryLimit, setMemoryLimit] = useState(DEFAULT_RESOURCE_LIMIT);
+  const [cpuLimit, setCpuLimit] = useState<number | undefined>();
+  const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
   const [isSaved, setIsSaved] = useState(true);
   const [nodesData, setNodesData] = useState<NodeUsageData[]>([]);
   const [sortedData, setSortedData] = useState<NodeUsageData[]>([]);
@@ -230,18 +230,14 @@ export const WLMDetails = ({
       if (workload) {
         setGroupDetails({
           name: workload.name,
-          cpuLimit:
-            workload.resource_limits?.cpu != null ? formatLimit(workload.resource_limits.cpu) : '-',
-          memLimit:
-            workload.resource_limits?.memory != null
-              ? formatLimit(workload.resource_limits.memory)
-              : '-',
+          cpuLimit: formatLimit(workload.resource_limits?.cpu),
+          memLimit: formatLimit(workload.resource_limits?.memory),
           resiliencyMode: workload.resiliency_mode,
           description: '-',
         });
         setResiliencyMode(workload.resiliency_mode.toLowerCase());
-        setCpuLimit(formatLimit(workload.resource_limits.cpu));
-        setMemoryLimit(formatLimit(workload.resource_limits.memory));
+        setCpuLimit(formatLimit(workload.resource_limits?.cpu));
+        setMemoryLimit(formatLimit(workload.resource_limits?.memory));
       }
     } catch (err) {
       console.error('Failed to fetch workload group details:', err);
@@ -291,11 +287,11 @@ export const WLMDetails = ({
 
         const statsForGroup = data.workload_groups[groupId];
 
-        if (statsForGroup) {
+        if (statsForGroup && statsForGroup.cpu && statsForGroup.memory) {
           nodeStatsList.push({
             nodeId,
-            cpuUsage: formatLimit(statsForGroup.cpu?.current_usage),
-            memoryUsage: formatLimit(statsForGroup.memory?.current_usage),
+            cpuUsage: formatUsage(statsForGroup.cpu.current_usage),
+            memoryUsage: formatUsage(statsForGroup.memory.current_usage),
           });
         }
       }
@@ -309,23 +305,32 @@ export const WLMDetails = ({
 
   // === Actions ===
   const saveChanges = async () => {
-    if (cpuLimit <= 0 || cpuLimit > 100 || memoryLimit <= 0 || memoryLimit > 100) {
+    const validCpu = cpuLimit === undefined || (cpuLimit > 0 && cpuLimit <= 100);
+    const validMem = memoryLimit === undefined || (memoryLimit > 0 && memoryLimit <= 100);
+
+    if (!resiliencyMode || (!validCpu && !validMem)) {
       core.notifications.toasts.addDanger(
-        'CPU and Memory limits must be between 0 and 100 (exclusive of 0)'
+        'Resiliency mode is required and at least one of CPU or memory limits must be valid (1–100).'
       );
       return;
+    }
+
+    const resourceLimits: Record<string, number> = {};
+    if (cpuLimit !== undefined) resourceLimits.cpu = cpuLimit / 100;
+    if (memoryLimit !== undefined) resourceLimits.memory = memoryLimit / 100;
+
+    const body: Record<string, any> = {
+      resiliency_mode: resiliencyMode.toUpperCase(),
+    };
+
+    if (Object.keys(resourceLimits).length > 0) {
+      body.resource_limits = resourceLimits;
     }
 
     try {
       await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
         query: { dataSourceId: dataSource.id },
-        body: JSON.stringify({
-          resiliency_mode: resiliencyMode,
-          resource_limits: {
-            cpu: cpuLimit / 100,
-            memory: memoryLimit / 100,
-          },
-        }),
+        body: JSON.stringify(body),
       });
 
       setIsSaved(true);
@@ -378,9 +383,15 @@ export const WLMDetails = ({
     }
   };
 
-  const formatLimit = (usage?: number, defaultValue: number = 0): number => {
-    return Math.round((usage ?? defaultValue) * 100);
+  const formatLimit = (usage?: number): number | undefined => {
+    if (usage == null) return undefined;
+    return Math.round(usage * 100);
   };
+
+  const formatUsage = (usage: number): number => {
+    return Math.round(usage * 100);
+  };
+
 
   return (
     <div style={{ padding: '20px 40px' }}>
@@ -633,13 +644,14 @@ export const WLMDetails = ({
               {/* CPU Usage Limit */}
               <EuiFormRow
                 label="Reject queries when CPU usage exceeds"
-                isInvalid={cpuLimit <= 0 || cpuLimit > 100}
+                isInvalid={cpuLimit !== undefined && (cpuLimit <= 0 || cpuLimit > 100)}
                 error="Value must be between 0 and 100"
               >
                 <EuiFieldNumber
                   value={cpuLimit}
                   onChange={(e) => {
-                    setCpuLimit(Number(e.target.value));
+                    const val = e.target.value;
+                    setCpuLimit(val === '' ? undefined : Number(val));
                     setIsSaved(false);
                   }}
                   append="%"
@@ -653,13 +665,14 @@ export const WLMDetails = ({
               {/* Memory Usage Limit */}
               <EuiFormRow
                 label="Reject queries when memory usage exceeds"
-                isInvalid={memoryLimit <= 0 || memoryLimit > 100}
+                isInvalid={memoryLimit !== undefined && (memoryLimit <= 0 || memoryLimit > 100)}
                 error="Value must be between 0 and 100"
               >
                 <EuiFieldNumber
                   value={memoryLimit}
                   onChange={(e) => {
-                    setMemoryLimit(Number(e.target.value));
+                    const val = e.target.value;
+                    setMemoryLimit(val === '' ? undefined : Number(val));
                     setIsSaved(false);
                   }}
                   append="%"
