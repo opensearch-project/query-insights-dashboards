@@ -167,4 +167,11 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     method: 'PUT',
     needBody: true,
   });
+
+  queryInsights.getLiveQueries = ca({
+    url: {
+      fmt: `/_insights/live_queries`,
+    },
+    method: 'GET',
+  });
 };

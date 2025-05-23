@@ -21,6 +21,18 @@ Object {
           role="tablist"
         >
           <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Live queries
+            </span>
+          </button>
+          <button
             aria-selected="true"
             class="euiTab euiTab-isSelected"
             role="tab"
@@ -70,6 +82,18 @@ Object {
         class="euiTabs"
         role="tablist"
       >
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Live queries
+          </span>
+        </button>
         <button
           aria-selected="true"
           class="euiTab euiTab-isSelected"
@@ -178,6 +202,18 @@ Object {
           role="tablist"
         >
           <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Live queries
+            </span>
+          </button>
+          <button
             aria-selected="true"
             class="euiTab euiTab-isSelected"
             role="tab"
@@ -227,6 +263,18 @@ Object {
         class="euiTabs"
         role="tablist"
       >
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Live queries
+          </span>
+        </button>
         <button
           aria-selected="true"
           class="euiTab euiTab-isSelected"
@@ -335,6 +383,18 @@ Object {
           role="tablist"
         >
           <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Live queries
+            </span>
+          </button>
+          <button
             aria-selected="true"
             class="euiTab euiTab-isSelected"
             role="tab"
@@ -384,6 +444,18 @@ Object {
         class="euiTabs"
         role="tablist"
       >
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Live queries
+          </span>
+        </button>
         <button
           aria-selected="true"
           class="euiTab euiTab-isSelected"
@@ -500,6 +572,18 @@ Object {
             <span
               class="euiTab__content"
             >
+              Live queries
+            </span>
+          </button>
+          <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
               Top N queries
             </span>
           </button>
@@ -541,6 +625,18 @@ Object {
         class="euiTabs"
         role="tablist"
       >
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Live queries
+          </span>
+        </button>
         <button
           aria-selected="false"
           class="euiTab"
