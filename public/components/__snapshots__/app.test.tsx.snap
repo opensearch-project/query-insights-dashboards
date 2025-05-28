@@ -520,7 +520,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements_2"
+                  data-test-subj="tableHeaderCell_Query Count_2"
                   role="columnheader"
                   scope="col"
                 >
@@ -570,7 +570,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements.latency_4"
+                  data-test-subj="tableHeaderCell_Latency_4"
                   role="columnheader"
                   scope="col"
                 >
@@ -595,7 +595,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements.cpu_5"
+                  data-test-subj="tableHeaderCell_CPU Time_5"
                   role="columnheader"
                   scope="col"
                 >
@@ -620,7 +620,7 @@ exports[`<QueryInsightsDashboardsApp /> spec renders the component 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_measurements.memory_6"
+                  data-test-subj="tableHeaderCell_Memory Usage_6"
                   role="columnheader"
                   scope="col"
                 >
