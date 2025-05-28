@@ -392,9 +392,8 @@ export const WLMDetails = ({
     return Math.round(usage * 100);
   };
 
-
   return (
-    <div style={{ padding: '20px 40px' }}>
+    <div>
       {isDeleteModalVisible && (
         <EuiConfirmModal
           title="Delete workload group"

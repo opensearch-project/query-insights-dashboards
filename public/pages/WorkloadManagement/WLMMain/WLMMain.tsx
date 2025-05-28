@@ -187,6 +187,10 @@ export const WorkloadManagementMain = ({
       }
     } catch (err) {
       console.error('Error fetching node list:', err);
+      core.notifications.toasts.addDanger({
+        title: 'Failed to fetch node list',
+        text: 'There was a problem retrieving the node list. Please try again later.',
+      });
     }
     setLoading(false);
   };
@@ -376,7 +380,7 @@ export const WorkloadManagementMain = ({
 
   const getBoxplotOption = (box: number[], limit: number) => {
     const sorted = [...box].sort((a, b) => a - b);
-    let [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
+    const [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
     const AXIS_MIN = 0;
     const AXIS_MAX = 100;
 
@@ -384,12 +388,14 @@ export const WorkloadManagementMain = ({
       tooltip: {
         trigger: 'axis',
         className: 'echarts-tooltip',
-        formatter: (params: any[]) => {
-          const box = params.find(p => p.seriesType === 'boxplot');
+        formatter: (currentParams: any[]) => {
+          const currentBox = currentParams.find((p) => p.seriesType === 'boxplot');
 
           let tooltip = '';
-          if (box) {
-            const [fMin, fQ1, fMedian, fQ3, fMax] = box.data.slice(1, 6).map((v: number) => v.toFixed(2));
+          if (currentBox) {
+            const [fMin, fQ1, fMedian, fQ3, fMax] = currentBox.data
+              .slice(1, 6)
+              .map((v: number) => v.toFixed(2));
             tooltip += `<strong>Usage across nodes (boxplot)</strong><br/>
                 Min: ${fMin}%<br/>
                 Q1: ${fQ1}%<br/>
@@ -401,7 +407,7 @@ export const WorkloadManagementMain = ({
           tooltip += `<span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
 
           return tooltip;
-        }
+        },
       },
       animation: false,
       grid: { left: '5%', right: '5%', top: '-1%', bottom: '-1%' },
@@ -439,19 +445,17 @@ export const WorkloadManagementMain = ({
             label: {
               formatter: '#DC3545',
               position: 'end',
-              color: "danger",
+              color: 'danger',
             },
             lineStyle: {
               color: '#DC3545',
               type: 'solid',
               width: 2,
             },
-            data: [
-              { xAxis: limit }
-            ],
+            data: [{ xAxis: limit }],
           },
         },
-      ]
+      ],
     };
   };
 

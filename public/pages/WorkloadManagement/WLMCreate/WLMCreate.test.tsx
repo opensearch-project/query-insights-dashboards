@@ -8,6 +8,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { WLMCreate } from './WLMCreate';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
+import { DataSourceContext } from '../WorkloadManagement';
+import { userEvent } from '@testing-library/user-event';
 
 const mockPush = jest.fn();
 const mockAddSuccess = jest.fn();
@@ -29,12 +31,25 @@ const coreMock = {
 };
 
 const depsMock = {}; // Not used in this component
+const mockDataSourceManagement = {
+  get: () => ({ id: 'default', name: 'default' }),
+  getDataSourceMenu: jest.fn(() => <div>Mocked Data Source Menu</div>),
+} as any;
+
+const mockDataSource = {
+  id: 'default',
+  name: 'default',
+} as any;
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useHistory: () => ({
     push: mockPush,
   }),
+}));
+
+jest.mock('../../../components/PageHeader', () => ({
+  PageHeader: () => <div data-testid="mock-page-header">Mocked PageHeader</div>,
 }));
 
 describe('WLMCreate', () => {
@@ -45,14 +60,23 @@ describe('WLMCreate', () => {
   const renderComponent = () =>
     render(
       <MemoryRouter>
-        <WLMCreate core={coreMock as any} depsStart={depsMock as any} />
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
+          <WLMCreate
+            core={coreMock as any}
+            depsStart={depsMock as any}
+            params={{} as any}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
       </MemoryRouter>
     );
 
   it('renders all input fields and buttons', () => {
     renderComponent();
 
-    expect(screen.getByText('Create Workload group')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create workload group/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Name/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Index wildcard/)).toBeInTheDocument();
@@ -61,7 +85,6 @@ describe('WLMCreate', () => {
     expect(screen.getByLabelText(/CPU usage/)).toBeInTheDocument();
     expect(screen.getByLabelText(/memory usage/)).toBeInTheDocument();
     expect(screen.getByText(/Cancel/)).toBeInTheDocument();
-    expect(screen.getByText(/Create workload group/)).toBeInTheDocument();
   });
 
   it('disables create button when name is empty', () => {
@@ -70,28 +93,41 @@ describe('WLMCreate', () => {
     expect(createButton).toBeDisabled();
   });
 
-  it('enables the Create button when name is filled', () => {
+  it('enables the Create button when name, CPU usage, and resiliency mode are set', async () => {
     renderComponent();
-    fireEvent.change(screen.getByLabelText(/Name/), {
-      target: { value: 'MyGroup' },
+
+    await userEvent.type(screen.getByTestId('name-input'), 'MyGroup');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), {
+      target: { value: '50' },
     });
-    expect(screen.getByRole('button', { name: /Create workload group/i })).toBeEnabled();
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+
+    expect((screen.getByTestId('name-input') as HTMLInputElement).value).toBe('MyGroup');
+    expect((screen.getByTestId('cpu-threshold-input') as HTMLInputElement).value).toBe('50');
+
+    await waitFor(() => {
+      const createBtn = screen.getByRole('button', { name: /create workload group/i });
+      expect(createBtn).toBeEnabled();
+    });
   });
 
   it('calls API and shows success toast on successful creation', async () => {
     coreMock.http.put.mockResolvedValue({});
 
     renderComponent();
-    fireEvent.change(screen.getByLabelText(/Name/), {
-      target: { value: 'MyGroup' },
-    });
 
-    fireEvent.click(screen.getByText(/Create workload group/));
+    await userEvent.type(screen.getByTestId('name-input'), 'MyGroup');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), {
+      target: { value: '50' },
+    });
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
 
     await waitFor(() => {
       expect(coreMock.http.put).toHaveBeenCalledWith(
         '/api/_wlm/workload_group',
-        expect.any(Object)
+        expect.objectContaining({ query: { dataSourceId: 'default' } })
       );
       expect(mockAddSuccess).toHaveBeenCalledWith('Workload group "MyGroup" created successfully.');
       expect(mockPush).toHaveBeenCalledWith('/workloadManagement');
@@ -102,11 +138,16 @@ describe('WLMCreate', () => {
     coreMock.http.put.mockRejectedValue({ body: { message: 'Creation failed' } });
 
     renderComponent();
+
     fireEvent.change(screen.getByLabelText(/Name/), {
       target: { value: 'FailGroup' },
     });
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), {
+      target: { value: '50' },
+    });
+    fireEvent.click(screen.getByLabelText(/Soft/i)); // Select resiliency mode
 
-    fireEvent.click(screen.getByText(/Create workload group/));
+    fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
 
     await waitFor(() => {
       expect(mockAddDanger).toHaveBeenCalledWith({
@@ -152,24 +193,6 @@ describe('WLMCreate', () => {
     renderComponent();
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(mockPush).toHaveBeenCalledWith('/workloadManagement');
-  });
-
-  it('shows error toast when API fails', async () => {
-    coreMock.http.put.mockRejectedValue({ body: { message: 'Creation failed' } });
-
-    renderComponent();
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: 'FailGroup' },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
-
-    await waitFor(() => {
-      expect(coreMock.notifications.toasts.addDanger).toHaveBeenCalledWith({
-        title: 'Failed to create workload group',
-        text: 'Creation failed',
-      });
-    });
   });
 
   it('updates CPU and memory threshold', () => {

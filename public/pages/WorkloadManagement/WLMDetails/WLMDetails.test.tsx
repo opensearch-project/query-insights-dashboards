@@ -13,9 +13,9 @@ import { WLMDetails } from './WLMDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { MemoryRouter, Route } from 'react-router-dom';
 import '@testing-library/jest-dom';
-import * as reactRouterDom from 'react-router-dom';
 import { WLM_MAIN } from '../WorkloadManagement';
 import { act } from 'react-dom/test-utils';
+import { DataSourceContext } from '../WorkloadManagement';
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -44,9 +44,12 @@ const mockCore = ({
 } as unknown) as CoreStart;
 
 const mockDeps = {};
+const mockDataSourceManagement = {
+  getDataSourceMenu: jest.fn(() => <div>Mocked Data Source Menu</div>),
+} as any;
 
-mockCore.http.get = jest.fn((path: string) => {
-  if (path === '/api/_wlm/workload_group') {
+(mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
+  if (url === '/api/_wlm/workload_group') {
     return Promise.resolve({
       body: {
         workload_groups: [{ name: 'test-group', _id: 'abc123' }],
@@ -54,7 +57,7 @@ mockCore.http.get = jest.fn((path: string) => {
     });
   }
 
-  if (path === '/api/_wlm/stats/abc123') {
+  if (url === '/api/_wlm/stats/abc123') {
     return Promise.resolve({
       body: {
         'node-1': {
@@ -72,20 +75,38 @@ mockCore.http.get = jest.fn((path: string) => {
   return Promise.resolve({ body: {} });
 });
 
+const mockDataSource = {
+  id: 'default',
+  name: 'default',
+} as any;
+
 const renderComponent = (name = 'test-group') => {
   render(
     <MemoryRouter initialEntries={[`/wlm-details?name=${name}`]}>
-      <Route path="/wlm-details">
-        <WLMDetails core={mockCore as CoreStart} depsStart={mockDeps as any} />
-      </Route>
+      <DataSourceContext.Provider value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}>
+        <WLMDetails
+          core={mockCore}
+          depsStart={mockDeps as any}
+          params={{} as any}
+          dataSourceManagement={mockDataSourceManagement}
+        />
+      </DataSourceContext.Provider>
     </MemoryRouter>
   );
 };
 
+const mockPush = jest.fn();
+const mockHistory = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useHistory: () => ({
+    push: mockPush,
+    history: mockHistory,
+  }),
+}));
+
 jest.mock('../../../components/PageHeader', () => ({
-  PageHeader: ({ fallBackComponent }: { fallBackComponent: React.ReactNode }) => (
-    <div data-testid="mock-page-header">{fallBackComponent}</div>
-  ),
+  PageHeader: () => <div data-testid="mock-page-header">Mocked PageHeader</div>,
 }));
 
 describe('WLMDetails Component', () => {
@@ -119,9 +140,6 @@ describe('WLMDetails Component', () => {
   });
 
   it('handles no stats returned gracefully', async () => {
-    const mockPush = jest.fn();
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: mockPush });
-
     (mockCore.http.get as jest.Mock)
       .mockImplementationOnce(() =>
         Promise.resolve({ body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] } })
@@ -136,8 +154,8 @@ describe('WLMDetails Component', () => {
   });
 
   it('shows error toast and redirects if no query group found', async () => {
-    const mockPush = jest.fn();
     const mockAddDanger = jest.fn();
+    mockCore.notifications.toasts.addDanger = mockAddDanger;
 
     mockCore.http.get = jest.fn((path: string) => {
       if (path.startsWith('/api/_wlm/workload_group')) {
@@ -145,9 +163,6 @@ describe('WLMDetails Component', () => {
       }
       return Promise.resolve({ body: {} });
     });
-
-    mockCore.notifications.toasts.addDanger = mockAddDanger;
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: mockPush });
 
     renderComponent('non-existent-group');
 
@@ -180,9 +195,8 @@ describe('WLMDetails Component', () => {
   });
 
   it('saves changes successfully after changing resiliency mode', async () => {
-    const mockPush = jest.fn();
     mockCore.notifications.toasts.addSuccess = jest.fn();
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: mockPush });
+    mockPush.mockClear();
 
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.startsWith('/api/_wlm/workload_group')) {
@@ -209,12 +223,11 @@ describe('WLMDetails Component', () => {
 
     renderComponent();
 
-    // Wait until the page loads
     await waitFor(() => {
       expect(screen.getByText(/Workload group name/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByTestId('wlm-tab-settings')); // Switch to Settings tab
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
 
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Enforced'));
@@ -225,7 +238,6 @@ describe('WLMDetails Component', () => {
       expect(applyButton).not.toBeDisabled();
     });
 
-    // Click Apply Changes
     fireEvent.click(screen.getByText('Apply Changes'));
 
     await waitFor(() => {
@@ -236,7 +248,7 @@ describe('WLMDetails Component', () => {
 
   it('shows error toast if fetching stats fails', async () => {
     mockCore.notifications.toasts.addDanger = jest.fn();
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: jest.fn() });
+    mockPush.mockClear();
 
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.includes('/_wlm/workload_group')) {
@@ -260,9 +272,8 @@ describe('WLMDetails Component', () => {
   });
 
   it('deletes workload group successfully', async () => {
-    const mockPush = jest.fn();
     mockCore.notifications.toasts.addSuccess = jest.fn();
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: mockPush });
+    mockPush.mockClear();
 
     (mockCore.http.delete as jest.Mock).mockResolvedValue({});
 
@@ -339,7 +350,7 @@ describe('WLMDetails Component', () => {
       return Promise.resolve({ body: {} });
     });
 
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: jest.fn() });
+    mockPush.mockClear();
     mockCore.notifications.toasts.addDanger = jest.fn();
 
     renderComponent('test-group');
@@ -357,10 +368,10 @@ describe('WLMDetails Component', () => {
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Reject queries when CPU usage is over')).toBeInTheDocument();
+      expect(screen.getByLabelText('Reject queries when CPU usage exceeds')).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Reject queries when CPU usage is over'), {
+    fireEvent.change(screen.getByLabelText('Reject queries when CPU usage exceeds'), {
       target: { value: '200' },
     });
 
@@ -370,14 +381,18 @@ describe('WLMDetails Component', () => {
   });
 
   it('redirects if group name is missing from URL', async () => {
-    const mockPush = jest.fn();
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: mockPush });
-
     render(
       <MemoryRouter initialEntries={['/wlm-details']}>
-        <Route path="/wlm-details">
-          <WLMDetails core={mockCore} depsStart={mockDeps as any} />
-        </Route>
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
+          <WLMDetails
+            core={mockCore as CoreStart}
+            depsStart={mockDeps as any}
+            params={{} as any}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
       </MemoryRouter>
     );
 
@@ -387,7 +402,22 @@ describe('WLMDetails Component', () => {
   });
 
   it('loads default workload group details if group name is DEFAULT_WORKLOAD_GROUP', async () => {
-    renderComponent('DEFAULT_WORKLOAD_GROUP');
+    render(
+      <MemoryRouter initialEntries={['/wlm-details?name=DEFAULT_WORKLOAD_GROUP']}>
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
+          <Route path="/wlm-details">
+            <WLMDetails
+              core={mockCore as CoreStart}
+              depsStart={mockDeps as any}
+              dataSourceManagement={mockDataSourceManagement}
+              params={{} as any}
+            />
+          </Route>
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
 
     await waitFor(() => {
       expect(screen.getByText('System default workload group')).toBeInTheDocument();
@@ -455,13 +485,18 @@ describe('WLMDetails Component', () => {
   it('does not fetch stats if groupName is missing', async () => {
     (mockCore.http.get as jest.Mock).mockResolvedValue({ body: {} });
 
-    (reactRouterDom.useHistory as jest.Mock).mockReturnValue({ push: jest.fn() });
-
     render(
       <MemoryRouter initialEntries={['/wlm-details']}>
-        <Route path="/wlm-details">
-          <WLMDetails core={mockCore as CoreStart} depsStart={mockDeps as any} />
-        </Route>
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
+          <WLMDetails
+            core={mockCore as CoreStart}
+            depsStart={mockDeps as any}
+            params={{} as any}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
       </MemoryRouter>
     );
 

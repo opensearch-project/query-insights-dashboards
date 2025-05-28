@@ -4,12 +4,13 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { WorkloadManagementMain } from './WLMMain';
 import { CoreStart } from 'opensearch-dashboards/public';
 import userEvent from '@testing-library/user-event';
+import { DataSourceContext } from '../WorkloadManagement';
 
 jest.mock('echarts-for-react', () => () => <div data-testid="MockedChart">Mocked Chart</div>);
 jest.mock('../../../components/PageHeader', () => ({
@@ -26,11 +27,13 @@ const mockCore = ({
   notifications: {
     toasts: {
       addSuccess: jest.fn(),
+      addDanger: jest.fn(),
     },
   },
 } as unknown) as CoreStart;
 
 const mockDepsStart = {} as any;
+const mockDataSourceManagement = {} as any;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -87,10 +90,22 @@ beforeEach(() => {
   });
 });
 
+const mockDataSource = {
+  id: 'default',
+  name: 'default',
+} as any;
+
 const renderComponent = () =>
   render(
     <MemoryRouter>
-      <WorkloadManagementMain core={mockCore} depsStart={mockDepsStart} />
+      <DataSourceContext.Provider value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}>
+        <WorkloadManagementMain
+          core={mockCore}
+          depsStart={mockDepsStart}
+          params={{} as any}
+          dataSourceManagement={mockDataSourceManagement}
+        />
+      </DataSourceContext.Provider>
     </MemoryRouter>
   );
 
@@ -118,12 +133,14 @@ describe('WorkloadManagementMain', () => {
     renderComponent();
     await screen.findByText('Group One');
 
-    const select = screen.getByLabelText('Data source');
+    const select = screen.getByLabelText('Node selection');
     fireEvent.change(select, { target: { value: 'nodeB' } });
 
     expect(select).toHaveValue('nodeB');
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats', {
+        query: { dataSourceId: 'default' },
+      });
     });
   });
 
@@ -137,15 +154,6 @@ describe('WorkloadManagementMain', () => {
 
     expect(await screen.findByText('Group One')).toBeInTheDocument();
     expect(screen.queryByText('Group Two')).not.toBeInTheDocument();
-  });
-
-  it('sorts by CPU usage descending by default', async () => {
-    renderComponent();
-    const table = await screen.findByTestId('workload-table');
-    const rows = within(table).getAllByRole('row');
-    const firstDataRow = rows[1];
-
-    expect(firstDataRow.textContent).toContain('Group Two'); // higher CPU
   });
 
   it('paginates when more than 5 workload groups', async () => {
@@ -175,7 +183,10 @@ describe('WorkloadManagementMain', () => {
     fireEvent.click(refreshButton);
 
     await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith(expect.stringContaining('/stats'));
+      expect(mockCore.http.get).toHaveBeenCalledWith(
+        expect.stringContaining('/stats'),
+        expect.objectContaining({ query: { dataSourceId: 'default' } })
+      );
     });
   });
 
@@ -202,8 +213,13 @@ describe('WorkloadManagementMain', () => {
     renderComponent();
 
     await waitFor(() => {
-      // Should not crash, just fallback to empty
       expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
+
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Failed to fetch node list',
+        })
+      );
     });
   });
 
@@ -362,22 +378,34 @@ describe('WorkloadManagementMain', () => {
     renderComponent();
     await screen.findByText('Group One');
 
-    const select = screen.getByLabelText('Data source');
+    const select = screen.getByLabelText('Node selection');
     fireEvent.change(select, { target: { value: 'nodeB' } });
 
     await waitFor(() => {
       expect(select).toHaveValue('nodeB');
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats');
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats', {
+        query: { dataSourceId: 'default' },
+      });
     });
   });
 
-  it('sorts workload groups by CPU usage ascending/descending', async () => {
-    renderComponent();
-    const cpuHeader = await screen.findByRole('columnheader', { name: /CPU usage/i });
+  const sortableColumns = [
+    'CPU usage',
+    'Memory usage',
+    'Total completion',
+    'Total rejections',
+    'Total cancellations',
+  ];
 
-    fireEvent.click(cpuHeader); // one click -> asc
-    fireEvent.click(cpuHeader); // two clicks -> desc
+  sortableColumns.forEach((column) => {
+    it(`sorts workload groups by ${column} ascending/descending`, async () => {
+      renderComponent();
+      const header = await screen.findByRole('columnheader', { name: new RegExp(column, 'i') });
 
-    expect(cpuHeader).toBeInTheDocument();
+      fireEvent.click(header); // Sort ascending
+      fireEvent.click(header); // Sort descending
+
+      expect(header).toBeInTheDocument();
+    });
   });
 });

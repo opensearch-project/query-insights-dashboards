@@ -7,6 +7,7 @@ import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
 
 export function defineWlmRoutes(router: IRouter) {
+  // Get WLM stats across all nodes in the cluster
   router.get(
     {
       path: '/api/_wlm/stats',
@@ -34,6 +35,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Get WLM stats for a specific node
   router.get(
     {
       path: '/api/_wlm/{nodeId}/stats',
@@ -64,7 +66,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
-  // dashboards server-side route
+  // List all workload groups
   router.get(
     {
       path: '/api/_wlm/workload_group',
@@ -87,6 +89,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Get workload group by name
   router.get(
     {
       path: '/api/_wlm/workload_group/{name}',
@@ -114,6 +117,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Create a new workload group
   router.put(
     {
       path: '/api/_wlm/workload_group',
@@ -149,6 +153,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Update a workload group by name
   router.put(
     {
       path: '/api/_wlm/workload_group/{name}',
@@ -187,6 +192,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Delete a workload group by name
   router.delete(
     {
       path: '/api/_wlm/workload_group/{name}',
@@ -218,6 +224,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Get stats for a specific workload group
   router.get(
     {
       path: '/api/_wlm/stats/{workloadGroupId}',
@@ -253,6 +260,7 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
+  // Get all node IDs (used for node selection dropdown)
   router.get(
     {
       path: '/api/_wlm_proxy/_nodes',

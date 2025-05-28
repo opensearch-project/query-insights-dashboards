@@ -42,7 +42,7 @@ export const WorkloadManagement = ({
 
   return (
     <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
-      <div style={{ padding: '20px 40px' }}>
+      <div style={{ padding: '35px 35px' }}>
         <Switch>
           <Route exact path={WLM_MAIN}>
             <WorkloadManagementMain

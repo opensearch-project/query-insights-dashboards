@@ -124,7 +124,7 @@ export const WLMCreate = ({
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div>
       <PageHeader
         coreStart={core}
         depsStart={depsStart}
@@ -169,7 +169,11 @@ export const WLMCreate = ({
         <EuiSpacer size="m" />
 
         <EuiFormRow label="Name" helpText="Specify a unique name that is easy to recognize.">
-          <EuiFieldText value={name} onChange={(e) => setName(e.target.value)} />
+          <EuiFieldText
+            data-testid="name-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </EuiFormRow>
 
         <EuiFormRow
@@ -210,6 +214,7 @@ export const WLMCreate = ({
           error="Value must be between 0 and 100"
         >
           <EuiFieldNumber
+            data-testid="cpu-threshold-input"
             value={cpuThreshold}
             onChange={(e) =>
               setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
