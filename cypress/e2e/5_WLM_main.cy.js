@@ -23,9 +23,15 @@ describe('WLM Main Page', () => {
   });
 
   it('should refresh stats on clicking the refresh button', () => {
-    cy.get('button').contains('Refresh').click();
-    cy.wait(3000);
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+    cy.get('.euiTableRow').then(($initialRows) => {
+      const initialRowCount = $initialRows.length;
+
+      cy.get('button').contains('Refresh').click();
+
+      cy.get('.euiTableRow', { timeout: 10000 }).should(($newRows) => {
+        expect($newRows.length).to.be.greaterThan(0);
+      });
+    });
   });
 
   it('should switch between nodes using dropdown', () => {
@@ -78,8 +84,11 @@ describe('WLM Main Page', () => {
   });
 
   it('should filter workload groups by name in search', () => {
-    cy.get('.euiFieldSearch').type('DEFAULT_QUERY_GROUP');
-    cy.get('.euiTableRow').should('contain.text', 'DEFAULT_QUERY_GROUP');
+    cy.get('.euiFieldSearch').type('DEFAULT_WORKLOAD_GROUP');
+    cy.get('.euiTableRow').should('contain.text', 'DEFAULT_WORKLOAD_GROUP');
+
+    cy.get('.euiFieldSearch').clear().type('nonexistent_group_12345');
+    cy.get('.euiTableRow').should('contain.text', 'No items found');
   });
 
   it('should route to workload group detail page when clicking a group name', () => {

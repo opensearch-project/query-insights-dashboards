@@ -13,15 +13,15 @@ describe('WLM Details Page', () => {
     // Clean up existing non-default groups
     cy.request({
       method: 'GET',
-      url: '/api/_wlm/query_group',
+      url: '/api/_wlm/workload_group',
       headers: { 'osd-xsrf': 'true' },
     }).then((res) => {
-      const groups = res.body?.query_groups ?? [];
+      const groups = res.body?.workload_groups ?? [];
       groups.forEach((g) => {
-        if (g.name !== 'DEFAULT_QUERY_GROUP') {
+        if (g.name !== 'DEFAUL_WORKLOAD_GROUP') {
           cy.request({
             method: 'DELETE',
-            url: `/api/_wlm/query_group/${g.name}`,
+            url: `/api/_wlm/workload_group/${g.name}`,
             headers: { 'osd-xsrf': 'true' },
             failOnStatusCode: false,
           });
@@ -31,7 +31,7 @@ describe('WLM Details Page', () => {
 
     cy.request({
       method: 'PUT',
-      url: '/api/_wlm/query_group',
+      url: '/api/_wlm/workload_group',
       headers: { 'osd-xsrf': 'true' },
       body: {
         name: groupName,
