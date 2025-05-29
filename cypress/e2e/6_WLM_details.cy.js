@@ -4,10 +4,9 @@
  */
 
 describe('WLM Details Page', () => {
-  const groupName = `test_group_${Date.now()}`; // Unique name for each run
+  const groupName = `test_group_${Date.now()}`;
 
   before(() => {
-    const groupName = `test_group_${Date.now()}`;
     Cypress.env('groupName', groupName);
 
     // Clean up existing non-default groups
@@ -59,11 +58,12 @@ describe('WLM Details Page', () => {
   });
 
   it('should switch between tabs', () => {
-    cy.get('.euiTab').contains('Settings').click();
+    // Switch to Settings tab
+    cy.get('[data-testid="wlm-tab-settings"]').click();
     cy.contains('Workload group settings').should('exist');
 
-    // Scroll into view and click Resources tab (force to bypass overlap)
-    cy.get('.euiTab').contains('Resources').scrollIntoView().click({ force: true });
+    // Switch to Resources tab
+    cy.get('[data-testid="wlm-tab-resources"]').click();
     cy.contains('Node ID').should('exist');
   });
 
@@ -74,6 +74,11 @@ describe('WLM Details Page', () => {
 
   it('should allow modifying and saving settings', () => {
     cy.get('.euiTab').contains('Settings').click();
+
+    cy.get('input[type="number"]').first().clear().type('150');
+    cy.get('input[type="number"]').last().clear().type('-5');
+
+    cy.contains('Value must be between 0 and 100').should('exist');
 
     // Modify CPU and memory thresholds
     cy.get('input[type="number"]').first().clear().type('0.5');
@@ -97,9 +102,9 @@ describe('WLM Details Page', () => {
   });
 
   it('should delete the workload group successfully', () => {
-    cy.contains('Delete').click();
+    cy.contains('Delete').click(); // opens modal
     cy.get('input[placeholder="delete"]').type('delete');
-    cy.get('button').contains('Delete').click();
+    cy.get('.euiModalFooter button').contains('Delete').click();
 
     // Confirm redirected back to WLM main page
     cy.url().should('include', '/workloadManagement');
@@ -108,3 +113,12 @@ describe('WLM Details Page', () => {
     cy.contains(`Deleted workload group "${groupName}"`).should('exist');
   });
 });
+
+describe('WLM Details – DEFAULT_WORKLOAD_GROUP', () => {
+  it('should disable settings tab for DEFAULT_WORKLOAD_GROUP', () => {
+    cy.visit('/app/workload-management#/wlm-details?name=DEFAULT_WORKLOAD_GROUP');
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+    cy.contains('Settings are not available for the DEFAULT_WORKLOAD_GROUP').should('exist');
+  });
+});
+
