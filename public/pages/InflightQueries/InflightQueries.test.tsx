@@ -7,7 +7,7 @@ import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { render, screen, waitFor, within, act } from '@testing-library/react';
 
-import {InflightQueries} from './InflightQueries';
+import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 jest.mock('vega-embed', () => ({
   __esModule: true,
