@@ -402,4 +402,30 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+  router.post(
+    {
+      path: '/api/tasks/{taskId}/cancel',
+      validate: {
+        params: schema.object({
+          taskId: schema.string(),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const esClient = context.core.opensearch.client.asCurrentUser;
+        const { taskId } = request.params;
+
+        const result = await esClient.transport.request({
+          method: 'POST',
+          path: `/_tasks/${taskId}/_cancel`,
+        });
+
+        return response.ok({ body: { ok: true, result } });
+      } catch (e) {
+        console.error(e);
+        return response.customError({ statusCode: 500, body: e.message });
+      }
+    }
+  );
 }

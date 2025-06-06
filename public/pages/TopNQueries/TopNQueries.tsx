@@ -12,7 +12,7 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public/comp
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
-import LiveQueries from '../InflightQueries/InflightQueries';
+import { InflightQueries } from '../InflightQueries/InflightQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
@@ -416,7 +416,7 @@ const TopNQueries = ({
             />
             <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
             <EuiSpacer size="l" />
-            <LiveQueries
+            <InflightQueries
               core={core}
               depsStart={depsStart}
               params={params}

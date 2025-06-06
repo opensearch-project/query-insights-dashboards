@@ -31,6 +31,8 @@
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
     "@babel/runtime-corejs3": "^7.22.9",
+    "filesize": "^10.1.6",
+    "luxon": "^3.6.1",
     "object-hash": "^3.0.0",
     "plotly.js-dist": "^2.34.0",
     "vega": "^5.32.0",
@@ -54,7 +56,8 @@
     "glob-parent": "5.1.2",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
-    "@babel/runtime-corejs3": "^7.22.9"
+    "@babel/runtime-corejs3": "^7.22.9",
+    "luxon": "^3.2.1"
   },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^6.0.1",
@@ -63,6 +66,7 @@
     "@testing-library/dom": "^8.11.3",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/luxon": "^3.6.2",
     "@types/object-hash": "^3.0.0",
     "@types/react-dom": "^16.9.8",
     "@types/react-router-dom": "^5.3.2",

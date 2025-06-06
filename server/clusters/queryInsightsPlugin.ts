@@ -174,4 +174,17 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     },
     method: 'GET',
   });
+
+  queryInsights.cancelTask = ca({
+    url: {
+      fmt: `/_tasks/<%=taskId%>/_cancel`,
+      req: {
+        taskId: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'POST',
+  });
 };

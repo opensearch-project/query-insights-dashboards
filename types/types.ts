@@ -77,6 +77,7 @@ export interface LiveSearchQueryRecord {
     memory?: Measurement;
   };
   node_id: string;
+  is_cancelled: boolean;
 }
 
 export interface LiveSearchQueryResponse {

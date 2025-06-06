@@ -4,304 +4,58 @@
  */
 
 import React from 'react';
-import { render, screen, act, waitFor } from '@testing-library/react';
-import InflightQueries from './InflightQueries';
+import { CoreStart } from 'opensearch-dashboards/public';
+import { render, screen, waitFor, within, act } from '@testing-library/react';
+
+import {InflightQueries} from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 jest.mock('vega-embed', () => ({
   __esModule: true,
   default: jest.fn().mockResolvedValue({}),
 }));
-
+import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
 
 describe('InflightQueries', () => {
-  const mockCoreStart = {
-    chrome: {
-      setBreadcrumbs: jest.fn(),
-      navControls: jest.fn(),
-      getBreadcrumbs: jest.fn(),
-      getIsVisible: jest.fn(),
-      setIsVisible: jest.fn(),
-      recentlyAccessed: {
-        add: jest.fn(),
-        get: jest.fn(),
-      },
-      docTitle: {
-        change: jest.fn(),
-        reset: jest.fn(),
-      },
-    },
-    uiSettings: {
-      get: jest.fn().mockReturnValue(false),
-      set: jest.fn(),
-      remove: jest.fn(),
-      overrideLocalDefault: jest.fn(),
-      isOverridden: jest.fn(),
-    },
+  const mockCore = ({
     http: {
       get: jest.fn(),
       post: jest.fn(),
-      put: jest.fn(),
-      delete: jest.fn(),
-      fetch: jest.fn(),
-      addLoadingCountListener: jest.fn(),
-      getLoadingCount: jest.fn(),
+    },
+    uiSettings: {
+      get: jest.fn().mockReturnValue(false),
     },
     notifications: {
       toasts: {
         addSuccess: jest.fn(),
         addError: jest.fn(),
-        add: jest.fn(),
-        remove: jest.fn(),
-        get: jest.fn(),
       },
     },
-    application: {
-      capabilities: {},
-      navigateToApp: jest.fn(),
-      currentAppId$: jest.fn(),
-      getUrlForApp: jest.fn(),
-      registerMountContext: jest.fn(),
-    },
-    docLinks: {
-      links: {},
-    },
-    i18n: {
-      translate: jest.fn((key) => key),
-    },
-    savedObjects: {
-      client: {
-        create: jest.fn(),
-        bulkCreate: jest.fn(),
-        delete: jest.fn(),
-        find: jest.fn(),
-        get: jest.fn(),
-        update: jest.fn(),
-        bulk: jest.fn(),
-      },
-    },
-    overlays: {
-      openFlyout: jest.fn(),
-      openModal: jest.fn(),
-      banners: {
-        add: jest.fn(),
-        remove: jest.fn(),
-        get: jest.fn(),
-      },
-    },
-  };
-
-  const mockLiveQueriesResponse = {
-    ok: true,
-    response: {
-      live_queries: [
-        {
-          timestamp: 1746147037494,
-          id: 'a23fvIkHTVuE3LkB_001',
-          node_id: 'node_1',
-          description:
-            'indices[customers], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":1000000}}}}]',
-          measurements: {
-            cpu: { number: 657000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 9256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 5174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'b45fvIkHTVuE3LkB_002',
-          node_id: 'node_2',
-          description:
-            'indices[orders], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":500000}}}}]',
-          measurements: {
-            cpu: { number: 957000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 13256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 8174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'c67fvIkHTVuE3LkB_003',
-          node_id: 'node_3',
-          description:
-            'indices[products], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":750000}}}}]',
-          measurements: {
-            cpu: { number: 757000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 15256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 6174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'd89fvIkHTVuE3LkB_004',
-          node_id: 'node_4',
-          description:
-            'indices[inventory], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":600000}}}}]',
-          measurements: {
-            cpu: { number: 857000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 11256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 7174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'e01fvIkHTVuE3LkB_005',
-          node_id: 'node_5',
-          description:
-            'indices[users], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":800000}}}}]',
-          measurements: {
-            cpu: { number: 557000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 17256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 4174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'f12fvIkHTVuE3LkB_006',
-          node_id: 'node_1',
-          description:
-            'indices[sales], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":900000}}}}]',
-          measurements: {
-            cpu: { number: 457000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 19256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 3174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'g23fvIkHTVuE3LkB_007',
-          node_id: 'node_2',
-          description:
-            'indices[reports], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":550000}}}}]',
-          measurements: {
-            cpu: { number: 357000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 21256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 2174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'h34fvIkHTVuE3LkB_008',
-          node_id: 'node_3',
-          description:
-            'indices[analytics], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":650000}}}}]',
-          measurements: {
-            cpu: { number: 257000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 23256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 1174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'i45fvIkHTVuE3LkB_009',
-          node_id: 'node_4',
-          description:
-            'indices[logs], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":450000}}}}]',
-          measurements: {
-            cpu: { number: 157000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 25256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 9174478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'j56fvIkHTVuE3LkB_010',
-          node_id: 'node_5',
-          description:
-            'indices[metrics], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":350000}}}}]',
-          measurements: {
-            cpu: { number: 757000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 27256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 5574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'k67fvIkHTVuE3LkB_011',
-          node_id: 'node_1',
-          description:
-            'indices[events], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":250000}}}}]',
-          measurements: {
-            cpu: { number: 857000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 29256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 6574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'l78fvIkHTVuE3LkB_012',
-          node_id: 'node_2',
-          description:
-            'indices[audit], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":150000}}}}]',
-          measurements: {
-            cpu: { number: 957000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 31256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 7574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'm89fvIkHTVuE3LkB_013',
-          node_id: 'node_3',
-          description:
-            'indices[cache], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":950000}}}}]',
-          measurements: {
-            cpu: { number: 657000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 33256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 8574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'n90fvIkHTVuE3LkB_014',
-          node_id: 'node_4',
-          description:
-            'indices[queue], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":850000}}}}]',
-          measurements: {
-            cpu: { number: 557000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 35256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 9574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-        {
-          timestamp: 1746147037494,
-          id: 'o01fvIkHTVuE3LkB_015',
-          node_id: 'node_5',
-          description:
-            'indices[tasks], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":750000}}}}]',
-          measurements: {
-            cpu: { number: 457000, count: 1, aggregationType: 'NONE' },
-            memory: { number: 37256, count: 1, aggregationType: 'NONE' },
-            latency: { number: 4574478333, count: 1, aggregationType: 'NONE' },
-          },
-        },
-      ],
-    },
-  };
+  } as unknown) as CoreStart;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (retrieveLiveQueries as jest.Mock).mockResolvedValue(mockLiveQueriesResponse);
+    (retrieveLiveQueries as jest.Mock).mockResolvedValue(stubLiveQueries);
   });
 
   const renderInflightQueries = () => {
-    return render(<InflightQueries core={mockCoreStart} />);
+    return render(<InflightQueries core={mockCore} />);
   };
 
-  it('renders the component with initial metrics', async () => {
-    const { container } = renderInflightQueries();
+  it('displays metric values from fixture', async () => {
+    renderInflightQueries();
 
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
-      expect(screen.getByText('15')).toBeInTheDocument();
-      expect(screen.getByText('5.93 s')).toBeInTheDocument();
-      expect(screen.getByText('9.57 s')).toBeInTheDocument();
-      expect(screen.getByText('9.25 ms')).toBeInTheDocument();
-      expect(screen.getByText('340.66 KB')).toBeInTheDocument();
+      expect(screen.getByText('20')).toBeInTheDocument();
+      expect(screen.getByText('7.19 s')).toBeInTheDocument();
+      expect(screen.getByText('9.69 s')).toBeInTheDocument();
+      expect(screen.getByText('1.68 ms')).toBeInTheDocument();
+      expect(screen.getByText('69.12 KB')).toBeInTheDocument();
+      expect(screen.getByText('ID: node-A1B2C4E5:3614')).toBeInTheDocument();
     });
-    expect(container).toMatchSnapshot();
   });
 
   it('shows 0 when there are no queries', async () => {
@@ -327,7 +81,7 @@ describe('InflightQueries', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(2000);
+      jest.advanceTimersByTime(6000);
     });
 
     expect(retrieveLiveQueries).toHaveBeenCalledTimes(2);
@@ -356,37 +110,52 @@ describe('InflightQueries', () => {
     renderInflightQueries();
 
     await waitFor(() => {
-      expect(screen.getAllByText('0.50 µs')).toHaveLength(2);
-      expect(screen.getByText('1.00 ms')).toBeInTheDocument();
+      expect(screen.getAllByText('0.50 µs')).toHaveLength(3);
+      expect(screen.getAllByText('1.00 ms')).toHaveLength(2);
     });
   });
 
-  it('formats memory values correctly', async () => {
-    const mockMemoryValues = {
+  it('renders correct table headers and row content', async () => {
+    (retrieveLiveQueries as jest.Mock).mockResolvedValue({
       response: {
         live_queries: [
           {
-            timestamp: 1746147037494,
-            id: 'o01fvIkHTVuE3LkB_015',
-            node_id: 'node_5',
-            description:
-              'indices[tasks], search_type[QUERY_THEN_FETCH], source[{"size":0,"aggregations":{"heavy_terms":{"terms":{"field":"title.keyword","size":750000}}}}]',
+            timestamp: 1749187466964, // Jun 05, 2025 @ 10:24:26 PM
+            id: 'node-A1B2C3D4E5:3600',
+            description: 'indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]',
+            node_id: 'node-A1B2C3D4E5',
             measurements: {
-              latency: { number: 1000000 },
-              cpu: { number: 1000000 },
-              memory: { number: 2 * 1024 * 1024 * 1024 },
+              latency: { number: 7990852130, count: 1, aggregationType: 'NONE' },
+              cpu: { number: 89951, count: 1, aggregationType: 'NONE' },
+              memory: { number: 3818, count: 1, aggregationType: 'NONE' },
+              is_cancelled: true,
             },
           },
         ],
       },
-    };
+    });
 
-    (retrieveLiveQueries as jest.Mock).mockResolvedValue(mockMemoryValues);
+    render(<InflightQueries core={mockCore} />);
+    const row = await screen.findByRole('row', { name: /node-A1B2C3D4E5:3600/i });
 
-    renderInflightQueries();
+    // Get all cells in the row
+    const cells = within(row).getAllByRole('cell');
 
-    await waitFor(() => {
-      expect(screen.getByText('2.00 GB')).toBeInTheDocument();
+    const expectedValues = [
+      'Jun 05, 2025 @ 10:24:26 PM',
+      'node-A1B2C3D4E5:3600',
+      'top_queries-2025.06.06-11009',
+      'Node 1',
+      'Time elapsed7.99 s',
+      '89.95 µs',
+      '3.73 KB',
+      'QUERY_THEN_FETCH',
+      'node-A1B2C3D4E5',
+      'Cancelled',
+    ];
+
+    expectedValues.forEach((expected, i) => {
+      expect(cells[i + 1].textContent).toContain(expected); // +1 to skip checkbox column
     });
   });
 });
