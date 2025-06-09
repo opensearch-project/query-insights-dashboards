@@ -361,4 +361,52 @@ describe('WorkloadManagementMain', () => {
       expect(header).toBeInTheDocument();
     });
   });
+
+  describe('ECharts tooltip formatter', () => {
+    const formatter = (limit: number) => {
+      return (currentParams: any[]) => {
+        const currentBox = currentParams.find((p) => p.seriesType === 'boxplot');
+
+        let tooltip = '';
+        if (currentBox) {
+          const [fMin, fQ1, fMedian, fQ3, fMax] = currentBox.data
+            .slice(1, 6)
+            .map((v: number) => v.toFixed(2));
+          tooltip += `<strong>Usage across nodes</strong><br/>
+                Min: ${fMin}%<br/>
+                Q1: ${fQ1}%<br/>
+                Median: ${fMedian}%<br/>
+                Q3: ${fQ3}%<br/>
+                Max: ${fMax}%<br/>`;
+        }
+
+        tooltip += `<span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
+        return tooltip;
+      };
+    };
+
+    it('formats boxplot tooltip correctly', () => {
+      const mockParams = [
+        {
+          seriesType: 'boxplot',
+          data: [0, 10.1234, 20.5678, 30.1111, 40.9999, 50.4444],
+        },
+      ];
+
+      const result = formatter(75)(mockParams);
+
+      expect(result).toContain('Min: 10.12%');
+      expect(result).toContain('Q1: 20.57%');
+      expect(result).toContain('Median: 30.11%');
+      expect(result).toContain('Q3: 41.00%');
+      expect(result).toContain('Max: 50.44%');
+      expect(result).toContain('<span style="color:#dc3545;">Limit: 75.00%</span>');
+    });
+
+    it('returns only limit line if boxplot is not found', () => {
+      const result = formatter(80)([]);
+
+      expect(result).toBe('<span style="color:#dc3545;">Limit: 80.00%</span>');
+    });
+  });
 });

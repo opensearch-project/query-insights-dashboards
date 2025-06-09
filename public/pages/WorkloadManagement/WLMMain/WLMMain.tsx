@@ -47,22 +47,6 @@ interface WorkloadGroupData {
   groupId: string;
 }
 
-interface GroupStats {
-  total_completions?: number;
-  total_rejections?: number;
-  total_cancellations?: number;
-  cpu?: {
-    current_usage?: number;
-    cancellations?: number;
-    rejections?: number;
-  };
-  memory?: {
-    current_usage?: number;
-    cancellations?: number;
-    rejections?: number;
-  };
-}
-
 interface WorkloadGroup {
   _id: string;
   name: string;
@@ -87,6 +71,18 @@ interface NodeStats {
   };
 }
 
+interface GroupStats {
+  cpu?: {
+    current_usage: number;
+  };
+  memory?: {
+    current_usage: number;
+  };
+  total_completions?: number;
+  total_rejections?: number;
+  total_cancellations?: number;
+}
+
 // --- Pagination Constants ---
 const DEFAULT_PAGE_INDEX = 0;
 const DEFAULT_PAGE_SIZE = 10;
@@ -94,9 +90,6 @@ const PAGE_SIZE_OPTIONS = [5, 10, 15, 50];
 
 const SUMMARY_STATS_KEYS = {
   totalGroups: 'totalGroups',
-  totalCompletions: 'totalCompletions',
-  totalRejections: 'totalRejections',
-  totalCancellations: 'totalCancellations',
   groupsExceedingLimits: 'groupsExceedingLimits',
 };
 
@@ -133,9 +126,6 @@ export const WorkloadManagementMain = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(SortDirection.DESC);
   const [summaryStats, setSummaryStats] = useState({
     [SUMMARY_STATS_KEYS.totalGroups]: '-' as string | number,
-    [SUMMARY_STATS_KEYS.totalCompletions]: '-' as string | number,
-    [SUMMARY_STATS_KEYS.totalRejections]: '-' as string | number,
-    [SUMMARY_STATS_KEYS.totalCancellations]: '-' as string | number,
     [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
 
@@ -171,46 +161,37 @@ export const WorkloadManagementMain = ({
   };
 
   // === API Calls ===
-  const fetchWorkloadGroupsWithLimits = async () => {
-    try {
-      const res = await core.http.get('/api/_wlm/workload_group', {
-        query: { dataSourceId: dataSource.id },
-      });
-      const workloadGroups: WorkloadGroup[] = res.body?.workload_groups ?? [];
-
-      // Map groupId to the resource limits, using NaN for unavailable limits
-      const groupIdToLimits = workloadGroups.reduce<
-        Record<string, { cpuLimit: number; memLimit: number }>
-      >((acc, group) => {
-        // If resource limits are available, convert them to numbers; otherwise, use NaN
-        const cpuLimit = group.resource_limits?.cpu
-          ? Math.round(group.resource_limits.cpu * 100)
-          : NaN;
-        const memLimit = group.resource_limits?.memory
-          ? Math.round(group.resource_limits.memory * 100)
-          : NaN;
-
-        acc[group._id] = { cpuLimit, memLimit };
-        return acc;
-      }, {});
-
-      return groupIdToLimits;
-    } catch (err) {
-      console.warn('Failed to fetch workload groups with limits:', err);
-      return {};
-    }
-  };
-
   const fetchClusterLevelStats = async () => {
     setLoading(true);
 
     try {
-      const idToName = await fetchWorkloadGroupNameMap();
       const rawNodeStats = await fetchClusterWorkloadGroupStats();
-      const groupIdToLimits = await fetchWorkloadGroupsWithLimits();
+      const workloadGroups: WorkloadGroup[] = await fetchWorkloadGroups();
+
+
+
+      const idToName = workloadGroups.reduce<Record<string, string>>((acc, group: WorkloadGroup) => {
+        acc[group._id] = group.name;
+        return acc;
+      }, {});
+
+      const groupIdToLimits = workloadGroups.reduce<Record<string, { cpuLimit: number; memLimit: number }>>(
+        (acc, group: WorkloadGroup) => {
+          const cpuLimit = group.resource_limits?.cpu
+            ? Math.round(group.resource_limits.cpu * 100)
+            : NaN;
+          const memLimit = group.resource_limits?.memory
+            ? Math.round(group.resource_limits.memory * 100)
+            : NaN;
+
+          acc[group._id] = { cpuLimit, memLimit };
+          return acc;
+        },
+        {}
+      );
 
       // Flatten and aggregate group stats across nodes
-      const aggregatedGroups: Record<string, GroupStats> = {};
+      const aggregatedGroups: Record<string, WorkloadGroupData> = {};
 
       for (const [nodeId, nodeStatsRaw] of Object.entries(rawNodeStats)) {
         if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
@@ -222,51 +203,58 @@ export const WorkloadManagementMain = ({
 
           if (!aggregatedGroups[groupId]) {
             aggregatedGroups[groupId] = {
-              total_completions: 0,
-              total_rejections: 0,
-              total_cancellations: 0,
-              cpu: { current_usage: 0 },
-              memory: { current_usage: 0 },
+              totalCompletions: 0,
+              totalRejections: 0,
+              totalCancellations: 0,
+              cpuUsage: 0,
+              memoryUsage: 0,
+              name: "",
+              topQueriesLink: "",
+              cpuLimit: 0,
+              memLimit: 0,
+              groupId: "",
+              cpuStats: [],
+              memStats: []
             };
           }
 
           // Aggregate values across nodes
-          aggregatedGroups[groupId].total_completions! += groupStats.total_completions ?? 0;
-          aggregatedGroups[groupId].total_rejections! += groupStats.total_rejections ?? 0;
-          aggregatedGroups[groupId].total_cancellations! += groupStats.total_cancellations ?? 0;
-          aggregatedGroups[groupId].cpu!.current_usage = Math.max(
-            aggregatedGroups[groupId].cpu!.current_usage ?? 0,
+          aggregatedGroups[groupId].totalCompletions! += groupStats.total_completions ?? 0;
+          aggregatedGroups[groupId].totalRejections! += groupStats.total_rejections ?? 0;
+          aggregatedGroups[groupId].totalCancellations! += groupStats.total_cancellations ?? 0;
+          aggregatedGroups[groupId].cpuStats.push((groupStats.cpu?.current_usage ?? 0) * 100);
+          aggregatedGroups[groupId].memStats.push((groupStats.memory?.current_usage ?? 0) * 100);
+          aggregatedGroups[groupId].cpuUsage = Math.max(
+            aggregatedGroups[groupId].cpuUsage ?? 0,
             groupStats.cpu?.current_usage ?? 0
           );
 
-          aggregatedGroups[groupId].memory!.current_usage = Math.max(
-            aggregatedGroups[groupId].memory!.current_usage ?? 0,
+          aggregatedGroups[groupId].memoryUsage = Math.max(
+            aggregatedGroups[groupId].memoryUsage ?? 0,
             groupStats.memory?.current_usage ?? 0
           );
         }
       }
-
-      // Build raw group data first (skip cpuStats/memStats for now)
       const rawData: WorkloadGroupData[] = [];
 
       for (const [groupId, groupStats] of Object.entries(aggregatedGroups) as Array<
-        [string, GroupStats]
+        [string, WorkloadGroupData]
       >) {
         const name = groupId === 'DEFAULT_WORKLOAD_GROUP' ? groupId : idToName[groupId];
-        const cpuUsage = Math.round((groupStats.cpu?.current_usage ?? 0) * 100);
-        const memoryUsage = Math.round((groupStats.memory?.current_usage ?? 0) * 100);
+        const cpuUsage = Math.round((groupStats.cpuUsage ?? 0) * 100);
+        const memoryUsage = Math.round((groupStats.memoryUsage ?? 0) * 100);
         const { cpuLimit = 100, memLimit = 100 } = groupIdToLimits[groupId] || {};
 
         rawData.push({
           name,
           cpuUsage,
           memoryUsage,
-          totalCompletions: groupStats.total_completions ?? 0,
-          totalRejections: groupStats.total_rejections ?? 0,
-          totalCancellations: groupStats.total_cancellations ?? 0,
+          totalCompletions: groupStats.totalCompletions,
+          totalRejections: groupStats.totalRejections,
+          totalCancellations: groupStats.totalCancellations,
           topQueriesLink: '', // not available yet
-          cpuStats: [],
-          memStats: [],
+          cpuStats: computeBoxStats(groupStats.cpuStats),
+          memStats: computeBoxStats(groupStats.memStats),
           cpuLimit,
           memLimit,
           groupId,
@@ -277,39 +265,7 @@ export const WorkloadManagementMain = ({
         ? rawData.filter((g) => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
         : rawData;
 
-      // Sort & paginate
       const sorted = sortData(filteredRawData, sortField, sortDirection);
-      const paged = sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
-
-      // Fetch only the stats needed for visible QGs (with /_wlm/stats/{workloadGroupId})
-      for (const group of paged) {
-        const groupId = group.groupId;
-
-        try {
-          const res = await core.http.get(`/api/_wlm/stats/${groupId}`, {
-            query: { dataSourceId: dataSource.id },
-          });
-          const stats: Record<string, NodeStats> = res.body;
-
-          const cpuUsages: number[] = [];
-          const memUsages: number[] = [];
-
-          for (const currentNodeId in stats) {
-            if (currentNodeId === '_nodes' || currentNodeId === 'cluster_name') continue;
-            const nodeStats = stats[currentNodeId]?.workload_groups?.[groupId];
-            if (nodeStats) {
-              cpuUsages.push((nodeStats.cpu?.current_usage ?? 0) * 100);
-              memUsages.push((nodeStats.memory?.current_usage ?? 0) * 100);
-            }
-          }
-
-          group.cpuStats = computeBoxStats(cpuUsages);
-          group.memStats = computeBoxStats(memUsages);
-        } catch (err) {
-          console.warn(`Failed to fetch boxplot stats for ${groupId}:`, err);
-        }
-      }
-
       const overLimit = filteredRawData.filter(
         (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
       ).length;
@@ -318,9 +274,6 @@ export const WorkloadManagementMain = ({
       setFilteredData(sorted);
       setSummaryStats({
         totalGroups: sorted.length,
-        totalCompletions: filteredRawData.reduce((sum, g) => sum + g.totalCompletions, 0),
-        totalRejections: filteredRawData.reduce((sum, g) => sum + g.totalRejections, 0),
-        totalCancellations: filteredRawData.reduce((sum, g) => sum + g.totalCancellations, 0),
         groupsExceedingLimits: overLimit,
       });
       setLastUpdated(new Date());
@@ -351,24 +304,19 @@ export const WorkloadManagementMain = ({
     });
   };
 
-  const fetchWorkloadGroupNameMap = async (): Promise<Record<string, string>> => {
-    const res = await core.http.get('/api/_wlm/workload_group', {
-      query: { dataSourceId: dataSource.id },
-    });
-    const groups = res.body?.workload_groups ?? [];
-    const map: Record<string, string> = {};
-    for (const group of groups) {
-      map[group._id] = group.name;
-    }
-    return map;
-  };
-
   const fetchClusterWorkloadGroupStats = async (): Promise<Record<string, NodeStats>> => {
     const res = await core.http.get('/api/_wlm/stats', {
       query: { dataSourceId: dataSource.id },
     });
 
     return res.body as Record<string, NodeStats>;
+  };
+
+  const fetchWorkloadGroups = async () => {
+    const res = await core.http.get('/api/_wlm/workload_group', {
+      query: { dataSourceId: dataSource.id },
+    });
+    return res.body?.workload_groups ?? [];
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
@@ -408,7 +356,7 @@ export const WorkloadManagementMain = ({
             const [fMin, fQ1, fMedian, fQ3, fMax] = currentBox.data
               .slice(1, 6)
               .map((v: number) => v.toFixed(2));
-            tooltip += `<strong>Usage across nodes (boxplot)</strong><br/>
+            tooltip += `<strong>Usage across nodes</strong><br/>
                 Min: ${fMin}%<br/>
                 Q1: ${fQ1}%<br/>
                 Median: ${fMedian}%<br/>
@@ -522,7 +470,14 @@ export const WorkloadManagementMain = ({
             option={getBoxplotOption(item.cpuStats, item.cpuLimit)}
             style={{ width: 120, height: 50 }}
           />
-          {cpuUsage}%
+          <EuiText
+            size="s"
+            style={{
+              color: cpuUsage > item.cpuLimit ? '#BD271E' : undefined,
+            }}
+          >
+            {cpuUsage}%
+          </EuiText>
         </div>
       ),
     },
@@ -536,7 +491,14 @@ export const WorkloadManagementMain = ({
             option={getBoxplotOption(item.memStats, item.memLimit)}
             style={{ width: 120, height: 50 }}
           />
-          {memoryUsage}%
+          <EuiText
+            size="s"
+            style={{
+              color: memoryUsage > item.memLimit ? '#BD271E' : undefined,
+            }}
+          >
+            {memoryUsage}%
+          </EuiText>
         </div>
       ),
     },
