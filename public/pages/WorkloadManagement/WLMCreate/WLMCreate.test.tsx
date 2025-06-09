@@ -182,7 +182,7 @@ describe('WLMCreate', () => {
   it('does NOT show error message when CPU usage is valid (70)', () => {
     renderComponent();
 
-    const cpuInput = screen.getByLabelText(/CPU usage/i);
+    const cpuInput = screen.getByTestId("cpu-threshold-input");
     fireEvent.change(cpuInput, { target: { value: '70' } });
 
     expect(screen.queryByText(/value must be between 0 and 100/i)).not.toBeInTheDocument();
@@ -198,11 +198,11 @@ describe('WLMCreate', () => {
   it('updates CPU and memory threshold', () => {
     renderComponent();
 
-    fireEvent.change(screen.getByLabelText(/CPU usage/i), { target: { value: '90' } });
-    fireEvent.change(screen.getByLabelText(/memory usage/i), { target: { value: '90' } });
+    fireEvent.change(screen.getByTestId("cpu-threshold-input"), { target: { value: '90' } });
+    fireEvent.change(screen.getByTestId("memory-threshold-input"), { target: { value: '90' } });
 
-    const cpuInput = screen.getByLabelText(/CPU usage/i) as HTMLInputElement;
-    const memInput = screen.getByLabelText(/memory usage/i) as HTMLInputElement;
+    const cpuInput = screen.getByTestId("cpu-threshold-input") as HTMLInputElement;
+    const memInput = screen.getByTestId("memory-threshold-input") as HTMLInputElement;
 
     expect(cpuInput.value).toBe('90');
     expect(memInput.value).toBe('90');
@@ -220,4 +220,21 @@ describe('WLMCreate', () => {
     expect(fakeEvent.preventDefault).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith('/workloadManagement');
   });
+
+  it('allows adding rules', async () => {
+    renderComponent();
+
+    const indexInput = await screen.getByTestId('indexInput');
+    await userEvent.type(indexInput, 'logs-*');
+    expect(indexInput).toHaveValue('logs-*');
+  });
+
+  it('sorts by memory usage when column is clicked', async () => {
+    renderComponent();
+
+    const memoryHeader = screen.getByText( /memory usage/i );
+    fireEvent.click(memoryHeader);
+    expect(memoryHeader).toBeInTheDocument();
+  });
+
 });

@@ -698,6 +698,7 @@ export const WLMDetails = ({
                       </EuiText>
                       <EuiSpacer size="s" />
                       <EuiFieldText
+                        data-testid = "indexInput"
                         value={rule.index}
                         onChange={(e) => {
                           const value = e.target.value;

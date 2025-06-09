@@ -258,6 +258,7 @@ export const WLMCreate = ({
                 </EuiText>
                 <EuiSpacer size="s" />
                 <EuiFieldText
+                  data-testid = "indexInput"
                   value={rule.index}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -358,7 +359,6 @@ export const WLMCreate = ({
               </EuiText>
             </label>
             <EuiFieldNumber
-              id="cpu-threshold-input"
               data-testid="cpu-threshold-input"
               value={cpuThreshold}
               onChange={(e) =>
@@ -382,7 +382,6 @@ export const WLMCreate = ({
               </EuiText>
             </label>
             <EuiFieldNumber
-              id="memory-threshold-input"
               data-testid="memory-threshold-input"
               value={memThreshold}
               onChange={(e) =>

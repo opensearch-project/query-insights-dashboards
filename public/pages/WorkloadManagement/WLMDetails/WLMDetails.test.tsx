@@ -16,6 +16,7 @@ import '@testing-library/jest-dom';
 import { WLM_MAIN } from '../WorkloadManagement';
 import { act } from 'react-dom/test-utils';
 import { DataSourceContext } from '../WorkloadManagement';
+import userEvent from '@testing-library/user-event';
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -517,5 +518,50 @@ describe('WLMDetails Component', () => {
     fireEvent.click(cpuUsageHeader);
 
     expect(cpuUsageHeader).toBeInTheDocument();
+  });
+
+  it('allows adding rules', async () => {
+    renderComponent();
+    const settingsTabButton = screen.getByTestId('wlm-tab-settings');
+
+    expect(settingsTabButton).toBeInTheDocument();
+    fireEvent.click(settingsTabButton);
+
+    const indexInput = await screen.getByTestId('indexInput');
+    await userEvent.type(indexInput, 'logs-*');
+    expect(indexInput).toHaveValue('logs-*');
+  });
+
+  it('adds a rule when clicking add rule', async () => {
+    renderComponent();
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const addButton = screen.getByRole('button', { name: /\+ add another rule/i });
+    fireEvent.click(addButton);
+
+    // There should be 2 index inputs after adding one
+    const inputs = screen.getAllByTestId('indexInput');
+    expect(inputs.length).toBe(2);
+  });
+
+  it('removes a rule when clicking delete icon', async () => {
+    renderComponent();
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const deleteIcons = screen.getAllByLabelText('Delete rule');
+    fireEvent.click(deleteIcons[0]);
+
+    expect(screen.queryByTestId('indexInput')).not.toBeInTheDocument();
+  });
+
+  it('shows error if more than 10 indexes are entered', async () => {
+    renderComponent();
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const input = screen.getByTestId('indexInput');
+    const value = Array(11).fill('logs-*').join(',');
+
+    fireEvent.change(input, { target: { value } });
+    expect(await screen.findByText(/at most 10 indexes/i)).toBeInTheDocument();
   });
 });
