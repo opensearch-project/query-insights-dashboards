@@ -30,6 +30,8 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
+  const [nodeChartError, setNodeChartError] = useState(false);
+  const [indexChartError, setIndexChartError] = useState(false);
 
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
@@ -42,21 +44,12 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
   const liveQueries = query?.response?.live_queries ?? [];
 
-  const nodeIdMap: Record<string, string> = {};
-  let nodeCounter = 1;
-
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
 
-  const getNodeLabel = (rawId: string): string => {
-    if (!nodeIdMap[rawId]) {
-      nodeIdMap[rawId] = `Node ${nodeCounter++}`;
-    }
-    return nodeIdMap[rawId];
-  };
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core);
 
@@ -71,7 +64,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
           index: indexMatch ? indexMatch[1] : 'N/A',
           search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
           coordinator_node: q.node_id,
-          node_label: getNodeLabel(q.node_id),
+          node_label: q.node_id,
         };
       });
 
@@ -79,10 +72,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
       parsedQueries.forEach((liveQuery) => {
         const nodeId = liveQuery.node_id;
-        const nodeLabel = getNodeLabel(nodeId); // Get friendly label like "Node 1"
-
-        tempNodeCount[nodeLabel] = (tempNodeCount[nodeLabel] || 0) + 1;
-
+        tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
         const index = liveQuery.index;
         if (index && typeof index === 'string') {
           indexCount[index] = (indexCount[index] || 0) + 1;
@@ -93,7 +83,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       const nodeCount: Record<string, number> = {};
       let othersCount = 0;
       sortedNodes.forEach(([nodeId, count], index) => {
-        if (index < TOP_N_DISPLAY_LIMIT ) nodeCount[nodeId] = count;
+        if (index < TOP_N_DISPLAY_LIMIT) nodeCount[nodeId] = count;
         else othersCount += count;
       });
       if (othersCount > 0) nodeCount.others = othersCount;
@@ -103,7 +93,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       const topIndexCount: Record<string, number> = {};
       let indexOthersCount = 0;
       sortedIndices.forEach(([indexName, count], i) => {
-        if (i < TOP_N_DISPLAY_LIMIT ) topIndexCount[indexName] = count;
+        if (i < TOP_N_DISPLAY_LIMIT) topIndexCount[indexName] = count;
         else indexOthersCount += count;
       });
       if (indexOthersCount > 0) topIndexCount.others = indexOthersCount;
@@ -115,14 +105,14 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => reject(new Error('Timed out')), ms);
       promise
-          .then((res) => {
-            clearTimeout(timeoutId);
-            resolve(res);
-          })
-          .catch((err) => {
-            clearTimeout(timeoutId);
-            reject(err);
-          });
+        .then((res) => {
+          clearTimeout(timeoutId);
+          resolve(res);
+        })
+        .catch((err) => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
     });
   }
 
@@ -151,7 +141,6 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, refreshInterval, core]);
-
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const formatTime = (seconds: number): string => {
@@ -200,9 +189,6 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
     onSelectionChange: (selected: any[]) => setSelectedItems(selected),
   };
 
-
-
-
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
 
@@ -242,8 +228,8 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
   const getChartData = (counts: Record<string, number>, type: 'node' | 'index') => {
     return Object.entries(counts).map(([key, value]) => ({
-      label: type === 'node' ? `${key}` : key, // Use descriptive label instead of 'a'
-      value, // Use 'value' instead of 'b' for clarity
+      label: type === 'node' ? `${key}` : key,
+      value,
     }));
   };
 
@@ -291,7 +277,6 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
     };
   };
 
-  // Update the embed calls
   useEffect(() => {
     if (chartRefByNode.current) {
       embed(
@@ -301,7 +286,12 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
           data: { values: getChartData(nodeCounts, 'node') },
         },
         { actions: false, renderer: 'svg' }
-      ).catch(console.error);
+      )
+        .then(() => setNodeChartError(false))
+        .catch((error) => {
+          console.error('Node chart rendering failed:', error);
+          setNodeChartError(true);
+        });
     }
   }, [nodeCounts, selectedChartIdByNode]);
 
@@ -314,7 +304,12 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
           data: { values: getChartData(indexCounts, 'index') },
         },
         { actions: false, renderer: 'svg' }
-      ).catch(console.error);
+      )
+        .then(() => setIndexChartError(false))
+        .catch((error) => {
+          console.error('Index chart rendering failed:', error);
+          setIndexChartError(true);
+        });
     }
   }, [indexCounts, selectedChartIdByIndex]);
 
@@ -334,7 +329,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
           <select
             value={refreshInterval}
             onChange={(e) => setRefreshInterval(Number(e.target.value))}
-            onBlur={(e) => setRefreshInterval(Number(e.target.value))} // same logic
+            onBlur={(e) => setRefreshInterval(Number(e.target.value))}
             style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
             disabled={!autoRefreshEnabled}
             data-test-subj="live-queries-refresh-interval"
@@ -362,7 +357,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
         {/* Active Queries */}
         <EuiFlexItem>
           <EuiPanel paddingSize="m" data-test-subj="panel-active-queries">
-                  <EuiFlexItem>
+            <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
                   <p>Active queries</p>
@@ -481,8 +476,20 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(nodeCounts).length > 0 ? (
-              <div ref={chartRefByNode} data-test-subj="vega-chart-node" data-chart-values={JSON.stringify(getChartData(nodeCounts, 'node'))}/>
+            {Object.keys(nodeCounts).length > 0 && !nodeChartError ? (
+              <div
+                ref={chartRefByNode}
+                data-test-subj="vega-chart-node"
+                data-chart-values={JSON.stringify(getChartData(nodeCounts, 'node'))}
+              />
+            ) : nodeChartError ? (
+              <EuiTextAlign textAlign="center">
+                <EuiSpacer size="xl" />
+                <EuiText color="danger">
+                  <p>Error rendering chart</p>
+                </EuiText>
+                <EuiSpacer size="xl" />
+              </EuiTextAlign>
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
@@ -511,8 +518,20 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(indexCounts).length > 0 ? (
-              <div ref={chartRefByIndex} data-test-subj="vega-chart-index" data-chart-values={JSON.stringify(getChartData(indexCounts, 'index'))}/>
+            {Object.keys(indexCounts).length > 0 && !indexChartError ? (
+              <div
+                ref={chartRefByIndex}
+                data-test-subj="vega-chart-index"
+                data-chart-values={JSON.stringify(getChartData(indexCounts, 'index'))}
+              />
+            ) : indexChartError ? (
+              <EuiTextAlign textAlign="center">
+                <EuiSpacer size="xl" />
+                <EuiText color="danger">
+                  <p>Error rendering chart</p>
+                </EuiText>
+                <EuiSpacer size="xl" />
+              </EuiTextAlign>
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
@@ -606,7 +625,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
             { field: 'id', name: 'Task ID' },
             { field: 'index', name: 'Index' },
-            { name: 'Node', render: (item) => item.node_label }, // 💡 Swapped: show coordinator_node under "Node"
+            { field: 'coordinator_node', name: 'Coordinator node' },
             {
               name: 'Time elapsed',
               render: (item) => formatTime(item.measurements?.latency?.number / 1e9),
@@ -621,7 +640,6 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             },
             { field: 'search_type', name: 'Search type' },
 
-            { field: 'coordinator_node', name: 'Coordinator node' },
             {
               name: 'Status',
               render: (item) =>

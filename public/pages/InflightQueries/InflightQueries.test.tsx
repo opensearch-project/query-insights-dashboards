@@ -145,12 +145,11 @@ describe('InflightQueries', () => {
       'Jun 05, 2025 @ 10:24:26 PM',
       'node-A1B2C3D4E5:3600',
       'top_queries-2025.06.06-11009',
-      'Node 1',
+      'Coordinator nodenode-A1B2C3D4E5',
       'Time elapsed7.99 s',
       '89.95 µs',
       '3.73 KB',
       'QUERY_THEN_FETCH',
-      'node-A1B2C3D4E5',
       'Cancelled',
     ];
 

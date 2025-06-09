@@ -141,6 +141,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
       >
         <div
           class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+          data-test-subj="panel-active-queries"
         >
           <div
             class="euiFlexItem"
@@ -185,6 +186,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
       >
         <div
           class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+          data-test-subj="panel-avg-elapsed-time"
         >
           <div
             class="euiFlexItem"
@@ -224,6 +226,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
       >
         <div
           class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+          data-test-subj="panel-longest-query"
         >
           <div
             class="euiFlexItem"
@@ -254,6 +257,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
       >
         <div
           class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+          data-test-subj="panel-total-cpu"
         >
           <div
             class="euiFlexItem"
@@ -293,6 +297,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
       >
         <div
           class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+          data-test-subj="panel-total-memory"
         >
           <div
             class="euiFlexItem"
@@ -967,7 +972,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   </th>
                   <th
                     class="euiTableHeaderCell"
-                    data-test-subj="tableHeaderCell_Node_3"
+                    data-test-subj="tableHeaderCell_coordinator_node_3"
                     role="columnheader"
                     scope="col"
                   >
@@ -976,9 +981,9 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                     >
                       <span
                         class="euiTableCellContent__text"
-                        title="Node"
+                        title="Coordinator node"
                       >
-                        Node
+                        Coordinator node
                       </span>
                     </span>
                   </th>
@@ -1052,24 +1057,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   </th>
                   <th
                     class="euiTableHeaderCell"
-                    data-test-subj="tableHeaderCell_coordinator_node_8"
-                    role="columnheader"
-                    scope="col"
-                  >
-                    <span
-                      class="euiTableCellContent"
-                    >
-                      <span
-                        class="euiTableCellContent__text"
-                        title="Coordinator node"
-                      >
-                        Coordinator node
-                      </span>
-                    </span>
-                  </th>
-                  <th
-                    class="euiTableHeaderCell"
-                    data-test-subj="tableHeaderCell_Status_9"
+                    data-test-subj="tableHeaderCell_Status_8"
                     role="columnheader"
                     scope="col"
                   >
@@ -1108,7 +1096,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 >
                   <td
                     class="euiTableRowCell euiTableRowCell--isMobileFullWidth"
-                    colspan="12"
+                    colspan="11"
                   >
                     <div
                       class="euiTableCellContent euiTableCellContent--alignCenter"

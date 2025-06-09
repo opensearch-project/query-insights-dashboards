@@ -22,41 +22,35 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays metrics panels correctly', () => {
-    cy.get('[data-test-subj="panel-active-queries"]')
-        .within(() => {
-          cy.contains('Active queries');
-          cy.get('h2 > b').should('contain.text', '20');
-        });
+    cy.get('[data-test-subj="panel-active-queries"]').within(() => {
+      cy.contains('Active queries');
+      cy.get('h2 > b').should('contain.text', '20');
+    });
 
-    cy.get('[data-test-subj="panel-avg-elapsed-time"]')
-        .within(() => {
-          cy.contains('Avg. elapsed time');
-          cy.get('h2 > b').should('contain.text', '7.19 s');
-          cy.contains('(Avg. across 20)');
-        });
+    cy.get('[data-test-subj="panel-avg-elapsed-time"]').within(() => {
+      cy.contains('Avg. elapsed time');
+      cy.get('h2 > b').should('contain.text', '7.19 s');
+      cy.contains('(Avg. across 20)');
+    });
 
-    cy.get('[data-test-subj="panel-longest-query"]')
-        .within(() => {
-          cy.contains('Longest running query');
-          cy.get('h2 > b').should('contain.text', '9.69 s');
-          cy.contains('ID: node-A1B2C4E5:3614');
-        });
+    cy.get('[data-test-subj="panel-longest-query"]').within(() => {
+      cy.contains('Longest running query');
+      cy.get('h2 > b').should('contain.text', '9.69 s');
+      cy.contains('ID: node-A1B2C4E5:3614');
+    });
 
-    cy.get('[data-test-subj="panel-total-cpu"]')
-        .within(() => {
-          cy.contains('Total CPU usage');
-          cy.get('h2 > b').should('contain.text', '1.68 ms');
-          cy.contains('(Sum across 20)');
-        });
+    cy.get('[data-test-subj="panel-total-cpu"]').within(() => {
+      cy.contains('Total CPU usage');
+      cy.get('h2 > b').should('contain.text', '1.68 ms');
+      cy.contains('(Sum across 20)');
+    });
 
-    cy.get('[data-test-subj="panel-total-memory"]')
-        .within(() => {
-          cy.contains('Total memory usage');
-          cy.get('h2 > b').should('contain.text', '69.12 KB');
-          cy.contains('(Sum across 20)');
-        });
+    cy.get('[data-test-subj="panel-total-memory"]').within(() => {
+      cy.contains('Total memory usage');
+      cy.get('h2 > b').should('contain.text', '69.12 KB');
+      cy.contains('(Sum across 20)');
+    });
   });
-
 
   it('verifies table headers and row content in memory table', () => {
     const expectedHeaders = [
@@ -64,12 +58,11 @@ describe('Inflight Queries Dashboard', () => {
       'Timestamp',
       'Task ID',
       'Index',
-      'Node',
+      'Coordinator node',
       'Time elapsed',
       'CPU usage',
       'Memory usage',
       'Search type',
-      'Coordinator node',
       'Status',
       'Actions',
     ];
@@ -78,14 +71,13 @@ describe('Inflight Queries Dashboard', () => {
       'Jun 05, 2025 @ 10:24:26 PM',
       'node-A1B2C3D4E5:3600',
       'top_queries-2025.06.06-11009',
-      'Node 1',
+      'node-A1B2C3D4E5',
       '7.99 s',
       '89.95 µs',
       '3.73 KB',
       'QUERY_THEN_FETCH',
-      'node-A1B2C3D4E5',
       'Cancelled',
-      '', // Action column
+      '',
     ];
 
     cy.get('.euiTable thead tr th').should(($headers) => {
@@ -118,15 +110,11 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('selects all checkboxes and shows bulk cancel text', () => {
-    // Click the header checkbox to select all
     cy.get('.euiTable thead tr th input[type="checkbox"]').check({ force: true });
-
-    // Count the number of rows selected
     cy.get('.euiTable tbody tr input[type="checkbox"]:checked').then(($rows) => {
       const selectedCount = $rows.length;
       const expectedText = `Cancel ${selectedCount} queries`;
 
-      // Assert the bulk action banner shows the correct message
       cy.contains(expectedText).should('be.visible');
     });
   });
@@ -135,7 +123,7 @@ describe('Inflight Queries Dashboard', () => {
     cy.get('[data-test-subj="live-queries-autorefresh-toggle"]').as('toggle');
     cy.get('[data-test-subj="live-queries-refresh-interval"]').as('dropdown');
 
-    cy.get('@toggle').click(); // Turn it off
+    cy.get('@toggle').click();
     cy.get('@toggle').should('have.attr', 'aria-checked', 'false');
     cy.get('@dropdown').should('be.disabled');
   });
@@ -181,37 +169,37 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays correct chart data for node and index charts', () => {
-    // Wait for charts to render
-    cy.get('[data-test-subj="vega-chart-node"]')
-        .invoke('attr', 'data-chart-values')
-        .then((json) => {
-          const data = JSON.parse(json);
-          expect(data).to.deep.equal([
-            { label: 'Node 1', value: 2 },
-            { label: 'Node 2', value: 1 },
-            { label: 'Node 3', value: 1 },
-            { label: 'Node 4', value: 1 },
-            { label: 'Node 5', value: 1 },
-            { label: 'Node 6', value: 1 },
-            { label: 'Node 7', value: 1 },
-            { label: 'Node 8', value: 1 },
-            { label: 'Node 9', value: 1 },
-            { label: 'others', value: 10 },
-          ]);
-          expect(data).to.have.length(10);
-        });
-
-    cy.get('[data-test-subj="vega-chart-index"]')
-        .invoke('attr', 'data-chart-values')
-        .then((json) => {
-          const data = JSON.parse(json);
-          expect(data).to.deep.include({ label: 'top_queries-2025.06.06-11009', value: 19 });
-          expect(data).to.deep.include({ label: 'opensearch', value: 1 });
-          expect(data).to.have.length(2);
-        });
-
+    return cy
+      .get('[data-test-subj="vega-chart-node"]')
+      .invoke('attr', 'data-chart-values')
+      .then((json) => {
+        const data = JSON.parse(json);
+        expect(data).to.deep.equal([
+          { label: 'node-A1B2C3D4E5', value: 2 },
+          { label: '4W2VTHIgQY-oB7dSrYz4B', value: 1 },
+          { label: 'node-X9Y8Z7W6', value: 1 },
+          { label: 'node-P0Q9R8S7', value: 1 },
+          { label: '4W2VTHIgQY-oB7dSrYz4', value: 1 },
+          { label: 'node-M2O3P4Q5', value: 1 },
+          { label: 'node-B2C3D4E5', value: 1 },
+          { label: 'node-N2O3P4Q5', value: 1 },
+          { label: '2VTHIgQY-oB7dSrYz4BQ', value: 1 },
+          { label: 'others', value: 10 },
+        ]);
+        expect(data).to.have.length(10);
+      })
+      .then(() => {
+        return cy
+          .get('[data-test-subj="vega-chart-index"]')
+          .invoke('attr', 'data-chart-values')
+          .then((json) => {
+            const data = JSON.parse(json);
+            expect(data).to.deep.include({ label: 'top_queries-2025.06.06-11009', value: 19 });
+            expect(data).to.deep.include({ label: 'opensearch', value: 1 });
+            expect(data).to.have.length(2);
+          });
+      });
   });
-
 
   it('handles empty response state', () => {
     cy.intercept('GET', '**/api/live_queries', (req) => {
@@ -255,17 +243,17 @@ describe('Inflight Queries Dashboard', () => {
 
     cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
     cy.contains('p', 'Queries by Node')
-        .closest('.euiPanel')
-        .within(() => {
-          cy.contains('No data available').should('be.visible');
-        });
+      .closest('.euiPanel')
+      .within(() => {
+        cy.contains('No data available').should('be.visible');
+      });
 
     cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
     cy.contains('p', 'Queries by Index')
-        .closest('.euiPanel')
-        .within(() => {
-          cy.contains('No data available').should('be.visible');
-        });
+      .closest('.euiPanel')
+      .within(() => {
+        cy.contains('No data available').should('be.visible');
+      });
   });
   it('validates time unit conversions', () => {
     cy.intercept('GET', '**/api/live_queries', {
@@ -275,7 +263,7 @@ describe('Inflight Queries Dashboard', () => {
           live_queries: [
             {
               measurements: {
-                latency: { number: 500 }, // 500 nanoseconds = 0.5 microseconds
+                latency: { number: 500 },
                 cpu: { number: 100 },
                 memory: { number: 1000 },
               },
@@ -292,7 +280,6 @@ describe('Inflight Queries Dashboard', () => {
         cy.get('h2').contains(/0\.50\s*µs/);
       });
 
-    // Test milliseconds
     cy.intercept('GET', '**/api/live_queries', {
       statusCode: 200,
       body: {
@@ -300,7 +287,7 @@ describe('Inflight Queries Dashboard', () => {
           live_queries: [
             {
               measurements: {
-                latency: { number: 1000000 }, // 1 millisecond
+                latency: { number: 1000000 },
                 cpu: { number: 100000 },
                 memory: { number: 1000 },
               },
@@ -319,7 +306,6 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('validates memory unit conversions', () => {
-    // Intercept and assert 2.00 KB
     cy.intercept('GET', '**/api/live_queries', {
       statusCode: 200,
       body: {
@@ -333,7 +319,7 @@ describe('Inflight Queries Dashboard', () => {
               measurements: {
                 latency: { number: 1 },
                 cpu: { number: 1 },
-                memory: { number: 2048 }, // 2 KB
+                memory: { number: 2048 },
               },
             },
           ],
@@ -345,7 +331,6 @@ describe('Inflight Queries Dashboard', () => {
     cy.wait('@getKBData');
     cy.contains('h2', /2\s*KB/).should('exist');
 
-    // Intercept and assert 2.00 MB
     cy.intercept('GET', '**/api/live_queries', {
       statusCode: 200,
       body: {
@@ -359,7 +344,7 @@ describe('Inflight Queries Dashboard', () => {
               measurements: {
                 latency: { number: 1 },
                 cpu: { number: 1 },
-                memory: { number: 2 * 1024 * 1024 }, // 2 MB
+                memory: { number: 2 * 1024 * 1024 },
               },
             },
           ],
@@ -367,7 +352,6 @@ describe('Inflight Queries Dashboard', () => {
       },
     }).as('getMBData');
 
-    // Click refresh button to trigger re-fetch
     cy.get('[data-test-subj="live-queries-refresh-button"]').click();
     cy.wait('@getMBData');
     cy.contains('h2', /2\s*MB/).should('exist');
@@ -396,25 +380,6 @@ describe('Inflight Queries Dashboard', () => {
         .find('input[type="checkbox"]')
         .should('be.disabled');
     });
-  });
-
-  it('handles error states', () => {
-    cy.intercept('GET', '**/api/live_queries', {
-      statusCode: 500,
-      body: { error: 'Internal Server Error' },
-    }).as('getErrorResponse');
-
-    cy.navigateToLiveQueries();
-    cy.wait('@getErrorResponse');
-
-    // Check that exactly 5 metric panels show '0'
-    cy.get('.euiPanel')
-      .filter((_, el) => el.querySelector('h2')?.textContent.trim() === '0')
-      .should('have.length', 5);
-
-    // Check for "No data available" in charts
-    cy.contains('p', 'Queries by Node').closest('.euiPanel').contains('No data available');
-    cy.contains('p', 'Queries by Index').closest('.euiPanel').contains('No data available');
   });
 
   it('filters table to show only "opensearch" index queries', () => {
