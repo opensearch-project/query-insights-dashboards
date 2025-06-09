@@ -8,97 +8,68 @@ describe('WLM Create Page', () => {
     cy.visit('/app/workload-management#/wlm-create');
   });
 
-  it('should render the create form layout', () => {
-    // Confirm title and overview section exist
+  it('renders the full create form with required fields', () => {
     cy.contains('h1', 'Create workload group').should('exist');
     cy.contains('h2', 'Overview').should('exist');
 
-    // Confirm presence of form field labels
-    const labels = [
+    // Form labels and fields
+    [
       'Name',
-      'Description (Optional)',
-      'Index wildcard',
+      'Description – Optional',
       'Resiliency mode',
+      'Index wildcard',
       'Reject queries when CPU usage exceeds',
       'Reject queries when memory usage exceeds',
-    ];
-
-    labels.forEach((label) => {
-      cy.contains('label', label).should('exist');
+    ].forEach((label) => {
+      cy.contains(label).should('exist');
     });
 
-    // Confirm both radio options are visible
-    cy.contains('label', 'Soft').should('exist');
-    cy.contains('label', 'Enforced').should('exist');
-
-    // Confirm buttons exist
-    cy.get('button').contains('Cancel').should('exist');
+    cy.contains('Soft').should('exist');
+    cy.contains('Enforced').should('exist');
+    cy.contains('+ Add another rule').should('exist');
     cy.get('button').contains('Create workload group').should('exist');
   });
 
-  it('should validate CPU and memory input ranges using label', () => {
-    cy.contains('label', 'Reject queries when CPU usage exceeds')
-      .parentsUntil('.euiFormRow')
-      .parent()
-      .find('input[type="number"]')
-      .as('cpuInput');
-
-    cy.get('@cpuInput').clear().type('150');
+  it('shows validation errors for CPU and memory thresholds', () => {
+    cy.get('[data-testid="cpu-threshold-input"]').clear().type('150');
     cy.contains('Value must be between 0 and 100').should('exist');
 
-    cy.get('@cpuInput').clear().type('-10');
+    cy.get('[data-testid="cpu-threshold-input"]').clear().type('-10');
     cy.contains('Value must be between 0 and 100').should('exist');
 
-    cy.contains('label', 'Reject queries when memory usage exceeds')
-      .parentsUntil('.euiFormRow')
-      .parent()
-      .find('input[type="number"]')
-      .as('memInput');
-
-    cy.get('@memInput').clear().type('150');
+    cy.get('[data-testid="memory-threshold-input"]').clear().type('101');
     cy.contains('Value must be between 0 and 100').should('exist');
 
-    cy.get('@memInput').clear().type('-5');
+    cy.get('[data-testid="memory-threshold-input"]').clear().type('-1');
     cy.contains('Value must be between 0 and 100').should('exist');
   });
 
-  it('should create workload group successfully with valid inputs', () => {
-    const groupName = `test_group_${Date.now()}`;
+  it('creates a workload group successfully with valid inputs', () => {
+    const groupName = `wlm_test_${Date.now()}`;
 
-    // Fill in the "Name" input using label
-    cy.contains('label', 'Name')
-      .parentsUntil('.euiFormRow')
-      .parent()
-      .find('input[type="text"]')
-      .type(groupName);
+    cy.get('[data-testid="name-input"]').type(groupName);
+    cy.contains('Soft').click();
+    cy.get('[data-testid="indexInput"]').type('test-index');
+    cy.get('[data-testid="cpu-threshold-input"]').type('10');
+    cy.get('[data-testid="memory-threshold-input"]').type('20');
 
-    // Select "Soft" resiliency mode radio
-    cy.contains('label', 'Soft').click();
-
-    // Fill in the CPU threshold
-    cy.contains('label', 'Reject queries when CPU usage exceeds')
-      .parentsUntil('.euiFormRow')
-      .parent()
-      .find('input[type="number"]')
-      .first()
-      .type('1');
-
-    // Fill in the Memory threshold
-    cy.contains('label', 'Reject queries when memory usage exceeds')
-      .parentsUntil('.euiFormRow')
-      .parent()
-      .find('input[type="number"]')
-      .first()
-      .type('1');
-
-    // Intercept request
-    cy.intercept('PUT', '/api/_wlm/workload_group').as('createGroup');
-
-    // Submit form
+    cy.intercept('PUT', '/api/_wlm/workload_group').as('createRequest');
     cy.get('button').contains('Create workload group').click();
 
-    // Confirm redirect and success toast
     cy.url().should('include', '/workloadManagement');
     cy.contains(groupName).should('exist');
+  });
+
+  it('adds and deletes a rule block', () => {
+    cy.contains('+ Add another rule').click();
+    cy.get('[data-testid="indexInput"]').should('have.length', 2);
+
+    cy.get('[aria-label="Delete rule"]').first().click();
+    cy.get('[data-testid="indexInput"]').should('have.length', 1);
+  });
+
+  it('navigates back to main page on Cancel', () => {
+    cy.get('button').contains('Cancel').click();
+    cy.url().should('include', '/workloadManagement');
   });
 });

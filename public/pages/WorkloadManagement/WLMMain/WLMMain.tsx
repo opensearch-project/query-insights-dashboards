@@ -168,27 +168,27 @@ export const WorkloadManagementMain = ({
       const rawNodeStats = await fetchClusterWorkloadGroupStats();
       const workloadGroups: WorkloadGroup[] = await fetchWorkloadGroups();
 
-
-
-      const idToName = workloadGroups.reduce<Record<string, string>>((acc, group: WorkloadGroup) => {
-        acc[group._id] = group.name;
-        return acc;
-      }, {});
-
-      const groupIdToLimits = workloadGroups.reduce<Record<string, { cpuLimit: number; memLimit: number }>>(
+      const idToName = workloadGroups.reduce<Record<string, string>>(
         (acc, group: WorkloadGroup) => {
-          const cpuLimit = group.resource_limits?.cpu
-            ? Math.round(group.resource_limits.cpu * 100)
-            : NaN;
-          const memLimit = group.resource_limits?.memory
-            ? Math.round(group.resource_limits.memory * 100)
-            : NaN;
-
-          acc[group._id] = { cpuLimit, memLimit };
+          acc[group._id] = group.name;
           return acc;
         },
         {}
       );
+
+      const groupIdToLimits = workloadGroups.reduce<
+        Record<string, { cpuLimit: number; memLimit: number }>
+      >((acc, group: WorkloadGroup) => {
+        const cpuLimit = group.resource_limits?.cpu
+          ? Math.round(group.resource_limits.cpu * 100)
+          : NaN;
+        const memLimit = group.resource_limits?.memory
+          ? Math.round(group.resource_limits.memory * 100)
+          : NaN;
+
+        acc[group._id] = { cpuLimit, memLimit };
+        return acc;
+      }, {});
 
       // Flatten and aggregate group stats across nodes
       const aggregatedGroups: Record<string, WorkloadGroupData> = {};
@@ -208,13 +208,13 @@ export const WorkloadManagementMain = ({
               totalCancellations: 0,
               cpuUsage: 0,
               memoryUsage: 0,
-              name: "",
-              topQueriesLink: "",
+              name: '',
+              topQueriesLink: '',
               cpuLimit: 0,
               memLimit: 0,
-              groupId: "",
+              groupId: '',
               cpuStats: [],
-              memStats: []
+              memStats: [],
             };
           }
 

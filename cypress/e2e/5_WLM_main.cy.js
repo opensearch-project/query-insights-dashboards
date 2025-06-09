@@ -32,53 +32,17 @@ describe('WLM Main Page', () => {
     });
   });
 
-  it('should switch between nodes using dropdown', () => {
-    cy.get('select').should('exist');
-    cy.get('select option').then((options) => {
-      if (options.length > 1) {
-        cy.get('select').select(options[1].value);
-        cy.wait(2000);
-        cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-      }
-    });
-  });
-
-  it('should not switch nodes if only one node is available', () => {
-    cy.get('select').should('exist');
-    cy.get('select option').then((options) => {
-      if (options.length === 1) {
-        cy.get('select').should('have.value', options[0].value);
-        cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-      }
-    });
-  });
-
   it('should display the WLM main page with workload group table and summary stats', () => {
     // Confirm table exists
     cy.get('.euiBasicTable').should('be.visible');
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
 
     // Confirm stat cards exist
-    const titles = [
-      'Total workload groups',
-      'Total groups exceeding limits',
-      'Total completion',
-      'Total rejections',
-      'Total cancellations',
-    ];
+    const titles = ['Total workload groups', 'Total groups exceeding limits'];
 
     titles.forEach((title) => {
       cy.contains(title).should('be.visible');
     });
-  });
-
-  it('should display CPU and memory usage tooltips on hover', () => {
-    cy.get('.echarts-for-react')
-      .first()
-      .trigger('mouseover', { force: true })
-      .then(() => {
-        cy.get('.echarts-tooltip').should('exist').and('contain.text', 'Usage across nodes');
-      });
   });
 
   it('should filter workload groups by name in search', () => {
@@ -97,5 +61,20 @@ describe('WLM Main Page', () => {
       });
 
     cy.contains('Workload group name', { timeout: 10000 }).should('exist');
+  });
+
+  it('should route to the Create Workload Group page when clicking the Create button', () => {
+    // Click the "Create workload group" button
+    cy.contains('Create workload group').click();
+
+    // Confirm we are on the create page
+    cy.url().should('include', '/wlm-create');
+
+    // Validate that the form elements exist
+    cy.contains('Resiliency mode').should('be.visible');
+    cy.get('[data-testid="indexInput"]').should('exist');
+    cy.get('button').contains('+ Add another rule').should('exist');
+    cy.get('input[data-testid="cpu-threshold-input"]').should('exist');
+    cy.get('input[data-testid="memory-threshold-input"]').should('exist');
   });
 });

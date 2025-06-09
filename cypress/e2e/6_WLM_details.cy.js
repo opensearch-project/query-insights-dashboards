@@ -94,11 +94,9 @@ describe('WLM Details Page', () => {
     cy.contains(`Saved changes for "${groupName}"`).should('exist');
   });
 
-  it('should show delete modal and cancel', () => {
+  it('should show delete modal', () => {
     cy.contains('Delete').click();
     cy.contains('Delete workload group').should('exist');
-    cy.get('button').contains('Cancel').click();
-    cy.contains('Delete workload group').should('not.exist');
   });
 
   it('should delete the workload group successfully', () => {

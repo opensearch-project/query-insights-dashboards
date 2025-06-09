@@ -279,4 +279,10 @@ export function defineWlmRoutes(router: IRouter) {
       }
     }
   );
+
+  // Create index rule
+
+  // Update index rule
+
+  // Delete index rule
 }
