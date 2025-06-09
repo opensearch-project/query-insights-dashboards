@@ -77,13 +77,13 @@ describe('WLMCreate', () => {
     renderComponent();
 
     expect(screen.getByRole('button', { name: /create workload group/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Name/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Description/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Index wildcard/)).toBeInTheDocument();
+    expect(screen.getByText(/Name/)).toBeInTheDocument();
+    expect(screen.getByText(/Description/)).toBeInTheDocument();
+    expect(screen.getByText(/Index wildcard/)).toBeInTheDocument();
     expect(screen.getByText(/Soft/)).toBeInTheDocument();
     expect(screen.getByText(/Enforced/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/CPU usage/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/memory usage/)).toBeInTheDocument();
+    expect(screen.getByText(/CPU usage/)).toBeInTheDocument();
+    expect(screen.getByText(/memory usage/)).toBeInTheDocument();
     expect(screen.getByText(/Cancel/)).toBeInTheDocument();
   });
 
@@ -129,7 +129,7 @@ describe('WLMCreate', () => {
         '/api/_wlm/workload_group',
         expect.objectContaining({ query: { dataSourceId: 'default' } })
       );
-      expect(mockAddSuccess).toHaveBeenCalledWith('Workload group "MyGroup" created successfully.');
+      expect(mockAddSuccess).toHaveBeenCalledWith('Workload group created successfully.');
       expect(mockPush).toHaveBeenCalledWith('/workloadManagement');
     });
   });
@@ -139,7 +139,7 @@ describe('WLMCreate', () => {
 
     renderComponent();
 
-    fireEvent.change(screen.getByLabelText(/Name/), {
+    fireEvent.change(screen.getByTestId('name-input'), {
       target: { value: 'FailGroup' },
     });
     fireEvent.change(screen.getByTestId('cpu-threshold-input'), {

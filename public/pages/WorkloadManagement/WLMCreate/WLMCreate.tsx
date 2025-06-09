@@ -183,7 +183,11 @@ export const WLMCreate = ({
             <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
               Specify a unique name that is easy to recognize.
             </EuiText>
-            <EuiFieldText value={name} onChange={(e) => setName(e.target.value)} />
+            <EuiFieldText
+              data-testid="name-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </>
         </EuiFormRow>
 
@@ -332,6 +336,7 @@ export const WLMCreate = ({
           error="Value must be between 0 and 100"
         >
           <EuiFieldNumber
+            data-testid="cpu-threshold-input"
             value={cpuThreshold}
             onChange={(e) =>
               setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
