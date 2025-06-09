@@ -22,42 +22,41 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays metrics panels correctly', () => {
-    cy.get('.euiPanel')
-      .eq(0)
-      .within(() => {
-        cy.contains('Active queries');
-        cy.get('h2').contains(20);
-      });
+    cy.get('[data-test-subj="panel-active-queries"]')
+        .within(() => {
+          cy.contains('Active queries');
+          cy.get('h2 > b').should('contain.text', '20');
+        });
 
-    cy.get('.euiPanel')
-      .eq(1)
-      .within(() => {
-        cy.contains('Avg. elapsed time');
-        cy.get('h2').contains('7.19 s');
-      });
+    cy.get('[data-test-subj="panel-avg-elapsed-time"]')
+        .within(() => {
+          cy.contains('Avg. elapsed time');
+          cy.get('h2 > b').should('contain.text', '7.19 s');
+          cy.contains('(Avg. across 20)');
+        });
 
-    cy.get('.euiPanel')
-      .eq(2)
-      .within(() => {
-        cy.contains('Longest running query');
-        cy.get('h2').contains('9.69 s');
-        cy.contains('ID: node-A1B2C4E5:3614');
-      });
+    cy.get('[data-test-subj="panel-longest-query"]')
+        .within(() => {
+          cy.contains('Longest running query');
+          cy.get('h2 > b').should('contain.text', '9.69 s');
+          cy.contains('ID: node-A1B2C4E5:3614');
+        });
 
-    cy.get('.euiPanel')
-      .eq(3)
-      .within(() => {
-        cy.contains('Total CPU usage');
-        cy.get('h2').contains('1.68 ms');
-      });
+    cy.get('[data-test-subj="panel-total-cpu"]')
+        .within(() => {
+          cy.contains('Total CPU usage');
+          cy.get('h2 > b').should('contain.text', '1.68 ms');
+          cy.contains('(Sum across 20)');
+        });
 
-    cy.get('.euiPanel')
-      .eq(4)
-      .within(() => {
-        cy.contains('Total memory usage');
-        cy.get('h2').contains('69.12 KB');
-      });
+    cy.get('[data-test-subj="panel-total-memory"]')
+        .within(() => {
+          cy.contains('Total memory usage');
+          cy.get('h2 > b').should('contain.text', '69.12 KB');
+          cy.contains('(Sum across 20)');
+        });
   });
+
 
   it('verifies table headers and row content in memory table', () => {
     const expectedHeaders = [
@@ -181,6 +180,39 @@ describe('Inflight Queries Dashboard', () => {
     cy.get('@getPeriodicQueries.all').should('have.length.at.least', 3);
   });
 
+  it('displays correct chart data for node and index charts', () => {
+    // Wait for charts to render
+    cy.get('[data-test-subj="vega-chart-node"]')
+        .invoke('attr', 'data-chart-values')
+        .then((json) => {
+          const data = JSON.parse(json);
+          expect(data).to.deep.equal([
+            { label: 'Node 1', value: 2 },
+            { label: 'Node 2', value: 1 },
+            { label: 'Node 3', value: 1 },
+            { label: 'Node 4', value: 1 },
+            { label: 'Node 5', value: 1 },
+            { label: 'Node 6', value: 1 },
+            { label: 'Node 7', value: 1 },
+            { label: 'Node 8', value: 1 },
+            { label: 'Node 9', value: 1 },
+            { label: 'others', value: 10 },
+          ]);
+          expect(data).to.have.length(10);
+        });
+
+    cy.get('[data-test-subj="vega-chart-index"]')
+        .invoke('attr', 'data-chart-values')
+        .then((json) => {
+          const data = JSON.parse(json);
+          expect(data).to.deep.include({ label: 'top_queries-2025.06.06-11009', value: 19 });
+          expect(data).to.deep.include({ label: 'opensearch', value: 1 });
+          expect(data).to.have.length(2);
+        });
+
+  });
+
+
   it('handles empty response state', () => {
     cy.intercept('GET', '**/api/live_queries', (req) => {
       req.reply({
@@ -196,52 +228,44 @@ describe('Inflight Queries Dashboard', () => {
 
     cy.navigateToLiveQueries();
     cy.wait('@getEmptyQueries');
-    cy.get('.euiPanel')
-      .eq(0)
-      .within(() => {
-        cy.contains('Active queries');
-        cy.get('h2').contains('0');
-      });
+    cy.get('[data-test-subj="panel-active-queries"]').within(() => {
+      cy.contains('Active queries');
+      cy.get('h2 > b').should('contain.text', '0');
+    });
 
-    cy.get('.euiPanel')
-      .eq(1)
-      .within(() => {
-        cy.contains('Avg. elapsed time');
-        cy.get('h2').contains('0');
-      });
+    cy.get('[data-test-subj="panel-avg-elapsed-time"]').within(() => {
+      cy.contains('Avg. elapsed time');
+      cy.get('h2 > b').should('contain.text', '0');
+    });
 
-    cy.get('.euiPanel')
-      .eq(2)
-      .within(() => {
-        cy.contains('Longest running query');
-        cy.get('h2').contains('0');
-      });
+    cy.get('[data-test-subj="panel-longest-query"]').within(() => {
+      cy.contains('Longest running query');
+      cy.get('h2 > b').should('contain.text', '0');
+    });
 
-    cy.get('.euiPanel')
-      .eq(3)
-      .within(() => {
-        cy.contains('Total CPU usage');
-        cy.get('h2').contains('0');
-      });
+    cy.get('[data-test-subj="panel-total-cpu"]').within(() => {
+      cy.contains('Total CPU usage');
+      cy.get('h2 > b').should('contain.text', '0');
+    });
 
-    cy.get('.euiPanel')
-      .eq(4)
-      .within(() => {
-        cy.contains('Total memory usage');
-        cy.get('h2').contains('0');
-      });
+    cy.get('[data-test-subj="panel-total-memory"]').within(() => {
+      cy.contains('Total memory usage');
+      cy.get('h2 > b').should('contain.text', '0');
+    });
 
+    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
     cy.contains('p', 'Queries by Node')
-      .closest('.euiPanel')
-      .within(() => {
-        cy.contains('No data available').should('be.visible');
-      });
+        .closest('.euiPanel')
+        .within(() => {
+          cy.contains('No data available').should('be.visible');
+        });
 
+    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
     cy.contains('p', 'Queries by Index')
-      .closest('.euiPanel')
-      .within(() => {
-        cy.contains('No data available').should('be.visible');
-      });
+        .closest('.euiPanel')
+        .within(() => {
+          cy.contains('No data available').should('be.visible');
+        });
   });
   it('validates time unit conversions', () => {
     cy.intercept('GET', '**/api/live_queries', {

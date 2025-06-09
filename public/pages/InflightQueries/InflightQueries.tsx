@@ -27,7 +27,8 @@ import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
-  const TOP_N_NODE_R_INDEX = 9;
+  const TOP_N_DISPLAY_LIMIT = 9;
+  const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
 
   const [nodeCounts, setNodeCounts] = useState({});
@@ -92,7 +93,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       const nodeCount: Record<string, number> = {};
       let othersCount = 0;
       sortedNodes.forEach(([nodeId, count], index) => {
-        if (index < TOP_N_NODE_R_INDEX) nodeCount[nodeId] = count;
+        if (index < TOP_N_DISPLAY_LIMIT ) nodeCount[nodeId] = count;
         else othersCount += count;
       });
       if (othersCount > 0) nodeCount.others = othersCount;
@@ -102,7 +103,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       const topIndexCount: Record<string, number> = {};
       let indexOthersCount = 0;
       sortedIndices.forEach(([indexName, count], i) => {
-        if (i < TOP_N_NODE_R_INDEX) topIndexCount[indexName] = count;
+        if (i < TOP_N_DISPLAY_LIMIT ) topIndexCount[indexName] = count;
         else indexOthersCount += count;
       });
       if (indexOthersCount > 0) topIndexCount.others = indexOthersCount;
@@ -110,15 +111,47 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
     }
   };
 
+  function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => reject(new Error('Timed out')), ms);
+      promise
+          .then((res) => {
+            clearTimeout(timeoutId);
+            resolve(res);
+          })
+          .catch((err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          });
+    });
+  }
+
+  const fetchliveQueriesSafe = async () => {
+    if (isFetching.current) {
+      return;
+    }
+    isFetching.current = true;
+    try {
+      await withTimeout(fetchliveQueries(), refreshInterval - 500);
+    } catch (e) {
+      console.warn('[LiveQueries] fetchliveQueries timed out or failed', e);
+    } finally {
+      isFetching.current = false;
+    }
+  };
+
   useEffect(() => {
-    fetchliveQueries();
+    fetchliveQueriesSafe();
+
     if (!autoRefreshEnabled) return;
+
     const interval = setInterval(() => {
-      fetchliveQueries();
+      fetchliveQueriesSafe();
     }, refreshInterval);
 
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, refreshInterval, core]);
+
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const formatTime = (seconds: number): string => {
@@ -166,6 +199,9 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
     selectable: (item: any) => item.measurements?.is_cancelled !== true,
     onSelectionChange: (selected: any[]) => setSelectedItems(selected),
   };
+
+
+
 
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
@@ -325,8 +361,8 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       <EuiFlexGroup>
         {/* Active Queries */}
         <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexItem>
+          <EuiPanel paddingSize="m" data-test-subj="panel-active-queries">
+                  <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
                   <p>Active queries</p>
@@ -344,7 +380,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
         {/* Avg. elapsed time */}
         <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+          <EuiPanel paddingSize="m" data-test-subj="panel-avg-elapsed-time">
             <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
@@ -365,7 +401,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
         {/* Longest running query */}
         <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+          <EuiPanel paddingSize="m" data-test-subj="panel-longest-query">
             <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
@@ -388,7 +424,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
         {/* Total CPU usage */}
         <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+          <EuiPanel paddingSize="m" data-test-subj="panel-total-cpu">
             <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
@@ -409,7 +445,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
         {/* Total memory usage */}
         <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+          <EuiPanel paddingSize="m" data-test-subj="panel-total-memory">
             <EuiFlexItem>
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
@@ -446,7 +482,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             </EuiFlexGroup>
             <EuiSpacer size="l" />
             {Object.keys(nodeCounts).length > 0 ? (
-              <div ref={chartRefByNode} data-test-subj="vega-chart-node" />
+              <div ref={chartRefByNode} data-test-subj="vega-chart-node" data-chart-values={JSON.stringify(getChartData(nodeCounts, 'node'))}/>
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
@@ -476,7 +512,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             </EuiFlexGroup>
             <EuiSpacer size="l" />
             {Object.keys(indexCounts).length > 0 ? (
-              <div ref={chartRefByIndex} data-test-subj="vega-chart-index" />
+              <div ref={chartRefByIndex} data-test-subj="vega-chart-index" data-chart-values={JSON.stringify(getChartData(indexCounts, 'index'))}/>
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
