@@ -39,40 +39,6 @@ beforeEach(() => {
   jest.clearAllMocks();
 
   (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
-    if (url === '/api/_wlm_proxy/_nodes') {
-      return Promise.resolve({
-        body: {
-          nodes: {
-            nodeA: {},
-            nodeB: {},
-          },
-        },
-      });
-    }
-    if (url === '/api/_wlm/nodeA/stats') {
-      return Promise.resolve({
-        body: {
-          nodeA: {
-            workload_groups: {
-              group1: {
-                cpu: { current_usage: 0.2 },
-                memory: { current_usage: 0.3 },
-                total_completions: 10,
-                total_rejections: 2,
-                total_cancellations: 1,
-              },
-              group2: {
-                cpu: { current_usage: 0.5 },
-                memory: { current_usage: 0.6 },
-                total_completions: 5,
-                total_rejections: 1,
-                total_cancellations: 0,
-              },
-            },
-          },
-        },
-      });
-    }
     if (url === '/api/_wlm/workload_group') {
       return Promise.resolve({
         body: {
@@ -80,6 +46,41 @@ beforeEach(() => {
             { _id: 'group1', name: 'Group One', resource_limits: { cpu: 0.4, memory: 0.5 } },
             { _id: 'group2', name: 'Group Two', resource_limits: { cpu: 0.6, memory: 0.7 } },
           ],
+        },
+      });
+    }
+    if (url === '/api/_wlm/stats') {
+      return Promise.resolve({
+        body: {
+          node1: {
+            workload_groups: {
+              group1: {
+                total_completions: 10,
+                total_rejections: 2,
+                total_cancellations: 1,
+                cpu: { current_usage: 0.4 },
+                memory: { current_usage: 0.3 },
+              },
+              group2: {
+                total_completions: 5,
+                total_rejections: 1,
+                total_cancellations: 0,
+                cpu: { current_usage: 0.5 },
+                memory: { current_usage: 0.6 },
+              },
+            },
+          },
+          node2: {
+            workload_groups: {
+              group1: {
+                total_completions: 5,
+                total_rejections: 1,
+                total_cancellations: 2,
+                cpu: { current_usage: 0.25 },
+                memory: { current_usage: 0.45 },
+              },
+            },
+          },
         },
       });
     }
@@ -112,8 +113,8 @@ const renderComponent = () =>
 describe('WorkloadManagementMain', () => {
   it('renders workload group table', async () => {
     renderComponent();
-    expect(await screen.findByText('Group One')).toBeInTheDocument();
-    expect(screen.getByText('Group Two')).toBeInTheDocument();
+    expect(await screen.findByText((text) => text.includes('Group One'))).toBeInTheDocument();
+    expect(screen.getByText((text) => text.includes('Group Two'))).toBeInTheDocument();
     expect(screen.getByTestId('workload-table')).toBeInTheDocument();
   });
 
@@ -126,21 +127,6 @@ describe('WorkloadManagementMain', () => {
       expect(screen.getAllByText(/Total completion/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/Total rejections/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/Total cancellations/i).length).toBeGreaterThan(0);
-    });
-  });
-
-  it('handles node dropdown change and reloads stats', async () => {
-    renderComponent();
-    await screen.findByText('Group One');
-
-    const select = screen.getByLabelText('Node selection');
-    fireEvent.change(select, { target: { value: 'nodeB' } });
-
-    expect(select).toHaveValue('nodeB');
-    await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats', {
-        query: { dataSourceId: 'default' },
-      });
     });
   });
 
@@ -201,24 +187,6 @@ describe('WorkloadManagementMain', () => {
     await waitFor(() => {
       expect(mockCore.chrome.setBreadcrumbs).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ text: 'Data Administration' })])
-      );
-    });
-  });
-
-  it('handles error when fetching node list fails', async () => {
-    (mockCore.http.get as jest.Mock).mockImplementationOnce(() => {
-      throw new Error('Failed to fetch nodes');
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
-
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Failed to fetch node list',
-        })
       );
     });
   });
@@ -371,21 +339,6 @@ describe('WorkloadManagementMain', () => {
 
     charts.forEach((chart) => {
       expect(chart).toBeInTheDocument();
-    });
-  });
-
-  it('switches nodes and fetches correct stats', async () => {
-    renderComponent();
-    await screen.findByText('Group One');
-
-    const select = screen.getByLabelText('Node selection');
-    fireEvent.change(select, { target: { value: 'nodeB' } });
-
-    await waitFor(() => {
-      expect(select).toHaveValue('nodeB');
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/_wlm/nodeB/stats', {
-        query: { dataSourceId: 'default' },
-      });
     });
   });
 

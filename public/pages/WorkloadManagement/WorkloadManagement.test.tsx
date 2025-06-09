@@ -46,7 +46,9 @@ const renderWithRoute = (initialRoute: string) => {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
       <Route path="*">
-        <DataSourceContext.Provider value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}>
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
           <WorkloadManagement
             core={mockCore}
             depsStart={mockDepsStart}
@@ -71,7 +73,9 @@ describe('WorkloadManagement Routing', () => {
 
   it('renders WLMDetails component at WLM_DETAILS route', async () => {
     renderWithRoute(`${WLM_DETAILS}?name=DEFAULT_WORKLOAD_GROUP`);
-    expect(await screen.findByRole('heading', { name: /DEFAULT_WORKLOAD_GROUP/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /DEFAULT_WORKLOAD_GROUP/i })
+    ).toBeInTheDocument();
   });
 
   it('redirects to WLM_MAIN for unknown routes', () => {
@@ -83,6 +87,4 @@ describe('WorkloadManagement Routing', () => {
     renderWithRoute(WLM_CREATE);
     expect(screen.getByRole('heading', { name: /Create workload group/i })).toBeInTheDocument();
   });
-
 });
-

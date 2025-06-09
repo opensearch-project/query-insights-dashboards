@@ -121,4 +121,3 @@ describe('WLM Details – DEFAULT_WORKLOAD_GROUP', () => {
     cy.contains('Settings are not available for the DEFAULT_WORKLOAD_GROUP').should('exist');
   });
 });
-

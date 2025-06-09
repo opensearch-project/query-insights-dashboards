@@ -4,8 +4,6 @@
  */
 
 describe('WLM Create Page', () => {
-  const groupName = 'test_create_group_' + Date.now();
-
   beforeEach(() => {
     cy.visit('/app/workload-management#/wlm-create');
   });
@@ -22,10 +20,10 @@ describe('WLM Create Page', () => {
       'Index wildcard',
       'Resiliency mode',
       'Reject queries when CPU usage exceeds',
-      'Reject queries when memory usage exceeds'
+      'Reject queries when memory usage exceeds',
     ];
 
-    labels.forEach(label => {
+    labels.forEach((label) => {
       cy.contains('label', label).should('exist');
     });
 

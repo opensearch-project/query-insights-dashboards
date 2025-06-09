@@ -23,9 +23,7 @@ describe('WLM Main Page', () => {
   });
 
   it('should refresh stats on clicking the refresh button', () => {
-    cy.get('.euiTableRow').then(($initialRows) => {
-      const initialRowCount = $initialRows.length;
-
+    return cy.get('.euiTableRow').then(() => {
       cy.get('button').contains('Refresh').click();
 
       cy.get('.euiTableRow', { timeout: 10000 }).should(($newRows) => {

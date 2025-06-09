@@ -18,8 +18,6 @@ import {
   EuiText,
   EuiFieldSearch,
   EuiLink,
-  EuiSelect,
-  EuiFormRow,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
@@ -53,8 +51,16 @@ interface GroupStats {
   total_completions?: number;
   total_rejections?: number;
   total_cancellations?: number;
-  cpu?: { current_usage?: number };
-  memory?: { current_usage?: number };
+  cpu?: {
+    current_usage?: number;
+    cancellations?: number;
+    rejections?: number;
+  };
+  memory?: {
+    current_usage?: number;
+    cancellations?: number;
+    rejections?: number;
+  };
 }
 
 interface WorkloadGroup {
@@ -125,9 +131,6 @@ export const WorkloadManagementMain = ({
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortField, setSortField] = useState<keyof WorkloadGroupData>('cpuUsage');
   const [sortDirection, setSortDirection] = useState<SortDirection>(SortDirection.DESC);
-
-  const [nodeIds, setNodeIds] = useState<string[]>([]);
-  const [selectedNode, setSelectedNode] = useState<string>('');
   const [summaryStats, setSummaryStats] = useState({
     [SUMMARY_STATS_KEYS.totalGroups]: '-' as string | number,
     [SUMMARY_STATS_KEYS.totalCompletions]: '-' as string | number,
@@ -168,33 +171,6 @@ export const WorkloadManagementMain = ({
   };
 
   // === API Calls ===
-  const fetchDataFromBackend = async () => {
-    setLoading(true);
-    try {
-      // Use /_nodes to get all node IDs
-      const res = await core.http.get('/api/_wlm_proxy/_nodes', {
-        query: { dataSourceId: dataSource.id },
-      });
-      const response = res.body;
-      const nodes: string[] = Object.keys(response.nodes || {});
-
-      setNodeIds(nodes);
-
-      if (nodes.length > 0) {
-        const defaultNode = selectedNode || nodes[0];
-        setSelectedNode(defaultNode);
-        await fetchStatsForNode(defaultNode);
-      }
-    } catch (err) {
-      console.error('Error fetching node list:', err);
-      core.notifications.toasts.addDanger({
-        title: 'Failed to fetch node list',
-        text: 'There was a problem retrieving the node list. Please try again later.',
-      });
-    }
-    setLoading(false);
-  };
-
   const fetchWorkloadGroupsWithLimits = async () => {
     try {
       const res = await core.http.get('/api/_wlm/workload_group', {
@@ -225,18 +201,55 @@ export const WorkloadManagementMain = ({
     }
   };
 
-  const fetchStatsForNode = async (nodeId: string) => {
+  const fetchClusterLevelStats = async () => {
     setLoading(true);
 
     try {
       const idToName = await fetchWorkloadGroupNameMap();
-      const workloadGroups = await fetchWorkloadGroupsForNode(nodeId);
+      const rawNodeStats = await fetchClusterWorkloadGroupStats();
       const groupIdToLimits = await fetchWorkloadGroupsWithLimits();
+
+      // Flatten and aggregate group stats across nodes
+      const aggregatedGroups: Record<string, GroupStats> = {};
+
+      for (const [nodeId, nodeStatsRaw] of Object.entries(rawNodeStats)) {
+        if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+
+        const nodeStats = nodeStatsRaw as NodeStats;
+
+        for (const [groupId, rawGroupStats] of Object.entries(nodeStats.workload_groups ?? {})) {
+          const groupStats = rawGroupStats as GroupStats;
+
+          if (!aggregatedGroups[groupId]) {
+            aggregatedGroups[groupId] = {
+              total_completions: 0,
+              total_rejections: 0,
+              total_cancellations: 0,
+              cpu: { current_usage: 0 },
+              memory: { current_usage: 0 },
+            };
+          }
+
+          // Aggregate values across nodes
+          aggregatedGroups[groupId].total_completions! += groupStats.total_completions ?? 0;
+          aggregatedGroups[groupId].total_rejections! += groupStats.total_rejections ?? 0;
+          aggregatedGroups[groupId].total_cancellations! += groupStats.total_cancellations ?? 0;
+          aggregatedGroups[groupId].cpu!.current_usage = Math.max(
+            aggregatedGroups[groupId].cpu!.current_usage ?? 0,
+            groupStats.cpu?.current_usage ?? 0
+          );
+
+          aggregatedGroups[groupId].memory!.current_usage = Math.max(
+            aggregatedGroups[groupId].memory!.current_usage ?? 0,
+            groupStats.memory?.current_usage ?? 0
+          );
+        }
+      }
 
       // Build raw group data first (skip cpuStats/memStats for now)
       const rawData: WorkloadGroupData[] = [];
 
-      for (const [groupId, groupStats] of Object.entries(workloadGroups) as Array<
+      for (const [groupId, groupStats] of Object.entries(aggregatedGroups) as Array<
         [string, GroupStats]
       >) {
         const name = groupId === 'DEFAULT_WORKLOAD_GROUP' ? groupId : idToName[groupId];
@@ -350,13 +363,12 @@ export const WorkloadManagementMain = ({
     return map;
   };
 
-  const fetchWorkloadGroupsForNode = async (
-    nodeId: string
-  ): Promise<Record<string, GroupStats>> => {
-    const res = await core.http.get(`/api/_wlm/${nodeId}/stats`, {
+  const fetchClusterWorkloadGroupStats = async (): Promise<Record<string, NodeStats>> => {
+    const res = await core.http.get('/api/_wlm/stats', {
       query: { dataSourceId: dataSource.id },
     });
-    return res.body[nodeId]?.workload_groups ?? {};
+
+    return res.body as Record<string, NodeStats>;
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
@@ -461,18 +473,16 @@ export const WorkloadManagementMain = ({
 
   // === Lifecycle ===
   useEffect(() => {
-    fetchDataFromBackend();
+    fetchClusterLevelStats();
   }, [dataSource]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (selectedNode) {
-        fetchStatsForNode(selectedNode);
-      }
+      fetchClusterLevelStats();
     }, 60000);
 
     return () => clearInterval(intervalId);
-  }, [selectedNode]);
+  }, []);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -580,7 +590,6 @@ export const WorkloadManagementMain = ({
             onManageDataSource={() => {}}
             onSelectedDataSource={() => {
               window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
-              if (selectedNode) fetchStatsForNode(selectedNode);
             }}
             dataSourcePickerReadOnly={false}
           />
@@ -597,24 +606,9 @@ export const WorkloadManagementMain = ({
           </EuiTitle>
         </EuiFlexItem>
 
-        {/* Right: Dropdown + Button */}
+        {/* Right: Button */}
         <EuiFlexItem grow={false}>
           <EuiFlexGroup gutterSize="m" alignItems="center" responsive={false}>
-            <EuiFlexItem grow={false}>
-              <EuiFormRow label="Node selection" display="columnCompressed">
-                <EuiSelect
-                  options={nodeIds.map((id) => ({ value: id, text: id }))}
-                  value={selectedNode || ''}
-                  onChange={(e) => {
-                    const selectedNodeId = e.target.value;
-                    setSelectedNode(selectedNodeId);
-                    fetchStatsForNode(selectedNodeId);
-                  }}
-                  compressed
-                />
-              </EuiFormRow>
-            </EuiFlexItem>
-
             <EuiFlexItem grow={false}>
               <EuiButton fill color="success" onClick={() => history.push(WLM_CREATE)}>
                 + Create workload group
@@ -645,30 +639,6 @@ export const WorkloadManagementMain = ({
             />
           </EuiPanel>
         </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiStat
-              title={Number(summaryStats.totalCompletions).toLocaleString()}
-              description="Total completions"
-            />
-          </EuiPanel>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiStat
-              title={Number(summaryStats.totalRejections).toLocaleString()}
-              description="Total rejections"
-            />
-          </EuiPanel>
-        </EuiFlexItem>
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiStat
-              title={Number(summaryStats.totalCancellations).toLocaleString()}
-              description="Total cancellations"
-            />
-          </EuiPanel>
-        </EuiFlexItem>
       </EuiFlexGroup>
       <EuiSpacer size="xl" />
 
@@ -696,7 +666,7 @@ export const WorkloadManagementMain = ({
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
                 <EuiButton
-                  onClick={() => fetchStatsForNode(selectedNode)}
+                  onClick={() => fetchClusterLevelStats()}
                   iconType="refresh"
                   isLoading={loading}
                 >

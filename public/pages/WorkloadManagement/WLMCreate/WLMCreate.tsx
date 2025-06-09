@@ -15,6 +15,7 @@ import {
   EuiRadioGroup,
   EuiFieldNumber,
   EuiText,
+  EuiButtonIcon,
 } from '@elastic/eui';
 import { useHistory } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
@@ -25,6 +26,12 @@ import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicke
 import { DataSourceContext } from '../WorkloadManagement';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import { PageHeader } from '../../../components/PageHeader';
+
+interface Rule {
+  index: string;
+  role: string;
+  username: string;
+}
 
 export const WLMCreate = ({
   core,
@@ -41,19 +48,20 @@ export const WLMCreate = ({
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [indexWildcard, setIndexWildcard] = useState('');
-  // add wild card later
   const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
-  const [cpuThreshold, setCpuThreshold] = useState<number | undefined>(undefined);
-  const [memThreshold, setMemThreshold] = useState<number | undefined>(undefined);
-  const isFormValid =
-    name.trim() !== '' &&
-    resiliencyMode?.trim() !== '' &&
-    ((cpuThreshold != null && cpuThreshold > 0 && cpuThreshold <= 100) ||
-      (memThreshold != null && memThreshold > 0 && memThreshold <= 100));
+  const [cpuThreshold, setCpuThreshold] = useState<number | undefined>();
+  const [memThreshold, setMemThreshold] = useState<number | undefined>();
+  const [rules, setRules] = useState<Rule[]>([{ index: 'security_logs*', role: '', username: '' }]);
   const [loading, setLoading] = useState(false);
+
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const isMounted = useRef(true);
+
+  const isFormValid =
+    name.trim() !== '' &&
+    resiliencyMode !== undefined &&
+    ((cpuThreshold != null && cpuThreshold > 0 && cpuThreshold <= 100) ||
+      (memThreshold != null && memThreshold > 0 && memThreshold <= 100));
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -107,7 +115,7 @@ export const WLMCreate = ({
         },
       });
 
-      core.notifications.toasts.addSuccess(`Workload group "${name}" created successfully.`);
+      core.notifications.toasts.addSuccess(`Workload group created successfully.`);
       history.push('/workloadManagement');
       return;
     } catch (err) {
@@ -129,23 +137,22 @@ export const WLMCreate = ({
         coreStart={core}
         depsStart={depsStart}
         fallBackComponent={
-          <>
-            <QueryInsightsDataSourceMenu
-              coreStart={core}
-              depsStart={depsStart}
-              params={params}
-              dataSourceManagement={dataSourceManagement}
-              setDataSource={setDataSource}
-              selectedDataSource={dataSource}
-              onManageDataSource={() => {}}
-              onSelectedDataSource={() => {
-                window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
-              }}
-              dataSourcePickerReadOnly={false}
-            />
-          </>
+          <QueryInsightsDataSourceMenu
+            coreStart={core}
+            depsStart={depsStart}
+            params={params}
+            dataSourceManagement={dataSourceManagement}
+            setDataSource={setDataSource}
+            selectedDataSource={dataSource}
+            onManageDataSource={() => {}}
+            onSelectedDataSource={() => {
+              window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+            }}
+            dataSourcePickerReadOnly={false}
+          />
         }
       />
+
       <EuiTitle size="l">
         <h1>Create workload group</h1>
       </EuiTitle>
@@ -168,53 +175,163 @@ export const WLMCreate = ({
         </EuiTitle>
         <EuiSpacer size="m" />
 
-        <EuiFormRow label="Name" helpText="Specify a unique name that is easy to recognize.">
-          <EuiFieldText
-            data-testid="name-input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+        <EuiFormRow>
+          <>
+            <EuiText size="m" style={{ fontWeight: 600 }}>
+              Name
+            </EuiText>
+            <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+              Specify a unique name that is easy to recognize.
+            </EuiText>
+            <EuiFieldText value={name} onChange={(e) => setName(e.target.value)} />
+          </>
         </EuiFormRow>
 
-        <EuiFormRow
-          label="Description (Optional)"
-          helpText="Describe the the purpose of the workload group."
-        >
-          <EuiTextArea
-            placeholder="Describe the workload group"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+        <EuiFormRow>
+          <>
+            <EuiText size="m" style={{ fontWeight: 600 }}>
+              Description – Optional
+            </EuiText>
+            <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+              Describe the purpose of the query group.
+            </EuiText>
+            <EuiTextArea
+              placeholder="Describe the query group"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </>
+        </EuiFormRow>
+      </EuiPanel>
+
+      <EuiSpacer size="l" />
+
+      <EuiPanel paddingSize="l">
+        <EuiTitle size="m">
+          <h2>Rules</h2>
+        </EuiTitle>
+        <EuiSpacer size="m" />
+
+        <EuiFormRow>
+          <>
+            <EuiText size="m" style={{ fontWeight: 600 }}>
+              Resiliency mode
+            </EuiText>
+            <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+              Select a resiliency mode.
+            </EuiText>
+            <EuiRadioGroup
+              options={[
+                { id: 'soft', label: 'Soft' },
+                { id: 'enforced', label: 'Enforced' },
+              ]}
+              idSelected={resiliencyMode}
+              onChange={(id) => setResiliencyMode(id as 'soft' | 'enforced')}
+            />
+          </>
         </EuiFormRow>
 
-        {/* For later implementation*/}
-        <EuiFormRow label="Index wildcard" helpText="You can use (*) to define a wildcard.">
-          <EuiFieldText
-            value={indexWildcard}
-            placeholder="e.g., security_logs*"
-            onChange={(e) => setIndexWildcard(e.target.value)}
-          />
-        </EuiFormRow>
+        <EuiSpacer size="l" />
 
-        <EuiFormRow label="Resiliency mode" helpText="Select resiliency mode.">
-          <EuiRadioGroup
-            options={[
-              { id: 'soft', label: 'Soft' },
-              { id: 'enforced', label: 'Enforced' },
-            ]}
-            idSelected={resiliencyMode}
-            onChange={(id) => setResiliencyMode(id as 'soft' | 'enforced')}
-          />
-        </EuiFormRow>
+        {rules.map((rule, idx) => (
+          <EuiPanel key={idx} paddingSize="m" style={{ position: 'relative', marginBottom: 16 }}>
+            <EuiTitle size="xs">
+              <h3>Rule {idx + 1}</h3>
+            </EuiTitle>
 
-        {/* CPU Usage Limit */}
+            <EuiText size="s" style={{ marginTop: 8, marginBottom: 16 }}>
+              <p>Define your rule using any combination of index, role, or username.</p>
+            </EuiText>
+
+            {/* Index wildcard */}
+            <EuiFormRow>
+              <>
+                <EuiText size="m" style={{ fontWeight: 600 }}>
+                  Index wildcard
+                </EuiText>
+                <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                  Specify an index wildcard or select an index.
+                </EuiText>
+                <EuiFieldText
+                  value={rule.index}
+                  onChange={(e) => {
+                    const updated = [...rules];
+                    updated[idx].index = e.target.value;
+                    setRules(updated);
+                  }}
+                />
+              </>
+            </EuiFormRow>
+
+            <EuiSpacer size="s" />
+
+            <div style={{ marginTop: 16 }}>
+              <EuiText size="m" style={{ fontWeight: 600 }}>
+                Role
+              </EuiText>
+              <EuiTextArea
+                placeholder="Enter role"
+                value={rule.role}
+                onChange={(e) => {
+                  const updated = [...rules];
+                  updated[idx].role = e.target.value;
+                  setRules(updated);
+                }}
+              />
+              <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                You can use (,) to add multiple roles.
+              </EuiText>
+            </div>
+
+            <EuiSpacer size="s" />
+
+            <div>
+              <EuiText size="m" style={{ fontWeight: 600 }}>
+                Username
+              </EuiText>
+              <EuiTextArea
+                placeholder="Username"
+                value={rule.username}
+                onChange={(e) => {
+                  const updated = [...rules];
+                  updated[idx].username = e.target.value;
+                  setRules(updated);
+                }}
+              />
+              <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                You can use (,) to add multiple usernames.
+              </EuiText>
+            </div>
+
+            <EuiButtonIcon
+              iconType="trash"
+              aria-label="Delete rule"
+              color="danger"
+              onClick={() => setRules(rules.filter((_, i) => i !== idx))}
+              style={{ position: 'absolute', top: 12, right: 12 }}
+            />
+          </EuiPanel>
+        ))}
+
+        <EuiButton onClick={() => setRules([...rules, { index: '', role: '', username: '' }])}>
+          + Add another rule
+        </EuiButton>
+      </EuiPanel>
+
+      <EuiSpacer size="l" />
+
+      <EuiPanel paddingSize="l">
+        <EuiTitle size="m">
+          <h2>Resource thresholds</h2>
+        </EuiTitle>
+        <EuiSpacer size="m" />
+
         <EuiFormRow
           label="Reject queries when CPU usage exceeds"
           isInvalid={cpuThreshold !== undefined && (cpuThreshold <= 0 || cpuThreshold > 100)}
           error="Value must be between 0 and 100"
         >
           <EuiFieldNumber
-            data-testid="cpu-threshold-input"
             value={cpuThreshold}
             onChange={(e) =>
               setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
@@ -225,9 +342,6 @@ export const WLMCreate = ({
           />
         </EuiFormRow>
 
-        <EuiSpacer size="m" />
-
-        {/* Memory Usage Limit */}
         <EuiFormRow
           label="Reject queries when memory usage exceeds"
           isInvalid={memThreshold !== undefined && (memThreshold <= 0 || memThreshold > 100)}
@@ -243,17 +357,17 @@ export const WLMCreate = ({
             max={100}
           />
         </EuiFormRow>
-
-        <EuiSpacer size="l" />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-          <EuiButton onClick={() => history.push('/workloadManagement')} color="success">
-            Cancel
-          </EuiButton>
-          <EuiButton fill onClick={handleCreate} isLoading={loading} disabled={!isFormValid}>
-            Create workload group
-          </EuiButton>
-        </div>
       </EuiPanel>
+
+      <EuiSpacer size="l" />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <EuiButton onClick={() => history.push('/workloadManagement')} color="text">
+          Cancel
+        </EuiButton>
+        <EuiButton fill onClick={handleCreate} isLoading={loading} disabled={!isFormValid}>
+          Create workload group
+        </EuiButton>
+      </div>
     </div>
   );
 };
