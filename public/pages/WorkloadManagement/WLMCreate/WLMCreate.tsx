@@ -51,7 +51,8 @@ export const WLMCreate = ({
   const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
   const [cpuThreshold, setCpuThreshold] = useState<number | undefined>();
   const [memThreshold, setMemThreshold] = useState<number | undefined>();
-  const [rules, setRules] = useState<Rule[]>([{ index: 'security_logs*', role: '', username: '' }]);
+  const [rules, setRules] = useState<Rule[]>([{ index: '', role: '', username: '' }]);
+  const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [loading, setLoading] = useState(false);
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
@@ -61,7 +62,8 @@ export const WLMCreate = ({
     name.trim() !== '' &&
     resiliencyMode !== undefined &&
     ((cpuThreshold != null && cpuThreshold > 0 && cpuThreshold <= 100) ||
-      (memThreshold != null && memThreshold > 0 && memThreshold <= 100));
+      (memThreshold != null && memThreshold > 0 && memThreshold <= 100)) &&
+    indexErrors.every((error) => error === null);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -239,73 +241,85 @@ export const WLMCreate = ({
 
         {rules.map((rule, idx) => (
           <EuiPanel key={idx} paddingSize="m" style={{ position: 'relative', marginBottom: 16 }}>
-            <EuiTitle size="xs">
+            <EuiTitle size="s">
               <h3>Rule {idx + 1}</h3>
             </EuiTitle>
 
             <EuiText size="s" style={{ marginTop: 8, marginBottom: 16 }}>
-              <p>Define your rule using any combination of index, role, or username.</p>
+              {/* <p>Define your rule using any combination of index, role, or username.</p>*/}
+              <p>Define your rule using index.</p>
             </EuiText>
 
             {/* Index wildcard */}
-            <EuiFormRow>
+            <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
               <>
                 <EuiText size="m" style={{ fontWeight: 600 }}>
                   Index wildcard
                 </EuiText>
-                <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                  Specify an index wildcard or select an index.
-                </EuiText>
+                <EuiSpacer size="s" />
                 <EuiFieldText
                   value={rule.index}
                   onChange={(e) => {
-                    const updated = [...rules];
-                    updated[idx].index = e.target.value;
-                    setRules(updated);
+                    const value = e.target.value;
+                    const commaCount = (value.match(/,/g) || []).length;
+
+                    const updatedRules = [...rules];
+                    const updatedErrors = [...indexErrors];
+
+                    updatedRules[idx].index = value;
+                    updatedErrors[idx] =
+                      commaCount >= 10 ? 'You can specify at most 10 indexes per rule.' : null;
+
+                    setRules(updatedRules);
+                    setIndexErrors(updatedErrors);
                   }}
+                  isInvalid={Boolean(indexErrors[idx])}
                 />
+                <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                  You can use (,) to add multiple indexes.
+                </EuiText>
               </>
             </EuiFormRow>
 
-            <EuiSpacer size="s" />
+            {/* <EuiSpacer size="s" />*/}
 
-            <div style={{ marginTop: 16 }}>
-              <EuiText size="m" style={{ fontWeight: 600 }}>
-                Role
-              </EuiText>
-              <EuiTextArea
-                placeholder="Enter role"
-                value={rule.role}
-                onChange={(e) => {
-                  const updated = [...rules];
-                  updated[idx].role = e.target.value;
-                  setRules(updated);
-                }}
-              />
-              <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                You can use (,) to add multiple roles.
-              </EuiText>
-            </div>
+            {/* <div style={{ marginTop: 16 }}>*/}
+            {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
+            {/*    Role*/}
+            {/*  </EuiText>*/}
+            {/*  <EuiTextArea*/}
+            {/*    placeholder="Enter role"*/}
+            {/*    value={rule.role}*/}
+            {/*    onChange={(e) => {*/}
+            {/*      const updated = [...rules];*/}
+            {/*      updated[idx].role = e.target.value;*/}
+            {/*      setRules(updated);*/}
+            {/*    }}*/}
+            {/*  />*/}
+            {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
+            {/*    You can use (,) to add multiple roles.*/}
+            {/*  </EuiText>*/}
+            {/* </div>*/}
 
-            <EuiSpacer size="s" />
+            {/* <EuiSpacer size="s" />*/}
 
-            <div>
-              <EuiText size="m" style={{ fontWeight: 600 }}>
-                Username
-              </EuiText>
-              <EuiTextArea
-                placeholder="Username"
-                value={rule.username}
-                onChange={(e) => {
-                  const updated = [...rules];
-                  updated[idx].username = e.target.value;
-                  setRules(updated);
-                }}
-              />
-              <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                You can use (,) to add multiple usernames.
-              </EuiText>
-            </div>
+            {/* <div>*/}
+            {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
+            {/*    Username*/}
+            {/*  </EuiText>*/}
+            {/*  <EuiTextArea*/}
+            {/*    placeholder="Username"*/}
+            {/*    value={rule.username}*/}
+            {/*    onChange={(e) => {*/}
+            {/*      const updated = [...rules];*/}
+            {/*      updated[idx].username = e.target.value;*/}
+            {/*      setRules(updated);*/}
+            {/*    }}*/}
+            {/*  />*/}
+            {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
+            {/*    You can use (,) to add multiple usernames.*/}
+            {/*  </EuiText>*/}
+            {/* </div>*/}
 
             <EuiButtonIcon
               iconType="trash"
@@ -317,7 +331,10 @@ export const WLMCreate = ({
           </EuiPanel>
         ))}
 
-        <EuiButton onClick={() => setRules([...rules, { index: '', role: '', username: '' }])}>
+        <EuiButton
+          onClick={() => setRules([...rules, { index: '', role: '', username: '' }])}
+          disabled={rules.length >= 5}
+        >
           + Add another rule
         </EuiButton>
       </EuiPanel>
@@ -331,36 +348,51 @@ export const WLMCreate = ({
         <EuiSpacer size="m" />
 
         <EuiFormRow
-          label="Reject queries when CPU usage exceeds"
           isInvalid={cpuThreshold !== undefined && (cpuThreshold <= 0 || cpuThreshold > 100)}
           error="Value must be between 0 and 100"
         >
-          <EuiFieldNumber
-            data-testid="cpu-threshold-input"
-            value={cpuThreshold}
-            onChange={(e) =>
-              setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
-            }
-            append="%"
-            min={0}
-            max={100}
-          />
+          <>
+            <label htmlFor="cpu-threshold-input">
+              <EuiText size="m" style={{ fontWeight: 600 }}>
+                Reject queries when CPU usage exceeds
+              </EuiText>
+            </label>
+            <EuiFieldNumber
+              id="cpu-threshold-input"
+              data-testid="cpu-threshold-input"
+              value={cpuThreshold}
+              onChange={(e) =>
+                setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
+              }
+              append="%"
+              min={0}
+              max={100}
+            />
+          </>
         </EuiFormRow>
 
         <EuiFormRow
-          label="Reject queries when memory usage exceeds"
           isInvalid={memThreshold !== undefined && (memThreshold <= 0 || memThreshold > 100)}
           error="Value must be between 0 and 100"
         >
-          <EuiFieldNumber
-            value={memThreshold}
-            onChange={(e) =>
-              setMemThreshold(e.target.value === '' ? undefined : Number(e.target.value))
-            }
-            append="%"
-            min={0}
-            max={100}
-          />
+          <>
+            <label htmlFor="memory-threshold-input">
+              <EuiText size="m" style={{ fontWeight: 600 }}>
+                Reject queries when memory usage exceeds
+              </EuiText>
+            </label>
+            <EuiFieldNumber
+              id="memory-threshold-input"
+              data-testid="memory-threshold-input"
+              value={memThreshold}
+              onChange={(e) =>
+                setMemThreshold(e.target.value === '' ? undefined : Number(e.target.value))
+              }
+              append="%"
+              min={0}
+              max={100}
+            />
+          </>
         </EuiFormRow>
       </EuiPanel>
 

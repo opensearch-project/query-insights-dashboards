@@ -368,10 +368,10 @@ describe('WLMDetails Component', () => {
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Reject queries when CPU usage exceeds')).toBeInTheDocument();
+      expect(screen.getByTestId('cpu-threshold-input')).toBeInTheDocument();
     });
 
-    fireEvent.change(screen.getByLabelText('Reject queries when CPU usage exceeds'), {
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), {
       target: { value: '200' },
     });
 

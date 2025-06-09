@@ -23,6 +23,8 @@ import {
   EuiRadioGroup,
   EuiFieldNumber,
   EuiConfirmModal,
+  EuiTextArea,
+  EuiButtonIcon,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
@@ -117,6 +119,12 @@ interface StatsResponse {
   [nodeId: string]: NodeStats;
 }
 
+interface Rule {
+  index: string;
+  role: string;
+  username: string;
+}
+
 // === Main Component ===
 export const WLMDetails = ({
   core,
@@ -140,7 +148,13 @@ export const WLMDetails = ({
   const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
   const [cpuLimit, setCpuLimit] = useState<number | undefined>();
   const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
+  const [description, setDescription] = useState<string>();
+  const [rules, setRules] = useState<Rule[]>([{ index: '', role: '', username: '' }]);
+  const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [isSaved, setIsSaved] = useState(true);
+  const isCpuInvalid = cpuLimit !== undefined && (cpuLimit <= 0 || cpuLimit > 100);
+  const isMemInvalid = memoryLimit !== undefined && (memoryLimit <= 0 || memoryLimit > 100);
+  const isInvalid = isCpuInvalid || isMemInvalid || indexErrors.some((e) => e != null);
   const [nodesData, setNodesData] = useState<NodeUsageData[]>([]);
   const [sortedData, setSortedData] = useState<NodeUsageData[]>([]);
   const [pageIndex, setPageIndex] = useState(DEFAULT_PAGE_INDEX);
@@ -606,84 +620,232 @@ export const WLMDetails = ({
               </EuiTitle>
               <EuiHorizontalRule />
 
-              {/* Index Wildcard */}
-              <EuiFormRow
-                label={<strong>Index wildcard</strong>}
-                helpText="You can use (*) to define a wildcard."
-              >
-                <EuiFieldText placeholder="security_logs*" />
+              <EuiFormRow>
+                <>
+                  <EuiText size="m" style={{ fontWeight: 600 }}>
+                    Description – Optional
+                  </EuiText>
+                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                    Describe the purpose of the query group.
+                  </EuiText>
+                  <EuiTextArea
+                    placeholder="Describe the query group"
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setIsSaved(false);
+                    }}
+                  />
+                </>
               </EuiFormRow>
-
-              <EuiSpacer size="m" />
 
               {/* Resiliency Mode */}
-              <EuiFormRow
-                label={<strong>Resiliency mode</strong>}
-                helpText="Select resiliency mode."
-              >
-                <EuiRadioGroup
-                  options={resiliencyOptions}
-                  idSelected={resiliencyMode}
-                  onChange={(id) => {
-                    setResiliencyMode(id as ResiliencyMode);
-                    setIsSaved(false);
-                  }}
-                />
+              <EuiFormRow>
+                <>
+                  <EuiText size="m" style={{ fontWeight: 600 }}>
+                    Resiliency mode
+                  </EuiText>
+                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                    Select a resiliency mode.
+                  </EuiText>
+                  <EuiRadioGroup
+                    options={resiliencyOptions}
+                    idSelected={resiliencyMode}
+                    onChange={(id) => {
+                      setResiliencyMode(id as ResiliencyMode);
+                      setIsSaved(false);
+                    }}
+                  />
+                </>
               </EuiFormRow>
 
-              <EuiSpacer size="m" />
+              <EuiSpacer size="l" />
+
+              {/* Index Wildcard */}
+              {rules.map((rule, idx) => (
+                <EuiPanel
+                  key={idx}
+                  paddingSize="m"
+                  style={{ position: 'relative', marginBottom: 16 }}
+                >
+                  <EuiTitle size="s">
+                    <h3>Rule {idx + 1}</h3>
+                  </EuiTitle>
+
+                  <EuiText size="s" style={{ marginTop: 8, marginBottom: 16 }}>
+                    {/* Define your rule using any combination of index, role, or username.*/}
+                    Define your rule using index.
+                  </EuiText>
+
+                  {/* Index */}
+                  <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
+                    <>
+                      <EuiText size="m" style={{ fontWeight: 600 }}>
+                        Index wildcard
+                      </EuiText>
+                      <EuiSpacer size="s" />
+                      <EuiFieldText
+                        value={rule.index}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const commaCount = (value.match(/,/g) || []).length;
+
+                          const updatedRules = [...rules];
+                          const updatedErrors = [...indexErrors];
+
+                          updatedRules[idx].index = value;
+                          updatedErrors[idx] =
+                            commaCount >= 10
+                              ? 'You can specify at most 10 indexes per rule.'
+                              : null;
+
+                          setRules(updatedRules);
+                          setIndexErrors(updatedErrors);
+                          setIsSaved(false);
+                        }}
+                        isInvalid={Boolean(indexErrors[idx])}
+                      />
+                      <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                        You can use (,) to add multiple indexes.
+                      </EuiText>
+                    </>
+                  </EuiFormRow>
+
+                  {/* <EuiSpacer size="s" />*/}
+
+                  {/* <div style={{ marginTop: 16 }}>*/}
+                  {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
+                  {/*    Role*/}
+                  {/*  </EuiText>*/}
+                  {/*  <EuiTextArea*/}
+                  {/*    placeholder="Enter role"*/}
+                  {/*    value={rule.role}*/}
+                  {/*    onChange={(e) => {*/}
+                  {/*      const updated = [...rules];*/}
+                  {/*      updated[idx].role = e.target.value;*/}
+                  {/*      setRules(updated);*/}
+                  {/*    }}*/}
+                  {/*  />*/}
+                  {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
+                  {/*    You can use (,) to add multiple roles.*/}
+                  {/*  </EuiText>*/}
+                  {/* </div>*/}
+
+                  {/* <EuiSpacer size="s" />*/}
+
+                  {/* <div>*/}
+                  {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
+                  {/*    Username*/}
+                  {/*  </EuiText>*/}
+                  {/*  <EuiTextArea*/}
+                  {/*    placeholder="Username"*/}
+                  {/*    value={rule.username}*/}
+                  {/*    onChange={(e) => {*/}
+                  {/*      const updated = [...rules];*/}
+                  {/*      updated[idx].username = e.target.value;*/}
+                  {/*      setRules(updated);*/}
+                  {/*    }}*/}
+                  {/*  />*/}
+                  {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
+                  {/*    You can use (,) to add multiple usernames.*/}
+                  {/*  </EuiText>*/}
+                  {/* </div>*/}
+
+                  <EuiButtonIcon
+                    iconType="trash"
+                    aria-label="Delete rule"
+                    color="danger"
+                    onClick={() => {
+                      const updated = rules.filter((_, i) => i !== idx);
+                      const errors = indexErrors.filter((_, i) => i !== idx);
+                      setRules(updated);
+                      setIndexErrors(errors);
+                      setIsSaved(false);
+                    }}
+                    style={{ position: 'absolute', top: 12, right: 12 }}
+                  />
+                </EuiPanel>
+              ))}
+              <EuiButton
+                onClick={() => {
+                  setRules([...rules, { index: '', role: '', username: '' }]);
+                  setIndexErrors([...indexErrors, null]);
+                  setIsSaved(false);
+                }}
+                disabled={rules.length >= 5}
+              >
+                + Add another rule
+              </EuiButton>
+
+              <EuiSpacer size="l" />
 
               {/* Resource Thresholds */}
-              <EuiTitle size="xs">
-                <h3>Resource thresholds</h3>
+              <EuiTitle size="s">
+                <h2>Resource thresholds</h2>
               </EuiTitle>
 
               <EuiSpacer size="s" />
 
               {/* CPU Usage Limit */}
               <EuiFormRow
-                label="Reject queries when CPU usage exceeds"
                 isInvalid={cpuLimit !== undefined && (cpuLimit <= 0 || cpuLimit > 100)}
                 error="Value must be between 0 and 100"
               >
-                <EuiFieldNumber
-                  value={cpuLimit}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCpuLimit(val === '' ? undefined : Number(val));
-                    setIsSaved(false);
-                  }}
-                  append="%"
-                  min={0}
-                  max={100}
-                />
+                <>
+                  <label htmlFor="cpu-threshold-input">
+                    <EuiText size="m" style={{ fontWeight: 600 }}>
+                      Reject queries when CPU usage exceeds
+                    </EuiText>
+                  </label>
+                  <EuiFieldNumber
+                    id="cpu-threshold-input"
+                    data-testid="cpu-threshold-input"
+                    value={cpuLimit}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCpuLimit(val === '' ? undefined : Number(val));
+                      setIsSaved(false);
+                    }}
+                    append="%"
+                    min={0}
+                    max={100}
+                  />
+                </>
               </EuiFormRow>
 
               <EuiSpacer size="m" />
 
               {/* Memory Usage Limit */}
               <EuiFormRow
-                label="Reject queries when memory usage exceeds"
                 isInvalid={memoryLimit !== undefined && (memoryLimit <= 0 || memoryLimit > 100)}
                 error="Value must be between 0 and 100"
               >
-                <EuiFieldNumber
-                  value={memoryLimit}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setMemoryLimit(val === '' ? undefined : Number(val));
-                    setIsSaved(false);
-                  }}
-                  append="%"
-                  min={0}
-                  max={100}
-                />
+                <>
+                  <label htmlFor="memory-threshold-input">
+                    <EuiText size="m" style={{ fontWeight: 600 }}>
+                      Reject queries when memory usage exceeds
+                    </EuiText>
+                  </label>
+                  <EuiFieldNumber
+                    id="memory-threshold-input"
+                    data-testid="memory-threshold-input"
+                    value={memoryLimit}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setMemoryLimit(val === '' ? undefined : Number(val));
+                      setIsSaved(false);
+                    }}
+                    append="%"
+                    min={0}
+                    max={100}
+                  />
+                </>
               </EuiFormRow>
 
               <EuiSpacer size="m" />
 
               {/* Apply Changes Button */}
-              <EuiButton onClick={saveChanges} color="primary" isDisabled={isSaved}>
+              <EuiButton onClick={saveChanges} color="primary" isDisabled={isSaved || isInvalid}>
                 Apply Changes
               </EuiButton>
             </>
