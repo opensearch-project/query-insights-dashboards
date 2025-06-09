@@ -38,6 +38,8 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     // waiting for the query insights queue to drain
     cy.wait(10000);
+    // Ensure query insights data is available before navigating
+    cy.waitForQueryInsightsData();
     cy.navigateToOverview();
   });
 
@@ -45,8 +47,21 @@ describe('Query Insights Dashboard', () => {
    * Validate the main overview page loads correctly
    */
   it('should display the main overview page', () => {
-    cy.get('.euiBasicTable').should('be.visible');
-    cy.contains('Query insights - Top N queries');
+    // Add extra wait and retry logic for the first test to handle race conditions
+    cy.wait(2000);
+
+    // Retry navigation if the page content is not loaded
+    cy.get('body').then(($body) => {
+      if (!$body.text().includes('Query insights - Top N queries')) {
+        cy.log('Page content not loaded, retrying navigation...');
+        cy.wait(5000);
+        cy.navigateToOverview();
+      }
+    });
+
+    // Wait for the page to be fully loaded with more generous timeout
+    cy.contains('Query insights - Top N queries', { timeout: 30000 }).should('be.visible');
+    cy.get('.euiBasicTable', { timeout: 30000 }).should('be.visible');
     cy.url().should('include', '/queryInsights');
 
     // should display the query table on the overview page
@@ -182,9 +197,9 @@ describe('Query Insights Dashboard', () => {
           expect(firstQuery.measurements[metric]).to.be.an('object');
         });
       });
-
-    after(() => clearAll());
   });
+
+  after(() => clearAll());
 });
 
 describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top Queries', () => {

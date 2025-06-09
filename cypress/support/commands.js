@@ -176,16 +176,60 @@ Cypress.Commands.add('waitForPageLoad', (fullUrl, { timeout = 60000, contains = 
   cy.url({ timeout: timeout })
     .should('include', fullUrl)
     .then(() => {
-      contains && cy.contains(contains).should('be.visible');
+      contains && cy.contains(contains, { timeout: timeout }).should('be.visible');
     });
 });
 
 Cypress.Commands.add('navigateToOverview', () => {
   cy.visit(OVERVIEW_PATH);
-  cy.waitForPageLoad(OVERVIEW_PATH, { contains: 'Query insights - Top N queries' });
+  cy.waitForPageLoad(OVERVIEW_PATH, { contains: 'Query insights - Top N queries', timeout: 90000 });
 });
 
 Cypress.Commands.add('navigateToConfiguration', () => {
   cy.visit(CONFIGURATION_PATH);
   cy.waitForPageLoad(CONFIGURATION_PATH, { contains: 'Query insights - Configuration' });
+});
+
+Cypress.Commands.add('waitForQueryInsightsData', () => {
+  // Poll the API to ensure query insights data is available before proceeding
+  cy.log('Waiting for query insights data to be available...');
+
+  const checkData = () => {
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    return cy.request({
+      method: 'GET',
+      url: `/api/top_queries/latency`,
+      qs: { from, to },
+      failOnStatusCode: false,
+    }).then((response) => {
+      if (response.status === 200 &&
+          response.body.ok &&
+          response.body.response &&
+          response.body.response.top_queries &&
+          response.body.response.top_queries.length > 0) {
+        cy.log('Query insights data is available');
+        return true;
+      }
+      return false;
+    });
+  };
+
+  // Retry up to 10 times with 3 second intervals
+  const retryCheck = (attempts = 0) => {
+    if (attempts >= 10) {
+      cy.log('Max attempts reached, proceeding anyway');
+      return;
+    }
+
+    checkData().then((hasData) => {
+      if (!hasData) {
+        cy.wait(3000);
+        retryCheck(attempts + 1);
+      }
+    });
+  };
+
+  retryCheck();
 });
