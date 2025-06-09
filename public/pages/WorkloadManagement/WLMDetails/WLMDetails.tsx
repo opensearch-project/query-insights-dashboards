@@ -62,6 +62,9 @@ interface NodeUsageData {
   nodeId: string;
   cpuUsage: number;
   memoryUsage: number;
+  totalCompletions?: number;
+  totalRejections?: number;
+  totalCancellations?: number;
 }
 
 interface WorkloadGroupDetails {
@@ -306,6 +309,9 @@ export const WLMDetails = ({
             nodeId,
             cpuUsage: formatUsage(statsForGroup.cpu.current_usage),
             memoryUsage: formatUsage(statsForGroup.memory.current_usage),
+            totalCompletions: statsForGroup.total_completions,
+            totalRejections: statsForGroup.total_rejections,
+            totalCancellations: statsForGroup.total_cancellations,
           });
         }
       }
@@ -566,7 +572,8 @@ export const WLMDetails = ({
                       style={{
                         width: `${cpuUsage}%`,
                         height: '100%',
-                        background: cpuUsage > 80 ? '#C43D35' : '#0268BC',
+                        background:
+                          cpuLimit !== undefined && cpuUsage > cpuLimit ? '#C43D35' : '#0268BC',
                       }}
                     />
                   </div>
@@ -592,13 +599,19 @@ export const WLMDetails = ({
                       style={{
                         width: `${memoryUsage}%`,
                         height: '100%',
-                        background: memoryUsage > 80 ? '#C43D35' : '#0268BC',
+                        background:
+                          memoryLimit !== undefined && memoryUsage > memoryLimit
+                            ? '#C43D35'
+                            : '#0268BC',
                       }}
                     />
                   </div>
                 </div>
               ),
             },
+            { field: 'totalCompletions', name: 'Completions', sortable: true },
+            { field: 'totalRejections', name: 'Rejections', sortable: true },
+            { field: 'totalCancellations', name: 'Cancellations', sortable: true },
           ]}
           sorting={{ sort: { field: sortField, direction: 'desc' } }}
           pagination={pagination}
