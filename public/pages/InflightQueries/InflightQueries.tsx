@@ -288,10 +288,14 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
         { actions: false, renderer: 'svg' }
       )
         .then(() => setNodeChartError(false))
-        .catch((error) => {
-          console.error('Node chart rendering failed:', error);
-          setNodeChartError(true);
-        });
+          .catch((error) => {
+            console.error('Node chart rendering failed:', error);
+            setNodeChartError(true);
+            core.notifications.toasts.addError(error, {
+              title: 'Failed to render Queries by Node chart',
+              toastMessage: 'Please check data or browser console for details.',
+            });
+          });
     }
   }, [nodeCounts, selectedChartIdByNode]);
 
@@ -306,10 +310,14 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
         { actions: false, renderer: 'svg' }
       )
         .then(() => setIndexChartError(false))
-        .catch((error) => {
-          console.error('Index chart rendering failed:', error);
-          setIndexChartError(true);
-        });
+          .catch((error) => {
+            console.error('Index chart rendering failed:', error);
+            setIndexChartError(true);
+            core.notifications.toasts.addError(error, {
+              title: 'Failed to render Queries by Index chart',
+              toastMessage: 'Please check data or browser console for details.',
+            });
+          });
     }
   }, [indexCounts, selectedChartIdByIndex]);
 
@@ -670,16 +678,8 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                       await core.http.post(`/api/tasks/${taskId}/cancel`);
                       await new Promise((r) => setTimeout(r, 300));
                       await fetchliveQueries();
-
-                      core.notifications.toasts.addSuccess({
-                        title: 'Task cancelled',
-                        text: `Task ${taskId} cancelled successfully.`,
-                      });
                     } catch (err) {
-                      core.notifications.toasts.addDanger({
-                        title: `Failed to cancel task`,
-                        text: err.body?.error || err.message,
-                      });
+                      console.error('Failed to cancel task', err);
                     }
                   },
                 },

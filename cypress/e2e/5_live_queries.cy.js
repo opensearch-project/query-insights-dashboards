@@ -17,6 +17,7 @@ describe('Inflight Queries Dashboard', () => {
     cy.wait('@getLiveQueries');
   });
 
+
   it('displays the correct page title', () => {
     cy.contains('Query insights - In-flight queries scoreboard').should('be.visible');
   });
