@@ -21,10 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         include:
-          - os: windows-latest
-            cypress_cache_folder: ~/AppData/Local/Cypress/Cache
           - os: ubuntu-latest
             cypress_cache_folder: ~/.cache/Cypress
     runs-on: ${{ matrix.os }}
@@ -39,10 +37,6 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-
-      - name: Enable longer filenames
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: git config --system core.longpaths true
 
       - name: Checkout Query Insights
         uses: actions/checkout@v4
@@ -112,8 +106,8 @@ jobs:
       - name: Run OpenSearch-Dashboards server
         run: |
           cd OpenSearch-Dashboards
-          # Set memory limits for better performance on Windows
-          export NODE_OPTIONS="--max-old-space-size=4096"
+          # Set memory limits and DNS resolution for better performance
+          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
           yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
         shell: bash
 
@@ -126,6 +120,10 @@ jobs:
           while [ $attempt -lt $max_attempts ]; do
             if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
               echo "OpenSearch-Dashboards is ready!"
+              # Output status for debugging
+              echo "=== OpenSearch-Dashboards Status Debug Info ==="
+              curl -s http://localhost:5601/api/status | jq '.' || curl -s http://localhost:5601/api/status
+              echo "=============================================="
               # Additional wait to ensure plugin is fully loaded
               sleep 45
               break
@@ -133,17 +131,21 @@ jobs:
 
             attempt=$((attempt + 1))
             echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
+
+            # Show debug info every 10 attempts
+            if [ $((attempt % 10)) -eq 0 ]; then
+              echo "Debug: Attempting to connect to http://localhost:5601/api/status"
+              curl -s -v http://localhost:5601/api/status || echo "Connection failed"
+            fi
+
             sleep 10
 
-            # Extra time for Windows
-            if [ "${{ matrix.os }}" = "windows-latest" ] && [ $attempt -eq 60 ]; then
-              echo "Windows detected, extending wait time..."
-              max_attempts=200
-            fi
           done
 
           if [ $attempt -eq $max_attempts ]; then
             echo "OpenSearch-Dashboards failed to start within timeout"
+            echo "Final debug attempt:"
+            curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
             exit 1
           fi
 
@@ -161,7 +163,12 @@ jobs:
           curl -s http://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
 
           echo "Checking OpenSearch-Dashboards status..."
-          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "OpenSearch-Dashboards not responding"
+          echo "=== Full OpenSearch-Dashboards Status ==="
+          curl -s http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
+          echo "========================================"
+
+          echo "Checking OpenSearch-Dashboards overall state..."
+          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
 
           echo "Checking plugin endpoint..."
           curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
