@@ -38,21 +38,24 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     // waiting for the query insights queue to drain
     cy.wait(10000);
-    cy.navigateToOverview();
+    cy.waitForQueryInsightsPlugin();
   });
 
   /**
    * Validate the main overview page loads correctly
    */
   it('should display the main overview page', () => {
-    cy.get('.euiBasicTable').should('be.visible');
-    cy.contains('Query insights - Top N queries');
+    // Verify the page title is visible (already loaded by waitForQueryInsightsPlugin)
+    cy.contains('Query insights - Top N queries').should('be.visible');
+
+    // Verify the URL is correct
     cy.url().should('include', '/queryInsights');
 
-    // should display the query table on the overview page
+    // Verify the table is visible and has content
     cy.get('.euiBasicTable').should('be.visible');
     cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 0);
-    // should have top n queries displayed on the table
+
+    // Verify there are query rows in the table
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
@@ -196,8 +199,8 @@ describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top
       }).as('getTopQueries');
     });
 
-    cy.navigateToOverview();
-    cy.wait(1000);
+    cy.waitForQueryInsightsPlugin();
+    cy.wait(2000);
     cy.wait('@getTopQueries');
   });
 
