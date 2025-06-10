@@ -307,13 +307,15 @@ export const WorkloadManagementMain = ({
     });
   };
 
-  const fetchClusterWorkloadGroupStats = useCallback(async (): Promise<Record<string, NodeStats>> => {
+  const fetchClusterWorkloadGroupStats = useCallback(async (): Promise<
+    Record<string, NodeStats>
+  > => {
     const res = await core.http.get('/api/_wlm/stats', {
       query: { dataSourceId: dataSource.id },
     });
 
     return res.body as Record<string, NodeStats>;
-  }, [dataSource])
+  }, [dataSource]);
 
   const fetchWorkloadGroups = async () => {
     const res = await core.http.get('/api/_wlm/workload_group', {
