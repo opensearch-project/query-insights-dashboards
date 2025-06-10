@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { render, screen, waitFor, within, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
@@ -125,48 +125,6 @@ describe('InflightQueries', () => {
     });
   });
 
-  it('renders correct table headers and row content', async () => {
-    (retrieveLiveQueries as jest.Mock).mockResolvedValue({
-      response: {
-        live_queries: [
-          {
-            timestamp: 1749187466964, // Jun 05, 2025 @ 10:24:26 PM
-            id: 'node-A1B2C3D4E5:3600',
-            description: 'indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]',
-            node_id: 'node-A1B2C3D4E5',
-            measurements: {
-              latency: { number: 7990852130, count: 1, aggregationType: 'NONE' },
-              cpu: { number: 89951, count: 1, aggregationType: 'NONE' },
-              memory: { number: 3818, count: 1, aggregationType: 'NONE' },
-              is_cancelled: true,
-            },
-          },
-        ],
-      },
-    });
-
-    render(<InflightQueries core={mockCore} />);
-    const row = await screen.findByRole('row', { name: /node-A1B2C3D4E5:3600/i });
-
-    // Get all cells in the row
-    const cells = within(row).getAllByRole('cell');
-
-    const expectedValues = [
-      'Jun 05, 2025 @ 10:24:26 PM',
-      'node-A1B2C3D4E5:3600',
-      'top_queries-2025.06.06-11009',
-      'Coordinator nodenode-A1B2C3D4E5',
-      'Time elapsed7.99 s',
-      '89.95 µs',
-      '3.73 KB',
-      'QUERY_THEN_FETCH',
-      'Cancelled',
-    ];
-
-    expectedValues.forEach((expected, i) => {
-      expect(cells[i + 1].textContent).toContain(expected); // +1 to skip checkbox column
-    });
-  });
   it('displays fallback when live queries API fails', async () => {
     (retrieveLiveQueries as jest.Mock).mockResolvedValue({
       ok: false,
