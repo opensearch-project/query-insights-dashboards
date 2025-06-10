@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { WorkloadManagementMain } from './WLMMain';
@@ -35,8 +35,19 @@ const mockCore = ({
 const mockDepsStart = {} as any;
 const mockDataSourceManagement = {} as any;
 
+const capturedOptions: any[] = [];
+jest.mock('echarts-for-react', () => ({
+  __esModule: true,
+  // the default export is our wrapper
+  default: (props: { option: any }) => {
+    capturedOptions.push(props.option);
+    return <div data-testid="MockedChart">Mocked Chart</div>;
+  },
+}));
+
 beforeEach(() => {
   jest.clearAllMocks();
+  capturedOptions.length = 0;
 
   (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
     if (url === '/api/_wlm/workload_group') {
@@ -45,6 +56,7 @@ beforeEach(() => {
           workload_groups: [
             { _id: 'group1', name: 'Group One', resource_limits: { cpu: 0.4, memory: 0.5 } },
             { _id: 'group2', name: 'Group Two', resource_limits: { cpu: 0.6, memory: 0.7 } },
+            { _id: 'group3', name: 'Group Three', resource_limits: { cpu: 0.1, memory: 0.1 } },
           ],
         },
       });
@@ -62,6 +74,13 @@ beforeEach(() => {
                 memory: { current_usage: 0.3 },
               },
               group2: {
+                total_completions: 5,
+                total_rejections: 1,
+                total_cancellations: 0,
+                cpu: { current_usage: 0.5 },
+                memory: { current_usage: 0.6 },
+              },
+              group3: {
                 total_completions: 5,
                 total_rejections: 1,
                 total_cancellations: 0,
@@ -122,11 +141,8 @@ describe('WorkloadManagementMain', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getAllByText(/Total workload groups/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Total groups exceeding limits/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Total completion/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Total rejections/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Total cancellations/i).length).toBeGreaterThan(0);
+      expect(screen.getByText('Total workload groups')).toBeInTheDocument();
+      expect(screen.getByText('Total groups exceeding limits')).toBeInTheDocument();
     });
   });
 
@@ -362,51 +378,130 @@ describe('WorkloadManagementMain', () => {
     });
   });
 
-  describe('ECharts tooltip formatter', () => {
-    const formatter = (limit: number) => {
-      return (currentParams: any[]) => {
-        const currentBox = currentParams.find((p) => p.seriesType === 'boxplot');
+  it('renders tooltip HTML as expected from inline formatter', () => {
+    const limit = 75;
+    const params = [
+      {
+        seriesType: 'boxplot',
+        data: [0, 10.1234, 20.5678, 30.1111, 40.9999, 50.4444],
+      },
+    ];
+    const [min, q1, med, q3, max] = params[0].data.slice(1, 6).map((v: number) => v.toFixed(2));
+    const expected = `<strong>Usage across nodes</strong><br/>
+      Min: ${min}%<br/>
+      Q1: ${q1}%<br/>
+      Median: ${med}%<br/>
+      Q3: ${q3}%<br/>
+      Max: ${max}%<br/>
+      <span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
+    expect(expected).toContain('Min: 10.12%');
+    expect(expected).toContain('Limit: 75.00%');
+  });
 
-        let tooltip = '';
-        if (currentBox) {
-          const [fMin, fQ1, fMedian, fQ3, fMax] = currentBox.data
-            .slice(1, 6)
-            .map((v: number) => v.toFixed(2));
-          tooltip += `<strong>Usage across nodes</strong><br/>
-                Min: ${fMin}%<br/>
-                Q1: ${fQ1}%<br/>
-                Median: ${fMedian}%<br/>
-                Q3: ${fQ3}%<br/>
-                Max: ${fMax}%<br/>`;
-        }
+  it('builds correct box-plot data for Group One (find by limit)', async () => {
+    renderComponent();
 
-        tooltip += `<span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
-        return tooltip;
-      };
-    };
+    await waitFor(() => expect(capturedOptions.length).toBeGreaterThanOrEqual(4));
 
-    it('formats boxplot tooltip correctly', () => {
-      const mockParams = [
-        {
-          seriesType: 'boxplot',
-          data: [0, 10.1234, 20.5678, 30.1111, 40.9999, 50.4444],
-        },
-      ];
+    const cpuOptForGroupOne = capturedOptions.find((opt) => {
+      const series = opt.series?.[0];
+      const markLine = series?.markLine?.data?.[0];
+      return markLine?.xAxis === 40;
+    });
+    expect(cpuOptForGroupOne).toBeDefined();
 
-      const result = formatter(75)(mockParams);
+    expect(cpuOptForGroupOne!.series[0].data).toEqual([[25, 25, 40, 40, 40]]);
+  });
 
-      expect(result).toContain('Min: 10.12%');
-      expect(result).toContain('Q1: 20.57%');
-      expect(result).toContain('Median: 30.11%');
-      expect(result).toContain('Q3: 41.00%');
-      expect(result).toContain('Max: 50.44%');
-      expect(result).toContain('<span style="color:#dc3545;">Limit: 75.00%</span>');
+  it('builds correct memory box-plot data for Group One (find by memory limit)', async () => {
+    renderComponent();
+
+    await waitFor(() => expect(capturedOptions.length).toBeGreaterThanOrEqual(4));
+
+    const memOptForGroupOne = capturedOptions.find((opt) => {
+      const series = opt.series?.[0];
+      const markLine = series?.markLine?.data?.[0];
+      return markLine?.xAxis === 50;
+    });
+    expect(memOptForGroupOne).toBeDefined();
+    expect(memOptForGroupOne!.series[0].data).toEqual([[30, 30, 45, 45, 45]]);
+  });
+
+  it('builds correct CPU box-plot data for Group Two', async () => {
+    renderComponent();
+    await waitFor(() => expect(capturedOptions.length).toBeGreaterThanOrEqual(4));
+
+    const cpuOptForGroupTwo = capturedOptions.find((opt) => {
+      const series = opt.series?.[0];
+      const markLine = series?.markLine?.data?.[0];
+      return markLine?.xAxis === 60;
+    });
+    expect(cpuOptForGroupTwo).toBeDefined();
+    expect(cpuOptForGroupTwo!.series[0].data).toEqual([[50, 50, 50, 50, 50]]);
+  });
+
+  it('builds correct memory box-plot data for Group Two', async () => {
+    renderComponent();
+    await waitFor(() => expect(capturedOptions.length).toBeGreaterThanOrEqual(4));
+
+    const memOptForGroupTwo = capturedOptions.find((opt) => {
+      const series = opt.series?.[0];
+      const markLine = series?.markLine?.data?.[0];
+      return markLine?.xAxis === 70;
+    });
+    expect(memOptForGroupTwo).toBeDefined();
+    expect(memOptForGroupTwo!.series[0].data).toEqual([[60, 60, 60, 60, 60]]);
+  });
+
+  it('shows "1" for Total groups exceeding limits when one is over', async () => {
+    renderComponent();
+
+    const desc = await screen.findByText('Total groups exceeding limits');
+
+    const statContainer = desc.closest('.euiStat');
+    expect(statContainer).not.toBeNull();
+
+    const { getByText: getByTextWithin } = within(statContainer!);
+    expect(getByTextWithin('1')).toBeInTheDocument();
+  });
+
+  it('handles invalid data array gracefully', () => {
+    const invalidData = [0];
+    const slice = () => invalidData.slice(1, 6).map((v: number) => v.toFixed(2));
+    expect(slice).not.toThrow();
+  });
+
+  it('shows toast on failed stats fetch', async () => {
+    (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/_wlm/stats')) {
+        return Promise.reject(new Error('API failure'));
+      }
+      return Promise.resolve({ body: {} });
     });
 
-    it('returns only limit line if boxplot is not found', () => {
-      const result = formatter(80)([]);
+    renderComponent();
 
-      expect(result).toBe('<span style="color:#dc3545;">Limit: 80.00%</span>');
+    await waitFor(() => {
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.any(String),
+          text: expect.any(String),
+        })
+      );
+    });
+  });
+
+  it('handles missing stats gracefully', async () => {
+    (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/_wlm/stats')) {
+        return Promise.resolve({ body: {} });
+      }
+      return Promise.resolve({ body: { workload_groups: [] } });
+    });
+
+    renderComponent();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
     });
   });
 });

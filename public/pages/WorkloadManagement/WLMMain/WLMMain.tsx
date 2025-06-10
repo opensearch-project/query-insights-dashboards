@@ -279,8 +279,11 @@ export const WorkloadManagementMain = ({
       setLastUpdated(new Date());
     } catch (err) {
       console.error(`Failed to fetch node stats:`, err);
+      core.notifications.toasts.addDanger({
+        title: 'Failed to fetch workload stats',
+        text: 'An error occurred while retrieving workload statistics. Please try again.',
+      });
     }
-
     setLoading(false);
   };
 
