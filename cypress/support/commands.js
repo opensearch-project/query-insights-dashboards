@@ -173,16 +173,23 @@ Cypress.Commands.add('waitForPageLoad', (fullUrl, { timeout = 60000, contains = 
   Cypress.log({
     message: `Wait for url: ${fullUrl} to be loaded.`,
   });
-  cy.url({ timeout: timeout })
-    .should('include', fullUrl)
-    .then(() => {
-      contains && cy.contains(contains, { timeout: timeout }).should('be.visible');
-    });
+  cy.url({ timeout: timeout }).should('include', fullUrl);
+
+  if (contains) {
+    // Wait for the specific content with retries
+    cy.contains(contains, { timeout: timeout }).should('be.visible');
+  }
 });
 
 Cypress.Commands.add('navigateToOverview', () => {
   cy.visit(OVERVIEW_PATH);
-  cy.waitForPageLoad(OVERVIEW_PATH, { contains: 'Query insights - Top N queries', timeout: 90000 });
+  // Wait for the page to load and ensure the plugin is ready
+  cy.waitForPageLoad(OVERVIEW_PATH, {
+    timeout: 90000,
+    contains: 'Query insights - Top N queries',
+  });
+  // Additional wait to ensure all components are fully rendered
+  cy.get('.euiBasicTable', { timeout: 30000 }).should('exist');
 });
 
 Cypress.Commands.add('navigateToConfiguration', () => {
@@ -190,46 +197,7 @@ Cypress.Commands.add('navigateToConfiguration', () => {
   cy.waitForPageLoad(CONFIGURATION_PATH, { contains: 'Query insights - Configuration' });
 });
 
-Cypress.Commands.add('waitForQueryInsightsData', () => {
-  // Poll the API to ensure query insights data is available before proceeding
-  cy.log('Waiting for query insights data to be available...');
-
-  const checkData = () => {
-    const to = new Date().toISOString();
-    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-    return cy.request({
-      method: 'GET',
-      url: `/api/top_queries/latency`,
-      qs: { from, to },
-      failOnStatusCode: false,
-    }).then((response) => {
-      if (response.status === 200 &&
-          response.body.ok &&
-          response.body.response &&
-          response.body.response.top_queries &&
-          response.body.response.top_queries.length > 0) {
-        cy.log('Query insights data is available');
-        return true;
-      }
-      return false;
-    });
-  };
-
-  // Retry up to 10 times with 3 second intervals
-  const retryCheck = (attempts = 0) => {
-    if (attempts >= 10) {
-      cy.log('Max attempts reached, proceeding anyway');
-      return;
-    }
-
-    checkData().then((hasData) => {
-      if (!hasData) {
-        cy.wait(3000);
-        retryCheck(attempts + 1);
-      }
-    });
-  };
-
-  retryCheck();
+Cypress.Commands.add('waitForPluginToLoad', () => {
+  // Simple wait for plugin initialization - less aggressive approach
+  cy.wait(3000);
 });

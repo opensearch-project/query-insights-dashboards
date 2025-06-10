@@ -17,7 +17,9 @@ env:
 jobs:
   tests:
     name: Run Cypress E2E tests
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         include:
@@ -58,7 +60,20 @@ jobs:
         run: |
           cd query-insights
           ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
-          sleep 300
+
+          # Wait for OpenSearch to be ready with health check
+          echo "Waiting for OpenSearch to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; then
+              echo "OpenSearch is ready!"
+              break
+            fi
+            echo "Attempt $i/60: OpenSearch not ready yet, waiting 10 seconds..."
+            sleep 10
+          done
+
+          # Verify OpenSearch is actually running
+          curl -s http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
@@ -97,19 +112,61 @@ jobs:
       - name: Run OpenSearch-Dashboards server
         run: |
           cd OpenSearch-Dashboards
+          # Set memory limits for better performance on Windows
+          export NODE_OPTIONS="--max-old-space-size=4096"
           yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
         shell: bash
 
-      # Window is slow so wait longer
-      - name: Sleep until OSD server starts - windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: Start-Sleep -s 600
-        shell: powershell
+      - name: Wait for OpenSearch-Dashboards to be ready
+        run: |
+          echo "Waiting for OpenSearch-Dashboards to start..."
+          max_attempts=150
+          attempt=0
 
-      - name: Sleep until OSD server starts - non-windows
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: sleep 500
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
+              echo "OpenSearch-Dashboards is ready!"
+              # Additional wait to ensure plugin is fully loaded
+              sleep 45
+              break
+            fi
+
+            attempt=$((attempt + 1))
+            echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
+            sleep 10
+
+            # Extra time for Windows
+            if [ "${{ matrix.os }}" = "windows-latest" ] && [ $attempt -eq 60 ]; then
+              echo "Windows detected, extending wait time..."
+              max_attempts=200
+            fi
+          done
+
+          if [ $attempt -eq $max_attempts ]; then
+            echo "OpenSearch-Dashboards failed to start within timeout"
+            exit 1
+          fi
+
+          # Verify the service is responding
+          curl -s http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
+
+          # Additional verification for plugin loading
+          echo "Waiting additional time for plugin initialization..."
+          sleep 15
         shell: bash
+
+      - name: Verify services are running
+        run: |
+          echo "Checking OpenSearch status..."
+          curl -s http://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
+
+          echo "Checking OpenSearch-Dashboards status..."
+          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "OpenSearch-Dashboards not responding"
+
+          echo "Checking plugin endpoint..."
+          curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
+        shell: bash
+        continue-on-error: true
 
       - name: Install Cypress
         run: |
@@ -137,12 +194,13 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
           wait-on: 'http://localhost:5601'
-          wait-on-timeout: 600
+          wait-on-timeout: 1200
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+        timeout-minutes: 60
 
       # Screenshots are only captured on failure, will change this once we do visual regression tests
       - uses: actions/upload-artifact@v4
