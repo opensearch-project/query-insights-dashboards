@@ -84,7 +84,17 @@ describe('InflightQueries', () => {
       jest.advanceTimersByTime(6000);
     });
 
-    expect(retrieveLiveQueries).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(retrieveLiveQueries).toHaveBeenCalledTimes(2);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(6000);
+    });
+
+    await waitFor(() => {
+      expect(retrieveLiveQueries).toHaveBeenCalledTimes(3);
+    });
 
     jest.useRealTimers();
   });
@@ -155,6 +165,18 @@ describe('InflightQueries', () => {
 
     expectedValues.forEach((expected, i) => {
       expect(cells[i + 1].textContent).toContain(expected); // +1 to skip checkbox column
+    });
+  });
+  it('displays fallback when live queries API fails', async () => {
+    (retrieveLiveQueries as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: 'Live queries fetch failed',
+    });
+
+    render(<InflightQueries core={mockCore} />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Live queries fetch failed')).toHaveLength(2);
     });
   });
 });

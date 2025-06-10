@@ -4,6 +4,7 @@
  */
 
 import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
+import { API_ENDPOINTS } from './apiendpoints';
 
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
@@ -66,15 +67,27 @@ export const retrieveLiveQueries = async (core: {
   http: { get: (endpoint: string) => Promise<any> };
 }): Promise<LiveSearchQueryResponse> => {
   const nullResponse: LiveSearchQueryResponse = {
+    ok: true,
+    response: { live_queries: [] },
+  };
+
+  const errorResponse: LiveSearchQueryResponse = {
     ok: false,
     response: { live_queries: [] },
   };
 
   try {
-    const response: LiveSearchQueryResponse = await core.http.get(`/api/live_queries`);
-    return response && Array.isArray(response.response?.live_queries) ? response : nullResponse;
+    const response: LiveSearchQueryResponse = await core.http.get(API_ENDPOINTS.LIVE_QUERIES);
+    const liveQueries = response?.response?.live_queries;
+
+    if (Array.isArray(liveQueries)) {
+      return response;
+    } else {
+      console.warn('No live queries found in response');
+      return nullResponse;
+    }
   } catch (error) {
     console.error('Error retrieving live queries:', error);
-    return nullResponse;
+    return errorResponse;
   }
 };

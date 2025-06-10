@@ -25,13 +25,15 @@ import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+
 export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
-  const [nodeChartError, setNodeChartError] = useState(false);
-  const [indexChartError, setIndexChartError] = useState(false);
+  const [nodeChartError, setNodeChartError] = useState<string | null>(null);
+  const [indexChartError, setIndexChartError] = useState<string | null>(null);
 
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
@@ -52,6 +54,14 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core);
+
+    if (retrievedQueries.error || retrievedQueries.ok === false) {
+      const errorMessage = retrievedQueries.error || 'Failed to load live queries';
+      setNodeChartError(errorMessage);
+      setIndexChartError(errorMessage);
+      setQuery(null);
+      return;
+    }
 
     if (retrievedQueries?.response?.live_queries) {
       const tempNodeCount: Record<string, number> = {};
@@ -287,15 +297,15 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
         },
         { actions: false, renderer: 'svg' }
       )
-        .then(() => setNodeChartError(false))
-          .catch((error) => {
-            console.error('Node chart rendering failed:', error);
-            setNodeChartError(true);
-            core.notifications.toasts.addError(error, {
-              title: 'Failed to render Queries by Node chart',
-              toastMessage: 'Please check data or browser console for details.',
-            });
+        .then(() => setNodeChartError(null))
+        .catch((error) => {
+          console.error('Node chart rendering failed:', error);
+          setNodeChartError('Failed to load chart data');
+          core.notifications.toasts.addError(error, {
+            title: 'Failed to render Queries by Node chart',
+            toastMessage: 'Please check data or browser console for details.',
           });
+        });
     }
   }, [nodeCounts, selectedChartIdByNode]);
 
@@ -309,15 +319,15 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
         },
         { actions: false, renderer: 'svg' }
       )
-        .then(() => setIndexChartError(false))
-          .catch((error) => {
-            console.error('Index chart rendering failed:', error);
-            setIndexChartError(true);
-            core.notifications.toasts.addError(error, {
-              title: 'Failed to render Queries by Index chart',
-              toastMessage: 'Please check data or browser console for details.',
-            });
+        .then(() => setIndexChartError(null))
+        .catch((error) => {
+          console.error('Index chart rendering failed:', error);
+          setIndexChartError('Failed to load chart data');
+          core.notifications.toasts.addError(error, {
+            title: 'Failed to render Queries by Index chart',
+            toastMessage: 'Please check data or browser console for details.',
           });
+        });
     }
   }, [indexCounts, selectedChartIdByIndex]);
 
@@ -494,7 +504,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
                 <EuiText color="danger">
-                  <p>Error rendering chart</p>
+                  <p>{nodeChartError}</p>
                 </EuiText>
                 <EuiSpacer size="xl" />
               </EuiTextAlign>
@@ -536,7 +546,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
                 <EuiText color="danger">
-                  <p>Error rendering chart</p>
+                  <p>{indexChartError}</p>
                 </EuiText>
                 <EuiSpacer size="xl" />
               </EuiTextAlign>
@@ -570,7 +580,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                 onClick={async () => {
                   await Promise.allSettled(
                     selectedItems.map((item) =>
-                      core.http.post(`/api/tasks/${item.id}/cancel`).then(
+                      core.http.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
                         () => ({ status: 'fulfilled', id: item.id }),
                         (err) => ({ status: 'rejected', id: item.id, error: err })
                       )
@@ -675,7 +685,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                   onClick: async (item) => {
                     try {
                       const taskId = item.id;
-                      await core.http.post(`/api/tasks/${taskId}/cancel`);
+                      await core.http.post(API_ENDPOINTS.CANCEL_TASK(taskId));
                       await new Promise((r) => setTimeout(r, 300));
                       await fetchliveQueries();
                     } catch (err) {

@@ -367,41 +367,34 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
-          const res = await client('queryInsights.getLiveQueries');
-          return response.custom({
-            statusCode: 200,
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
-        } else {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res = await client.callAPI('queryInsights.getLiveQueries', {});
-          return response.custom({
-            statusCode: 200,
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+        const client =
+          !dataSourceEnabled || !request.query?.dataSourceId
+            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
+            : context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+
+        const res = await client('queryInsights.getLiveQueries');
+        if (!res || res.ok === false) {
+          throw new Error(res?.error || 'Query Insights service returned an error');
         }
-      } catch (error) {
-        console.error('Unable to get top queries: ', error);
+
         return response.ok({
           body: {
-            ok: false,
-            response: error.message,
+            ok: true,
+            response: res,
+          },
+        });
+      } catch (error) {
+        console.error('Unable to get live queries: ', error);
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: {
+            message: error.message || 'Internal server error',
           },
         });
       }
     }
   );
+
   router.post(
     {
       path: '/api/tasks/{taskId}/cancel',
@@ -416,15 +409,24 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         const esClient = context.core.opensearch.client.asCurrentUser;
         const { taskId } = request.params;
 
-        const result = await esClient.transport.request({
+        const res = await esClient.transport.request({
           method: 'POST',
           path: `/_tasks/${taskId}/_cancel`,
         });
 
-        return response.ok({ body: { ok: true, result } });
-      } catch (e) {
-        console.error(e);
-        return response.customError({ statusCode: 500, body: e.message });
+        if (!res) {
+          throw new Error('failed');
+        }
+
+        return response.ok({ body: { ok: true, res } });
+      } catch (error) {
+        console.error(error);
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: {
+            message: error.message || 'Internal server error',
+          },
+        });
       }
     }
   );

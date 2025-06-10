@@ -17,7 +17,6 @@ describe('Inflight Queries Dashboard', () => {
     cy.wait('@getLiveQueries');
   });
 
-
   it('displays the correct page title', () => {
     cy.contains('Query insights - In-flight queries scoreboard').should('be.visible');
   });
@@ -428,5 +427,33 @@ describe('Inflight Queries Dashboard', () => {
       .should('exist')
       .contains(/others/i)
       .should('exist');
+  });
+
+  it('displays error panel when live queries API fails', () => {
+    cy.intercept('GET', '**/api/live_queries', {
+      statusCode: 500,
+      body: {
+        ok: false,
+        error: 'Internal Server Error',
+      },
+    }).as('getLiveQueriesError');
+
+    cy.visit('/app/query-insights-dashboards#/LiveQueries');
+    cy.wait('@getLiveQueriesError');
+
+    // Validate that a proper error message is shown in the Vega panels
+    cy.contains('p', 'Queries by Node')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.contains('Failed to load live queries').should('be.visible');
+      });
+
+    cy.contains('p', 'Queries by Index')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.contains('Failed to load live queries').should('be.visible');
+      });
+    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
+    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
   });
 });
