@@ -200,6 +200,7 @@ jobs:
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CI: true
         timeout-minutes: 60
 
       # Screenshots are only captured on failure, will change this once we do visual regression tests
