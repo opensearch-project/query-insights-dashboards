@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   EuiTitle,
   EuiSpacer,
@@ -307,13 +307,13 @@ export const WorkloadManagementMain = ({
     });
   };
 
-  const fetchClusterWorkloadGroupStats = async (): Promise<Record<string, NodeStats>> => {
+  const fetchClusterWorkloadGroupStats = useCallback(async (): Promise<Record<string, NodeStats>> => {
     const res = await core.http.get('/api/_wlm/stats', {
       query: { dataSourceId: dataSource.id },
     });
 
     return res.body as Record<string, NodeStats>;
-  };
+  }, [dataSource])
 
   const fetchWorkloadGroups = async () => {
     const res = await core.http.get('/api/_wlm/workload_group', {
@@ -425,7 +425,7 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     fetchClusterLevelStats();
-  }, [dataSource]);
+  }, [fetchClusterWorkloadGroupStats]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -433,7 +433,7 @@ export const WorkloadManagementMain = ({
     }, 60000);
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchClusterWorkloadGroupStats]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
