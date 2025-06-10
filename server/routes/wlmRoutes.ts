@@ -281,8 +281,134 @@ export function defineWlmRoutes(router: IRouter) {
   );
 
   // Create index rule
+  router.put(
+    {
+      path: '/api/_rules/workload_group',
+      validate: {
+        body: schema.object({
+          description: schema.string(),
+          index_pattern: schema.arrayOf(schema.string()),
+          workload_group: schema.string(),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const client = context.core.opensearch.client.asCurrentUser;
+        const description = request.body.description;
+        const indexPattern = request.body.index_pattern;
+        const workloadGroup = request.body.workload_group;
+
+        const result = await client.transport.request({
+          method: 'PUT',
+          path: '/_rules/workload_group',
+          body: {
+            description,
+            index_pattern: indexPattern,
+            workload_group: workloadGroup,
+          },
+        });
+
+        return response.ok({ body: result });
+      } catch (error: any) {
+        console.error(`Failed to create index rule:`, error);
+        return response.custom({
+          statusCode: error.statusCode || 500,
+          body: { message: `Failed to create index rule: ${error.message}` },
+        });
+      }
+    }
+  );
+
+  // Get all index rules
+  router.get(
+    {
+      path: '/api/_rules/workload_group',
+      validate: false,
+    },
+    async (context, request, response) => {
+      try {
+        const client = context.core.opensearch.client.asCurrentUser;
+
+        const result = await client.transport.request({
+          method: 'GET',
+          path: '/_rules/workload_group',
+        });
+
+        return response.ok({ body: result });
+      } catch (e: any) {
+        console.error('Failed to fetch index rules:', e);
+        return response.internalError({
+          body: { message: `Failed to fetch index rules: ${e.message}` },
+        });
+      }
+    }
+  );
+
+  // Delete index rule by ID
+  router.delete(
+    {
+      path: '/api/_rules/workload_group/{ruleId}',
+      validate: {
+        params: schema.object({
+          ruleId: schema.string(),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      const { ruleId } = request.params;
+      try {
+        const client = context.core.opensearch.client.asCurrentUser;
+
+        const result = await client.transport.request({
+          method: 'DELETE',
+          path: `/_rules/workload_group/${ruleId}`,
+        });
+
+        return response.ok({ body: result });
+      } catch (e: any) {
+        console.error(`Failed to delete index rule ${ruleId}:`, e);
+        return response.internalError({
+          body: { message: `Failed to delete index rule ${ruleId}: ${e.message}` },
+        });
+      }
+    }
+  );
 
   // Update index rule
+  router.put(
+    {
+      path: '/_rules/workload_group/{ruleId}',
+      validate: {
+        params: schema.object({
+          ruleId: schema.string(),
+        }),
+        body: schema.object({
+          description: schema.maybe(schema.string()),
+          index_pattern: schema.arrayOf(schema.string()),
+          workload_group: schema.string(),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      const { ruleId } = request.params;
+      const body = request.body;
 
-  // Delete index rule
+      try {
+        const result = await context.core.opensearch.client.asCurrentUser.transport.request({
+          method: 'PUT',
+          path: `/_wlm/rule/${ruleId}`,
+          body,
+        });
+
+        return response.ok({ body: result });
+      } catch (error) {
+        console.error('Error updating rule:', error);
+        return response.customError({
+          body: error.message || error,
+          statusCode: error.statusCode || 500,
+        });
+      }
+    }
+  );
 }

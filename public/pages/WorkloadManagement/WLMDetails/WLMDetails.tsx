@@ -72,7 +72,6 @@ interface WorkloadGroupDetails {
   cpuLimit: number | undefined;
   memLimit: number | undefined;
   resiliencyMode: 'soft' | 'enforced';
-  description: string;
 }
 
 interface WorkloadGroup {
@@ -124,8 +123,7 @@ interface StatsResponse {
 
 interface Rule {
   index: string;
-  role: string;
-  username: string;
+  indexId: string;
 }
 
 // === Main Component ===
@@ -147,12 +145,14 @@ export const WLMDetails = ({
   const groupName = searchParams.get('name');
 
   // === State ===
+  const [_currentId, setCurrentId] = useState<string>();
   const [groupDetails, setGroupDetails] = useState<WorkloadGroupDetails | null>(null);
   const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
   const [cpuLimit, setCpuLimit] = useState<number | undefined>();
   const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
   const [description, setDescription] = useState<string>();
-  const [rules, setRules] = useState<Rule[]>([{ index: '', role: '', username: '' }]);
+  const [rules, setRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
+  const [_existingRules, setExistingRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [isSaved, setIsSaved] = useState(true);
   const isCpuInvalid = cpuLimit !== undefined && (cpuLimit <= 0 || cpuLimit > 100);
@@ -179,7 +179,6 @@ export const WLMDetails = ({
     cpuLimit: 0,
     memLimit: 0,
     resiliencyMode: 'soft',
-    description: '-',
   };
 
   const pagination: Pagination = {
@@ -220,7 +219,6 @@ export const WLMDetails = ({
       cpuLimit: 100,
       memLimit: 100,
       resiliencyMode: 'soft',
-      description: 'System default workload group',
     });
     setCpuLimit(DEFAULT_RESOURCE_LIMIT);
     setMemoryLimit(DEFAULT_RESOURCE_LIMIT);
@@ -250,7 +248,6 @@ export const WLMDetails = ({
           cpuLimit: formatLimit(workload.resource_limits?.cpu),
           memLimit: formatLimit(workload.resource_limits?.memory),
           resiliencyMode: workload.resiliency_mode,
-          description: '-',
         });
         setResiliencyMode(workload.resiliency_mode.toLowerCase());
         setCpuLimit(formatLimit(workload.resource_limits?.cpu));
@@ -289,6 +286,39 @@ export const WLMDetails = ({
         core.notifications.toasts.addDanger(`Failed to find workload group "${groupName}"`);
         return;
       }
+    }
+
+    setCurrentId(groupId);
+
+    try {
+      const rulesRes = await core.http.get('/api/_rules/workload_group', {
+        query: { dataSourceId: dataSource.id },
+      });
+      const allRules = rulesRes?.body?.rules ?? [];
+
+      const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
+
+      setRules(
+        matchedRules.map((rule: any) => ({
+          index: rule.index_pattern.join(','),
+          indexId: rule.id,
+        }))
+      );
+
+      setExistingRules(
+        matchedRules.map((rule: any) => ({
+          index: rule.index_pattern.join(','),
+          indexId: rule.id,
+        }))
+      );
+
+      setDescription(rulesRes.body?.description ?? '-');
+      if (groupName === DEFAULT_WORKLOAD_GROUP) {
+        setDescription('System default workload group');
+      }
+    } catch (err) {
+      console.error('Failed to fetch group stats', err);
+      core.notifications.toasts.addDanger('Could not load rules.');
     }
 
     try {
@@ -352,6 +382,44 @@ export const WLMDetails = ({
         query: { dataSourceId: dataSource.id },
         body: JSON.stringify(body),
       });
+
+      // for updating and deleting rules, not available in server side yet
+      // const existingRuleIds = new Set(existingRules.map((r: any) => r._id));
+      // const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
+      //
+      // console.log(existingRules);
+      // console.log(rules);
+      // for (const rule of rules) {
+      //   const body = {
+      //     description: description, // empty string if optional
+      //     index_pattern: rule.index.split(',').map((s) => s.trim()),
+      //     workload_group: currentId,
+      //   };
+      //
+      //   if (rule.indexId in existingRuleIds) {
+      //     // Update
+      //     await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
+      //       query: { dataSourceId: dataSource.id },
+      //       body: JSON.stringify(body),
+      //       headers: { 'Content-Type': 'application/json' },
+      //     });
+      //   } else {
+      //     // Create
+      //     await core.http.put(`/api/_rules/workload_group`, {
+      //       query: { dataSourceId: dataSource.id },
+      //       body: JSON.stringify(body),
+      //       headers: { 'Content-Type': 'application/json' },
+      //     });
+      //   }
+      // }
+      //
+      // for (const existing of existingRules) {
+      //   if (!newRuleIds.has(existing.indexId)) {
+      //     await core.http.delete(`/api/_rules/workload_group/${existing.indexId}`, {
+      //       query: { dataSourceId: dataSource.id },
+      //     });
+      //   }
+      // }
 
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
@@ -502,7 +570,7 @@ export const WLMDetails = ({
             <EuiText size="s">
               <strong>Description</strong>
             </EuiText>
-            <EuiText size="s">{workloadGroup.description}</EuiText>
+            <EuiText size="s">{description}</EuiText>
           </EuiFlexItem>
           <EuiFlexItem>
             <EuiText size="s">
@@ -782,7 +850,7 @@ export const WLMDetails = ({
               ))}
               <EuiButton
                 onClick={() => {
-                  setRules([...rules, { index: '', role: '', username: '' }]);
+                  setRules([...rules, { index: '', indexId: '' }]);
                   setIndexErrors([...indexErrors, null]);
                   setIsSaved(false);
                 }}

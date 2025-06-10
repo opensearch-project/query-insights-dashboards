@@ -29,8 +29,6 @@ import { PageHeader } from '../../../components/PageHeader';
 
 interface Rule {
   index: string;
-  role: string;
-  username: string;
 }
 
 export const WLMCreate = ({
@@ -51,7 +49,7 @@ export const WLMCreate = ({
   const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
   const [cpuThreshold, setCpuThreshold] = useState<number | undefined>();
   const [memThreshold, setMemThreshold] = useState<number | undefined>();
-  const [rules, setRules] = useState<Rule[]>([{ index: '', role: '', username: '' }]);
+  const [rules, setRules] = useState<Rule[]>([{ index: '' }]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -109,13 +107,34 @@ export const WLMCreate = ({
         body.resource_limits = resourceLimits;
       }
 
-      await core.http.put('/api/_wlm/workload_group', {
+      const res = await core.http.put('/api/_wlm/workload_group', {
         query: { dataSourceId: dataSource.id },
         body: JSON.stringify(body),
         headers: {
           'Content-Type': 'application/json',
         },
       });
+
+      const groupId = res?.body?._id;
+      if (groupId && rules.length > 0) {
+        await Promise.all(
+          rules.map((rule) => {
+            const indexPattern = rule.index
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            return core.http.put('/api/_rules/workload_group', {
+              body: JSON.stringify({
+                description: (description && description.trim()) || '-',
+                index_pattern: indexPattern,
+                workload_group: groupId,
+              }),
+              headers: { 'Content-Type': 'application/json' },
+            });
+          })
+        );
+      }
 
       core.notifications.toasts.addSuccess(`Workload group created successfully.`);
       history.push('/workloadManagement');
@@ -332,10 +351,7 @@ export const WLMCreate = ({
           </EuiPanel>
         ))}
 
-        <EuiButton
-          onClick={() => setRules([...rules, { index: '', role: '', username: '' }])}
-          disabled={rules.length >= 5}
-        >
+        <EuiButton onClick={() => setRules([...rules, { index: '' }])} disabled={rules.length >= 5}>
           + Add another rule
         </EuiButton>
       </EuiPanel>
