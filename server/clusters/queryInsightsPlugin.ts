@@ -167,4 +167,24 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     method: 'PUT',
     needBody: true,
   });
+
+  queryInsights.getLiveQueries = ca({
+    url: {
+      fmt: `/_insights/live_queries`,
+    },
+    method: 'GET',
+  });
+
+  queryInsights.cancelTask = ca({
+    url: {
+      fmt: `/_tasks/<%=taskId%>/_cancel`,
+      req: {
+        taskId: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'POST',
+  });
 };

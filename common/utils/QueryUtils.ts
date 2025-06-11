@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SearchQueryRecord } from '../../types/types';
+import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
+import { API_ENDPOINTS } from './apiendpoints';
 
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
@@ -11,8 +12,7 @@ export const retrieveQueryById = async (
   dataSourceId: string,
   start: string | null,
   end: string | null,
-  id: string | null,
-  verbose: boolean
+  id: string | null
 ): Promise<SearchQueryRecord | null> => {
   const nullResponse = { response: { top_queries: [] } };
   const params = {
@@ -21,7 +21,6 @@ export const retrieveQueryById = async (
       from: start,
       to: end,
       id,
-      verbose,
     },
   };
 
@@ -61,5 +60,34 @@ export const retrieveQueryById = async (
   } catch (error) {
     console.error('Error retrieving query details:', error);
     return null;
+  }
+};
+
+export const retrieveLiveQueries = async (core: {
+  http: { get: (endpoint: string) => Promise<any> };
+}): Promise<LiveSearchQueryResponse> => {
+  const nullResponse: LiveSearchQueryResponse = {
+    ok: true,
+    response: { live_queries: [] },
+  };
+
+  const errorResponse: LiveSearchQueryResponse = {
+    ok: false,
+    response: { live_queries: [] },
+  };
+
+  try {
+    const response: LiveSearchQueryResponse = await core.http.get(API_ENDPOINTS.LIVE_QUERIES);
+    const liveQueries = response?.response?.live_queries;
+
+    if (Array.isArray(liveQueries)) {
+      return response;
+    } else {
+      console.warn('No live queries found in response');
+      return nullResponse;
+    }
+  } catch (error) {
+    console.error('Error retrieving live queries:', error);
+    return errorResponse;
   }
 };
