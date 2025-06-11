@@ -442,7 +442,10 @@ export const WLMDetails = ({
 
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
-      window.location.reload();
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err) {
       const errorMessage = err?.body?.message || err?.message || String(err);
       core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);
