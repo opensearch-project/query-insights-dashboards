@@ -726,10 +726,10 @@ export const WLMDetails = ({
                     Description – Optional
                   </EuiText>
                   <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    Describe the purpose of the query group.
+                    Describe the purpose of the workload group.
                   </EuiText>
                   <EuiTextArea
-                    placeholder="Describe the query group"
+                    placeholder="Describe the workload group"
                     value={description}
                     onChange={(e) => {
                       setDescription(e.target.value);
