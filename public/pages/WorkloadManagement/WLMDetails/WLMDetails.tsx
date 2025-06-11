@@ -393,23 +393,8 @@ export const WLMDetails = ({
       const rulesToDelete: Rule[] = [];
 
       for (const rule of rules) {
-        const trimmedIndexList = rule.index
-          .split(',')
-          .map((s) => s.trim())
-          .sort();
-
         if (rule.indexId && existingRuleMap.has(rule.indexId)) {
-          const existingRule = existingRuleMap.get(rule.indexId);
-          const existingIndexList = existingRule?.index
-            .split(',')
-            .map((s) => s.trim())
-            .sort();
-
-          const isSame = JSON.stringify(trimmedIndexList) === JSON.stringify(existingIndexList);
-
-          if (!isSame) {
-            rulesToUpdate.push(rule);
-          }
+          rulesToUpdate.push(rule);
         } else {
           rulesToCreate.push(rule);
         }
@@ -421,9 +406,6 @@ export const WLMDetails = ({
         }
       }
 
-      console.log('rulesToDelete', rulesToDelete);
-      console.log('update', rulesToUpdate);
-      console.log('create', rulesToCreate);
       for (const rule of rulesToCreate) {
         const response = {
           description: description || '',
@@ -439,7 +421,6 @@ export const WLMDetails = ({
       }
 
       for (const rule of rulesToUpdate) {
-        console.log(description);
         const response = {
           description: description || '',
           index_pattern: rule.index.split(',').map((s) => s.trim()),
