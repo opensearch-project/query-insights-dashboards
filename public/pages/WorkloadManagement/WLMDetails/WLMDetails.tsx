@@ -789,17 +789,36 @@ export const WLMDetails = ({
                         value={rule.index}
                         onChange={(e) => {
                           const value = e.target.value;
-                          const commaCount = (value.match(/,/g) || []).length;
+                          const trimmedValue = value.trim();
 
                           const updatedRules = [...rules];
                           const updatedErrors = [...indexErrors];
-
                           updatedRules[idx].index = value;
-                          updatedErrors[idx] =
-                            commaCount >= 10
-                              ? 'You can specify at most 10 indexes per rule.'
-                              : null;
 
+                          let error: string | null = null;
+
+                          // 1) Entirely empty?
+                          if (trimmedValue === '') {
+                            error = 'Please specify at least one index.';
+                          } else {
+                            // split on commas, trim each segment
+                            const items = value.split(',').map((s) => s.trim());
+
+                            // 2) Any blank item?
+                            if (items.some((item) => item === '')) {
+                              error = 'Index names cannot be empty.';
+                            }
+                            // 3) Any item too long?
+                            else if (items.some((item) => item.length > 100)) {
+                              error = 'Index names must be 100 characters or fewer.';
+                            }
+                            // 4) Too many items?
+                            else if (items.length > 10) {
+                              error = 'You can specify at most 10 indexes per rule.';
+                            }
+                          }
+
+                          updatedErrors[idx] = error;
                           setRules(updatedRules);
                           setIndexErrors(updatedErrors);
                           setIsSaved(false);
