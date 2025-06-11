@@ -145,14 +145,14 @@ export const WLMDetails = ({
   const groupName = searchParams.get('name');
 
   // === State ===
-  const [_currentId, setCurrentId] = useState<string>();
+  const [currentId, setCurrentId] = useState<string>();
   const [groupDetails, setGroupDetails] = useState<WorkloadGroupDetails | null>(null);
   const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
   const [cpuLimit, setCpuLimit] = useState<number | undefined>();
   const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
   const [description, setDescription] = useState<string>();
   const [rules, setRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
-  const [_existingRules, setExistingRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
+  const [existingRules, setExistingRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [isSaved, setIsSaved] = useState(true);
   const isCpuInvalid = cpuLimit !== undefined && (cpuLimit <= 0 || cpuLimit > 100);
@@ -312,7 +312,8 @@ export const WLMDetails = ({
         }))
       );
 
-      setDescription(rulesRes.body?.description ?? '-');
+      setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
+
       if (groupName === DEFAULT_WORKLOAD_GROUP) {
         setDescription('System default workload group');
       }
@@ -384,46 +385,83 @@ export const WLMDetails = ({
       });
 
       // for updating and deleting rules, not available in server side yet
-      // const existingRuleIds = new Set(existingRules.map((r: any) => r._id));
-      // const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
-      //
-      // console.log(existingRules);
-      // console.log(rules);
-      // for (const rule of rules) {
-      //   const body = {
-      //     description: description, // empty string if optional
-      //     index_pattern: rule.index.split(',').map((s) => s.trim()),
-      //     workload_group: currentId,
-      //   };
-      //
-      //   if (rule.indexId in existingRuleIds) {
-      //     // Update
-      //     await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
-      //       query: { dataSourceId: dataSource.id },
-      //       body: JSON.stringify(body),
-      //       headers: { 'Content-Type': 'application/json' },
-      //     });
-      //   } else {
-      //     // Create
-      //     await core.http.put(`/api/_rules/workload_group`, {
-      //       query: { dataSourceId: dataSource.id },
-      //       body: JSON.stringify(body),
-      //       headers: { 'Content-Type': 'application/json' },
-      //     });
-      //   }
-      // }
-      //
-      // for (const existing of existingRules) {
-      //   if (!newRuleIds.has(existing.indexId)) {
-      //     await core.http.delete(`/api/_rules/workload_group/${existing.indexId}`, {
-      //       query: { dataSourceId: dataSource.id },
-      //     });
-      //   }
-      // }
+      const existingRuleMap = new Map(existingRules.map((r) => [r.indexId, r]));
+      const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
+
+      const rulesToCreate: Rule[] = [];
+      const rulesToUpdate: Rule[] = [];
+      const rulesToDelete: Rule[] = [];
+
+      for (const rule of rules) {
+        const trimmedIndexList = rule.index
+          .split(',')
+          .map((s) => s.trim())
+          .sort();
+
+        if (rule.indexId && existingRuleMap.has(rule.indexId)) {
+          const existingRule = existingRuleMap.get(rule.indexId);
+          const existingIndexList = existingRule?.index
+            .split(',')
+            .map((s) => s.trim())
+            .sort();
+
+          const isSame = JSON.stringify(trimmedIndexList) === JSON.stringify(existingIndexList);
+
+          if (!isSame) {
+            rulesToUpdate.push(rule);
+          }
+        } else {
+          rulesToCreate.push(rule);
+        }
+      }
+
+      for (const existing of existingRules) {
+        if (!newRuleIds.has(existing.indexId)) {
+          rulesToDelete.push(existing);
+        }
+      }
+
+      console.log('rulesToDelete', rulesToDelete);
+      console.log('update', rulesToUpdate);
+      console.log('create', rulesToCreate);
+      for (const rule of rulesToCreate) {
+        const response = {
+          description: description || '',
+          index_pattern: rule.index.split(',').map((s) => s.trim()),
+          workload_group: currentId,
+        };
+
+        await core.http.put(`/api/_rules/workload_group`, {
+          query: { dataSourceId: dataSource.id },
+          body: JSON.stringify(response),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      for (const rule of rulesToUpdate) {
+        console.log(description);
+        const response = {
+          description: description || '',
+          index_pattern: rule.index.split(',').map((s) => s.trim()),
+          workload_group: currentId,
+        };
+
+        await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
+          query: { dataSourceId: dataSource.id },
+          body: JSON.stringify(response),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      for (const rule of rulesToDelete) {
+        await core.http.delete(`/api/_rules/workload_group/${rule.indexId}`, {
+          query: { dataSourceId: dataSource.id },
+        });
+      }
 
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
-      fetchGroupDetails();
+      window.location.reload();
     } catch (err) {
       const errorMessage = err?.body?.message || err?.message || String(err);
       core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);

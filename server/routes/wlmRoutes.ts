@@ -378,13 +378,13 @@ export function defineWlmRoutes(router: IRouter) {
   // Update index rule
   router.put(
     {
-      path: '/_rules/workload_group/{ruleId}',
+      path: '/api/_rules/workload_group/{ruleId}',
       validate: {
         params: schema.object({
           ruleId: schema.string(),
         }),
         body: schema.object({
-          description: schema.maybe(schema.string()),
+          description: schema.string(),
           index_pattern: schema.arrayOf(schema.string()),
           workload_group: schema.string(),
         }),
@@ -397,7 +397,7 @@ export function defineWlmRoutes(router: IRouter) {
       try {
         const result = await context.core.opensearch.client.asCurrentUser.transport.request({
           method: 'PUT',
-          path: `/_wlm/rule/${ruleId}`,
+          path: `/_rules/workload_group/${ruleId}`,
           body,
         });
 
