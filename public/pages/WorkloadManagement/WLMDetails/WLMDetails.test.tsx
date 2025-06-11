@@ -16,7 +16,6 @@ import '@testing-library/jest-dom';
 import { WLM_MAIN } from '../WorkloadManagement';
 import { act } from 'react-dom/test-utils';
 import { DataSourceContext } from '../WorkloadManagement';
-import userEvent from '@testing-library/user-event';
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -133,8 +132,18 @@ describe('WLMDetails Component', () => {
         return Promise.resolve({
           body: {
             rules: [
-              { id: 'keep-me', description: 'd', index_pattern: ['keep-*'], workload_group: 'wg-123' },
-              { id: 'remove-me', description: 'd', index_pattern: ['remove-*'], workload_group: 'wg-123' },
+              {
+                id: 'keep-me',
+                description: 'd',
+                index_pattern: ['keep-*'],
+                workload_group: 'wg-123',
+              },
+              {
+                id: 'remove-me',
+                description: 'd',
+                index_pattern: ['remove-*'],
+                workload_group: 'wg-123',
+              },
             ],
           },
         });
@@ -566,14 +575,10 @@ describe('WLMDetails Component', () => {
   it('lets you add a rule and enables the Apply Changes button', async () => {
     renderComponent();
 
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group name/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
 
     const initialInputs = screen.getAllByTestId('indexInput');
     const initialCount = initialInputs.length;
@@ -595,14 +600,10 @@ describe('WLMDetails Component', () => {
   it('lets you delete a rule and enables the Apply Changes button', async () => {
     renderComponent();
 
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group name/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
 
     const initialInputs = screen.getAllByTestId('indexInput');
     const initialCount = initialInputs.length;
@@ -623,14 +624,10 @@ describe('WLMDetails Component', () => {
   it('lets you update a rule and enables the Apply Changes button', async () => {
     renderComponent();
 
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group name/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
 
     const inputs = screen.getAllByTestId('indexInput');
     expect(inputs).toHaveLength(2);
@@ -644,14 +641,10 @@ describe('WLMDetails Component', () => {
 
   it('sends an update HTTP request when you modify an existing rule and click Apply Changes', async () => {
     renderComponent();
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group name/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
 
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-    await waitFor(() =>
-      expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
 
     const inputs = screen.getAllByTestId('indexInput');
     fireEvent.change(inputs[0], { target: { value: 'keep-updated-*' } });
