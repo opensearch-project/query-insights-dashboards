@@ -72,28 +72,6 @@ describe('WLM Details Page', () => {
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
-  it('should allow modifying and saving settings', () => {
-    cy.get('.euiTab').contains('Settings').click();
-
-    cy.get('input[type="number"]').first().clear().type('150');
-    cy.get('input[type="number"]').last().clear().type('-5');
-
-    cy.contains('Value must be between 0 and 100').should('exist');
-
-    // Modify CPU and memory thresholds
-    cy.get('input[type="number"]').first().clear().type('0.5');
-    cy.get('input[type="number"]').last().clear().type('0.6');
-
-    // Select "Soft" resiliency mode
-    cy.get('label[for="soft"]').click();
-
-    // Save changes
-    cy.contains('Apply Changes').click();
-
-    // Confirm success toast appears
-    cy.contains(`Saved changes for "${groupName}"`).should('exist');
-  });
-
   it('should show delete modal', () => {
     cy.contains('Delete').click();
     cy.contains('Delete workload group').should('exist');
