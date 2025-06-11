@@ -7,6 +7,7 @@
         "id": "node-A1B2C3D4E5:3600",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3D4E5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 7990852130,
@@ -22,8 +23,7 @@
             "number": 3818,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -31,6 +31,7 @@
         "id": "4W2VTHIgQY-oB7dSrYz4B:3601",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4B",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 6412938258,
@@ -46,8 +47,7 @@
             "number": 2653,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -55,6 +55,7 @@
         "id": "node-X9Y8Z7W6:3602",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X9Y8Z7W6",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 9633985711,
@@ -70,8 +71,7 @@
             "number": 3996,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -79,6 +79,7 @@
         "id": "node-P0Q9R8S7:3603",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-P0Q9R8S7",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 9530744641,
@@ -94,8 +95,7 @@
             "number": 3806,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -103,6 +103,7 @@
         "id": "4W2VTHIgQY-oB7dSrYz4:3604",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 6084339201,
@@ -118,8 +119,7 @@
             "number": 4364,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -127,6 +127,7 @@
         "id": "node-M2O3P4Q5:3605",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-M2O3P4Q5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5967857684,
@@ -142,8 +143,7 @@
             "number": 3952,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -151,6 +151,7 @@
         "id": "node-B2C3D4E5:3606",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-B2C3D4E5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 6454136095,
@@ -166,8 +167,7 @@
             "number": 3909,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -175,6 +175,7 @@
         "id": "node-N2O3P4Q5:3607",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-N2O3P4Q5",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 8450990820,
@@ -190,8 +191,7 @@
             "number": 2119,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -199,6 +199,7 @@
         "id": "2VTHIgQY-oB7dSrYz4BQ:3608",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "2VTHIgQY-oB7dSrYz4BQ",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 7308762773,
@@ -214,8 +215,7 @@
             "number": 4354,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -223,6 +223,7 @@
         "id": "node-X9Y8Z7W6V5:3609",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X9Y8Z7W6V5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5167823987,
@@ -238,8 +239,7 @@
             "number": 2772,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -247,6 +247,7 @@
         "id": "de-M1N2O3P4Q5:3610",
         "description": "indices[opensearch], search_type[Query_THEN_FETCH]",
         "node_id": "de-M1N2O3P4Q5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5708789476,
@@ -262,8 +263,7 @@
             "number": 4238,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -271,6 +271,7 @@
         "id": "no-P0Q9R8S7T6:3611",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "no-P0Q9R8S7T6",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 7501207171,
@@ -286,8 +287,7 @@
             "number": 3146,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -295,6 +295,7 @@
         "id": "4WTHIgQY-oB7dSrYz4BQ:3612",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4WTHIgQY-oB7dSrYz4BQ",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 8887346819,
@@ -310,8 +311,7 @@
             "number": 2430,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -319,6 +319,7 @@
         "id": "4W2VTHQY-oB7dSrYz4BQ:3613",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHQY-oB7dSrYz4BQ",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5672726176,
@@ -334,8 +335,7 @@
             "number": 3759,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -343,6 +343,7 @@
         "id": "node-A1B2C4E5:3614",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C4E5",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 9691523794,
@@ -358,8 +359,7 @@
             "number": 3231,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -367,6 +367,7 @@
         "id": "node-X8Z7W6V5:3615",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X8Z7W6V5",
+        "is_cancelled": false,
         "measurements": {
           "latency": {
             "number": 6840833580,
@@ -382,8 +383,7 @@
             "number": 3428,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": false
+          }
         }
       },
       {
@@ -391,6 +391,7 @@
         "id": "node-M1N2P4Q5:3616",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-M1N2P4Q5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5718519414,
@@ -406,8 +407,7 @@
             "number": 4775,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -415,6 +415,7 @@
         "id": "node-A1B2C3E5:3617",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3E5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 6063407743,
@@ -430,8 +431,7 @@
             "number": 4814,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -439,6 +439,7 @@
         "id": "4W2VTHIgQY-7dSrYz4BQ:3618",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-7dSrYz4BQ",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 9215252980,
@@ -454,8 +455,7 @@
             "number": 2855,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       },
       {
@@ -463,6 +463,7 @@
         "id": "node-A1B2C3D4E5:3619",
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3D4E5",
+        "is_cancelled": true,
         "measurements": {
           "latency": {
             "number": 5409476701,
@@ -478,8 +479,7 @@
             "number": 2357,
             "count": 1,
             "aggregationType": "NONE"
-          },
-          "is_cancelled": true
+          }
         }
       }
     ]
