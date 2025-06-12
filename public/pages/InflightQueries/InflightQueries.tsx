@@ -195,7 +195,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
-    selectable: (item: any) => item.measurements?.is_cancelled !== true,
+    selectable: (item: any) => item.is_cancelled !== true,
     onSelectionChange: (selected: any[]) => setSelectedItems(selected),
   };
 
@@ -661,7 +661,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             {
               name: 'Status',
               render: (item) =>
-                item.measurements?.is_cancelled === true ? (
+                item.is_cancelled === true ? (
                   <EuiText color="danger">
                     <b>Cancelled</b>
                   </EuiText>
@@ -681,7 +681,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.measurements?.is_cancelled !== true,
+                  available: (item) => item.is_cancelled !== true,
                   onClick: async (item) => {
                     try {
                       const taskId = item.id;
