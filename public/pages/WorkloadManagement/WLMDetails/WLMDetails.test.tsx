@@ -16,7 +16,6 @@ import '@testing-library/jest-dom';
 import { WLM_MAIN } from '../WorkloadManagement';
 import { act } from 'react-dom/test-utils';
 import { DataSourceContext } from '../WorkloadManagement';
-import userEvent from '@testing-library/user-event';
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -113,6 +112,48 @@ jest.mock('../../../components/PageHeader', () => ({
 describe('WLMDetails Component', () => {
   beforeEach(() => {
     jest.resetAllMocks(); // Reset mock function calls
+    (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+      if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+        return Promise.resolve({
+          body: {
+            workload_groups: [
+              {
+                _id: 'wg-123',
+                name: 'test-group',
+                resource_limits: { cpu: 0.5, memory: 0.5 },
+                resiliency_mode: 'SOFT',
+              },
+            ],
+          },
+        });
+      }
+      // 2) GET existing rules
+      if (path === '/api/_rules/workload_group') {
+        return Promise.resolve({
+          body: {
+            rules: [
+              {
+                id: 'keep-me',
+                description: 'd',
+                index_pattern: ['keep-*'],
+                workload_group: 'wg-123',
+              },
+              {
+                id: 'remove-me',
+                description: 'd',
+                index_pattern: ['remove-*'],
+                workload_group: 'wg-123',
+              },
+            ],
+          },
+        });
+      }
+      // 3) GET stats (ignored here)
+      if (path.startsWith('/api/_wlm/stats')) {
+        return Promise.resolve({ body: {} });
+      }
+      return Promise.resolve({ body: {} });
+    });
   });
 
   it('renders workload group information', () => {
@@ -520,40 +561,6 @@ describe('WLMDetails Component', () => {
     expect(cpuUsageHeader).toBeInTheDocument();
   });
 
-  it('allows adding rules', async () => {
-    renderComponent();
-    const settingsTabButton = screen.getByTestId('wlm-tab-settings');
-
-    expect(settingsTabButton).toBeInTheDocument();
-    fireEvent.click(settingsTabButton);
-
-    const indexInput = await screen.getByTestId('indexInput');
-    await userEvent.type(indexInput, 'logs-*');
-    expect(indexInput).toHaveValue('logs-*');
-  });
-
-  it('adds a rule when clicking add rule', async () => {
-    renderComponent();
-    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-
-    const addButton = screen.getByRole('button', { name: /\+ add another rule/i });
-    fireEvent.click(addButton);
-
-    // There should be 2 index inputs after adding one
-    const inputs = screen.getAllByTestId('indexInput');
-    expect(inputs.length).toBe(2);
-  });
-
-  it('removes a rule when clicking delete icon', async () => {
-    renderComponent();
-    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
-
-    const deleteIcons = screen.getAllByLabelText('Delete rule');
-    fireEvent.click(deleteIcons[0]);
-
-    expect(screen.queryByTestId('indexInput')).not.toBeInTheDocument();
-  });
-
   it('shows error if more than 10 indexes are entered', async () => {
     renderComponent();
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
@@ -563,5 +570,108 @@ describe('WLMDetails Component', () => {
 
     fireEvent.change(input, { target: { value } });
     expect(await screen.findByText(/at most 10 indexes/i)).toBeInTheDocument();
+  });
+
+  it('lets you add a rule and enables the Apply Changes button', async () => {
+    renderComponent();
+
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+
+    const initialInputs = screen.getAllByTestId('indexInput');
+    const initialCount = initialInputs.length;
+    expect(initialCount).toBe(2);
+
+    fireEvent.click(screen.getByRole('button', { name: /\+ add another rule/i }));
+
+    const inputs = screen.getAllByTestId('indexInput');
+    expect(inputs).toHaveLength(initialCount + 1);
+
+    const newInput = inputs[inputs.length - 1];
+    fireEvent.change(newInput, { target: { value: 'new-*' } });
+    expect(newInput).toHaveValue('new-*');
+
+    const applyBtn = screen.getByRole('button', { name: /Apply Changes/i });
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('lets you delete a rule and enables the Apply Changes button', async () => {
+    renderComponent();
+
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+
+    const initialInputs = screen.getAllByTestId('indexInput');
+    const initialCount = initialInputs.length;
+    expect(initialCount).toBe(2);
+
+    const deleteIcons = screen.getAllByLabelText('Delete rule');
+    expect(deleteIcons).toHaveLength(initialCount);
+
+    fireEvent.click(deleteIcons[1]);
+
+    const inputsAfterDelete = screen.getAllByTestId('indexInput');
+    expect(inputsAfterDelete).toHaveLength(initialCount - 1);
+
+    const applyBtn = screen.getByRole('button', { name: /Apply Changes/i });
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('lets you update a rule and enables the Apply Changes button', async () => {
+    renderComponent();
+
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+
+    const inputs = screen.getAllByTestId('indexInput');
+    expect(inputs).toHaveLength(2);
+
+    fireEvent.change(inputs[0], { target: { value: 'keep-updated-*' } });
+    expect(inputs[0]).toHaveValue('keep-updated-*');
+
+    const applyBtn = screen.getByRole('button', { name: /Apply Changes/i });
+    expect(applyBtn).not.toBeDisabled();
+  });
+
+  it('sends an update HTTP request when you modify an existing rule and click Apply Changes', async () => {
+    renderComponent();
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+
+    const inputs = screen.getAllByTestId('indexInput');
+    fireEvent.change(inputs[0], { target: { value: 'keep-updated-*' } });
+
+    const applyBtn = screen.getByRole('button', { name: /Apply Changes/i });
+    fireEvent.click(applyBtn);
+
+    await waitFor(() => {
+      const updateCalls = (mockCore.http.put as jest.Mock).mock.calls.filter(
+        ([url]) => url === '/api/_rules/workload_group/keep-me'
+      );
+      expect(updateCalls).toHaveLength(1);
+
+      const [, options] = updateCalls[0];
+      expect(options).toEqual(
+        expect.objectContaining({
+          query: { dataSourceId: 'default' },
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: 'd',
+            index_pattern: ['keep-updated-*'],
+            workload_group: 'wg-123',
+          }),
+        })
+      );
+    });
+
+    expect(mockCore.notifications.toasts.addSuccess).toHaveBeenCalled();
   });
 });
