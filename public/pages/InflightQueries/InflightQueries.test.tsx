@@ -51,20 +51,21 @@ describe('InflightQueries', () => {
       >
         <InflightQueries
           core={mockCore}
-          depsStart={{
-            data: {
-              dataSources: {
-                get: jest.fn().mockReturnValue(mockCore.http),
+          depsStart={
+            {
+              data: {
+                dataSources: {
+                  get: jest.fn().mockReturnValue(mockCore.http),
+                },
               },
-            },
-          } as any}
+            } as any
+          }
           params={{} as any}
           dataSourceManagement={undefined}
         />
       </DataSourceContext.Provider>
     );
   };
-
 
   it('displays metric values from fixture', async () => {
     renderInflightQueries();
@@ -162,19 +163,20 @@ describe('InflightQueries', () => {
       >
         <InflightQueries
           core={mockCore}
-          depsStart={{
-            data: {
-              dataSources: {
-                get: jest.fn().mockReturnValue(mockCore.http),
+          depsStart={
+            {
+              data: {
+                dataSources: {
+                  get: jest.fn().mockReturnValue(mockCore.http),
+                },
               },
-            },
-          } as any}
+            } as any
+          }
           params={{} as any}
           dataSourceManagement={undefined}
         />
       </DataSourceContext.Provider>
     );
-
 
     await waitFor(() => {
       expect(screen.getAllByText('Live queries fetch failed')).toHaveLength(2);

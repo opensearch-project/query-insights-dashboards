@@ -6,15 +6,14 @@
 import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
 import { API_ENDPOINTS } from './apiendpoints';
 
-
-type CustomCore = {
+interface CustomCore {
   http: { get: (endpoint: string) => Promise<any> };
   data?: {
     dataSources: {
       get: (id: string) => { get: (endpoint: string) => Promise<any> };
     };
   };
-};
+}
 
 // Utility function to fetch query by id and time range
 export const retrieveQueryById = async (
@@ -73,7 +72,6 @@ export const retrieveQueryById = async (
   }
 };
 
-
 export const retrieveLiveQueries = async (
   core: CustomCore,
   dataSourceId?: string
@@ -89,9 +87,8 @@ export const retrieveLiveQueries = async (
   };
 
   try {
-    const http = dataSourceId && core.data?.dataSources
-      ? core.data.dataSources.get(dataSourceId)
-      : core.http;
+    const http =
+      dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
 
     const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES);
     const liveQueries = response?.response?.live_queries;

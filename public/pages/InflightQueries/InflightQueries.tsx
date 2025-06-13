@@ -22,30 +22,27 @@ import embed from 'vega-embed';
 import type { VisualizationSpec } from 'vega-embed';
 import { Duration } from 'luxon';
 import { filesize } from 'filesize';
-import { LiveSearchQueryResponse } from '../../../types/types';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
-import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
-import {QueryInsightsDashboardsPluginStartDependencies} from "../../types";
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useContext } from 'react';
+import { LiveSearchQueryResponse } from '../../../types/types';
+import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
-
 export const InflightQueries = ({
-                                  core,
-                                  depsStart,
-                                  params,
-                                  dataSourceManagement,
-                                }: {
+  core,
+  depsStart,
+  params,
+  dataSourceManagement,
+}: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-
-
   const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
@@ -72,7 +69,6 @@ export const InflightQueries = ({
 
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
-
 
     if (retrievedQueries.error || retrievedQueries.ok === false) {
       const errorMessage = retrievedQueries.error || 'Failed to load live queries';
@@ -351,22 +347,21 @@ export const InflightQueries = ({
   }, [indexCounts, selectedChartIdByIndex]);
 
   return (
-
-  <div>
-    <QueryInsightsDataSourceMenu
-      coreStart={core}
-      depsStart={depsStart}
-      params={params}
-      dataSourceManagement={dataSourceManagement}
-      setDataSource={setDataSource}
-      selectedDataSource={dataSource}
-      onManageDataSource={() => {}}
-      onSelectedDataSource={() => {
-        fetchliveQueries(); // re-fetch queries when data source changes
-      }}
-      dataSourcePickerReadOnly={false}
-    />
-    <EuiSpacer size="m" />
+    <div>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          fetchliveQueries(); // re-fetch queries when data source changes
+        }}
+        dataSourcePickerReadOnly={false}
+      />
+      <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="flexEnd">
         <EuiFlexItem grow={false}>
           <EuiSwitch
@@ -615,8 +610,6 @@ export const InflightQueries = ({
                   const httpClient = dataSource?.id
                     ? depsStart.data.dataSources.get(dataSource.id)
                     : core.http;
-
-
 
                   await Promise.allSettled(
                     selectedItems.map((item) =>
