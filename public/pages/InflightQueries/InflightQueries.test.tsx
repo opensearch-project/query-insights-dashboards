@@ -6,6 +6,7 @@
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { render, screen, waitFor, act } from '@testing-library/react';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
@@ -41,8 +42,29 @@ describe('InflightQueries', () => {
   });
 
   const renderInflightQueries = () => {
-    return render(<InflightQueries core={mockCore} />);
+    return render(
+      <DataSourceContext.Provider
+        value={{
+          dataSource: { id: 'default' },
+          setDataSource: jest.fn(),
+        }}
+      >
+        <InflightQueries
+          core={mockCore}
+          depsStart={{
+            data: {
+              dataSources: {
+                get: jest.fn().mockReturnValue(mockCore.http),
+              },
+            },
+          } as any}
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      </DataSourceContext.Provider>
+    );
   };
+
 
   it('displays metric values from fixture', async () => {
     renderInflightQueries();
@@ -131,7 +153,28 @@ describe('InflightQueries', () => {
       error: 'Live queries fetch failed',
     });
 
-    render(<InflightQueries core={mockCore} />);
+    render(
+      <DataSourceContext.Provider
+        value={{
+          dataSource: { id: 'default' },
+          setDataSource: jest.fn(),
+        }}
+      >
+        <InflightQueries
+          core={mockCore}
+          depsStart={{
+            data: {
+              dataSources: {
+                get: jest.fn().mockReturnValue(mockCore.http),
+              },
+            },
+          } as any}
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      </DataSourceContext.Provider>
+    );
+
 
     await waitFor(() => {
       expect(screen.getAllByText('Live queries fetch failed')).toHaveLength(2);
