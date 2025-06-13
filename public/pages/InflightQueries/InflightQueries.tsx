@@ -20,21 +20,36 @@ import {
 } from '@elastic/eui';
 import embed from 'vega-embed';
 import type { VisualizationSpec } from 'vega-embed';
-import { CoreStart } from 'opensearch-dashboards/public';
 import { Duration } from 'luxon';
 import { filesize } from 'filesize';
+import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
+import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
+import { useContext } from 'react';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { DataSourceContext } from '../TopNQueries/TopNQueries';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
-export const InflightQueries = ({ core }: { core: CoreStart }) => {
+export const InflightQueries = ({
+  core,
+  depsStart,
+  params,
+  dataSourceManagement,
+}: {
+  core: CoreStart;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
+}) => {
   const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
   const [nodeChartError, setNodeChartError] = useState<string | null>(null);
   const [indexChartError, setIndexChartError] = useState<string | null>(null);
-
+  const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
 
@@ -53,7 +68,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
   };
 
   const fetchliveQueries = async () => {
-    const retrievedQueries = await retrieveLiveQueries(core);
+    const retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
 
     if (retrievedQueries.error || retrievedQueries.ok === false) {
       const errorMessage = retrievedQueries.error || 'Failed to load live queries';
@@ -333,6 +348,20 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
 
   return (
     <div>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          fetchliveQueries(); // re-fetch queries when data source changes
+        }}
+        dataSourcePickerReadOnly={false}
+      />
+      <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="flexEnd">
         <EuiFlexItem grow={false}>
           <EuiSwitch
@@ -578,9 +607,13 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                 iconType="trash"
                 disabled={selectedItems.length === 0}
                 onClick={async () => {
+                  const httpClient = dataSource?.id
+                    ? depsStart.data.dataSources.get(dataSource.id)
+                    : core.http;
+
                   await Promise.allSettled(
                     selectedItems.map((item) =>
-                      core.http.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
+                      httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
                         () => ({ status: 'fulfilled', id: item.id }),
                         (err) => ({ status: 'rejected', id: item.id, error: err })
                       )
@@ -684,8 +717,11 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                   available: (item) => item.is_cancelled !== true,
                   onClick: async (item) => {
                     try {
-                      const taskId = item.id;
-                      await core.http.post(API_ENDPOINTS.CANCEL_TASK(taskId));
+                      const httpClient = dataSource?.id
+                        ? depsStart.data.dataSources.get(dataSource.id)
+                        : core.http;
+
+                      await httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id));
                       await new Promise((r) => setTimeout(r, 300));
                       await fetchliveQueries();
                     } catch (err) {
