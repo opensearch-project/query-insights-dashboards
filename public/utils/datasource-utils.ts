@@ -23,12 +23,32 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public';
 import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
+import { getSavedObjectsClient } from '../../public/service';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
   url.searchParams.set('dataSource', JSON.stringify(dataSource));
   return url;
 }
+
+export const getDataSourceVersion = async (
+  dataSourceId: string | undefined
+): Promise<string | undefined> => {
+  try {
+    if (dataSourceId === undefined) {
+      throw new Error();
+    }
+
+    const dataSource = await getSavedObjectsClient().get<DataSourceAttributes>(
+      'data-source',
+      dataSourceId
+    );
+    return dataSource?.attributes?.dataSourceVersion;
+  } catch (error) {
+    console.error('Error getting version: ', error);
+    return undefined;
+  }
+};
 
 export function getDataSourceFromUrl(): DataSourceOption {
   const urlParams = new URLSearchParams(window.location.search);
