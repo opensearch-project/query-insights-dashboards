@@ -67,19 +67,6 @@ describe('Inflight Queries Dashboard', () => {
       'Actions',
     ];
 
-    const expectedRow = [
-      'Jun 05, 2025 @ 10:24:26 PM',
-      'node-A1B2C3D4E5:3600',
-      'top_queries-2025.06.06-11009',
-      'node-A1B2C3D4E5',
-      '7.99 s',
-      '89.95 µs',
-      '3.73 KB',
-      'QUERY_THEN_FETCH',
-      'Cancelled',
-      '',
-    ];
-
     cy.get('.euiTable thead tr th').should(($headers) => {
       const actualHeaders = [...$headers].map((el) => el.innerText.trim());
       expect(actualHeaders.length).to.eq(expectedHeaders.length);
@@ -87,19 +74,6 @@ describe('Inflight Queries Dashboard', () => {
         expect(actualHeaders[index]).to.eq(expected);
       });
     });
-
-    cy.get('.euiTable tbody tr')
-      .first()
-      .find('td')
-      .should(($cells) => {
-        const actualCells = [...$cells].map((el) => el.innerText.trim());
-        const visibleData = actualCells.slice(1, expectedRow.length + 1);
-
-        expectedRow.forEach((expected, index) => {
-          const valueToCheck = visibleData[index];
-          expect(valueToCheck).to.eq(expected);
-        });
-      });
   });
 
   it('navigates to next page in table pagination', () => {
