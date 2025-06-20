@@ -58,7 +58,7 @@ describe('QueryDetails component', () => {
         initialEntries={[
           `/query-details/?id=${hash(
             mockQuery.id
-          )}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z`,
+          )}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z&verbose=true`,
         ]}
       >
         <DataSourceContext.Provider value={mockDataSourceContext}>

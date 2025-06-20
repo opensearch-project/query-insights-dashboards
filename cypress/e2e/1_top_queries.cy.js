@@ -125,10 +125,69 @@ describe('Query Insights Dashboard', () => {
     // Verify rows on the second page
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
-  after(() => clearAll());
+
+  it('should get minimal details of the query using verbose=false', () => {
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    return cy
+      .request({
+        method: 'GET',
+        url: `/api/top_queries/latency`,
+        qs: {
+          from: from,
+          to: to,
+          verbose: false,
+        },
+      })
+      .then((response) => {
+        expect(response.status).to.eq(200);
+        expect(response.body).to.have.property('ok', true);
+
+        const responseData = response.body.response;
+        expect(responseData).to.have.property('top_queries');
+        expect(responseData.top_queries).to.be.an('array');
+        expect(responseData.top_queries.length).to.be.greaterThan(0);
+
+        const firstQuery = responseData.top_queries[0];
+        const requiredFields = [
+          'group_by',
+          'id',
+          'indices',
+          'labels',
+          'measurements',
+          'node_id',
+          'search_type',
+          'timestamp',
+          'total_shards',
+        ];
+
+        expect(firstQuery).to.include.all.keys(requiredFields);
+        const typeValidations = {
+          group_by: 'string',
+          id: 'string',
+          indices: 'array',
+          labels: 'object',
+          measurements: 'object',
+          node_id: 'string',
+          search_type: 'string',
+          timestamp: 'number',
+          total_shards: 'number',
+        };
+        Object.entries(typeValidations).forEach(([field, type]) => {
+          expect(firstQuery[field]).to.be.a(type, `${field} should be a ${type}`);
+        });
+        expect(firstQuery.measurements).to.have.all.keys(['cpu', 'latency', 'memory']);
+        ['cpu', 'latency', 'memory'].forEach((metric) => {
+          expect(firstQuery.measurements[metric]).to.be.an('object');
+        });
+      });
+
+    after(() => clearAll());
+  });
 });
 
-describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', () => {
+describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top Queries', () => {
   beforeEach(() => {
     cy.fixture('stub_top_queries.json').then((stubResponse) => {
       cy.intercept('GET', '**/api/top_queries/*', {
