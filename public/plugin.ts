@@ -45,11 +45,11 @@ export class QueryInsightsDashboardsPlugin
       order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle
-        const { renderApp } = await import('./application');
+        const { mountQueryInsightsDashboards } = await import('./application');
         // Get start services as specified in opensearch_dashboards.json
         const [coreStart, depsStart] = await core.getStartServices();
         // Render the application
-        return renderApp(
+        return mountQueryInsightsDashboards(
           coreStart,
           depsStart as QueryInsightsDashboardsPluginStartDependencies,
           params,
