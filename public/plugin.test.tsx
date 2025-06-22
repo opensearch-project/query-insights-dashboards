@@ -6,11 +6,11 @@
 import { CoreSetup, CoreStart } from '../../../src/core/public';
 import { QueryInsightsDashboardsPlugin } from './plugin';
 import { PLUGIN_NAME } from '../common';
-import { mountQueryInsightsDashboards } from './application';
+import { renderApp } from './application';
 import { coreMock } from '../../../src/core/public/mocks';
 
 jest.mock('./application', () => ({
-  mountQueryInsightsDashboards: jest.fn(),
+  renderApp: jest.fn(),
 }));
 
 describe('QueryInsightsDashboardsPlugin', () => {
@@ -62,7 +62,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
 
     await mountFunction(paramsMock);
 
-    expect(mountQueryInsightsDashboards).toHaveBeenCalledWith(
+    expect(renderApp).toHaveBeenCalledWith(
       coreStartMock,
       depsMock,
       expect.objectContaining({ element: expect.any(HTMLElement) }),

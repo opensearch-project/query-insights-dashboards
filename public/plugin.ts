@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
+import {
+  AppMountParameters,
+  CoreSetup,
+  CoreStart,
+  DEFAULT_NAV_GROUPS,
+  Plugin,
+} from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -39,11 +45,11 @@ export class QueryInsightsDashboardsPlugin
       order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle
-        const { mountQueryInsightsDashboards } = await import('./application');
+        const { renderApp } = await import('./application');
         // Get start services as specified in opensearch_dashboards.json
         const [coreStart, depsStart] = await core.getStartServices();
         // Render the application
-        return mountQueryInsightsDashboards(
+        return renderApp(
           coreStart,
           depsStart as QueryInsightsDashboardsPluginStartDependencies,
           params,
@@ -52,31 +58,19 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    core.application.register({
-      id: 'workloadManagement',
-      title: 'Workload Management',
-      appRoute: '/app/workload-management',
-      description: 'Monitor and manage workload distribution across the cluster.',
-      category: {
-        id: 'opensearch',
-        label: 'OpenSearch Plugins',
-        order: 2000,
+    // Registration for new navigation
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: PLUGIN_NAME,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        order: 200,
       },
-      order: 5100,
-      async mount(params: AppMountParameters) {
-        // Dynamically import the WLM page
-        const { mountQueryInsightsDashboards } = await import('./application');
-
-        const [coreStart, depsStart] = await core.getStartServices();
-
-        return mountQueryInsightsDashboards(
-          coreStart,
-          depsStart as QueryInsightsDashboardsPluginStartDependencies,
-          params,
-          deps.dataSourceManagement
-        );
-      },
-    });
+    ]);
 
     return {};
   }
