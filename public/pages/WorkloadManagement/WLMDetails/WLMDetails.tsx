@@ -293,24 +293,24 @@ export const WLMDetails = ({
     if (groupName !== DEFAULT_WORKLOAD_GROUP) {
       try {
         const rulesRes = await core.http.get('/api/_rules/workload_group', {
-          query: {dataSourceId: dataSource.id},
+          query: { dataSourceId: dataSource.id },
         });
         const allRules = rulesRes?.body?.rules ?? [];
 
         const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
 
         setRules(
-            matchedRules.map((rule: any) => ({
-              index: rule.index_pattern.join(','),
-              indexId: rule.id,
-            }))
+          matchedRules.map((rule: any) => ({
+            index: rule.index_pattern.join(','),
+            indexId: rule.id,
+          }))
         );
 
         setExistingRules(
-            matchedRules.map((rule: any) => ({
-              index: rule.index_pattern.join(','),
-              indexId: rule.id,
-            }))
+          matchedRules.map((rule: any) => ({
+            index: rule.index_pattern.join(','),
+            indexId: rule.id,
+          }))
         );
 
         setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
