@@ -290,36 +290,38 @@ export const WLMDetails = ({
 
     setCurrentId(groupId);
 
-    try {
-      const rulesRes = await core.http.get('/api/_rules/workload_group', {
-        query: { dataSourceId: dataSource.id },
-      });
-      const allRules = rulesRes?.body?.rules ?? [];
+    if (groupName !== DEFAULT_WORKLOAD_GROUP) {
+      try {
+        const rulesRes = await core.http.get('/api/_rules/workload_group', {
+          query: {dataSourceId: dataSource.id},
+        });
+        const allRules = rulesRes?.body?.rules ?? [];
 
-      const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
+        const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
 
-      setRules(
-        matchedRules.map((rule: any) => ({
-          index: rule.index_pattern.join(','),
-          indexId: rule.id,
-        }))
-      );
+        setRules(
+            matchedRules.map((rule: any) => ({
+              index: rule.index_pattern.join(','),
+              indexId: rule.id,
+            }))
+        );
 
-      setExistingRules(
-        matchedRules.map((rule: any) => ({
-          index: rule.index_pattern.join(','),
-          indexId: rule.id,
-        }))
-      );
+        setExistingRules(
+            matchedRules.map((rule: any) => ({
+              index: rule.index_pattern.join(','),
+              indexId: rule.id,
+            }))
+        );
 
-      setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
+        setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
 
-      if (groupName === DEFAULT_WORKLOAD_GROUP) {
-        setDescription('System default workload group');
+        if (groupName === DEFAULT_WORKLOAD_GROUP) {
+          setDescription('System default workload group');
+        }
+      } catch (err) {
+        console.error('Failed to fetch group stats', err);
+        core.notifications.toasts.addDanger('Could not load rules.');
       }
-    } catch (err) {
-      console.error('Failed to fetch group stats', err);
-      core.notifications.toasts.addDanger('Could not load rules.');
     }
 
     try {

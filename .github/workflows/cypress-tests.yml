@@ -39,19 +39,12 @@ jobs:
           java-version: 21
           distribution: temurin
 
-#      - name: Checkout Query Insights
-#        uses: actions/checkout@v4
-#        with:
-#          path: query-insights
-#          repository: opensearch-project/query-insights
-#          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
-
       - name: Checkout Query Insights
         uses: actions/checkout@v4
         with:
           path: query-insights
-          repository: Lindsay-00/query-insights  # This is only for test
-          ref: wlm_plugin
+          repository: opensearch-project/query-insights
+          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
 
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
