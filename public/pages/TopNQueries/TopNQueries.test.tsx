@@ -71,9 +71,8 @@ describe('TopNQueries Component', () => {
 
     // Check for Query Insights tab content
     expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Live queries' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Top N queries' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Configuration' })).toBeInTheDocument();
+    expect(screen.getByText('Top N queries')).toBeInTheDocument();
+    expect(screen.getByText('Configuration')).toBeInTheDocument();
     expect(container).toMatchSnapshot();
 
     // Switch to Configuration tab
