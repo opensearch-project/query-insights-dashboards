@@ -4,7 +4,7 @@
  */
 
 import * as ReactDOM from 'react-dom';
-import { renderApp } from './application';
+import { mountQueryInsightsDashboards } from './application';
 import { coreMock } from '../../../src/core/public/mocks';
 
 jest.mock('react-dom', () => {
@@ -16,7 +16,7 @@ jest.mock('react-dom', () => {
   };
 });
 
-describe('renderApp', () => {
+describe('mountQueryInsightsDashboards', () => {
   const coreMockStart = coreMock.createStart();
   const depsStartMock = {};
   const paramsMock = { element: document.createElement('div') };
@@ -27,7 +27,12 @@ describe('renderApp', () => {
   });
 
   it('should unmount the component when the returned function is called', () => {
-    const unmount = renderApp(coreMockStart, depsStartMock, paramsMock, dataSourceManagementMock);
+    const unmount = mountQueryInsightsDashboards(
+      coreMockStart,
+      depsStartMock,
+      paramsMock,
+      dataSourceManagementMock
+    );
     unmount();
 
     expect(ReactDOM.unmountComponentAtNode).toHaveBeenCalledWith(paramsMock.element);
