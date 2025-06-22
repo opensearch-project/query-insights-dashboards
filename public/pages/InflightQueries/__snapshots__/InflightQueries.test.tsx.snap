@@ -4,9 +4,6 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
 <div>
   <div>
     <div
-      class="euiSpacer euiSpacer--m"
-    />
-    <div
       class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentFlexEnd euiFlexGroup--directionRow euiFlexGroup--responsive"
     >
       <div
