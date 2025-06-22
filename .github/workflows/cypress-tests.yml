@@ -71,8 +71,8 @@ jobs:
         run: |
           mkdir -p query-insights/plugins
 
-          cp OpenSearch/modules/autotagging-commons/build/distributions/rule-framework-${OPENSEARCH_VERSION}.zip query-insights/plugins/
-          cp OpenSearch/plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip query-insights/plugins/
+          cp modules/autotagging-commons/build/distributions/rule-framework-${OPENSEARCH_VERSION}.zip query-insights/plugins/
+          cp plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip query-insights/plugins/
 
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
