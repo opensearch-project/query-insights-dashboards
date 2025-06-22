@@ -69,8 +69,6 @@ jobs:
           # Build WLM plugin
           ./gradlew :plugins:workload-management:assemble -x test
 
-#          echo "Checking autotagging-commons build directory:"
-#          ls -la modules/autotagging-commons/build/distributions/
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
 
