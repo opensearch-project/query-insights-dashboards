@@ -64,9 +64,13 @@ jobs:
       - name: Build Required Plugins
         run: |
           cd OpenSearch
+          # Build rule-framework (autotagging-commons)
+          ./gradlew :modules:autotagging-commons:build -x test
           # Build WLM plugin
           ./gradlew :plugins:workload-management:assemble -x test
 
+          echo "Checking autotagging-commons build directory:"
+          ls -la modules/autotagging-commons/build/distributions/
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
 
@@ -74,13 +78,12 @@ jobs:
         run: |
           mkdir -p query-insights/plugins
 
-          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          cp modules/autotagging-commons/build/distributions/rule-framework-${OPENSEARCH_VERSION}.zip query-insights/plugins/
+          cp plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip query-insights/plugins/
 
           # List what was copied
           echo "Contents of plugins directory:"
           ls -la query-insights/plugins/
-#          cp modules/autotagging-commons/build/distributions/rule-framework-${OPENSEARCH_VERSION}.zip query-insights/plugins/
-#          cp plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip query-insights/plugins/
 
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
