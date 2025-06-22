@@ -63,9 +63,9 @@ jobs:
         run: |
           cd OpenSearch
           # Build rule-framework (autotagging-commons)
-          ./gradlew :modules:autotagging-commons:build
+          ./gradlew :modules:autotagging-commons:build -x test
           # Build WLM plugin
-          ./gradlew :plugins:workload-management:assemble
+          ./gradlew :plugins:workload-management:assemble -x test
 
       - name: Copy Plugins to Query Insights
         run: |
