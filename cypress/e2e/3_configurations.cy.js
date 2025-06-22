@@ -32,9 +32,8 @@ describe('Query Insights Configurations Page', () => {
     cy.get('h1').contains('Query insights - Configuration').should('be.visible');
     // Validate the tabs
     cy.get('.euiTabs').should('be.visible');
-    cy.get('.euiTab').should('have.length', 3); // Three tabs: 'Top N queries', 'Live queries' and 'Configuration'
+    cy.get('.euiTab').should('have.length', 2); // Two tabs: 'Top N queries' and 'Configuration'
     cy.contains('button', 'Top N queries').should('be.visible');
-    cy.contains('button', 'Live queries').should('be.visible');
     cy.contains('button', 'Configuration').should('have.class', 'euiTab-isSelected');
     // Validate the panels
     // 6 panels: Settings, Status, Group Settings, Group Status, Delete After Settings, Delete After Status

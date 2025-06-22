@@ -3,13 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const {
-  ADMIN_AUTH,
-  OVERVIEW_PATH,
-  CONFIGURATION_PATH,
-  BASE_PATH,
-  LIVEQUERIES_PATH,
-} = require('./constants');
+const { ADMIN_AUTH, OVERVIEW_PATH, CONFIGURATION_PATH, BASE_PATH } = require('./constants');
 
 /**
  * Overwrites the default visit command to authenticate before visiting
@@ -213,13 +207,6 @@ Cypress.Commands.add('navigateToOverview', () => {
 Cypress.Commands.add('navigateToConfiguration', () => {
   cy.visit(CONFIGURATION_PATH);
   cy.waitForPageLoad(CONFIGURATION_PATH, { contains: 'Query insights - Configuration' });
-});
-
-Cypress.Commands.add('navigateToLiveQueries', () => {
-  cy.visit(LIVEQUERIES_PATH);
-  cy.waitForPageLoad(LIVEQUERIES_PATH, {
-    contains: 'Query insights - In-flight queries scoreboard',
-  });
 });
 
 Cypress.Commands.add('waitForPluginToLoad', () => {

@@ -66,23 +66,3 @@ export interface QueryInsightsSettingsResponse {
   group_by?: string;
   exporter?: ExporterSettingsResponse;
 }
-
-export interface LiveSearchQueryRecord {
-  timestamp: number;
-  id: string;
-  description: string;
-  measurements: {
-    latency?: Measurement;
-    cpu?: Measurement;
-    memory?: Measurement;
-  };
-  node_id: string;
-  is_cancelled: boolean;
-}
-
-export interface LiveSearchQueryResponse {
-  ok: boolean;
-  response: {
-    live_queries: LiveSearchQueryRecord[];
-  };
-}

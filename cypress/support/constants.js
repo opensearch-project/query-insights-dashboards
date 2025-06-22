@@ -9,8 +9,6 @@ export const PLUGIN_NAME = 'query-insights-dashboards';
 
 export const OVERVIEW_PATH = `${BASE_PATH}/app/${PLUGIN_NAME}#/queryInsights`;
 export const CONFIGURATION_PATH = `${BASE_PATH}/app/${PLUGIN_NAME}#/configuration`;
-export const LIVEQUERIES_PATH = `${BASE_PATH}/app/${PLUGIN_NAME}#/LiveQueries`;
-
 export const METRICS = {
   LATENCY: 'latency',
   CPU: 'cpu',
