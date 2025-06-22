@@ -38,12 +38,41 @@ jobs:
           java-version: 21
           distribution: temurin
 
+#      - name: Checkout Query Insights
+#        uses: actions/checkout@v4
+#        with:
+#          path: query-insights
+#          repository: opensearch-project/query-insights
+#          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
+
       - name: Checkout Query Insights
         uses: actions/checkout@v4
         with:
           path: query-insights
-          repository: opensearch-project/query-insights
-          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
+          repository: Lindsay-00/query-insights  # This is only for test
+          ref: wlm_plugin
+
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OPENSEARCH_VERSION }}
+
+      - name: Build Required Plugins
+        run: |
+          cd OpenSearch
+          # Build rule-framework (autotagging-commons)
+          ./gradlew :modules:autotagging-commons:build
+          # Build WLM plugin
+          ./gradlew :plugins:workload-management:assemble
+
+      - name: Copy Plugins to Query Insights
+        run: |
+          mkdir -p query-insights/plugins
+
+          cp OpenSearch/modules/autotagging-commons/build/distributions/rule-framework-${OPENSEARCH_VERSION}.zip query-insights/plugins/
+          cp OpenSearch/plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip query-insights/plugins/
 
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
