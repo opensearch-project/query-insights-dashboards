@@ -314,14 +314,12 @@ export const WLMDetails = ({
         );
 
         setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
-
-        if (groupName === DEFAULT_WORKLOAD_GROUP) {
-          setDescription('System default workload group');
-        }
       } catch (err) {
         console.error('Failed to fetch group stats', err);
         core.notifications.toasts.addDanger('Could not load rules.');
       }
+    } else {
+      setDescription('System default workload group');
     }
 
     try {
