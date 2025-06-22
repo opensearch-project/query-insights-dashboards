@@ -109,6 +109,14 @@ jobs:
 
           # Verify OpenSearch is actually running
           curl -s http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
+
+          # List installed plugins
+          echo -e "\nInstalled Plugins:"
+          curl -s http://localhost:9200/_cat/plugins | sort
+
+          # Test WLM stats endpoint
+          echo -e "\nTesting WLM stats endpoint:"
+          curl -s http://localhost:9200/_wlm/stats | jq '.'
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
