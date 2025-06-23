@@ -58,9 +58,9 @@ jobs:
         run: |
           cd OpenSearch
           # Build rule-framework (autotagging-commons)
-          ./gradlew :modules:autotagging-commons:build -x test
+          ./gradlew :modules:autotagging-commons:assemble
           # Build WLM plugin
-          ./gradlew :plugins:workload-management:assemble -x test
+          ./gradlew :plugins:workload-management:assemble
 
           echo "Checking autotagging-commons build directory:"
           ls -la modules/autotagging-commons/build/distributions/
@@ -108,7 +108,7 @@ jobs:
 
           # Test WLM stats endpoint
           echo -e "\nTesting WLM stats endpoint:"
-          curl -s http://localhost:9200/_wlm/stats | jq '.'
+          curl -s http://localhost:9200/_wlm/workload_group | jq '.'
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
