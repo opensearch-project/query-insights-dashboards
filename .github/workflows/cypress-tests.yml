@@ -74,7 +74,7 @@ jobs:
           find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
           find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
 
-          # List what was copied
+          # List copied plugins
           echo "Contents of plugins directory:"
           ls -la query-insights/plugins/
 
