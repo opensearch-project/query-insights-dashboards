@@ -7,6 +7,7 @@ on:
     branches:
       - "*"
 env:
+  OPENSEARCH_BRANCH: '3.1'
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
   OPENSEARCH_VERSION: '3.1.0-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
@@ -45,6 +46,38 @@ jobs:
           repository: opensearch-project/query-insights
           ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
 
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OPENSEARCH_BRANCH }}
+
+
+      - name: Build Required Plugins
+        run: |
+          cd OpenSearch
+          # Build rule-framework (autotagging-commons)
+          ./gradlew :modules:autotagging-commons:assemble
+          # Build WLM plugin
+          ./gradlew :plugins:workload-management:assemble
+
+          echo "Checking autotagging-commons build directory:"
+          ls -la modules/autotagging-commons/build/distributions/
+          echo "Checking WLM build directory:"
+          ls -la plugins/workload-management/build/distributions/
+
+      - name: Copy Plugins to Query Insights
+        run: |
+          mkdir -p query-insights/plugins
+
+          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+
+          # List copied plugins
+          echo "Contents of plugins directory:"
+          ls -la query-insights/plugins/
+
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
         with:
@@ -68,6 +101,14 @@ jobs:
 
           # Verify OpenSearch is actually running
           curl -s http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
+
+          # List installed plugins
+          echo -e "\nInstalled Plugins:"
+          curl -s http://localhost:9200/_cat/plugins | sort
+
+          # Test WLM stats endpoint
+          echo -e "\nTesting WLM stats endpoint:"
+          curl -s http://localhost:9200/_wlm/workload_group | jq '.'
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
