@@ -33,6 +33,10 @@ jobs:
     steps:
       - name: Get pwd
         run: pwd
+      - name: Confirm script exists
+        run: ls -la OpenSearch-Dashboards/plugins/query-insights-dashboards
+      - name: Confirm script exists
+        run: ls -la
       - name: Get OpenSearch version
         run: |
             echo "OPENSEARCH_VERSION=$(node ../get-opensearch-version.js)" >> $GITHUB_ENV
