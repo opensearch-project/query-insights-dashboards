@@ -31,6 +31,8 @@ jobs:
       # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
     steps:
+      - name: Get pwd
+        run: pwd
       - name: Get OpenSearch version
         run: |
             echo "OPENSEARCH_VERSION=$(node ../get-opensearch-version.js)" >> $GITHUB_ENV
