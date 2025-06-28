@@ -7,9 +7,7 @@ on:
     branches:
       - "*"
 env:
-  OPENSEARCH_BRANCH: '3.1'
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  OPENSEARCH_VERSION: '3.1.0-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
@@ -33,6 +31,11 @@ jobs:
       # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
     steps:
+      - name: Get OpenSearch version from file
+        id: get_version
+        run: |
+          echo "OPENSEARCH_VERSION=$(get-opensearch-version.js)" >> $GITHUB_ENV
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
