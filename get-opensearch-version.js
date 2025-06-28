@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.resolve(__dirname, '../../opensearch_dashboards.json');
+const filePath = path.resolve(__dirname, 'opensearch_dashboards.json');
 
 if (fs.existsSync(filePath)) {
   const content = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
