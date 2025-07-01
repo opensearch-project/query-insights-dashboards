@@ -233,16 +233,12 @@ const TopNQueries = ({
         ).map((item) => JSON.parse(item));
 
         const version = await getDataSourceVersion(dataSourceId);
-        console.log('Resolved dataSourceId:', dataSourceId);
-        console.log('Fetched OpenSearch version:', version);
 
         const is219OSVersion = version
           ? semver.major(version) === MINIMUM_MAJOR_SUPPORTED_VERSION &&
             semver.minor(version) === MINIMUM_MINOR_SUPPORTED_VERSION
           : false;
 
-        console.log('!!!!!!!!is219OSVersion!!!!!!!!!!');
-        console.log(is219OSVersion);
 
         const fromTime = DateTime.fromISO(parseDateString(start));
         const toTime = DateTime.fromISO(parseDateString(end));
