@@ -94,8 +94,6 @@ const TopNQueries = ({
   const [currStart, setStart] = useState(initialStart);
   const [currEnd, setEnd] = useState(initialEnd);
   const dataSourceFromUrl = getDataSourceFromUrl();
-  // console.log("!!!!!!dataSourceFromUrl:")
-  // console.log(dataSourceFromUrl)
   const dataSourceId = dataSourceFromUrl.id;
 
   const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
