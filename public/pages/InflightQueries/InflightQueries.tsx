@@ -18,31 +18,27 @@ import {
   EuiInMemoryTable,
   EuiButton,
 } from '@elastic/eui';
-import embed from 'vega-embed';
-import type { VisualizationSpec } from 'vega-embed';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { VegaChart } from './vegachart';
+import { createVegaPieSpec } from './vegaspecs/pieChartSpec';
+import { createVegaBarSpec } from './vegaspecs/barChartSpec';
 
 export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
-  const [nodeChartError, setNodeChartError] = useState<string | null>(null);
-  const [indexChartError, setIndexChartError] = useState<string | null>(null);
 
-  const [nodeCounts, setNodeCounts] = useState({});
-  const [indexCounts, setIndexCounts] = useState({});
+  const [nodeCounts, setNodeCounts] = useState<Record<string, number>>({});
+  const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
-
-  const chartRefByNode = useRef<HTMLDivElement>(null);
-  const chartRefByIndex = useRef<HTMLDivElement>(null);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -55,11 +51,10 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core);
 
-    if (retrievedQueries.error || retrievedQueries.ok === false) {
-      const errorMessage = retrievedQueries.error || 'Failed to load live queries';
-      setNodeChartError(errorMessage);
-      setIndexChartError(errorMessage);
+    if (retrievedQueries.ok === false) {
       setQuery(null);
+      setNodeCounts({});
+      setIndexCounts({});
       return;
     }
 
@@ -192,6 +187,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
   const onChartChangeByNode = (optionId: string) => {
     setSelectedChartIdByNode(optionId);
   };
+
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
@@ -235,101 +231,6 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
       totalMemoryBytes: totalMemory,
     };
   }, [query]);
-
-  const getChartData = (counts: Record<string, number>, type: 'node' | 'index') => {
-    return Object.entries(counts).map(([key, value]) => ({
-      label: type === 'node' ? `${key}` : key,
-      value,
-    }));
-  };
-
-  const getChartSpec = (type: string, chartType: 'node' | 'index'): VisualizationSpec => {
-    const isDonut = type.includes('donut');
-
-    return {
-      width: 400,
-      height: 300,
-      mark: isDonut ? { type: 'arc', innerRadius: 50 } : { type: 'bar' },
-      encoding: isDonut
-        ? {
-            theta: { field: 'value', type: 'quantitative' },
-            color: {
-              field: 'label',
-              type: 'nominal',
-              title: chartType === 'node' ? 'Nodes' : 'Indices',
-            },
-            tooltip: [
-              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' },
-            ],
-          }
-        : {
-            x: {
-              field: 'label',
-              type: 'nominal',
-              axis: { labelAngle: -45, title: chartType === 'node' ? 'Node' : 'Index' },
-            },
-            y: {
-              field: 'value',
-              type: 'quantitative',
-              axis: { title: 'Count' },
-            },
-            color: {
-              field: 'label',
-              type: 'nominal',
-              title: chartType === 'node' ? 'Node' : 'Index',
-            },
-            tooltip: [
-              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' },
-            ],
-          },
-    };
-  };
-
-  useEffect(() => {
-    if (chartRefByNode.current) {
-      embed(
-        chartRefByNode.current,
-        {
-          ...getChartSpec(selectedChartIdByNode, 'node'),
-          data: { values: getChartData(nodeCounts, 'node') },
-        },
-        { actions: false, renderer: 'svg' }
-      )
-        .then(() => setNodeChartError(null))
-        .catch((error) => {
-          console.error('Node chart rendering failed:', error);
-          setNodeChartError('Failed to load chart data');
-          core.notifications.toasts.addError(error, {
-            title: 'Failed to render Queries by Node chart',
-            toastMessage: 'Please check data or browser console for details.',
-          });
-        });
-    }
-  }, [nodeCounts, selectedChartIdByNode]);
-
-  useEffect(() => {
-    if (chartRefByIndex.current) {
-      embed(
-        chartRefByIndex.current,
-        {
-          ...getChartSpec(selectedChartIdByIndex, 'index'),
-          data: { values: getChartData(indexCounts, 'index') },
-        },
-        { actions: false, renderer: 'svg' }
-      )
-        .then(() => setIndexChartError(null))
-        .catch((error) => {
-          console.error('Index chart rendering failed:', error);
-          setIndexChartError('Failed to load chart data');
-          core.notifications.toasts.addError(error, {
-            title: 'Failed to render Queries by Index chart',
-            toastMessage: 'Please check data or browser console for details.',
-          });
-        });
-    }
-  }, [indexCounts, selectedChartIdByIndex]);
 
   return (
     <div>
@@ -477,10 +378,10 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+
       <EuiFlexGroup>
-        {/* Queries by Node */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+        <EuiFlexItem grow={true} style={{ minWidth: 380 }}>
+          <EuiPanel paddingSize="m" style={{ minHeight: 700 }}>
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
                 <p>Queries by Node</p>
@@ -491,38 +392,24 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                 idSelected={selectedChartIdByNode}
                 onChange={onChartChangeByNode}
                 color="primary"
+                buttonSize="compressed"
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(nodeCounts).length > 0 && !nodeChartError ? (
-              <div
-                ref={chartRefByNode}
-                data-test-subj="vega-chart-node"
-                data-chart-values={JSON.stringify(getChartData(nodeCounts, 'node'))}
+            {selectedChartIdByNode === 'donut' ? (
+              <VegaChart
+                spec={createVegaPieSpec(nodeCounts, 380, 380)}
+                width={380}
+                height={480} // 380 + extra for legend if needed
               />
-            ) : nodeChartError ? (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="danger">
-                  <p>{nodeChartError}</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
             ) : (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="subdued">
-                  <p>No data available</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
+              <VegaChart spec={createVegaBarSpec(nodeCounts, 380, 380)} width={380} height={380} />
             )}
           </EuiPanel>
         </EuiFlexItem>
 
-        {/* Queries by Index */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
+        <EuiFlexItem grow={true} style={{ minWidth: 380 }}>
+          <EuiPanel paddingSize="m" style={{ minHeight: 700 }}>
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
                 <p>Queries by Index</p>
@@ -533,35 +420,23 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                 idSelected={selectedChartIdByIndex}
                 onChange={onChartChangeByIndex}
                 color="primary"
+                buttonSize="compressed"
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(indexCounts).length > 0 && !indexChartError ? (
-              <div
-                ref={chartRefByIndex}
-                data-test-subj="vega-chart-index"
-                data-chart-values={JSON.stringify(getChartData(indexCounts, 'index'))}
+            {selectedChartIdByIndex === 'donut' ? (
+              <VegaChart
+                spec={createVegaPieSpec(indexCounts, 380, 380)}
+                width={380}
+                height={480} // adjust if needed
               />
-            ) : indexChartError ? (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="danger">
-                  <p>{indexChartError}</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
             ) : (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="subdued">
-                  <p>No data available</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
+              <VegaChart spec={createVegaBarSpec(indexCounts, 380, 380)} width={380} height={380} />
             )}
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+
       <EuiSpacer size="m" />
       <EuiPanel paddingSize="m">
         <EuiInMemoryTable
@@ -571,27 +446,31 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
               placeholder: 'Search queries',
               schema: false,
             },
-            toolsLeft: selectedItems.length > 0 && [
-              <EuiButton
-                key="delete-button"
-                color="danger"
-                iconType="trash"
-                disabled={selectedItems.length === 0}
-                onClick={async () => {
-                  await Promise.allSettled(
-                    selectedItems.map((item) =>
-                      core.http.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
-                        () => ({ status: 'fulfilled', id: item.id }),
-                        (err) => ({ status: 'rejected', id: item.id, error: err })
-                      )
-                    )
-                  );
-                  setSelectedItems([]);
-                }}
-              >
-                Cancel {selectedItems.length} {selectedItems.length !== 1 ? 'queries' : 'query'}
-              </EuiButton>,
-            ],
+            toolsLeft:
+              selectedItems.length > 0
+                ? [
+                    <EuiButton
+                      key="delete-button"
+                      color="danger"
+                      iconType="trash"
+                      disabled={selectedItems.length === 0}
+                      onClick={async () => {
+                        await Promise.allSettled(
+                          selectedItems.map((item) =>
+                            core.http.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
+                              () => ({ status: 'fulfilled', id: item.id }),
+                              (err) => ({ status: 'rejected', id: item.id, error: err })
+                            )
+                          )
+                        );
+                        setSelectedItems([]);
+                      }}
+                    >
+                      Cancel {selectedItems.length}{' '}
+                      {selectedItems.length !== 1 ? 'queries' : 'query'}
+                    </EuiButton>,
+                  ]
+                : undefined,
             toolsRight: [
               <EuiButton
                 key="refresh-button"
@@ -661,7 +540,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
             {
               name: 'Status',
               render: (item) =>
-                item.measurements?.is_cancelled === true ? (
+                item.is_cancelled === true ? (
                   <EuiText color="danger">
                     <b>Cancelled</b>
                   </EuiText>
@@ -681,7 +560,7 @@ export const InflightQueries = ({ core }: { core: CoreStart }) => {
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.measurements?.is_cancelled !== true,
+                  available: (item) => item.is_cancelled !== true,
                   onClick: async (item) => {
                     try {
                       const taskId = item.id;
