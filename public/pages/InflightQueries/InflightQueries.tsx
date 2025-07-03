@@ -18,8 +18,15 @@ import {
   EuiInMemoryTable,
   EuiButton,
 } from '@elastic/eui';
-import embed from 'vega-embed';
-import type { VisualizationSpec } from 'vega-embed';
+import {
+  RadialChart,
+  XYPlot,
+  HorizontalBarSeries,
+  XAxis,
+  YAxis,
+  HorizontalGridLines,
+} from 'react-vis';
+import 'react-vis/dist/style.css';
 import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -33,11 +40,11 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
 export const InflightQueries = ({
-  core,
-  depsStart,
-  params,
-  dataSourceManagement,
-}: {
+                                  core,
+                                  depsStart,
+                                  params,
+                                  dataSourceManagement,
+                                }: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -47,17 +54,12 @@ export const InflightQueries = ({
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
-  const [nodeChartError, setNodeChartError] = useState<string | null>(null);
-  const [indexChartError, setIndexChartError] = useState<string | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
-
-  const chartRefByNode = useRef<HTMLDivElement>(null);
-  const chartRefByIndex = useRef<HTMLDivElement>(null);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -69,14 +71,6 @@ export const InflightQueries = ({
 
   const fetchliveQueries = async () => {
     const retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
-
-    if (retrievedQueries.error || retrievedQueries.ok === false) {
-      const errorMessage = retrievedQueries.error || 'Failed to load live queries';
-      setNodeChartError(errorMessage);
-      setIndexChartError(errorMessage);
-      setQuery(null);
-      return;
-    }
 
     if (retrievedQueries?.response?.live_queries) {
       const tempNodeCount: Record<string, number> = {};
@@ -214,6 +208,34 @@ export const InflightQueries = ({
     onSelectionChange: (selected: any[]) => setSelectedItems(selected),
   };
 
+  const chartColors = [
+    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',
+    '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
+    '#bcbd22', '#17becf',
+  ];
+
+  const Legend = ({ data }: { data: Record<string, number> }) => (
+    <EuiFlexGroup direction="row" wrap responsive={false} gutterSize="s">
+      {Object.entries(data).map(([label, value], idx) => (
+        <EuiFlexItem key={label} grow={false}>
+          <EuiText size="xs">
+          <span
+            style={{
+              display: 'inline-block',
+              width: 12,
+              height: 12,
+              backgroundColor: chartColors[idx % chartColors.length],
+              marginRight: 6,
+            }}
+          />
+            {label}: {value}
+          </EuiText>
+        </EuiFlexItem>
+      ))}
+    </EuiFlexGroup>
+  );
+
+
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
 
@@ -251,100 +273,17 @@ export const InflightQueries = ({
     };
   }, [query]);
 
-  const getChartData = (counts: Record<string, number>, type: 'node' | 'index') => {
-    return Object.entries(counts).map(([key, value]) => ({
-      label: type === 'node' ? `${key}` : key,
-      value,
+  const getReactVisChartData = (counts: Record<string, number>) => {
+    return Object.entries(counts).map(([label, value], index) => ({
+      x: value, // value for horizontal bar
+      y: label, // category
+      angle: value,
+      label,
+      color: chartColors[index % chartColors.length],
     }));
   };
 
-  const getChartSpec = (type: string, chartType: 'node' | 'index'): VisualizationSpec => {
-    const isDonut = type.includes('donut');
 
-    return {
-      width: 400,
-      height: 300,
-      mark: isDonut ? { type: 'arc', innerRadius: 50 } : { type: 'bar' },
-      encoding: isDonut
-        ? {
-            theta: { field: 'value', type: 'quantitative' },
-            color: {
-              field: 'label',
-              type: 'nominal',
-              title: chartType === 'node' ? 'Nodes' : 'Indices',
-            },
-            tooltip: [
-              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' },
-            ],
-          }
-        : {
-            x: {
-              field: 'label',
-              type: 'nominal',
-              axis: { labelAngle: -45, title: chartType === 'node' ? 'Node' : 'Index' },
-            },
-            y: {
-              field: 'value',
-              type: 'quantitative',
-              axis: { title: 'Count' },
-            },
-            color: {
-              field: 'label',
-              type: 'nominal',
-              title: chartType === 'node' ? 'Node' : 'Index',
-            },
-            tooltip: [
-              { field: 'label', type: 'nominal', title: chartType === 'node' ? 'Node' : 'Index' },
-              { field: 'value', type: 'quantitative', title: 'Count' },
-            ],
-          },
-    };
-  };
-
-  useEffect(() => {
-    if (chartRefByNode.current) {
-      embed(
-        chartRefByNode.current,
-        {
-          ...getChartSpec(selectedChartIdByNode, 'node'),
-          data: { values: getChartData(nodeCounts, 'node') },
-        },
-        { actions: false, renderer: 'svg' }
-      )
-        .then(() => setNodeChartError(null))
-        .catch((error) => {
-          console.error('Node chart rendering failed:', error);
-          setNodeChartError('Failed to load chart data');
-          core.notifications.toasts.addError(error, {
-            title: 'Failed to render Queries by Node chart',
-            toastMessage: 'Please check data or browser console for details.',
-          });
-        });
-    }
-  }, [nodeCounts, selectedChartIdByNode]);
-
-  useEffect(() => {
-    if (chartRefByIndex.current) {
-      embed(
-        chartRefByIndex.current,
-        {
-          ...getChartSpec(selectedChartIdByIndex, 'index'),
-          data: { values: getChartData(indexCounts, 'index') },
-        },
-        { actions: false, renderer: 'svg' }
-      )
-        .then(() => setIndexChartError(null))
-        .catch((error) => {
-          console.error('Index chart rendering failed:', error);
-          setIndexChartError('Failed to load chart data');
-          core.notifications.toasts.addError(error, {
-            title: 'Failed to render Queries by Index chart',
-            toastMessage: 'Please check data or browser console for details.',
-          });
-        });
-    }
-  }, [indexCounts, selectedChartIdByIndex]);
 
   return (
     <div>
@@ -523,20 +462,39 @@ export const InflightQueries = ({
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(nodeCounts).length > 0 && !nodeChartError ? (
-              <div
-                ref={chartRefByNode}
-                data-test-subj="vega-chart-node"
-                data-chart-values={JSON.stringify(getChartData(nodeCounts, 'node'))}
-              />
-            ) : nodeChartError ? (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="danger">
-                  <p>{nodeChartError}</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
+            {Object.keys(nodeCounts).length > 0 ? (
+              selectedChartIdByNode === 'donut' ? (
+                <>
+                  <RadialChart
+                    data={getReactVisChartData(nodeCounts)}
+                    width={300}
+                    height={300}
+                    innerRadius={80}
+                    radius={140}
+                    colorType="literal"
+                    data-test-subj="vega-chart-node-donut"
+                  />
+                  <EuiSpacer size="s" />
+                  <Legend data={nodeCounts} />
+                </>
+              ) : (
+                <XYPlot
+                  yType="ordinal"
+                  width={400}
+                  height={300}
+                  margin={{ left: 180 }}
+                  colorType="literal"
+                  data-test-subj="vega-chart-node-bar"
+                >
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis />
+                  <HorizontalBarSeries
+                    data={getReactVisChartData(nodeCounts)}
+                    getColor={(d) => d.color}
+                  />
+                </XYPlot>
+              )
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
@@ -565,20 +523,39 @@ export const InflightQueries = ({
               />
             </EuiFlexGroup>
             <EuiSpacer size="l" />
-            {Object.keys(indexCounts).length > 0 && !indexChartError ? (
-              <div
-                ref={chartRefByIndex}
-                data-test-subj="vega-chart-index"
-                data-chart-values={JSON.stringify(getChartData(indexCounts, 'index'))}
-              />
-            ) : indexChartError ? (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="danger">
-                  <p>{indexChartError}</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
+            {Object.keys(indexCounts).length > 0 ? (
+              selectedChartIdByIndex === 'donut' ? (
+                <>
+                  <RadialChart
+                    data={getReactVisChartData(indexCounts)}
+                    width={300}
+                    height={300}
+                    innerRadius={80}
+                    radius={140}
+                    colorType="literal"
+                    data-test-subj="vega-chart-index-donut"
+                  />
+                  <EuiSpacer size="s" />
+                  <Legend data={indexCounts} />
+                </>
+              ) : (
+                <XYPlot
+                  yType="ordinal"
+                  width={500}
+                  height={300}
+                  margin={{ left: 180 }}
+                  data-test-subj="vega-chart-index-bar"
+                >
+                  <HorizontalGridLines />
+                  <XAxis />
+                  <YAxis />
+                  <HorizontalBarSeries
+                    data={getReactVisChartData(indexCounts)}
+                    colorType="literal"
+                    getColor={(d) => d.color}
+                  />
+                </XYPlot>
+              )
             ) : (
               <EuiTextAlign textAlign="center">
                 <EuiSpacer size="xl" />
