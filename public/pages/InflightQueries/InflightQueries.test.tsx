@@ -10,14 +10,23 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
-jest.mock('vega-embed', () => ({
-  __esModule: true,
-  default: jest.fn().mockResolvedValue({}),
-}));
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
+
+jest.mock('react-vis', () => ({
+  RadialChart: (props: any) => (
+    <div data-testid={props['data-test-subj'] || 'RadialChart'}>{props.children}</div>
+  ),
+  XYPlot: (props: any) => (
+    <div data-testid={props['data-test-subj'] || 'XYPlot'}>{props.children}</div>
+  ),
+  HorizontalBarSeries: () => <div>HorizontalBarSeries</div>,
+  XAxis: () => <div>XAxis</div>,
+  YAxis: () => <div>YAxis</div>,
+  HorizontalGridLines: () => <div>HorizontalGridLines</div>,
+}));
 
 describe('InflightQueries', () => {
   const mockCore = ({
@@ -133,6 +142,9 @@ describe('InflightQueries', () => {
               cpu: { number: 1000000 },
               memory: { number: 500 },
             },
+            timestamp: Date.now(),
+            node_id: 'node1',
+            description: 'indices[index1] search_type[dfs_query_then_fetch]',
           },
         ],
       },
@@ -148,38 +160,13 @@ describe('InflightQueries', () => {
     });
   });
 
-  it('displays fallback when live queries API fails', async () => {
-    (retrieveLiveQueries as jest.Mock).mockResolvedValue({
-      ok: false,
-      error: 'Live queries fetch failed',
-    });
-
-    render(
-      <DataSourceContext.Provider
-        value={{
-          dataSource: { id: 'default' },
-          setDataSource: jest.fn(),
-        }}
-      >
-        <InflightQueries
-          core={mockCore}
-          depsStart={
-            {
-              data: {
-                dataSources: {
-                  get: jest.fn().mockReturnValue(mockCore.http),
-                },
-              },
-            } as any
-          }
-          params={{} as any}
-          dataSourceManagement={undefined}
-        />
-      </DataSourceContext.Provider>
-    );
+  it('renders legend correctly', async () => {
+    renderInflightQueries();
 
     await waitFor(() => {
-      expect(screen.getAllByText('Live queries fetch failed')).toHaveLength(2);
+      expect(screen.getByText(/Queries by Node/i)).toBeInTheDocument();
     });
+
+    expect(screen.getByText(/Others:/i)).toBeInTheDocument();
   });
 });

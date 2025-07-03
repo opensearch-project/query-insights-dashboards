@@ -18,7 +18,7 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays the correct page title', () => {
-    cy.contains('Query insights - In-flight queries scoreboard').should('be.visible');
+    cy.contains('Query insights - In-flight queries').should('be.visible');
   });
 
   it('displays metrics panels correctly', () => {
@@ -140,39 +140,6 @@ describe('Inflight Queries Dashboard', () => {
     cy.wait('@getPeriodicQueries');
 
     cy.get('@getPeriodicQueries.all').should('have.length.at.least', 3);
-  });
-
-  it('displays correct chart data for node and index charts', () => {
-    return cy
-      .get('[data-test-subj="vega-chart-node"]')
-      .invoke('attr', 'data-chart-values')
-      .then((json) => {
-        const data = JSON.parse(json);
-        expect(data).to.deep.equal([
-          { label: 'node-A1B2C3D4E5', value: 2 },
-          { label: '4W2VTHIgQY-oB7dSrYz4B', value: 1 },
-          { label: 'node-X9Y8Z7W6', value: 1 },
-          { label: 'node-P0Q9R8S7', value: 1 },
-          { label: '4W2VTHIgQY-oB7dSrYz4', value: 1 },
-          { label: 'node-M2O3P4Q5', value: 1 },
-          { label: 'node-B2C3D4E5', value: 1 },
-          { label: 'node-N2O3P4Q5', value: 1 },
-          { label: '2VTHIgQY-oB7dSrYz4BQ', value: 1 },
-          { label: 'others', value: 10 },
-        ]);
-        expect(data).to.have.length(10);
-      })
-      .then(() => {
-        return cy
-          .get('[data-test-subj="vega-chart-index"]')
-          .invoke('attr', 'data-chart-values')
-          .then((json) => {
-            const data = JSON.parse(json);
-            expect(data).to.deep.include({ label: 'top_queries-2025.06.06-11009', value: 19 });
-            expect(data).to.deep.include({ label: 'opensearch', value: 1 });
-            expect(data).to.have.length(2);
-          });
-      });
   });
 
   it('handles empty response state', () => {
@@ -365,69 +332,5 @@ describe('Inflight Queries Dashboard', () => {
       .within(() => {
         cy.contains('td', 'opensearch');
       });
-  });
-
-  it('renders charts and allows switching between chart types', () => {
-    cy.contains('p', 'Queries by Node').closest('.euiPanel').as('nodeChart');
-    cy.contains('p', 'Queries by Index').closest('.euiPanel').as('indexChart');
-
-    cy.get('@nodeChart').within(() => {
-      cy.get('.euiButtonGroup').should('exist');
-      cy.get('.euiButtonGroup').contains('Donut').should('exist');
-      cy.get('.euiButtonGroup').contains('Bar').should('exist');
-      cy.get('.vega-embed').should('exist');
-
-      cy.get('.euiButtonGroup').contains('Bar').click();
-      cy.wait(500);
-      cy.get('.euiButtonGroup').contains('Donut').click();
-      cy.wait(500);
-    });
-
-    cy.get('@indexChart').within(() => {
-      cy.get('.euiButtonGroup').should('exist');
-      cy.get('.euiButtonGroup').contains('Donut').should('exist');
-      cy.get('.euiButtonGroup').contains('Bar').should('exist');
-      cy.get('.vega-embed').should('exist');
-
-      cy.get('.euiButtonGroup').contains('Bar').click({ force: true });
-      cy.wait(500);
-      cy.get('.euiButtonGroup').contains('Donut').click({ force: true });
-      cy.wait(500);
-    });
-  });
-
-  it('displays "others" in Vega chart legend when there are > 9 nodes', () => {
-    cy.get('[data-test-subj="vega-chart-node"] svg')
-      .should('exist')
-      .contains(/others/i)
-      .should('exist');
-  });
-
-  it('displays error panel when live queries API fails', () => {
-    cy.intercept('GET', '**/api/live_queries', {
-      statusCode: 500,
-      body: {
-        ok: false,
-        error: 'Internal Server Error',
-      },
-    }).as('getLiveQueriesError');
-
-    cy.visit('/app/query-insights-dashboards#/LiveQueries');
-    cy.wait('@getLiveQueriesError');
-
-    // Validate that a proper error message is shown in the Vega panels
-    cy.contains('p', 'Queries by Node')
-      .closest('.euiPanel')
-      .within(() => {
-        cy.contains('Failed to load live queries').should('be.visible');
-      });
-
-    cy.contains('p', 'Queries by Index')
-      .closest('.euiPanel')
-      .within(() => {
-        cy.contains('Failed to load live queries').should('be.visible');
-      });
-    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
-    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
   });
 });

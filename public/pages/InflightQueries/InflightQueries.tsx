@@ -40,11 +40,11 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 
 export const InflightQueries = ({
-                                  core,
-                                  depsStart,
-                                  params,
-                                  dataSourceManagement,
-                                }: {
+  core,
+  depsStart,
+  params,
+  dataSourceManagement,
+}: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -209,9 +209,16 @@ export const InflightQueries = ({
   };
 
   const chartColors = [
-    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',
-    '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
-    '#bcbd22', '#17becf',
+    '#1f77b4',
+    '#ff7f0e',
+    '#2ca02c',
+    '#d62728',
+    '#9467bd',
+    '#8c564b',
+    '#e377c2',
+    '#7f7f7f',
+    '#bcbd22',
+    '#17becf',
   ];
 
   const Legend = ({ data }: { data: Record<string, number> }) => (
@@ -219,22 +226,21 @@ export const InflightQueries = ({
       {Object.entries(data).map(([label, value], idx) => (
         <EuiFlexItem key={label} grow={false}>
           <EuiText size="xs">
-          <span
-            style={{
-              display: 'inline-block',
-              width: 12,
-              height: 12,
-              backgroundColor: chartColors[idx % chartColors.length],
-              marginRight: 6,
-            }}
-          />
+            <span
+              style={{
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                backgroundColor: chartColors[idx % chartColors.length],
+                marginRight: 6,
+              }}
+            />
             {label}: {value}
           </EuiText>
         </EuiFlexItem>
       ))}
     </EuiFlexGroup>
   );
-
 
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
@@ -282,8 +288,6 @@ export const InflightQueries = ({
       color: chartColors[index % chartColors.length],
     }));
   };
-
-
 
   return (
     <div>
