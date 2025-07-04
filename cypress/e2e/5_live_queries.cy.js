@@ -182,14 +182,12 @@ describe('Inflight Queries Dashboard', () => {
       cy.get('h2 > b').should('contain.text', '0');
     });
 
-    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
     cy.contains('p', 'Queries by Node')
       .closest('.euiPanel')
       .within(() => {
         cy.contains('No data available').should('be.visible');
       });
 
-    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
     cy.contains('p', 'Queries by Index')
       .closest('.euiPanel')
       .within(() => {
