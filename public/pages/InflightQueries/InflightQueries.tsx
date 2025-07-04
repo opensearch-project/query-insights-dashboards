@@ -476,7 +476,7 @@ export const InflightQueries = ({
                     innerRadius={80}
                     radius={140}
                     colorType="literal"
-                    data-test-subj="vega-chart-node-donut"
+                    data-test-subj="chart-node-donut"
                   />
                   <EuiSpacer size="s" />
                   <Legend data={nodeCounts} />
@@ -488,7 +488,7 @@ export const InflightQueries = ({
                   height={300}
                   margin={{ left: 180 }}
                   colorType="literal"
-                  data-test-subj="vega-chart-node-bar"
+                  data-test-subj="chart-node-bar"
                 >
                   <HorizontalGridLines />
                   <XAxis />
@@ -537,7 +537,7 @@ export const InflightQueries = ({
                     innerRadius={80}
                     radius={140}
                     colorType="literal"
-                    data-test-subj="vega-chart-index-donut"
+                    data-test-subj="chart-index-donut"
                   />
                   <EuiSpacer size="s" />
                   <Legend data={indexCounts} />
@@ -548,7 +548,7 @@ export const InflightQueries = ({
                   width={500}
                   height={300}
                   margin={{ left: 180 }}
-                  data-test-subj="vega-chart-index-bar"
+                  data-test-subj="chart-index-bar"
                 >
                   <HorizontalGridLines />
                   <XAxis />
