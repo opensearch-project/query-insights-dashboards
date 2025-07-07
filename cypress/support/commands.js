@@ -218,7 +218,7 @@ Cypress.Commands.add('navigateToConfiguration', () => {
 Cypress.Commands.add('navigateToLiveQueries', () => {
   cy.visit(LIVEQUERIES_PATH);
   cy.waitForPageLoad(LIVEQUERIES_PATH, {
-    contains: 'Query insights - In-flight queries scoreboard',
+    contains: 'Query insights - In-flight queries',
   });
 });
 

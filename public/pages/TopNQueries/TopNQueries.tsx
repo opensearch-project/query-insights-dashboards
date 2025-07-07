@@ -408,7 +408,7 @@ const TopNQueries = ({
               fallBackComponent={
                 <>
                   <EuiTitle size="l">
-                    <h1>Query insights - In-flight queries scoreboard</h1>
+                    <h1>Query insights - In-flight queries</h1>
                   </EuiTitle>
                   <EuiSpacer size="l" />
                 </>
