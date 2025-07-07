@@ -11,7 +11,7 @@ import { QueryInsightsDashboardsApp } from './components/app';
 import { QueryInsightsDashboardsPluginStartDependencies } from './types';
 import { DataSourceManagementPluginSetup } from '../../../src/plugins/data_source_management/public';
 
-const renderApp = (
+export const renderApp = (
   core: CoreStart,
   depsStart: QueryInsightsDashboardsPluginStartDependencies,
   params: AppMountParameters,
@@ -31,5 +31,3 @@ const renderApp = (
 
   return () => ReactDOM.unmountComponentAtNode(params.element);
 };
-
-export { renderApp as mountQueryInsightsDashboards };
