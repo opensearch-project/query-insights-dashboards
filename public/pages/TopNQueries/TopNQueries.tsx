@@ -237,7 +237,6 @@ const TopNQueries = ({
             semver.minor(version) === MINIMUM_MINOR_SUPPORTED_VERSION
           : false;
 
-
         const fromTime = DateTime.fromISO(parseDateString(start));
         const toTime = DateTime.fromISO(parseDateString(end));
 
