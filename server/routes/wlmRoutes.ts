@@ -411,4 +411,28 @@ export function defineWlmRoutes(router: IRouter) {
       }
     }
   );
+
+  // Get node level cpu and memory threshold
+  router.get(
+    {
+      path: '/api/_wlm/thresholds',
+      validate: false,
+    },
+    async (context, request, response) => {
+      const esClient = context.core.opensearch.client.asInternalUser;
+      const { body } = await esClient.cluster.getSettings({ include_defaults: true });
+
+      const cpuThreshold = body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ?? '1';
+
+      const memoryThreshold =
+        body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ?? '1';
+
+      return response.ok({
+        body: {
+          cpuRejectionThreshold: parseFloat(cpuThreshold),
+          memoryRejectionThreshold: parseFloat(memoryThreshold),
+        },
+      });
+    }
+  );
 }

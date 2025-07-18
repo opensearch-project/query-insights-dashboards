@@ -266,8 +266,18 @@ export const WorkloadManagementMain = ({
         : rawData;
 
       const sorted = sortData(filteredRawData, sortField, sortDirection);
+
+      const thresholds = await core.http.get<{
+        cpuRejectionThreshold: number;
+        memoryRejectionThreshold: number;
+      }>('/api/_wlm/thresholds');
+
+      const cpuThreshold = thresholds?.cpuRejectionThreshold ?? 1;
+      const memoryThreshold = thresholds?.memoryRejectionThreshold ?? 1;
+
       const overLimit = filteredRawData.filter(
-        (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
+        (g) =>
+          g.cpuUsage > g.cpuLimit * cpuThreshold || g.memoryUsage > g.memLimit * memoryThreshold
       ).length;
 
       setData(sorted);
