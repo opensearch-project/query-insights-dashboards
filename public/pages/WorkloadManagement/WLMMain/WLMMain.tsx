@@ -437,7 +437,6 @@ export const WorkloadManagementMain = ({
     return () => clearInterval(intervalId);
   }, [fetchClusterWorkloadGroupStats]);
 
-
   useEffect(() => {
     core.chrome.setBreadcrumbs([
       {

@@ -224,7 +224,6 @@ export const WLMDetails = ({
     return () => clearInterval(interval);
   }, [groupName, dataSource]);
 
-
   // === Data Fetching ===
   const fetchDefaultGroupDetails = () => {
     setGroupDetails({
@@ -370,17 +369,13 @@ export const WLMDetails = ({
     }
   };
 
-  const extractDescriptionFromRules = (
-    rulesRes: any,
-    groupId: string,
-  ) => {
-    const rules = rulesRes?.body?.rules ?? [];
+  const extractDescriptionFromRules = (rulesRes: any, groupId: string) => {
+    const allRules = rulesRes?.body?.rules ?? [];
 
-    const matchedRule = rules.find((rule: any) => rule.workload_group === groupId);
+    const matchedRule = allRules.find((rule: any) => rule.workload_group === groupId);
 
     setDescription(matchedRule?.description ?? '-');
   };
-
 
   // === Actions ===
   const saveChanges = async () => {
@@ -669,8 +664,7 @@ export const WLMDetails = ({
         <EuiFlexItem grow={false}>
           <EuiText color="subdued" size="s">
             <p>
-              Last updated {lastUpdated?.toLocaleDateString()} @{' '}
-              {lastUpdated?.toLocaleTimeString()}
+              Last updated {lastUpdated?.toLocaleDateString()} @ {lastUpdated?.toLocaleTimeString()}
             </p>
           </EuiText>
         </EuiFlexItem>
@@ -753,9 +747,24 @@ export const WLMDetails = ({
                 </div>
               ),
             },
-            { field: 'totalCompletions', name: 'Completions', sortable: true, render: (val: number) => val.toLocaleString(), },
-            { field: 'totalRejections', name: 'Rejections', sortable: true, render: (val: number) => val.toLocaleString(), },
-            { field: 'totalCancellations', name: 'Cancellations', sortable: true, render: (val: number) => val.toLocaleString(), },
+            {
+              field: 'totalCompletions',
+              name: 'Completions',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
+            {
+              field: 'totalRejections',
+              name: 'Rejections',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
+            {
+              field: 'totalCancellations',
+              name: 'Cancellations',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
           ]}
           sorting={{ sort: { field: sortField, direction: 'desc' } }}
           pagination={pagination}
@@ -984,7 +993,9 @@ export const WLMDetails = ({
 
                       // If it was originally defined, do not allow clearing it
                       if (originalCpuLimit !== undefined && newVal === undefined) {
-                        core.notifications.toasts.addWarning('Once set, CPU limit cannot be cleared.');
+                        core.notifications.toasts.addWarning(
+                          'Once set, CPU limit cannot be cleared.'
+                        );
                         return;
                       }
                       setCpuLimit(newVal);
@@ -1025,7 +1036,9 @@ export const WLMDetails = ({
 
                       // If it was originally defined, do not allow clearing it
                       if (originalMemoryLimit !== undefined && newVal === undefined) {
-                        core.notifications.toasts.addWarning('Once set, memory limit cannot be cleared.');
+                        core.notifications.toasts.addWarning(
+                          'Once set, memory limit cannot be cleared.'
+                        );
                         return;
                       }
 
