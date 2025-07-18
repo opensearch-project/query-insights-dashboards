@@ -427,15 +427,16 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     fetchClusterLevelStats();
-  }, [fetchClusterWorkloadGroupStats]);
 
-  useEffect(() => {
+    // Set up interval to fetch every 60 seconds
     const intervalId = setInterval(() => {
       fetchClusterLevelStats();
     }, 60000);
 
+    // Cleanup
     return () => clearInterval(intervalId);
   }, [fetchClusterWorkloadGroupStats]);
+
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
