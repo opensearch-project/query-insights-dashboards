@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { getRouteService } from '../service';
 
 export const getLocalClusterVersion = async (): Promise<string | undefined> => {
