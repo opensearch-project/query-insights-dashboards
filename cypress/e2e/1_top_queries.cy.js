@@ -252,3 +252,37 @@ describe('Query Insights Dashboard - Dynamic Columns with Stubbed Top Queries', 
     testMetricSorting('Avg Memory Usage / Memory Usage', 6);
   });
 });
+
+describe('Query Insights Table - Search & Filter', () => {
+  beforeEach(() => {
+    cy.fixture('stub_top_queries.json').then((stubResponse) => {
+      cy.intercept('GET', '**/api/top_queries/*', {
+        statusCode: 200,
+        body: stubResponse,
+      }).as('getTopQueries');
+    });
+
+    cy.waitForQueryInsightsPlugin();
+    cy.wait(2000);
+    cy.wait('@getTopQueries');
+  });
+
+  it('should show only one query after search and filter', () => {
+    const targetId = 'a2e1c822-3e3c-4d1b-adb2-9f73af094b43';
+
+    // Apply filter for group_by = NONE (i.e., query)
+    cy.get('.euiFilterButton').contains('Type').click();
+    cy.get('.euiFilterSelectItem').contains('query').click();
+    cy.wait(500);
+
+    // Search using exact ID
+    cy.get('.euiFieldSearch').clear().type(targetId);
+    cy.wait(500);
+
+    // Assert that only one row is displayed
+    cy.get('.euiTableRow').should('have.length', 1);
+
+    // Confirm that the row contains the expected ID
+    cy.get('.euiTableRow').first().should('contain.text', targetId);
+  });
+});
