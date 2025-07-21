@@ -28,11 +28,12 @@
     "postbuild": "echo Renaming build artifact to [$npm_package_config_id-$npm_package_version.zip] && mv build/$npm_package_config_id*.zip build/$npm_package_config_id-$npm_package_version.zip"
   },
   "dependencies": {
-    "object-hash": "^3.0.0",
-    "plotly.js-dist": "^2.34.0",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.22.9",
-    "@babel/runtime-corejs3": "^7.22.9"
+    "@babel/runtime-corejs3": "^7.22.9",
+    "luxon": "^3.7.1",
+    "object-hash": "^3.0.0",
+    "plotly.js-dist": "^2.34.0"
   },
   "resolutions": {
     "@types/react": "^16.9.8",
@@ -60,8 +61,9 @@
     "@testing-library/dom": "^8.11.3",
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/user-event": "^14.4.3",
-    "@types/react-dom": "^16.9.8",
+    "@types/luxon": "^3.6.2",
     "@types/object-hash": "^3.0.0",
+    "@types/react-dom": "^16.9.8",
     "@types/react-router-dom": "^5.3.2",
     "cypress": "12.17.4",
     "cypress-real-events": "1.7.6",
@@ -73,8 +75,8 @@
     "jest-cli": "^27.5.1",
     "jest-environment-jsdom": "^27.5.1",
     "lint-staged": "^10.2.0",
-    "ts-loader": "^6.2.1",
-    "string.prototype.replaceall": "1.0.7"
+    "string.prototype.replaceall": "1.0.7",
+    "ts-loader": "^6.2.1"
   },
   "eslintIgnore": [
     "node_modules/*",
