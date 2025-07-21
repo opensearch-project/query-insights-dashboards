@@ -48,7 +48,7 @@
     "micromatch": "4.0.8",
     "cross-spawn": "7.0.5",
     "serialize-javascript": "6.0.2",
-    "glob-parent": "5.1.2",
+    "glob-parent": "^6.0.0",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.22.9",
     "@babel/runtime-corejs3": "^7.22.9"
