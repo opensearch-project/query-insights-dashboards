@@ -11,7 +11,6 @@ import {
   QueryInsightsDashboardsPluginStartDependencies,
 } from './types';
 import { PLUGIN_NAME } from '../common';
-import { setStartServices } from './service';
 
 export class QueryInsightsDashboardsPlugin
   implements
@@ -83,7 +82,6 @@ export class QueryInsightsDashboardsPlugin
   }
 
   public start(_core: CoreStart): QueryInsightsDashboardsPluginStart {
-    setStartServices(_core);
     return {};
   }
 
