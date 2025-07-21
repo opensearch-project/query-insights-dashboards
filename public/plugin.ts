@@ -39,11 +39,11 @@ export class QueryInsightsDashboardsPlugin
       order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle
-        const { mountQueryInsightsDashboards } = await import('./application');
+        const { renderApp } = await import('./application');
         // Get start services as specified in opensearch_dashboards.json
         const [coreStart, depsStart] = await core.getStartServices();
         // Render the application
-        return mountQueryInsightsDashboards(
+        return renderApp(
           coreStart,
           depsStart as QueryInsightsDashboardsPluginStartDependencies,
           params,
@@ -65,11 +65,11 @@ export class QueryInsightsDashboardsPlugin
       order: 5100,
       async mount(params: AppMountParameters) {
         // Dynamically import the WLM page
-        const { mountQueryInsightsDashboards } = await import('./application');
+        const { renderApp } = await import('./application');
 
         const [coreStart, depsStart] = await core.getStartServices();
 
-        return mountQueryInsightsDashboards(
+        return renderApp(
           coreStart,
           depsStart as QueryInsightsDashboardsPluginStartDependencies,
           params,
