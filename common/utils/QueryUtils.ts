@@ -49,7 +49,7 @@ export const retrieveQueryById = async (
       fetchMetric(`/api/top_queries/memory`),
     ]);
     const records = topQueriesResponse.response.top_queries || [];
-    return records.find(q => q.id === id) || null;
+    return records.find((q) => q.id === id) || null;
   } catch (error) {
     console.error('Error retrieving query details:', error);
     return null;
