@@ -266,8 +266,18 @@ export const WorkloadManagementMain = ({
         : rawData;
 
       const sorted = sortData(filteredRawData, sortField, sortDirection);
+
+      const thresholds = await core.http.get<{
+        cpuRejectionThreshold: number;
+        memoryRejectionThreshold: number;
+      }>('/api/_wlm/thresholds');
+
+      const cpuThreshold = thresholds?.cpuRejectionThreshold ?? 1;
+      const memoryThreshold = thresholds?.memoryRejectionThreshold ?? 1;
+
       const overLimit = filteredRawData.filter(
-        (g) => g.cpuUsage > g.cpuLimit || g.memoryUsage > g.memLimit
+        (g) =>
+          g.cpuUsage > g.cpuLimit * cpuThreshold || g.memoryUsage > g.memLimit * memoryThreshold
       ).length;
 
       setData(sorted);
@@ -345,9 +355,7 @@ export const WorkloadManagementMain = ({
 
   const getBoxplotOption = (box: number[], limit: number) => {
     const sorted = [...box].sort((a, b) => a - b);
-    const [boxMin, boxQ1, boxMedian, boxQ3, boxMax] = sorted;
-    const AXIS_MIN = 0;
-    const AXIS_MAX = 100;
+    const [min, q1, median, q3, max] = sorted;
 
     return {
       tooltip: {
@@ -355,7 +363,6 @@ export const WorkloadManagementMain = ({
         className: 'echarts-tooltip',
         formatter: (currentParams: any[]) => {
           const currentBox = currentParams.find((p) => p.seriesType === 'boxplot');
-
           let tooltip = '';
           if (currentBox) {
             const [fMin, fQ1, fMedian, fQ3, fMax] = currentBox.data
@@ -368,25 +375,23 @@ export const WorkloadManagementMain = ({
                 Q3: ${fQ3}%<br/>
                 Max: ${fMax}%<br/>`;
           }
-
           tooltip += `<span style="color:#dc3545;">Limit: ${limit.toFixed(2)}%</span>`;
-
           return tooltip;
         },
       },
       animation: false,
-      grid: { left: '5%', right: '5%', top: '-1%', bottom: '-1%' },
+      grid: { left: '5%', right: '5%', top: '10%', bottom: '10%' },
       xAxis: {
         type: 'value',
-        min: AXIS_MIN,
-        max: AXIS_MAX,
+        min: 0,
+        max: 100,
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: { show: false },
         splitLine: {
           show: true,
           lineStyle: {
-            color: ['#000000', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#000000'],
+            color: ['#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0', '#e0e0e0'],
             type: 'solid',
             width: 1,
           },
@@ -394,31 +399,62 @@ export const WorkloadManagementMain = ({
       },
       yAxis: {
         type: 'category',
-        data: ['Boxplot'],
+        data: [''],
+        axisLine: { show: false },
+        axisTick: { show: false },
         axisLabel: { show: false },
       },
       series: [
         {
-          name: 'Usage Distribution',
+          name: 'Box',
           type: 'boxplot',
-          data: [[boxMin, boxQ1, boxMedian, boxQ3, boxMax]],
-          itemStyle: { color: '#79AAD9', borderColor: '#000', borderWidth: 1.25 },
-          boxWidth: ['40%', '50%'],
-
+          data: [[min, q1, median, q3, max]],
+          itemStyle: {
+            color: '#79AAD9',
+            borderColor: '#000000',
+            borderWidth: 1.25,
+          },
+          boxWidth: ['50%', '20%'],
+          whiskerBox: {
+            lineStyle: {
+              color: '#000',
+              width: 1.25,
+            },
+          },
+          symbolSize: 0,
           markLine: {
             symbol: 'none',
-            label: {
-              formatter: '#DC3545',
-              position: 'end',
-              color: 'danger',
-            },
+            label: { show: false },
             lineStyle: {
               color: '#DC3545',
-              type: 'solid',
               width: 2,
+              type: 'solid',
             },
             data: [{ xAxis: limit }],
           },
+        },
+      ],
+      graphic: [
+        {
+          type: 'group',
+          bounding: 'all',
+          children: [
+            {
+              type: 'line',
+              shape: {
+                x1: 10,
+                y1: 25,
+                x2: 180,
+                y2: 25,
+              },
+              style: {
+                stroke: '#ccc',
+                lineWidth: 1,
+                lineDash: [6, 4],
+              },
+              z: -1,
+            },
+          ],
         },
       ],
     };
@@ -427,13 +463,13 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     fetchClusterLevelStats();
-  }, [fetchClusterWorkloadGroupStats]);
 
-  useEffect(() => {
+    // Set up interval to fetch every 60 seconds
     const intervalId = setInterval(() => {
       fetchClusterLevelStats();
     }, 60000);
 
+    // Cleanup
     return () => clearInterval(intervalId);
   }, [fetchClusterWorkloadGroupStats]);
 
