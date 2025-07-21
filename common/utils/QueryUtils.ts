@@ -54,7 +54,8 @@ export const retrieveQueryById = async (
     for (const endpoint of endpoints) {
       const result = await fetchMetric(endpoint);
       if (result.response.top_queries.length > 0) {
-        return result.response.top_queries[0];
+        const records = result.response.top_queries || [];
+        return records.find((q) => q.id === id) || null;
       }
     }
     return null;
