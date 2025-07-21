@@ -9,8 +9,6 @@ import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
-import { DateTime } from 'luxon';
-import semver from 'semver';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -18,11 +16,6 @@ import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
-import { getDataSourceVersion } from '../../utils/datasource-utils';
-import {
-  MINIMUM_MAJOR_SUPPORTED_VERSION,
-  MINIMUM_MINOR_SUPPORTED_VERSION,
-} from '../../../common/constants';
 import {
   DEFAULT_DELETE_AFTER_DAYS,
   DEFAULT_EXPORTER_TYPE,
@@ -91,11 +84,6 @@ const TopNQueries = ({
   const [loading, setLoading] = useState(false);
   const [currStart, setStart] = useState(initialStart);
   const [currEnd, setEnd] = useState(initialEnd);
-  const dataSourceFromUrl = getDataSourceFromUrl();
-  const dataSourceId = dataSourceFromUrl.id;
-
-  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
-
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: currStart, end: currEnd },
   ]);
@@ -221,26 +209,7 @@ const TopNQueries = ({
         const noDuplicates: SearchQueryRecord[] = Array.from(
           new Set(newQueries.map((item) => JSON.stringify(item)))
         ).map((item) => JSON.parse(item));
-
-        const version = await getDataSourceVersion(dataSourceId);
-
-        const is219OSVersion = version
-          ? semver.major(version) === MINIMUM_MAJOR_SUPPORTED_VERSION &&
-            semver.minor(version) === MINIMUM_MINOR_SUPPORTED_VERSION
-          : false;
-
-        const fromTime = DateTime.fromISO(parseDateString(start));
-        const toTime = DateTime.fromISO(parseDateString(end));
-
-        const isWithinTimeWindow = (q: SearchQueryRecord) => {
-          const ts = DateTime.fromMillis(q.timestamp);
-          return ts.isValid && ts >= fromTime && ts <= toTime;
-        };
-
-        const filteredQueries = is219OSVersion
-          ? noDuplicates.filter(isWithinTimeWindow)
-          : noDuplicates;
-        setQueries(filteredQueries);
+        setQueries(noDuplicates);
       } catch (error) {
         console.error('Error retrieving queries:', error);
       } finally {
@@ -392,6 +361,10 @@ const TopNQueries = ({
   useEffect(() => {
     retrieveQueries(currStart, currEnd);
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
+
+  const dataSourceFromUrl = getDataSourceFromUrl();
+
+  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
 
   return (
     <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
