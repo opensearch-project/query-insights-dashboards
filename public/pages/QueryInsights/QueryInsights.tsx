@@ -82,7 +82,7 @@ const QueryInsights = ({
   const onSearchChange = ({ query }) => {
     const ast = query?.ast;
 
-    const textClause = ast?.clauses?.find(c => c.type === 'term' && !c.field);
+    const textClause = ast?.clauses?.find((c) => c.type === 'term' && !c.field);
 
     if (textClause) {
       setSearchText(textClause.value.trim().toLowerCase());
@@ -90,7 +90,6 @@ const QueryInsights = ({
       setSearchText('');
     }
   };
-
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -325,18 +324,14 @@ const QueryInsights = ({
     },
   ];
   const filteredQueries = useMemo(() => {
-    const base = queries.filter(q =>
-      selectedFilter.length === 0 || selectedFilter.includes(q.group_by)
+    const base = queries.filter(
+      (q) => selectedFilter.length === 0 || selectedFilter.includes(q.group_by)
     );
 
     if (!searchText) return base;
 
-    return base.filter(q =>
-      (q.id ?? '').toLowerCase().includes(searchText)
-    );
+    return base.filter((q) => (q.id ?? '').toLowerCase().includes(searchText));
   }, [queries, selectedFilter, searchText]);
-
-
 
   const defaultColumns = [
     ...baseColumns,

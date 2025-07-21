@@ -348,5 +348,3 @@ describe('Query Insights Table - Search & Filter', () => {
     cy.get('.euiTableRow').first().should('contain.text', targetId);
   });
 });
-
-
