@@ -422,10 +422,17 @@ export function defineWlmRoutes(router: IRouter) {
       const esClient = context.core.opensearch.client.asInternalUser;
       const { body } = await esClient.cluster.getSettings({ include_defaults: true });
 
-      const cpuThreshold = body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ?? '1';
+      const cpuThreshold =
+        body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        '1';
 
       const memoryThreshold =
-        body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ?? '1';
+        body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        '1';
 
       return response.ok({
         body: {
