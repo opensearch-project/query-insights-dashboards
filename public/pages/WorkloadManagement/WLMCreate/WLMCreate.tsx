@@ -124,6 +124,8 @@ export const WLMCreate = ({
               .map((s) => s.trim())
               .filter(Boolean);
 
+            if (indexPattern.length === 0) return null;
+
             return core.http.put('/api/_rules/workload_group', {
               body: JSON.stringify({
                 description: (description && description.trim()) || '-',
@@ -178,7 +180,7 @@ export const WLMCreate = ({
         <h1>Create workload group</h1>
       </EuiTitle>
       <EuiText color="subdued" size="s">
-        Use query groups to manage resource usage in associated queries.{' '}
+        Use workload groups to manage resource usage in associated queries.{' '}
         <a
           href="https://docs.opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/workload-management/wlm-feature-overview/"
           target="_blank"
@@ -218,10 +220,10 @@ export const WLMCreate = ({
               Description – Optional
             </EuiText>
             <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-              Describe the purpose of the query group.
+              Describe the purpose of the workload group.
             </EuiText>
             <EuiTextArea
-              placeholder="Describe the query group"
+              placeholder="Describe the workload group"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -380,6 +382,11 @@ export const WLMCreate = ({
               onChange={(e) =>
                 setCpuThreshold(e.target.value === '' ? undefined : Number(e.target.value))
               }
+              onKeyDown={(e) => {
+                if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               append="%"
               min={0}
               max={100}
@@ -403,6 +410,11 @@ export const WLMCreate = ({
               onChange={(e) =>
                 setMemThreshold(e.target.value === '' ? undefined : Number(e.target.value))
               }
+              onKeyDown={(e) => {
+                if (['e', 'E', '+', '-'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               append="%"
               min={0}
               max={100}

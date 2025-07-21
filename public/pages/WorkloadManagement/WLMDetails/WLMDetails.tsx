@@ -150,6 +150,8 @@ export const WLMDetails = ({
   const [resiliencyMode, setResiliencyMode] = useState<ResiliencyMode>(ResiliencyMode.SOFT);
   const [cpuLimit, setCpuLimit] = useState<number | undefined>();
   const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
+  const [originalCpuLimit, setOriginalCpuLimit] = useState<number | undefined>(undefined);
+  const [originalMemoryLimit, setOriginalMemoryLimit] = useState<number | undefined>(undefined);
   const [description, setDescription] = useState<string>();
   const [rules, setRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
   const [existingRules, setExistingRules] = useState<Rule[]>([{ index: '', indexId: '' }]);
@@ -166,6 +168,7 @@ export const WLMDetails = ({
   const [selectedTab, setSelectedTab] = useState<WLMTabs>(WLMTabs.RESOURCES);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   // === Helpers ===
@@ -208,8 +211,17 @@ export const WLMDetails = ({
   }, [nodesData]);
 
   useEffect(() => {
+    // Initial fetch
     fetchGroupDetails();
     updateStats();
+
+    // Set up interval to refresh every 60 seconds
+    const interval = setInterval(() => {
+      fetchGroupDetails();
+      updateStats();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, [groupName, dataSource]);
 
   // === Data Fetching ===
@@ -250,6 +262,8 @@ export const WLMDetails = ({
           resiliencyMode: workload.resiliency_mode,
         });
         setResiliencyMode(workload.resiliency_mode.toLowerCase());
+        setOriginalCpuLimit(formatLimit(workload.resource_limits?.cpu));
+        setOriginalMemoryLimit(formatLimit(workload.resource_limits?.memory));
         setCpuLimit(formatLimit(workload.resource_limits?.cpu));
         setMemoryLimit(formatLimit(workload.resource_limits?.memory));
       }
@@ -313,7 +327,7 @@ export const WLMDetails = ({
           }))
         );
 
-        setDescription(rulesRes?.body?.rules?.[0]?.description ?? '-');
+        extractDescriptionFromRules(rulesRes, groupId);
       } catch (err) {
         console.error('Failed to fetch group stats', err);
         core.notifications.toasts.addDanger('Could not load rules.');
@@ -348,10 +362,19 @@ export const WLMDetails = ({
       }
 
       setNodesData(nodeStatsList);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error('Failed to fetch group stats', err);
       core.notifications.toasts.addDanger('Could not load workload group stats.');
     }
+  };
+
+  const extractDescriptionFromRules = (rulesRes: any, groupId: string) => {
+    const allRules = rulesRes?.body?.rules ?? [];
+
+    const matchedRule = allRules.find((rule: any) => rule.workload_group === groupId);
+
+    setDescription(matchedRule?.description ?? '-');
   };
 
   // === Actions ===
@@ -384,7 +407,6 @@ export const WLMDetails = ({
         body: JSON.stringify(body),
       });
 
-      // for updating and deleting rules, not available in server side yet
       const existingRuleMap = new Map(existingRules.map((r) => [r.indexId, r]));
       const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
 
@@ -408,7 +430,7 @@ export const WLMDetails = ({
 
       for (const rule of rulesToCreate) {
         const response = {
-          description: description || '',
+          description: description || '-',
           index_pattern: rule.index.split(',').map((s) => s.trim()),
           workload_group: currentId,
         };
@@ -422,7 +444,7 @@ export const WLMDetails = ({
 
       for (const rule of rulesToUpdate) {
         const response = {
-          description: description || '',
+          description: description || '-',
           index_pattern: rule.index.split(',').map((s) => s.trim()),
           workload_group: currentId,
         };
@@ -621,19 +643,45 @@ export const WLMDetails = ({
 
       <EuiSpacer size="m" />
 
-      {/* Tabs Section */}
-      <EuiTabs>
-        {Object.values(WLMTabs).map((tab) => (
-          <EuiTab
-            key={tab}
-            isSelected={selectedTab === tab}
-            onClick={() => setSelectedTab(tab)}
-            data-testid={`wlm-tab-${tab}`}
+      <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
+        {/* Tabs section */}
+        <EuiFlexItem grow={true}>
+          <EuiTabs>
+            {Object.values(WLMTabs).map((tab) => (
+              <EuiTab
+                key={tab}
+                isSelected={selectedTab === tab}
+                onClick={() => setSelectedTab(tab)}
+                data-testid={`wlm-tab-${tab}`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </EuiTab>
+            ))}
+          </EuiTabs>
+        </EuiFlexItem>
+
+        {/* Last updated text */}
+        <EuiFlexItem grow={false}>
+          <EuiText color="subdued" size="s">
+            <p>
+              Last updated {lastUpdated?.toLocaleDateString()} @ {lastUpdated?.toLocaleTimeString()}
+            </p>
+          </EuiText>
+        </EuiFlexItem>
+
+        {/* Refresh button */}
+        <EuiFlexItem grow={false}>
+          <EuiButton
+            onClick={() => {
+              fetchGroupDetails();
+              updateStats();
+            }}
+            iconType="refresh"
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </EuiTab>
-        ))}
-      </EuiTabs>
+            Refresh
+          </EuiButton>
+        </EuiFlexItem>
+      </EuiFlexGroup>
 
       <EuiSpacer size="m" />
 
@@ -699,9 +747,24 @@ export const WLMDetails = ({
                 </div>
               ),
             },
-            { field: 'totalCompletions', name: 'Completions', sortable: true },
-            { field: 'totalRejections', name: 'Rejections', sortable: true },
-            { field: 'totalCancellations', name: 'Cancellations', sortable: true },
+            {
+              field: 'totalCompletions',
+              name: 'Completions',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
+            {
+              field: 'totalRejections',
+              name: 'Rejections',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
+            {
+              field: 'totalCancellations',
+              name: 'Cancellations',
+              sortable: true,
+              render: (val: number) => val.toLocaleString(),
+            },
           ]}
           sorting={{ sort: { field: sortField, direction: 'desc' } }}
           pagination={pagination}
@@ -926,8 +989,22 @@ export const WLMDetails = ({
                     value={cpuLimit}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setCpuLimit(val === '' ? undefined : Number(val));
+                      const newVal = val === '' ? undefined : Number(val);
+
+                      // If it was originally defined, do not allow clearing it
+                      if (originalCpuLimit !== undefined && newVal === undefined) {
+                        core.notifications.toasts.addWarning(
+                          'Once set, CPU limit cannot be cleared.'
+                        );
+                        return;
+                      }
+                      setCpuLimit(newVal);
                       setIsSaved(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                        e.preventDefault();
+                      }
                     }}
                     append="%"
                     min={0}
@@ -955,8 +1032,23 @@ export const WLMDetails = ({
                     value={memoryLimit}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setMemoryLimit(val === '' ? undefined : Number(val));
+                      const newVal = val === '' ? undefined : Number(val);
+
+                      // If it was originally defined, do not allow clearing it
+                      if (originalMemoryLimit !== undefined && newVal === undefined) {
+                        core.notifications.toasts.addWarning(
+                          'Once set, memory limit cannot be cleared.'
+                        );
+                        return;
+                      }
+
+                      setMemoryLimit(newVal);
                       setIsSaved(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (['e', 'E', '+', '-'].includes(e.key)) {
+                        e.preventDefault();
+                      }
                     }}
                     append="%"
                     min={0}
