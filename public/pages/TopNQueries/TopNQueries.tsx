@@ -9,6 +9,7 @@ import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
+import { DateTime } from 'luxon';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -209,7 +210,16 @@ const TopNQueries = ({
         const noDuplicates: SearchQueryRecord[] = Array.from(
           new Set(newQueries.map((item) => JSON.stringify(item)))
         ).map((item) => JSON.parse(item));
-        setQueries(noDuplicates);
+
+        const fromTime = DateTime.fromISO(parseDateString(start));
+        const toTime = DateTime.fromISO(parseDateString(end));
+
+        const filteredQueries = noDuplicates.filter((q) => {
+          const ts = DateTime.fromMillis(q.timestamp);
+          return ts.isValid && ts >= fromTime && ts <= toTime;
+        });
+
+        setQueries(filteredQueries);
       } catch (error) {
         console.error('Error retrieving queries:', error);
       } finally {
