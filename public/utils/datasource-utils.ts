@@ -23,7 +23,7 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public';
 import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
-import { getSavedObjectsClient } from '../../public/service';
+import { getSavedObjectsClient } from '../service';
 import { getLocalClusterVersion } from './getLocalClusterVersion';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
