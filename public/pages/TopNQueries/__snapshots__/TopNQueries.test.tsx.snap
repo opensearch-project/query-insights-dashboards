@@ -1,5 +1,476 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`TopNQueries Component Query deduplication should deduplicate queries by ID from multiple metric endpoints 1`] = `
+Object {
+  "asFragment": [Function],
+  "baseElement": <body>
+    <div>
+      <div
+        style="padding: 35px 35px;"
+      >
+        <h1
+          class="euiTitle euiTitle--large"
+        >
+          Query insights - Top N queries
+        </h1>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div
+          class="euiTabs"
+          role="tablist"
+        >
+          <button
+            aria-selected="true"
+            class="euiTab euiTab-isSelected"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Top N queries
+            </span>
+          </button>
+          <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Configuration
+            </span>
+          </button>
+        </div>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div>
+          Mocked QueryInsights
+        </div>
+      </div>
+    </div>
+  </body>,
+  "container": <div>
+    <div
+      style="padding: 35px 35px;"
+    >
+      <h1
+        class="euiTitle euiTitle--large"
+      >
+        Query insights - Top N queries
+      </h1>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div
+        class="euiTabs"
+        role="tablist"
+      >
+        <button
+          aria-selected="true"
+          class="euiTab euiTab-isSelected"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Top N queries
+          </span>
+        </button>
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Configuration
+          </span>
+        </button>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div>
+        Mocked QueryInsights
+      </div>
+    </div>
+  </div>,
+  "debug": [Function],
+  "findAllByAltText": [Function],
+  "findAllByDisplayValue": [Function],
+  "findAllByLabelText": [Function],
+  "findAllByPlaceholderText": [Function],
+  "findAllByRole": [Function],
+  "findAllByTestId": [Function],
+  "findAllByText": [Function],
+  "findAllByTitle": [Function],
+  "findByAltText": [Function],
+  "findByDisplayValue": [Function],
+  "findByLabelText": [Function],
+  "findByPlaceholderText": [Function],
+  "findByRole": [Function],
+  "findByTestId": [Function],
+  "findByText": [Function],
+  "findByTitle": [Function],
+  "getAllByAltText": [Function],
+  "getAllByDisplayValue": [Function],
+  "getAllByLabelText": [Function],
+  "getAllByPlaceholderText": [Function],
+  "getAllByRole": [Function],
+  "getAllByTestId": [Function],
+  "getAllByText": [Function],
+  "getAllByTitle": [Function],
+  "getByAltText": [Function],
+  "getByDisplayValue": [Function],
+  "getByLabelText": [Function],
+  "getByPlaceholderText": [Function],
+  "getByRole": [Function],
+  "getByTestId": [Function],
+  "getByText": [Function],
+  "getByTitle": [Function],
+  "queryAllByAltText": [Function],
+  "queryAllByDisplayValue": [Function],
+  "queryAllByLabelText": [Function],
+  "queryAllByPlaceholderText": [Function],
+  "queryAllByRole": [Function],
+  "queryAllByTestId": [Function],
+  "queryAllByText": [Function],
+  "queryAllByTitle": [Function],
+  "queryByAltText": [Function],
+  "queryByDisplayValue": [Function],
+  "queryByLabelText": [Function],
+  "queryByPlaceholderText": [Function],
+  "queryByRole": [Function],
+  "queryByTestId": [Function],
+  "queryByText": [Function],
+  "queryByTitle": [Function],
+  "rerender": [Function],
+  "unmount": [Function],
+}
+`;
+
+exports[`TopNQueries Component Query deduplication should handle empty responses without errors 1`] = `
+Object {
+  "asFragment": [Function],
+  "baseElement": <body>
+    <div>
+      <div
+        style="padding: 35px 35px;"
+      >
+        <h1
+          class="euiTitle euiTitle--large"
+        >
+          Query insights - Top N queries
+        </h1>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div
+          class="euiTabs"
+          role="tablist"
+        >
+          <button
+            aria-selected="true"
+            class="euiTab euiTab-isSelected"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Top N queries
+            </span>
+          </button>
+          <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Configuration
+            </span>
+          </button>
+        </div>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div>
+          Mocked QueryInsights
+        </div>
+      </div>
+    </div>
+  </body>,
+  "container": <div>
+    <div
+      style="padding: 35px 35px;"
+    >
+      <h1
+        class="euiTitle euiTitle--large"
+      >
+        Query insights - Top N queries
+      </h1>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div
+        class="euiTabs"
+        role="tablist"
+      >
+        <button
+          aria-selected="true"
+          class="euiTab euiTab-isSelected"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Top N queries
+          </span>
+        </button>
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Configuration
+          </span>
+        </button>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div>
+        Mocked QueryInsights
+      </div>
+    </div>
+  </div>,
+  "debug": [Function],
+  "findAllByAltText": [Function],
+  "findAllByDisplayValue": [Function],
+  "findAllByLabelText": [Function],
+  "findAllByPlaceholderText": [Function],
+  "findAllByRole": [Function],
+  "findAllByTestId": [Function],
+  "findAllByText": [Function],
+  "findAllByTitle": [Function],
+  "findByAltText": [Function],
+  "findByDisplayValue": [Function],
+  "findByLabelText": [Function],
+  "findByPlaceholderText": [Function],
+  "findByRole": [Function],
+  "findByTestId": [Function],
+  "findByText": [Function],
+  "findByTitle": [Function],
+  "getAllByAltText": [Function],
+  "getAllByDisplayValue": [Function],
+  "getAllByLabelText": [Function],
+  "getAllByPlaceholderText": [Function],
+  "getAllByRole": [Function],
+  "getAllByTestId": [Function],
+  "getAllByText": [Function],
+  "getAllByTitle": [Function],
+  "getByAltText": [Function],
+  "getByDisplayValue": [Function],
+  "getByLabelText": [Function],
+  "getByPlaceholderText": [Function],
+  "getByRole": [Function],
+  "getByTestId": [Function],
+  "getByText": [Function],
+  "getByTitle": [Function],
+  "queryAllByAltText": [Function],
+  "queryAllByDisplayValue": [Function],
+  "queryAllByLabelText": [Function],
+  "queryAllByPlaceholderText": [Function],
+  "queryAllByRole": [Function],
+  "queryAllByTestId": [Function],
+  "queryAllByText": [Function],
+  "queryAllByTitle": [Function],
+  "queryByAltText": [Function],
+  "queryByDisplayValue": [Function],
+  "queryByLabelText": [Function],
+  "queryByPlaceholderText": [Function],
+  "queryByRole": [Function],
+  "queryByTestId": [Function],
+  "queryByText": [Function],
+  "queryByTitle": [Function],
+  "rerender": [Function],
+  "unmount": [Function],
+}
+`;
+
+exports[`TopNQueries Component Query deduplication should preserve first occurrence when deduplicating by ID 1`] = `
+Object {
+  "asFragment": [Function],
+  "baseElement": <body>
+    <div>
+      <div
+        style="padding: 35px 35px;"
+      >
+        <h1
+          class="euiTitle euiTitle--large"
+        >
+          Query insights - Top N queries
+        </h1>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div
+          class="euiTabs"
+          role="tablist"
+        >
+          <button
+            aria-selected="true"
+            class="euiTab euiTab-isSelected"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Top N queries
+            </span>
+          </button>
+          <button
+            aria-selected="false"
+            class="euiTab"
+            role="tab"
+            type="button"
+          >
+            <span
+              class="euiTab__content"
+            >
+              Configuration
+            </span>
+          </button>
+        </div>
+        <div
+          class="euiSpacer euiSpacer--l"
+        />
+        <div>
+          Mocked QueryInsights
+        </div>
+      </div>
+    </div>
+  </body>,
+  "container": <div>
+    <div
+      style="padding: 35px 35px;"
+    >
+      <h1
+        class="euiTitle euiTitle--large"
+      >
+        Query insights - Top N queries
+      </h1>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div
+        class="euiTabs"
+        role="tablist"
+      >
+        <button
+          aria-selected="true"
+          class="euiTab euiTab-isSelected"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Top N queries
+          </span>
+        </button>
+        <button
+          aria-selected="false"
+          class="euiTab"
+          role="tab"
+          type="button"
+        >
+          <span
+            class="euiTab__content"
+          >
+            Configuration
+          </span>
+        </button>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div>
+        Mocked QueryInsights
+      </div>
+    </div>
+  </div>,
+  "debug": [Function],
+  "findAllByAltText": [Function],
+  "findAllByDisplayValue": [Function],
+  "findAllByLabelText": [Function],
+  "findAllByPlaceholderText": [Function],
+  "findAllByRole": [Function],
+  "findAllByTestId": [Function],
+  "findAllByText": [Function],
+  "findAllByTitle": [Function],
+  "findByAltText": [Function],
+  "findByDisplayValue": [Function],
+  "findByLabelText": [Function],
+  "findByPlaceholderText": [Function],
+  "findByRole": [Function],
+  "findByTestId": [Function],
+  "findByText": [Function],
+  "findByTitle": [Function],
+  "getAllByAltText": [Function],
+  "getAllByDisplayValue": [Function],
+  "getAllByLabelText": [Function],
+  "getAllByPlaceholderText": [Function],
+  "getAllByRole": [Function],
+  "getAllByTestId": [Function],
+  "getAllByText": [Function],
+  "getAllByTitle": [Function],
+  "getByAltText": [Function],
+  "getByDisplayValue": [Function],
+  "getByLabelText": [Function],
+  "getByPlaceholderText": [Function],
+  "getByRole": [Function],
+  "getByTestId": [Function],
+  "getByText": [Function],
+  "getByTitle": [Function],
+  "queryAllByAltText": [Function],
+  "queryAllByDisplayValue": [Function],
+  "queryAllByLabelText": [Function],
+  "queryAllByPlaceholderText": [Function],
+  "queryAllByRole": [Function],
+  "queryAllByTestId": [Function],
+  "queryAllByText": [Function],
+  "queryAllByTitle": [Function],
+  "queryByAltText": [Function],
+  "queryByDisplayValue": [Function],
+  "queryByLabelText": [Function],
+  "queryByPlaceholderText": [Function],
+  "queryByRole": [Function],
+  "queryByTestId": [Function],
+  "queryByText": [Function],
+  "queryByTitle": [Function],
+  "rerender": [Function],
+  "unmount": [Function],
+}
+`;
+
 exports[`TopNQueries Component fetches queries for all metrics in retrieveQueries 1`] = `
 Object {
   "asFragment": [Function],
