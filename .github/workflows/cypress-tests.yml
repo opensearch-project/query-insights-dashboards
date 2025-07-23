@@ -7,7 +7,6 @@ on:
     branches:
       - "*"
 env:
-  OPENSEARCH_VERSION: '2.x'
   OPENSEARCH_DASHBOARDS_VERSION: '2.x'
   QUERY_INSIGHTS_BRANCH: '2.x'
   GRADLE_VERSION: '7.6.1'
@@ -52,7 +51,7 @@ jobs:
       - name: Run OpenSearch with Query Insights plugin
         run: |
           cd query-insights
-          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
+          ./gradlew run &
 
           # Wait for OpenSearch to be ready with health check
           echo "Waiting for OpenSearch to start..."
