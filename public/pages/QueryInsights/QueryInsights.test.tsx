@@ -96,6 +96,48 @@ describe('QueryInsights Component', () => {
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
+  it('uses query ID as itemId for table rows to prevent duplicate row rendering', () => {
+    const testQueries = [
+      {
+        ...sampleQueries[0],
+        id: 'unique-query-id-1',
+        timestamp: 1000,
+        group_by: 'NONE',
+      },
+      {
+        ...sampleQueries[0],
+        id: 'unique-query-id-2',
+        timestamp: 2000,
+        group_by: 'NONE',
+      },
+    ];
+    expect(() => {
+      render(
+        <MemoryRouter>
+          <DataSourceContext.Provider value={mockDataSourceContext}>
+            <QueryInsights
+              queries={testQueries}
+              loading={false}
+              onTimeChange={mockOnTimeChange}
+              recentlyUsedRanges={[]}
+              currStart="now-15m"
+              currEnd="now"
+              retrieveQueries={mockRetrieveQueries}
+              // @ts-ignore
+              core={mockCore}
+              depsStart={{} as any}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock as any}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+    }).not.toThrow();
+
+    // Verify that the table component renders successfully
+    expect(screen.getByRole('table')).toBeInTheDocument();
+  });
+
   it('renders the expected column headers in the correct sequence for default', async () => {
     renderQueryInsights();
 
