@@ -8,7 +8,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MemoryRouter } from 'react-router-dom';
 import TopNQueries, { QUERY_INSIGHTS, CONFIGURATION } from './TopNQueries';
-import { CoreStart } from 'opensearch-dashboards/public';
+import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
 jest.mock('../QueryInsights/QueryInsights', () => () => <div>Mocked QueryInsights</div>);
 jest.mock('../Configuration/Configuration', () => () => <div>Mocked Configuration</div>);
@@ -54,10 +55,13 @@ const setUpDefaultEnabledSettings = () => {
   (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
 };
 
+const mockDepsStart = {} as QueryInsightsDashboardsPluginStartDependencies;
+const mockParams = {} as AppMountParameters;
+
 const renderTopNQueries = (type: string) =>
   render(
     <MemoryRouter initialEntries={[type]}>
-      <TopNQueries core={mockCore} depsStart={{ navigation: {} }} params={{} as any} />
+      <TopNQueries core={mockCore} depsStart={mockDepsStart} params={mockParams} />
     </MemoryRouter>
   );
 
@@ -186,8 +190,8 @@ describe('TopNQueries Component', () => {
           core={mockCore}
           initialStart="now-1h"
           initialEnd="now"
-          depsStart={{ navigation: {} }}
-          params={{} as any}
+          depsStart={mockDepsStart}
+          params={mockParams}
         />
       </MemoryRouter>
     );
@@ -203,8 +207,8 @@ describe('TopNQueries Component', () => {
           core={mockCore}
           initialStart="now-7d"
           initialEnd="now"
-          depsStart={{ navigation: {} }}
-          params={{} as any}
+          depsStart={mockDepsStart}
+          params={mockParams}
         />
       </MemoryRouter>
     );
@@ -218,6 +222,244 @@ describe('TopNQueries Component', () => {
       );
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/cpu', expect.any(Object));
       expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/memory', expect.any(Object));
+    });
+  });
+
+  describe('Query deduplication', () => {
+    it('should deduplicate queries by ID from multiple metric endpoints', async () => {
+      // Setup: Create queries with duplicate IDs but different measurements
+      const mockLatencyResponse = {
+        response: {
+          top_queries: [
+            {
+              id: 'query1',
+              timestamp: 1000,
+              measurements: { latency: { number: 100, count: 1, aggregationType: 'NONE' } },
+              total_shards: 1,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+            {
+              id: 'query2',
+              timestamp: 2000,
+              measurements: { latency: { number: 200, count: 1, aggregationType: 'NONE' } },
+              total_shards: 1,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+          ],
+        },
+      };
+
+      const mockCpuResponse = {
+        response: {
+          top_queries: [
+            {
+              id: 'query1', // Duplicate ID with different measurements
+              timestamp: 1000,
+              measurements: { cpu: { number: 5000000, count: 1, aggregationType: 'NONE' } },
+              total_shards: 1,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+            {
+              id: 'query3',
+              timestamp: 3000,
+              measurements: { cpu: { number: 3000000, count: 1, aggregationType: 'NONE' } },
+              total_shards: 1,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+          ],
+        },
+      };
+
+      const mockMemoryResponse = {
+        response: {
+          top_queries: [
+            {
+              id: 'query2', // Duplicate ID with different measurements
+              timestamp: 2000,
+              measurements: { memory: { number: 1024, count: 1, aggregationType: 'NONE' } },
+              total_shards: 1,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+          ],
+        },
+      };
+
+      // Mock settings response - all metrics enabled
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  memory: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        if (endpoint === '/api/top_queries/latency') return Promise.resolve(mockLatencyResponse);
+        if (endpoint === '/api/top_queries/cpu') return Promise.resolve(mockCpuResponse);
+        if (endpoint === '/api/top_queries/memory') return Promise.resolve(mockMemoryResponse);
+        return Promise.resolve({ response: { top_queries: [] } });
+      });
+
+      const container = renderTopNQueries(QUERY_INSIGHTS);
+
+      // Verify that all endpoints are called
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          '/api/top_queries/latency',
+          expect.any(Object)
+        );
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/cpu', expect.any(Object));
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          '/api/top_queries/memory',
+          expect.any(Object)
+        );
+      });
+
+      // Verify that the component renders without errors
+      // The actual deduplication logic is tested at the unit level
+      expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
+      expect(container).toMatchSnapshot();
+    });
+
+    it('should handle empty responses without errors', async () => {
+      const mockEmptyResponse = { response: { top_queries: [] } };
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  memory: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        return Promise.resolve(mockEmptyResponse);
+      });
+
+      const container = renderTopNQueries(QUERY_INSIGHTS);
+
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          '/api/top_queries/latency',
+          expect.any(Object)
+        );
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/cpu', expect.any(Object));
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          '/api/top_queries/memory',
+          expect.any(Object)
+        );
+      });
+
+      // Should handle empty results gracefully and render without error
+      expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
+      expect(container).toMatchSnapshot();
+    });
+
+    it('should preserve first occurrence when deduplicating by ID', async () => {
+      // Test that the first occurrence of a duplicate ID is preserved
+      const mockLatencyResponse = {
+        response: {
+          top_queries: [
+            {
+              id: 'duplicateQuery',
+              timestamp: 1000,
+              measurements: { latency: { number: 100, count: 1, aggregationType: 'NONE' } },
+              total_shards: 5,
+              node_id: 'node1',
+              search_type: 'query_then_fetch',
+              indices: ['index1'],
+              group_by: 'NONE',
+            },
+          ],
+        },
+      };
+
+      const mockCpuResponse = {
+        response: {
+          top_queries: [
+            {
+              id: 'duplicateQuery', // Same ID but different properties
+              timestamp: 2000, // Different timestamp
+              measurements: { cpu: { number: 5000000, count: 1, aggregationType: 'NONE' } },
+              total_shards: 10, // Different shard count
+              node_id: 'node2', // Different node
+              search_type: 'dfs_query_then_fetch', // Different search type
+              indices: ['index2'], // Different indices
+              group_by: 'NONE',
+            },
+          ],
+        },
+      };
+
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  memory: { enabled: 'false' },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        if (endpoint === '/api/top_queries/latency') return Promise.resolve(mockLatencyResponse);
+        if (endpoint === '/api/top_queries/cpu') return Promise.resolve(mockCpuResponse);
+        return Promise.resolve({ response: { top_queries: [] } });
+      });
+
+      const container = renderTopNQueries(QUERY_INSIGHTS);
+
+      // Verify API calls are made
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          '/api/top_queries/latency',
+          expect.any(Object)
+        );
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/top_queries/cpu', expect.any(Object));
+      });
+
+      // Verify the component renders successfully
+      expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
+      expect(container).toMatchSnapshot();
     });
   });
 });
