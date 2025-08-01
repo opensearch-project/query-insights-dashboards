@@ -106,3 +106,41 @@ export const retrieveLiveQueries = async (
     return errorResponse;
   }
 };
+
+export const retrieveLiveQueriesWithWLMGroup = async (
+  core: CustomCore,
+  dataSourceId?: string,
+  wlmGroup?: string
+): Promise<LiveSearchQueryResponse> => {
+  const nullResponse: LiveSearchQueryResponse = {
+    ok: true,
+    response: { live_queries: [] },
+  };
+
+  const errorResponse: LiveSearchQueryResponse = {
+    ok: false,
+    response: { live_queries: [] },
+  };
+
+  try {
+    const http =
+      dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
+
+    const response: LiveSearchQueryResponse = await http.get({
+      path: API_ENDPOINTS.LIVE_QUERIES,
+      query: { wlm_group: wlmGroup },
+    });
+
+    const liveQueries = response?.response?.live_queries;
+
+    if (Array.isArray(liveQueries)) {
+      return response;
+    } else {
+      console.warn('No live queries found in response');
+      return nullResponse;
+    }
+  } catch (error) {
+    console.error('Error retrieving live queries:', error);
+    return errorResponse;
+  }
+};

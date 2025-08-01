@@ -362,17 +362,24 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       validate: {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
+          wlmGroup: schema.maybe(schema.string()),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const client =
-          !dataSourceEnabled || !request.query?.dataSourceId
-            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
-            : context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+        const { dataSourceId, wlmGroup } = request.query;
 
-        const res = await client('queryInsights.getLiveQueries');
+        const client =
+          !dataSourceEnabled || !dataSourceId
+            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
+            : context.dataSource.opensearch.legacy.getClient(dataSourceId);
+
+        // Call the appropriate API based on whether wlm_group is provided
+        const res = wlmGroup
+          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlmGroup })
+          : await client('queryInsights.getLiveQueries');
+
         if (!res || res.ok === false) {
           throw new Error(res?.error || 'Query Insights service returned an error');
         }

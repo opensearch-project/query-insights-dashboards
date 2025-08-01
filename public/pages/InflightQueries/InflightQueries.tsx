@@ -17,7 +17,7 @@ import {
   EuiSpacer,
   EuiInMemoryTable,
   EuiButton,
-  EuiLink
+  EuiLink,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -33,8 +33,12 @@ import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import {
+  retrieveLiveQueries,
+  retrieveLiveQueriesWithWLMGroup,
+} from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
@@ -58,9 +62,8 @@ export const InflightQueries = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
-  const [workloadGroups, setWorkloadGroups] = useState<string[]>([]);
-  const [selectedWorkloadGroup, setSelectedWorkloadGroup] = useState<string>('');
-
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
@@ -73,34 +76,21 @@ export const InflightQueries = ({
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/oeg/api/_wlm/stats');
-        const data = await response.json();
-        // Assuming data format: { workloads: [{ group_id: 'group1' }, ...] }
-        const groups = data.workloads?.map((w: any) => w.group_id) || [];
-        setWorkloadGroups(groups);
-        if (groups.length && !selectedWorkloadGroup) {
-          setSelectedWorkloadGroup(groups[0]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch workload stats', error);
-      }
-    };
-    fetchStats();
-  }, []);
-
   const fetchliveQueries = async () => {
-    const retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
-
+    const wlmGroup = searchParams.get('wlm_group');
+    let retrievedQueries;
+    if (wlmGroup) {
+      retrievedQueries = await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup);
+    } else {
+      retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
+    }
     if (retrievedQueries?.response?.live_queries) {
       const tempNodeCount: Record<string, number> = {};
       const indexCount: Record<string, number> = {};
       const parsedQueries = retrievedQueries.response.live_queries.map((q) => {
         const indexMatch = q.description?.match(/indices\[(.*?)\]/);
         const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
-        let wlmGroup =
+        const newWlmGroup =
           typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
             ? q.query_group_id
             : 'N/A';
@@ -110,7 +100,7 @@ export const InflightQueries = ({
           search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
           coordinator_node: q.node_id,
           node_label: q.node_id,
-          wlm_group: wlmGroup,
+          wlm_group: newWlmGroup,
         };
       });
 
@@ -316,6 +306,7 @@ export const InflightQueries = ({
     }));
   };
 
+
   return (
     <div>
       <QueryInsightsDataSourceMenu
@@ -333,25 +324,6 @@ export const InflightQueries = ({
       />
       <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="flexEnd">
-        <EuiFlexItem grow={false}>
-          <EuiText size="s">
-            <strong>Workload Group</strong>
-          </EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem grow={false}>
-          <select
-            value={selectedWorkloadGroup}
-            onChange={(e) => setSelectedWorkloadGroup(e.target.value)}
-            style={{ padding: '6px', borderRadius: '6px', minWidth: 150 }}
-            data-test-subj="live-queries-workload-group-selector"
-          >
-            {workloadGroups.map((groupId) => (
-              <option key={groupId} value={groupId}>
-                {groupId}
-              </option>
-            ))}
-          </select>
-        </EuiFlexItem>
         <EuiFlexItem grow={false}>
           <EuiSwitch
             label="Auto-refresh"
