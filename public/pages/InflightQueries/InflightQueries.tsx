@@ -90,7 +90,7 @@ export const InflightQueries = ({
       const parsedQueries = retrievedQueries.response.live_queries.map((q) => {
         const indexMatch = q.description?.match(/indices\[(.*?)\]/);
         const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
-        const newWlmGroup =
+        const WlmGroup =
           typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
             ? q.query_group_id
             : 'N/A';
@@ -100,7 +100,7 @@ export const InflightQueries = ({
           search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
           coordinator_node: q.node_id,
           node_label: q.node_id,
-          wlm_group: newWlmGroup,
+          wlm_group: WlmGroup,
         };
       });
 

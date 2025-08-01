@@ -110,7 +110,7 @@ export const retrieveLiveQueries = async (
 export const retrieveLiveQueriesWithWLMGroup = async (
   core: CustomCore,
   dataSourceId?: string,
-  wlmGroup?: string
+  wlm_group?: string
 ): Promise<LiveSearchQueryResponse> => {
   const nullResponse: LiveSearchQueryResponse = {
     ok: true,
@@ -128,7 +128,7 @@ export const retrieveLiveQueriesWithWLMGroup = async (
 
     const response: LiveSearchQueryResponse = await http.get({
       path: API_ENDPOINTS.LIVE_QUERIES,
-      query: { wlm_group: wlmGroup },
+      query: { wlm_group : wlm_group },
     });
 
     const liveQueries = response?.response?.live_queries;
