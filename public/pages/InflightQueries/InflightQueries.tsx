@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -18,6 +18,7 @@ import {
   EuiInMemoryTable,
   EuiButton,
   EuiLink,
+  EuiFormRow
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -33,7 +34,6 @@ import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useContext } from 'react';
-import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import {
   retrieveLiveQueries,
@@ -43,6 +43,7 @@ import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { useLocation } from 'react-router-dom';
 
 export const InflightQueries = ({
   core,
@@ -62,11 +63,86 @@ export const InflightQueries = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
+
+  const [wlmGroupOptions, setWlmGroupOptions] = useState<{ id: string; name: string }[]>([]);
+
+
+  const location = useLocation();
+  const urlSearchParams = new URLSearchParams(location.search);
+  const initialWlmGroup = urlSearchParams.get('wlm_group') || '';
+
+  const [wlmGroup, setWlmGroup] = useState<string | undefined>(
+    initialWlmGroup !== '' ? initialWlmGroup : undefined
+  );
+  const wlmIdToNameMap = React.useMemo(
+    () => Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name])),
+    [wlmGroupOptions]
+  );
+
+
+
+
+
+  const [workloadGroupStats, setWorkloadGroupStats] = useState<{
+    total_completions: number;
+    total_cancellations: number;
+    total_rejections: number;
+  }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+
+
+
+
+  const fetchActiveWlmGroups = useCallback(async () => {
+    const [statsRes, groupsRes] = await Promise.all([
+      core.http.get('/api/_wlm/stats', { query: { dataSourceId: dataSource.id } }),
+      core.http.get('/api/_wlm/workload_group', { query: { dataSourceId: dataSource.id } }),
+    ]);
+
+    const statsBody = statsRes.body || statsRes;
+    const groupDetails = groupsRes.body?.workload_groups || groupsRes.workload_groups || [];
+
+    const idToNameMap: Record<string, string> = {};
+    for (const group of groupDetails) {
+      idToNameMap[group._id] = group.name;
+    }
+
+    const activeGroupIds = new Set<string>();
+    let completions = 0;
+    let cancellations = 0;
+    let rejections = 0;
+
+    for (const [nodeId, nodeStats] of Object.entries(statsBody)) {
+      if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+
+      const workloadGroups = (nodeStats as any)?.workload_groups ?? {};
+      for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
+        activeGroupIds.add(groupId);
+        if (!wlmGroup || wlmGroup === groupId) {
+          const stats = groupStats as any;
+          completions += stats.total_completions ?? 0;
+          cancellations += stats.total_cancellations ?? 0;
+          rejections += stats.total_rejections ?? 0;
+        }
+      }
+    }
+
+    setWorkloadGroupStats({
+      total_completions: completions,
+      total_cancellations: cancellations,
+      total_rejections: rejections,
+    });
+
+    const options = Array.from(activeGroupIds).map((id) => ({
+      id,
+      name: idToNameMap[id] || id,
+    }));
+
+    setWlmGroupOptions(options);
+    return idToNameMap;
+  }, [core.http, dataSource?.id, wlmGroup]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -76,8 +152,7 @@ export const InflightQueries = ({
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
 
-  const fetchliveQueries = async () => {
-    const wlmGroup = searchParams.get('wlm_group');
+  const fetchliveQueries = async (idToNameMap?: Record<string, string>) => {
     let retrievedQueries;
     if (wlmGroup) {
       retrievedQueries = await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup);
@@ -90,10 +165,13 @@ export const InflightQueries = ({
       const parsedQueries = retrievedQueries.response.live_queries.map((q) => {
         const indexMatch = q.description?.match(/indices\[(.*?)\]/);
         const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+        const idToNameMap = Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name]));
+
         const WlmGroup =
           typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
-            ? q.query_group_id
+            ? idToNameMap?.[q.query_group_id] || q.query_group_id
             : 'N/A';
+
         return {
           ...q,
           index: indexMatch ? indexMatch[1] : 'N/A',
@@ -153,18 +231,19 @@ export const InflightQueries = ({
   }
 
   const fetchliveQueriesSafe = async () => {
-    if (isFetching.current) {
-      return;
-    }
+    if (isFetching.current) return;
     isFetching.current = true;
+
     try {
-      await withTimeout(fetchliveQueries(), refreshInterval - 500);
+      const idToNameMap = await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
+      await fetchliveQueries(idToNameMap);
     } catch (e) {
       console.warn('[LiveQueries] fetchliveQueries timed out or failed', e);
     } finally {
       isFetching.current = false;
     }
   };
+
 
   useEffect(() => {
     fetchliveQueriesSafe();
@@ -176,7 +255,7 @@ export const InflightQueries = ({
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refreshInterval, core]);
+  }, [autoRefreshEnabled, refreshInterval, core, wlmGroup]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const formatTime = (seconds: number): string => {
@@ -323,43 +402,80 @@ export const InflightQueries = ({
         dataSourcePickerReadOnly={false}
       />
       <EuiSpacer size="m" />
-      <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="flexEnd">
-        <EuiFlexItem grow={false}>
-          <EuiSwitch
-            label="Auto-refresh"
-            checked={autoRefreshEnabled}
-            onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
-            data-test-subj="live-queries-autorefresh-toggle"
-          />
-        </EuiFlexItem>
+      <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="spaceBetween">
+        {/* Left side: WLM Group selector */}
 
         <EuiFlexItem grow={false}>
-          <select
-            value={refreshInterval}
-            onChange={(e) => setRefreshInterval(Number(e.target.value))}
-            onBlur={(e) => setRefreshInterval(Number(e.target.value))}
-            style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
-            disabled={!autoRefreshEnabled}
-            data-test-subj="live-queries-refresh-interval"
-          >
-            <option value={5000}>5 seconds</option>
-            <option value={10000}>10 seconds</option>
-            <option value={30000}>30 seconds</option>
-            <option value={60000}>1 minute</option>
-          </select>
+          <EuiFlexGroup alignItems="center" gutterSize="s">
+            <EuiFlexItem grow={false}>
+              <label htmlFor="wlm-group-select">
+                WLM Group
+              </label>
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <select
+                id="wlm-group-select"
+                value={wlmGroup ?? ''}
+                onChange={(e) => setWlmGroup(e.target.value || undefined)}
+                style={{ padding: '6px', borderRadius: '6px', minWidth: 240 }}
+                aria-label="WLM Group selector"
+              >
+                <option value="">All WLM Groups</option>
+                {wlmGroupOptions.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+            </EuiFlexItem>
+          </EuiFlexGroup>
         </EuiFlexItem>
+
+
+
+        {/* Right side: Refresh + Switch + Interval */}
         <EuiFlexItem grow={false}>
-          <EuiButton
-            iconType="refresh"
-            onClick={async () => {
-              await fetchliveQueries();
-            }}
-            data-test-subj="live-queries-refresh-button"
-          >
-            Refresh
-          </EuiButton>
+          <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+            <EuiFlexItem grow={false}>
+              <EuiSwitch
+                label="Auto-refresh"
+                checked={autoRefreshEnabled}
+                onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+              />
+            </EuiFlexItem>
+
+            <EuiFlexItem grow={false}>
+              <EuiFormRow display="columnCompressed">
+                <select
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                  style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
+                  disabled={!autoRefreshEnabled}
+                >
+                  <option value={5000}>5 seconds</option>
+                  <option value={10000}>10 seconds</option>
+                  <option value={30000}>30 seconds</option>
+                  <option value={60000}>1 minute</option>
+                </select>
+              </EuiFormRow>
+            </EuiFlexItem>
+
+            <EuiFlexItem grow={false}>
+              <EuiButton
+                iconType="refresh"
+                onClick={async () => {
+                  await fetchliveQueries();
+                }}
+                data-test-subj="live-queries-refresh-button"
+              >
+                Refresh
+              </EuiButton>
+            </EuiFlexItem>
+          </EuiFlexGroup>
         </EuiFlexItem>
       </EuiFlexGroup>
+
+
 
       <EuiFlexGroup>
         {/* Active Queries */}
@@ -590,6 +706,48 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiFlexGroup>
+        {/* WLM Group Stats Panels */}
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiTextAlign textAlign="center">
+              <EuiText size="s">
+                <p>Total completions</p>
+              </EuiText>
+              <EuiTitle size="l">
+                <h2>{workloadGroupStats.total_completions}</h2>
+              </EuiTitle>
+            </EuiTextAlign>
+          </EuiPanel>
+        </EuiFlexItem>
+
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiTextAlign textAlign="center">
+              <EuiText size="s">
+                <p>Total cancellations</p>
+              </EuiText>
+              <EuiTitle size="l">
+                <h2>{workloadGroupStats.total_cancellations}</h2>
+              </EuiTitle>
+            </EuiTextAlign>
+          </EuiPanel>
+        </EuiFlexItem>
+
+        <EuiFlexItem>
+          <EuiPanel paddingSize="m">
+            <EuiTextAlign textAlign="center">
+              <EuiText size="s">
+                <p>Total rejections</p>
+              </EuiText>
+              <EuiTitle size="l">
+                <h2>{workloadGroupStats.total_rejections}</h2>
+              </EuiTitle>
+            </EuiTextAlign>
+          </EuiPanel>
+        </EuiFlexItem>
+      </EuiFlexGroup>
+
       <EuiSpacer size="m" />
       <EuiPanel paddingSize="m">
         <EuiInMemoryTable
@@ -698,11 +856,12 @@ export const InflightQueries = ({
                     <b>Cancelled</b>
                   </EuiText>
                 ) : (
-                  <EuiText color="success">
+                  <EuiText style={{ color: '#0073e6' }}>
                     <b>Running</b>
                   </EuiText>
                 ),
             },
+
             {
               name: 'WLM Group',
               render: (item: any) =>
@@ -710,18 +869,20 @@ export const InflightQueries = ({
                   <EuiLink
                     onClick={() => {
                       core.application.navigateToApp('workloadManagement', {
-                        path: `#/wlm-details?name=${item.wlm_group}`,
+                        path: `#/wlm-details?name=${wlmIdToNameMap[item.wlm_group]}`,
                       });
                     }}
                     style={{ fontWeight: 'bold' }}
                     color="primary"
                   >
-                    {item.wlm_group}
+                    console.log("#/wlm-details?name=${wlmIdToNameMap[item.wlm_group]"");
+                    {wlmIdToNameMap[item.wlm_group] ?? item.wlm_group} <EuiIcon type="popout" size="s" />
                   </EuiLink>
                 ) : (
                   'N/A'
                 ),
             },
+
 
             {
               name: 'Actions',
