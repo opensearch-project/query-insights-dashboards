@@ -207,9 +207,9 @@ const TopNQueries = ({
           ...respCpu.response.top_queries,
           ...respMemory.response.top_queries,
         ];
-        const noDuplicates: SearchQueryRecord[] = Array.from(
-          new Set(newQueries.map((item) => JSON.stringify(item)))
-        ).map((item) => JSON.parse(item));
+        const noDuplicates: SearchQueryRecord[] = newQueries.filter(
+          (query, index, self) => index === self.findIndex((q) => q.id === query.id)
+        );
 
         const fromTime = DateTime.fromISO(parseDateString(start));
         const toTime = DateTime.fromISO(parseDateString(end));
