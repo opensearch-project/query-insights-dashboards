@@ -7,8 +7,6 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 
 ### Bug Fixes
 * Fix-query-details-verbose-param ([#217](https://github.com/opensearch-project/query-insights-dashboards/pull/217))
-* [Fix] Ensure accurate time filtering for Top Queries in OpenSearch 2.19+ ([#219](https://github.com/opensearch-project/query-insights-dashboards/pull/219))
-* Revert "[Fix] Ensure accurate time filtering for Top Queries in OpenSearch 2.19+" ([#273](https://github.com/opensearch-project/query-insights-dashboards/pull/273))
 * React-vis implementation for Live Queries Dashboards ([#243](https://github.com/opensearch-project/query-insights-dashboards/pull/243))
 * Revert "Update renderApp to use default export to prevent initialization race condition" ([#247](https://github.com/opensearch-project/query-insights-dashboards/pull/247))
 * Fix for ui bugs ([#258](https://github.com/opensearch-project/query-insights-dashboards/pull/258))
