@@ -113,7 +113,7 @@ describe('InflightQueries', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(6000);
+      jest.advanceTimersByTime(30000);
     });
 
     await waitFor(() => {
@@ -121,7 +121,7 @@ describe('InflightQueries', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(6000);
+      jest.advanceTimersByTime(30000);
     });
 
     await waitFor(() => {
