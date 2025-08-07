@@ -13,7 +13,7 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 * Fix for ui bugs ([#258](https://github.com/opensearch-project/query-insights-dashboards/pull/258))
 * Fix top queries table sorting with correct id ([#285](https://github.com/opensearch-project/query-insights-dashboards/pull/285))
 * Search bar fix ([#267](https://github.com/opensearch-project/query-insights-dashboards/pull/267))
-* Removed search bar Cypress ([#305](https://github.com/opensearch-project/query-insights-dashboards/pull/305))
+* Removed search bar Cypress ([#306](https://github.com/opensearch-project/query-insights-dashboards/pull/306))
 
 ### Maintenance
 * CVE-2020-28469 Updated package.json and yarn.lock ([#270](https://github.com/opensearch-project/query-insights-dashboards/pull/270))
