@@ -4,6 +4,7 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 
 ### Enhancements
 * [IMPROVEMENT] MDS support for Inflight Queries ([#217](https://github.com/opensearch-project/query-insights-dashboards/pull/217))
+* Change Live Queries page default auto refresh to 30 seconds ([#304](https://github.com/opensearch-project/query-insights-dashboards/pull/304))
 
 ### Bug Fixes
 * Fix-query-details-verbose-param ([#217](https://github.com/opensearch-project/query-insights-dashboards/pull/217))
@@ -12,6 +13,7 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 * Fix for ui bugs ([#258](https://github.com/opensearch-project/query-insights-dashboards/pull/258))
 * Fix top queries table sorting with correct id ([#285](https://github.com/opensearch-project/query-insights-dashboards/pull/285))
 * Search bar fix ([#267](https://github.com/opensearch-project/query-insights-dashboards/pull/267))
+* Removed search bar Cypress ([#306](https://github.com/opensearch-project/query-insights-dashboards/pull/306))
 
 ### Maintenance
 * CVE-2020-28469 Updated package.json and yarn.lock ([#270](https://github.com/opensearch-project/query-insights-dashboards/pull/270))
