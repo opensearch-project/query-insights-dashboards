@@ -4,7 +4,7 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 
 ### Enhancements
 * [IMPROVEMENT] MDS support for Inflight Queries ([#217](https://github.com/opensearch-project/query-insights-dashboards/pull/217))
-* AutoRefresh to 30 seconds ([#304](https://github.com/opensearch-project/query-insights-dashboards/pull/304))
+* Change Live Queries page default auto refresh to 30 seconds ([#304](https://github.com/opensearch-project/query-insights-dashboards/pull/304))
 
 ### Bug Fixes
 * Fix-query-details-verbose-param ([#217](https://github.com/opensearch-project/query-insights-dashboards/pull/217))
