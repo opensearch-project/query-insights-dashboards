@@ -50,7 +50,7 @@ export const InflightQueries = ({
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-  const DEFAULT_REFRESH_INTERVAL = 5000; // default 5s
+  const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
   const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
