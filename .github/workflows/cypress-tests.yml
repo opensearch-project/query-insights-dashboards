@@ -7,9 +7,7 @@ on:
     branches:
       - "*"
 env:
-  OPENSEARCH_BRANCH: '3.1'
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  OPENSEARCH_VERSION: '3.1.0-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
@@ -33,6 +31,12 @@ jobs:
       # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
     steps:
+      - name: Set dynamic branch name
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "QUERY_INSIGHTS_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "OPENSEARCH_DASHBOARDS_VERSION=$BRANCH_NAME" >> $GITHUB_ENV
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -53,6 +57,50 @@ jobs:
           repository: opensearch-project/OpenSearch
           ref: ${{ env.OPENSEARCH_BRANCH }}
 
+      - name: Check working directory and list files
+        run: |
+          echo "Current Directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
+
+      - name: Fetch OpenSearch version from build.gradle
+        run: |
+          # Navigate to the query-insights directory
+          cd query-insights
+
+          # Check if build.gradle exists
+          if [ -f "build.gradle" ]; then
+            echo "build.gradle file exists!"
+          else
+            echo "build.gradle file not found!"
+            exit 1
+          fi
+
+          # Print the content of build.gradle for debugging
+          echo "Printing build.gradle content:"
+          cat build.gradle
+
+          # Extract the version from build.gradle using Node.js with the updated regex
+          opensearch_version=$(node -e "
+            const fs = require('fs');
+            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
+            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
+            console.log(match ? match[1] : 'No version found');
+          ")
+
+          # Set the OpenSearch version as an environment variable
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
+
+          # Print the version for debugging
+          echo "Using OpenSearch version: $opensearch_version"
+        shell: bash
+
+
+      - name: Verify OpenSearch version
+        run: |
+          echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
+          echo "Using Plugin version: ${{ env.PLUGIN_VERSION }}"
 
       - name: Build Required Plugins
         run: |
@@ -111,6 +159,7 @@ jobs:
           curl -s http://localhost:9200/_wlm/workload_group | jq '.'
         shell: bash
 
+
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4
         with:
@@ -130,7 +179,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install Yarn
-        # Need to use bash to avoid having a windows/linux specific step
         shell: bash
         run: |
           YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
@@ -147,7 +195,6 @@ jobs:
       - name: Run OpenSearch-Dashboards server
         run: |
           cd OpenSearch-Dashboards
-          # Set memory limits and DNS resolution for better performance
           export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
           yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
         shell: bash
@@ -157,43 +204,30 @@ jobs:
           echo "Waiting for OpenSearch-Dashboards to start..."
           max_attempts=150
           attempt=0
-
           while [ $attempt -lt $max_attempts ]; do
             if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
               echo "OpenSearch-Dashboards is ready!"
-              # Output status for debugging
               echo "=== OpenSearch-Dashboards Status Debug Info ==="
               curl -s http://localhost:5601/api/status | jq '.' || curl -s http://localhost:5601/api/status
               echo "=============================================="
-              # Additional wait to ensure plugin is fully loaded
               sleep 45
               break
             fi
-
             attempt=$((attempt + 1))
             echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
-
-            # Show debug info every 10 attempts
             if [ $((attempt % 10)) -eq 0 ]; then
               echo "Debug: Attempting to connect to http://localhost:5601/api/status"
               curl -s -v http://localhost:5601/api/status || echo "Connection failed"
             fi
-
             sleep 10
-
           done
-
           if [ $attempt -eq $max_attempts ]; then
             echo "OpenSearch-Dashboards failed to start within timeout"
             echo "Final debug attempt:"
             curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
             exit 1
           fi
-
-          # Verify the service is responding
           curl -s http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
-
-          # Additional verification for plugin loading
           echo "Waiting additional time for plugin initialization..."
           sleep 15
         shell: bash
@@ -202,15 +236,12 @@ jobs:
         run: |
           echo "Checking OpenSearch status..."
           curl -s http://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
-
           echo "Checking OpenSearch-Dashboards status..."
           echo "=== Full OpenSearch-Dashboards Status ==="
           curl -s http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
           echo "========================================"
-
           echo "Checking OpenSearch-Dashboards overall state..."
           curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
-
           echo "Checking plugin endpoint..."
           curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
         shell: bash
@@ -219,8 +250,6 @@ jobs:
       - name: Install Cypress
         run: |
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
-          # This will install Cypress in case the binary is missing which can happen on Windows and Mac
-          # If the binary exists, this will exit quickly so it should not be an expensive operation
           npx cypress install
         shell: bash
 
@@ -237,7 +266,6 @@ jobs:
           path: ${{ matrix.cypress_cache_folder }}
           key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
 
-      # for now just chrome, use matrix to do all browsers later
       - name: Cypress tests
         uses: cypress-io/github-action@v5
         with:
@@ -251,14 +279,12 @@ jobs:
           CI: true
         timeout-minutes: 60
 
-      # Screenshots are only captured on failure, will change this once we do visual regression tests
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: cypress-screenshots-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
 
-      # Test run video was always captured, so this action uses "always()" condition
       - uses: actions/upload-artifact@v4
         if: always()
         with:
