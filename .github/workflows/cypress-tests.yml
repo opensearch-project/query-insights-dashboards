@@ -31,11 +31,6 @@ jobs:
       # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
     steps:
-      - name: Set dynamic branch name
-        run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          echo "QUERY_INSIGHTS_BRANCH=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "OPENSEARCH_DASHBOARDS_VERSION=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Set up JDK
         uses: actions/setup-java@v4
