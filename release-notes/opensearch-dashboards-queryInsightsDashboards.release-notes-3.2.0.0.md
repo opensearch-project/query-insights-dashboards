@@ -18,3 +18,4 @@ Compatible with OpenSearch and OpenSearch Dashboards version 3.2.0
 * 2.19.3 Release Notes ([#280](https://github.com/opensearch-project/query-insights-dashboards/pull/280))
 * [AUTO] Increment version to 3.2.0.0 ([#295](https://github.com/opensearch-project/query-insights-dashboards/pull/295))
 * [AUTO] Add release notes for 3.2.0 ([#302](https://github.com/opensearch-project/query-insights-dashboards/pull/302))
+* CVE-2025-7783 and CVE-2025-6545 Updated package.json and yarn.lock ([#270](https://github.com/opensearch-project/query-insights-dashboards/pull/270))
