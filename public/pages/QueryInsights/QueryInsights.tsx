@@ -400,6 +400,7 @@ const QueryInsights = ({
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
     onTimeChange({ start, end });
+    retrieveQueries(start, end);
   };
 
   const filterDuplicates = (options: any[]) =>
