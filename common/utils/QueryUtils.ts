@@ -45,13 +45,20 @@ export const retrieveQueryById = async (
   };
 
   try {
-    const topQueriesResponse = await Promise.any([
-      fetchMetric(`/api/top_queries/latency`),
-      fetchMetric(`/api/top_queries/cpu`),
-      fetchMetric(`/api/top_queries/memory`),
-    ]);
-    const records = topQueriesResponse.response.top_queries || [];
-    return records.find((q) => q.id === id) || null;
+    const endpoints = [
+      `/api/top_queries/latency`,
+      `/api/top_queries/cpu`,
+      `/api/top_queries/memory`,
+    ];
+
+    for (const endpoint of endpoints) {
+      const result = await fetchMetric(endpoint);
+      if (result.response.top_queries.length > 0) {
+        const records = result.response.top_queries || [];
+        return records.find((q) => q.id === id) || null;
+      }
+    }
+    return null;
   } catch (error) {
     console.error('Error retrieving query details:', error);
     return null;
