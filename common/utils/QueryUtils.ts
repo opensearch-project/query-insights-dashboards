@@ -11,7 +11,8 @@ export const retrieveQueryById = async (
   dataSourceId: string,
   start: string | null,
   end: string | null,
-  id: string | null
+  id: string | null,
+  verbose: boolean
 ): Promise<SearchQueryRecord | null> => {
   const nullResponse = { response: { top_queries: [] } };
   const params = {
@@ -20,6 +21,7 @@ export const retrieveQueryById = async (
       from: start,
       to: end,
       id,
+      verbose,
     },
   };
 
