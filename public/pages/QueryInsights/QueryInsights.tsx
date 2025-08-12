@@ -530,7 +530,7 @@ const QueryInsights = ({
           ],
         }}
         allowNeutralSort={false}
-        itemId={(query) => `${query.id}-${query.timestamp}`}
+        itemId={(query) => query.id}
       />
     </>
   );
