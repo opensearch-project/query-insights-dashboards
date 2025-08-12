@@ -19,7 +19,6 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        // data source disabled
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -65,13 +64,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
+        const { from, to, id, verbose } = request.query;
+        const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -123,13 +123,15 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
+        const { from, to, id, verbose } = request.query;
+        const params = { from, to, id, verbose };
+
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -181,13 +183,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
+          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { from, to, id } = request.query;
-        const params = { from, to, id };
+        const { from, to, id, verbose } = request.query;
+        const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;

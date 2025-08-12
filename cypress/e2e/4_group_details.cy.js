@@ -106,6 +106,62 @@ describe('Query Group Details Page', () => {
         cy.get('#latency').should('be.visible');
       });
   });
+  it('should get complete details of the query using verbose=true for group type', () => {
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    return cy
+      .request({
+        method: 'GET',
+        url: `/api/top_queries/latency`,
+        qs: {
+          from: from,
+          to: to,
+          verbose: true,
+        },
+      })
+      .then((response) => {
+        // Verify response status and structure
+        expect(response.status).to.eq(200);
+        expect(response.body).to.have.property('ok', true);
+
+        cy.log('Response structure:', JSON.stringify(response.body, null, 2));
+
+        const responseData = response.body.response;
+        expect(responseData).to.have.property('top_queries');
+        expect(responseData.top_queries).to.be.an('array');
+        expect(responseData.top_queries.length).to.be.greaterThan(0);
+
+        const firstQuery = responseData.top_queries[0];
+        expect(firstQuery).to.include.all.keys([
+          'group_by',
+          'id',
+          'indices',
+          'labels',
+          'measurements',
+          'node_id',
+          'phase_latency_map',
+          'query_group_hashcode',
+          'search_type',
+          'source',
+          'task_resource_usages',
+          'timestamp',
+          'total_shards',
+        ]);
+        expect(firstQuery.group_by).to.equal('SIMILARITY');
+        expect(firstQuery.indices).to.be.an('array');
+        expect(firstQuery.id).to.be.a('string');
+        expect(firstQuery.labels).to.be.an('object');
+        expect(firstQuery.node_id).to.be.a('string');
+        expect(firstQuery.query_group_hashcode).to.be.a('string');
+        expect(firstQuery.search_type).to.be.a('string');
+        expect(firstQuery.timestamp).to.be.a('number');
+        expect(firstQuery.total_shards).to.be.a('number');
+        expect(firstQuery.measurements.cpu).to.be.an('object');
+        expect(firstQuery.measurements.latency).to.be.an('object');
+        expect(firstQuery.measurements.memory).to.be.an('object');
+      });
+  });
 
   after(() => clearAll());
 });
