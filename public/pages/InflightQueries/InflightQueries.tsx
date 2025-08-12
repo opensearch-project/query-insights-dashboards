@@ -18,7 +18,10 @@ import {
   EuiInMemoryTable,
   EuiButton,
   EuiLink,
-  EuiFormRow
+  EuiFormRow,
+  EuiLoadingSpinner,
+  EuiHealth,
+  EuiIconTip
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -82,8 +85,28 @@ export const InflightQueries = ({
     [wlmGroupOptions]
   );
 
+  const [wlmAvailable, setWlmAvailable] = useState<boolean | null>(null);
 
-
+  const detectWlm = useCallback(async (): Promise<boolean> => {
+    try {
+      const httpClient = dataSource?.id ? depsStart.data.dataSources.get(dataSource.id) : core.http;
+      const res = await httpClient.get('/_cat/plugins', {
+      query: {dataSourceId: dataSource?.id },
+      });
+      // `component` or `name` field typically contains the plugin name/id.
+      const arr = Array.isArray(res) ? res : (res?.body ?? []);
+      const hasWlm = Array.isArray(arr) && arr.some((p: any) => {
+        const s = `${p.component ?? ''} ${p.name ?? ''}`.toLowerCase();
+        return s.includes('workload') || s.includes('wlm');
+        });
+      setWlmAvailable(hasWlm);
+      return hasWlm;
+      } catch (e) {
+      console.warn('[LiveQueries] _cat/plugins failed; assuming WLM unavailable', e);
+      setWlmAvailable(false);
+      return false;
+      }
+    }, [core.http, depsStart, dataSource?.id, wlmGroup, wlmAvailable]);
 
 
   const [workloadGroupStats, setWorkloadGroupStats] = useState<{
@@ -96,6 +119,12 @@ export const InflightQueries = ({
 
 
   const fetchActiveWlmGroups = useCallback(async () => {
+    const available = (wlmAvailable ?? await detectWlm());
+    if (!available) {
+     setWlmGroupOptions([]);
+     setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+     return {};
+    }
     const [statsRes, groupsRes] = await Promise.all([
       core.http.get('/api/_wlm/stats', { query: { dataSourceId: dataSource.id } }),
       core.http.get('/api/_wlm/workload_group', { query: { dataSourceId: dataSource.id } }),
@@ -402,55 +431,68 @@ export const InflightQueries = ({
         dataSourcePickerReadOnly={false}
       />
       <EuiSpacer size="m" />
-      <EuiFlexGroup alignItems="center" gutterSize="s" justifyContent="spaceBetween">
-        {/* Left side: WLM Group selector */}
+      <EuiFlexGroup alignItems="center" gutterSize="m" justifyContent="spaceBetween">
+        {/* LEFT: WLM status + optional selector */}
 
-        <EuiFlexItem grow={false}>
-          <EuiFlexGroup alignItems="center" gutterSize="s">
-            <EuiFlexItem grow={false}>
-              <label htmlFor="wlm-group-select">
-                WLM Group
-              </label>
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <select
+        {wlmAvailable && wlmGroupOptions.length > 0 && (
+        <>
+          <EuiFlexItem grow={false}>
+            <label htmlFor="wlm-group-select">WLM Group</label>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <select
                 id="wlm-group-select"
                 value={wlmGroup ?? ''}
                 onChange={(e) => setWlmGroup(e.target.value || undefined)}
                 style={{ padding: '6px', borderRadius: '6px', minWidth: 240 }}
                 aria-label="WLM Group selector"
-              >
-                <option value="">All WLM Groups</option>
-                {wlmGroupOptions.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
-                ))}
-              </select>
-            </EuiFlexItem>
-          </EuiFlexGroup>
-        </EuiFlexItem>
+            >
+              <option value="">All WLM Groups</option>
+              {wlmGroupOptions.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </EuiFlexItem>
+        </>
+        )}
+        <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
+          <EuiFlexItem grow={false}>
+            <EuiText size="s">Plugin Status for Workload Management
+            <EuiIconTip
+                content="Workload Management (WLM) helps prioritize and control query workloads by assigning them to workload groups with specific CPU, memory, and concurrency limits."
+                position="right"
+                type="questionInCircle"
+                aria-label="What is Workload Management?"
+                size="m"
+            />
+            </EuiText>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false} data-test-subj="wlm-status">
+            {wlmAvailable === null && <EuiLoadingSpinner size="m" />}
+            {wlmAvailable === true && <EuiHealth color="success">Enabled</EuiHealth>}
+            {wlmAvailable === false && <EuiHealth color="danger">Disabled</EuiHealth>}
+          </EuiFlexItem>
 
 
+        </EuiFlexGroup>
 
-        {/* Right side: Refresh + Switch + Interval */}
+        {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>
           <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
             <EuiFlexItem grow={false}>
               <EuiSwitch
-                label="Auto-refresh"
-                checked={autoRefreshEnabled}
-                onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                  label="Auto-refresh"
+                  checked={autoRefreshEnabled}
+                  onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
               />
             </EuiFlexItem>
-
             <EuiFlexItem grow={false}>
               <EuiFormRow display="columnCompressed">
                 <select
-                  value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                  style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
-                  disabled={!autoRefreshEnabled}
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                    style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
+                    disabled={!autoRefreshEnabled}
                 >
                   <option value={5000}>5 seconds</option>
                   <option value={10000}>10 seconds</option>
@@ -459,14 +501,11 @@ export const InflightQueries = ({
                 </select>
               </EuiFormRow>
             </EuiFlexItem>
-
             <EuiFlexItem grow={false}>
               <EuiButton
-                iconType="refresh"
-                onClick={async () => {
-                  await fetchliveQueries();
-                }}
-                data-test-subj="live-queries-refresh-button"
+                  iconType="refresh"
+                  onClick={async () => { await fetchliveQueries(); }}
+                  data-test-subj="live-queries-refresh-button"
               >
                 Refresh
               </EuiButton>
@@ -474,6 +513,7 @@ export const InflightQueries = ({
           </EuiFlexGroup>
         </EuiFlexItem>
       </EuiFlexGroup>
+      <EuiSpacer size="m" />
 
 
 
@@ -864,24 +904,35 @@ export const InflightQueries = ({
 
             {
               name: 'WLM Group',
-              render: (item: any) =>
-                item.wlm_group && item.wlm_group !== 'N/A' ? (
-                  <EuiLink
-                    onClick={() => {
-                      core.application.navigateToApp('workloadManagement', {
-                        path: `#/wlm-details?name=${wlmIdToNameMap[item.wlm_group]}`,
-                      });
-                    }}
-                    style={{ fontWeight: 'bold' }}
-                    color="primary"
-                  >
-                    console.log("#/wlm-details?name=${wlmIdToNameMap[item.wlm_group]"");
-                    {wlmIdToNameMap[item.wlm_group] ?? item.wlm_group} <EuiIcon type="popout" size="s" />
-                  </EuiLink>
-                ) : (
-                  'N/A'
-                ),
+              render: (item: any) => {
+                if (!item.wlm_group || item.wlm_group === 'N/A') {
+                  return 'N/A';
+                }
+
+                const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
+
+                if (wlmAvailable === true) {
+                  // Plugin enabled → clickable link
+                  return (
+                      <EuiLink
+                          onClick={() => {
+                            core.application.navigateToApp('workloadManagement', {
+                              path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                            });
+                          }}
+                          color="primary"
+                      >
+                        {displayName} <EuiIcon type="popout" size="s" />
+                      </EuiLink>
+                  );
+                }
+
+                // Plugin not available → simple text
+                return <span>{displayName}</span>;
+              },
             },
+
+
 
 
             {
