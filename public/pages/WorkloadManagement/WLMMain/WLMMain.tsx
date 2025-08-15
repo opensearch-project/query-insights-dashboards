@@ -562,17 +562,19 @@ export const WorkloadManagementMain = ({
       render: (val: number) => val.toLocaleString(),
     },
     {
-      field: 'topQueriesLink',
-      name: <EuiText size="m">Top N Queries</EuiText>,
-      render: (link: string) => (
-        <a
-          href={link}
+      field: 'liveQueriesLink',
+      name: <EuiText size="m">Live Queries</EuiText>,
+      render: (link: string, item: WorkloadGroupData) => (
+        <EuiLink
+          onClick={() => {
+            core.application.navigateToApp('query-insights-dashboards', {
+              path: `#/LiveQueries?wlm_group=${item.groupId}`,
+            });
+          }}
           style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
-          target="_blank"
-          rel="noopener noreferrer"
         >
           View <EuiIcon type="popout" size="s" />
-        </a>
+        </EuiLink>
       ),
     },
   ];

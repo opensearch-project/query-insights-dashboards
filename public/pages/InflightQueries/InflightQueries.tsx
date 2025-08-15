@@ -17,6 +17,7 @@ import {
   EuiSpacer,
   EuiInMemoryTable,
   EuiButton,
+  EuiLink,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -32,8 +33,12 @@ import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import {
+  retrieveLiveQueries,
+  retrieveLiveQueriesWithWLMGroup,
+} from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
@@ -57,6 +62,8 @@ export const InflightQueries = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [nodeCounts, setNodeCounts] = useState({});
   const [indexCounts, setIndexCounts] = useState({});
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
@@ -70,20 +77,30 @@ export const InflightQueries = ({
   };
 
   const fetchliveQueries = async () => {
-    const retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
-
+    const wlmGroup = searchParams.get('wlm_group');
+    let retrievedQueries;
+    if (wlmGroup) {
+      retrievedQueries = await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup);
+    } else {
+      retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
+    }
     if (retrievedQueries?.response?.live_queries) {
       const tempNodeCount: Record<string, number> = {};
       const indexCount: Record<string, number> = {};
       const parsedQueries = retrievedQueries.response.live_queries.map((q) => {
         const indexMatch = q.description?.match(/indices\[(.*?)\]/);
         const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+        const WlmGroup =
+          typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
+            ? q.query_group_id
+            : 'N/A';
         return {
           ...q,
           index: indexMatch ? indexMatch[1] : 'N/A',
           search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
           coordinator_node: q.node_id,
           node_label: q.node_id,
+          wlm_group: WlmGroup,
         };
       });
 
@@ -262,7 +279,6 @@ export const InflightQueries = ({
       totalLatency += latency;
       totalCPU += cpu;
       totalMemory += memory;
-
       if (latency > longestLatency) {
         longestLatency = latency;
         longestQueryId = q.id;
@@ -683,6 +699,25 @@ export const InflightQueries = ({
                   <EuiText color="success">
                     <b>Running</b>
                   </EuiText>
+                ),
+            },
+            {
+              name: 'WLM Group',
+              render: (item: any) =>
+                item.wlm_group && item.wlm_group !== 'N/A' ? (
+                  <EuiLink
+                    onClick={() => {
+                      core.application.navigateToApp('workloadManagement', {
+                        path: `#/wlm-details?name=${item.wlm_group}`,
+                      });
+                    }}
+                    style={{ fontWeight: 'bold' }}
+                    color="primary"
+                  >
+                    {item.wlm_group}
+                  </EuiLink>
+                ) : (
+                  'N/A'
                 ),
             },
 
