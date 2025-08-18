@@ -19,9 +19,8 @@ import {
   EuiButton,
   EuiLink,
   EuiFormRow,
-  EuiLoadingSpinner,
-  EuiHealth,
-  EuiIconTip
+  EuiSelect,
+  EuiBadge,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -85,28 +84,36 @@ export const InflightQueries = ({
     [wlmGroupOptions]
   );
 
-  const [wlmAvailable, setWlmAvailable] = useState<boolean | null>(null);
+  const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+
+  const wlmCheckPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
-    try {
-      const httpClient = dataSource?.id ? depsStart.data.dataSources.get(dataSource.id) : core.http;
-      const res = await httpClient.get('/_cat/plugins', {
-      query: {dataSourceId: dataSource?.id },
-      });
-      // `component` or `name` field typically contains the plugin name/id.
-      const arr = Array.isArray(res) ? res : (res?.body ?? []);
-      const hasWlm = Array.isArray(arr) && arr.some((p: any) => {
-        const s = `${p.component ?? ''} ${p.name ?? ''}`.toLowerCase();
-        return s.includes('workload') || s.includes('wlm');
-        });
-      setWlmAvailable(hasWlm);
-      return hasWlm;
+    if (wlmCheckPromiseRef.current) return wlmCheckPromiseRef.current;
+    const p = (async () => {
+      try {
+        const query = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+        const res = await core.http.get('/api/wlm/cat_plugins', { query });
+        const has = !!res?.hasWlm;
+        setWlmAvailable(has);
+        return has;
       } catch (e) {
-      console.warn('[LiveQueries] _cat/plugins failed; assuming WLM unavailable', e);
-      setWlmAvailable(false);
-      return false;
+        console.warn('[LiveQueries] _cat/plugins detection failed; assuming WLM unavailable', e);
+        setWlmAvailable(false);
+        return false;
+      } finally {
+        // allow future re-checks
+        wlmCheckPromiseRef.current = null;
       }
-    }, [core.http, depsStart, dataSource?.id, wlmGroup, wlmAvailable]);
+    })();
+    wlmCheckPromiseRef.current = p;
+    return p;
+  }, [core.http, dataSource?.id]);
+
+  useEffect(() => {
+    setWlmAvailable(false);
+    void detectWlm();
+  }, [detectWlm]);
 
 
   const [workloadGroupStats, setWorkloadGroupStats] = useState<{
@@ -119,23 +126,17 @@ export const InflightQueries = ({
 
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    const available = (wlmAvailable ?? await detectWlm());
-    if (!available) {
-     setWlmGroupOptions([]);
-     setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
-     return {};
-    }
-    const [statsRes, groupsRes] = await Promise.all([
-      core.http.get('/api/_wlm/stats', { query: { dataSourceId: dataSource.id } }),
-      core.http.get('/api/_wlm/workload_group', { query: { dataSourceId: dataSource.id } }),
-    ]);
 
-    const statsBody = statsRes.body || statsRes;
-    const groupDetails = groupsRes.body?.workload_groups || groupsRes.workload_groups || [];
-
-    const idToNameMap: Record<string, string> = {};
-    for (const group of groupDetails) {
-      idToNameMap[group._id] = group.name;
+    const query = { dataSourceId: dataSource.id };
+    let statsBody: any = {};
+    try {
+      const statsRes = await core.http.get('/api/_wlm/stats', { query });
+      statsBody = (statsRes as any).body || statsRes;
+    } catch (e) {
+      console.warn('[LiveQueries] Failed to fetch WLM stats', e);
+      setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+      setWlmGroupOptions([]);
+      return {};
     }
 
     const activeGroupIds = new Set<string>();
@@ -150,10 +151,10 @@ export const InflightQueries = ({
       for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
         activeGroupIds.add(groupId);
         if (!wlmGroup || wlmGroup === groupId) {
-          const stats = groupStats as any;
-          completions += stats.total_completions ?? 0;
-          cancellations += stats.total_cancellations ?? 0;
-          rejections += stats.total_rejections ?? 0;
+          const s = groupStats as any;
+          completions += s.total_completions ?? 0;
+          cancellations += s.total_cancellations ?? 0;
+          rejections += s.total_rejections ?? 0;
         }
       }
     }
@@ -164,14 +165,24 @@ export const InflightQueries = ({
       total_rejections: rejections,
     });
 
-    const options = Array.from(activeGroupIds).map((id) => ({
-      id,
-      name: idToNameMap[id] || id,
-    }));
+    // fetch group NAMES only if plugin exists (but do not block the stats)
+    let idToNameMap: Record<string, string> = {};
+    try {
+      const available = await detectWlm();
+      if (available) {
+        const groupsRes = await core.http.get('/api/_wlm/workload_group', { query });
+        const groupDetails = (groupsRes as any).body?.workload_groups || (groupsRes as any).workload_groups || [];
+        for (const g of groupDetails) idToNameMap[g._id] = g.name;
+      }
+    } catch (e) {
+      console.warn('[LiveQueries] Failed to fetch workload groups', e);
+    }
 
+    const options = Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }));
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroup]);
+  }, [core.http, dataSource?.id, wlmGroup, detectWlm]);
+
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -434,47 +445,28 @@ export const InflightQueries = ({
       <EuiFlexGroup alignItems="center" gutterSize="m" justifyContent="spaceBetween">
         {/* LEFT: WLM status + optional selector */}
 
-        {wlmAvailable && wlmGroupOptions.length > 0 && (
-        <>
+        <EuiFlexGroup gutterSize="none" alignItems="center">
+          <EuiBadge color="default" style={{ padding: '6px 12px', height: 32, display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
+            Workload group
+          </EuiBadge>
           <EuiFlexItem grow={false}>
-            <label htmlFor="wlm-group-select">WLM Group</label>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
-            <select
-                id="wlm-group-select"
-                value={wlmGroup ?? ''}
-                onChange={(e) => setWlmGroup(e.target.value || undefined)}
-                style={{ padding: '6px', borderRadius: '6px', minWidth: 240 }}
-                aria-label="WLM Group selector"
-            >
-              <option value="">All WLM Groups</option>
-              {wlmGroupOptions.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </EuiFlexItem>
-        </>
-        )}
-        <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
-          <EuiFlexItem grow={false}>
-            <EuiText size="s">Plugin Status for Workload Management
-            <EuiIconTip
-                content="Workload Management (WLM) helps prioritize and control query workloads by assigning them to workload groups with specific CPU, memory, and concurrency limits."
-                position="right"
-                type="questionInCircle"
-                aria-label="What is Workload Management?"
-                size="m"
+            <EuiSelect
+              id="wlm-group-select"
+              options={[
+                { value: '', text: 'All workload groups' },
+                ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
+              ]}
+              value={wlmGroup ?? ''}
+              onChange={(e) => setWlmGroup(e.target.value || undefined)}
+              aria-label="Workload group selector"
+              compressed
             />
-            </EuiText>
           </EuiFlexItem>
-          <EuiFlexItem grow={false} data-test-subj="wlm-status">
-            {wlmAvailable === null && <EuiLoadingSpinner size="m" />}
-            {wlmAvailable === true && <EuiHealth color="success">Enabled</EuiHealth>}
-            {wlmAvailable === false && <EuiHealth color="danger">Disabled</EuiHealth>}
-          </EuiFlexItem>
-
-
         </EuiFlexGroup>
+
+
+
+        {/*</EuiFlexGroup>*/}
 
         {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>

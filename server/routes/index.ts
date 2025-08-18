@@ -437,4 +437,56 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+
+  router.get(
+    {
+      path: '/api/wlm/cat_plugins',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const { dataSourceId } = request.query;
+
+        // Always use _cat (JSON) as requested
+        const catPath = '/_cat/plugins?format=json';
+
+        let resp: any;
+        if (dataSourceEnabled && dataSourceId) {
+          // Data source-aware client (proxies to the selected cluster)
+          const dsClient = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          resp = await dsClient.callAPI('transport.request', {
+            method: 'GET',
+            path: catPath,
+          });
+        } else {
+          // Fallback: core client as current user
+          const es = context.core.opensearch.client.asCurrentUser;
+          resp = await es.transport.request({
+            method: 'GET',
+            path: catPath,
+          });
+        }
+
+        const body = resp?.body ?? resp; // legacy/new client normalization
+        const rows: Array<Record<string, any>> = Array.isArray(body) ? body : [];
+
+        // Typical _cat/plugins fields include "name" or "component"
+        const hasWlm = rows.some((p) => {
+          const s = `${p?.component ?? ''} ${p?.name ?? ''}`.toLowerCase();
+          return s.includes('workload') || s.includes('wlm');
+        });
+
+        return response.ok({ body: { ok: true, hasWlm, rows } });
+      } catch (err: any) {
+        return response.ok({
+          body: { ok: false, hasWlm: false, error: err?.message ?? 'cat plugins failed' },
+        });
+      }
+    }
+  );
+
 }
