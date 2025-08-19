@@ -64,6 +64,7 @@ describe('Inflight Queries Dashboard', () => {
       'Memory usage',
       'Search type',
       'Status',
+      'WLM Group',
       'Actions',
     ];
 
@@ -330,5 +331,14 @@ describe('Inflight Queries Dashboard', () => {
       .within(() => {
         cy.contains('td', 'opensearch');
       });
+  });
+  it('shows a grey "Workload group" badge with a dropdown next to it', () => {
+    cy.contains('.euiBadge', 'Workload group').should('be.visible');
+    // The select should be the next control after the badge
+    cy.contains('.euiBadge', 'Workload group')
+      .parent()
+      .next()
+      .find('select, .euiSelect') // raw <select> or EuiSelect
+      .should('exist');
   });
 });
