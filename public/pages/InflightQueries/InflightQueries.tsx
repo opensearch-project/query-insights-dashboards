@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -36,6 +36,7 @@ import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import {
   retrieveLiveQueries,
@@ -45,7 +46,6 @@ import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { useLocation } from 'react-router-dom';
 
 export const InflightQueries = ({
   core,
@@ -69,8 +69,7 @@ export const InflightQueries = ({
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
-  const [wlmGroupOptions, setWlmGroupOptions] = useState<{ id: string; name: string }[]>([]);
-
+  const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
   const location = useLocation();
   const urlSearchParams = new URLSearchParams(location.search);
@@ -115,18 +114,13 @@ export const InflightQueries = ({
     void detectWlm();
   }, [detectWlm]);
 
-
   const [workloadGroupStats, setWorkloadGroupStats] = useState<{
     total_completions: number;
     total_cancellations: number;
     total_rejections: number;
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
-
-
-
   const fetchActiveWlmGroups = useCallback(async () => {
-
     const query = { dataSourceId: dataSource.id };
     let statsBody: any = {};
     try {
@@ -166,12 +160,13 @@ export const InflightQueries = ({
     });
 
     // fetch group NAMES only if plugin exists (but do not block the stats)
-    let idToNameMap: Record<string, string> = {};
+    const idToNameMap: Record<string, string> = {};
     try {
       const available = await detectWlm();
       if (available) {
         const groupsRes = await core.http.get('/api/_wlm/workload_group', { query });
-        const groupDetails = (groupsRes as any).body?.workload_groups || (groupsRes as any).workload_groups || [];
+        const groupDetails =
+          (groupsRes as any).body?.workload_groups || (groupsRes as any).workload_groups || [];
         for (const g of groupDetails) idToNameMap[g._id] = g.name;
       }
     } catch (e) {
@@ -182,7 +177,6 @@ export const InflightQueries = ({
     setWlmGroupOptions(options);
     return idToNameMap;
   }, [core.http, dataSource?.id, wlmGroup, detectWlm]);
-
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -283,7 +277,6 @@ export const InflightQueries = ({
       isFetching.current = false;
     }
   };
-
 
   useEffect(() => {
     fetchliveQueriesSafe();
@@ -446,7 +439,16 @@ export const InflightQueries = ({
         {/* LEFT: WLM status + optional selector */}
 
         <EuiFlexGroup gutterSize="none" alignItems="center">
-          <EuiBadge color="default" style={{ padding: '6px 12px', height: 32, display: 'flex', alignItems: 'center', fontWeight: 'bold' }}>
+          <EuiBadge
+            color="default"
+            style={{
+              padding: '6px 12px',
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              fontWeight: 'bold',
+            }}
+          >
             Workload group
           </EuiBadge>
           <EuiFlexItem grow={false}>
@@ -464,27 +466,27 @@ export const InflightQueries = ({
           </EuiFlexItem>
         </EuiFlexGroup>
 
-
-
-        {/*</EuiFlexGroup>*/}
+        {/* </EuiFlexGroup>*/}
 
         {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>
           <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
             <EuiFlexItem grow={false}>
               <EuiSwitch
-                  label="Auto-refresh"
-                  checked={autoRefreshEnabled}
-                  onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                label="Auto-refresh"
+                checked={autoRefreshEnabled}
+                onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                data-test-subj="live-queries-autorefresh-toggle"
               />
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiFormRow display="columnCompressed">
                 <select
-                    value={refreshInterval}
-                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                    style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
-                    disabled={!autoRefreshEnabled}
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                  style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
+                  disabled={!autoRefreshEnabled}
+                  data-test-subj="live-queries-refresh-interval"
                 >
                   <option value={5000}>5 seconds</option>
                   <option value={10000}>10 seconds</option>
@@ -495,9 +497,11 @@ export const InflightQueries = ({
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiButton
-                  iconType="refresh"
-                  onClick={async () => { await fetchliveQueries(); }}
-                  data-test-subj="live-queries-refresh-button"
+                iconType="refresh"
+                onClick={async () => {
+                  await fetchliveQueries();
+                }}
+                data-test-subj="live-queries-refresh-button"
               >
                 Refresh
               </EuiButton>
@@ -506,8 +510,6 @@ export const InflightQueries = ({
         </EuiFlexItem>
       </EuiFlexGroup>
       <EuiSpacer size="m" />
-
-
 
       <EuiFlexGroup>
         {/* Active Queries */}
@@ -906,16 +908,16 @@ export const InflightQueries = ({
                 if (wlmAvailable === true) {
                   // Plugin enabled → clickable link
                   return (
-                      <EuiLink
-                          onClick={() => {
-                            core.application.navigateToApp('workloadManagement', {
-                              path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
-                            });
-                          }}
-                          color="primary"
-                      >
-                        {displayName} <EuiIcon type="popout" size="s" />
-                      </EuiLink>
+                    <EuiLink
+                      onClick={() => {
+                        core.application.navigateToApp('workloadManagement', {
+                          path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                        });
+                      }}
+                      color="primary"
+                    >
+                      {displayName} <EuiIcon type="popout" size="s" />
+                    </EuiLink>
                   );
                 }
 
@@ -923,9 +925,6 @@ export const InflightQueries = ({
                 return <span>{displayName}</span>;
               },
             },
-
-
-
 
             {
               name: 'Actions',

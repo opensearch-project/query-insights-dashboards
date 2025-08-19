@@ -128,7 +128,7 @@ export const retrieveLiveQueriesWithWLMGroup = async (
 
     const response: LiveSearchQueryResponse = await http.get({
       path: API_ENDPOINTS.LIVE_QUERIES,
-      query: { wlm_group : wlm_group },
+      query: { wlm_group },
     });
 
     const liveQueries = response?.response?.live_queries;
