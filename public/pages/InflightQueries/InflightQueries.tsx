@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useContext } from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -35,7 +35,6 @@ import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import {
@@ -46,6 +45,34 @@ import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+
+type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
+
+type LiveQueryRow = LiveQueryRaw & {
+  index: string;
+  search_type: string;
+  coordinator_node: string;
+  node_label: string;
+  wlm_group: string;
+};
+
+interface WlmGroupTally {
+  total_completions?: number;
+  total_cancellations?: number;
+  total_rejections?: number;
+}
+
+interface WlmNodeStats {
+  workload_groups?: Record<string, WlmGroupTally>;
+}
+
+// _nodes and cluster_name also appear; keep value loose
+type WlmStatsBody = Record<string, WlmNodeStats | unknown>;
+
+interface WlmGroupDetail {
+  _id: string;
+  name: string;
+}
 
 export const InflightQueries = ({
   core,
@@ -63,8 +90,8 @@ export const InflightQueries = ({
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
-  const [nodeCounts, setNodeCounts] = useState({});
-  const [indexCounts, setIndexCounts] = useState({});
+  const [nodeCounts, setNodeCounts] = useState<Record<string, number>>({});
+  const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
@@ -91,8 +118,8 @@ export const InflightQueries = ({
     if (wlmCheckPromiseRef.current) return wlmCheckPromiseRef.current;
     const p = (async () => {
       try {
-        const query = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
-        const res = await core.http.get('/api/wlm/cat_plugins', { query });
+        const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+        const res = await core.http.get('/api/cat_plugins', { query: httpQuery });
         const has = !!res?.hasWlm;
         setWlmAvailable(has);
         return has;
@@ -121,11 +148,11 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    const query = { dataSourceId: dataSource.id };
-    let statsBody: any = {};
+    const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+    let statsBody: WlmStatsBody = {};
     try {
-      const statsRes = await core.http.get('/api/_wlm/stats', { query });
-      statsBody = (statsRes as any).body || statsRes;
+      const statsRes = await core.http.get('/api/_wlm/stats', { query: httpQuery });
+      statsBody = ((statsRes as { body?: unknown }).body ?? statsRes) as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
       setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
@@ -138,14 +165,14 @@ export const InflightQueries = ({
     let cancellations = 0;
     let rejections = 0;
 
-    for (const [nodeId, nodeStats] of Object.entries(statsBody)) {
+    for (const [nodeId, maybeNode] of Object.entries(statsBody)) {
       if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
-
-      const workloadGroups = (nodeStats as any)?.workload_groups ?? {};
+      const nodeStats = maybeNode as WlmNodeStats;
+      const workloadGroups = nodeStats.workload_groups ?? {};
       for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
         activeGroupIds.add(groupId);
         if (!wlmGroup || wlmGroup === groupId) {
-          const s = groupStats as any;
+          const s = groupStats;
           completions += s.total_completions ?? 0;
           cancellations += s.total_cancellations ?? 0;
           rejections += s.total_rejections ?? 0;
@@ -164,10 +191,13 @@ export const InflightQueries = ({
     try {
       const available = await detectWlm();
       if (available) {
-        const groupsRes = await core.http.get('/api/_wlm/workload_group', { query });
-        const groupDetails =
-          (groupsRes as any).body?.workload_groups || (groupsRes as any).workload_groups || [];
-        for (const g of groupDetails) idToNameMap[g._id] = g.name;
+        const groupsRes = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
+        const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
+          ?.workload_groups ??
+          (groupsRes as { workload_groups?: WlmGroupDetail[] }).workload_groups ??
+          []) as WlmGroupDetail[];
+
+        for (const g of details) idToNameMap[g._id] = g.name;
       }
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch workload groups', e);
@@ -186,68 +216,75 @@ export const InflightQueries = ({
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
 
-  const fetchliveQueries = async (idToNameMap?: Record<string, string>) => {
-    let retrievedQueries;
-    if (wlmGroup) {
-      retrievedQueries = await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup);
-    } else {
-      retrievedQueries = await retrieveLiveQueries(core, dataSource?.id);
-    }
-    if (retrievedQueries?.response?.live_queries) {
-      const tempNodeCount: Record<string, number> = {};
-      const indexCount: Record<string, number> = {};
-      const parsedQueries = retrievedQueries.response.live_queries.map((q) => {
-        const indexMatch = q.description?.match(/indices\[(.*?)\]/);
-        const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
-        const idToNameMap = Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name]));
+  const fetchLiveQueries = useCallback(
+    async (idToNameMapParam?: Record<string, string>) => {
+      const retrieved = wlmGroup
+        ? await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup)
+        : await retrieveLiveQueries(core, dataSource?.id);
 
-        const WlmGroup =
-          typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
-            ? idToNameMap?.[q.query_group_id] || q.query_group_id
-            : 'N/A';
+      if (retrieved?.response?.live_queries) {
+        const mapFromOptions: Record<string, string> = Object.fromEntries(
+          wlmGroupOptions.map((g) => [g.id, g.name])
+        );
+        const idToName = { ...mapFromOptions, ...(idToNameMapParam ?? {}) };
 
-        return {
-          ...q,
-          index: indexMatch ? indexMatch[1] : 'N/A',
-          search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
-          coordinator_node: q.node_id,
-          node_label: q.node_id,
-          wlm_group: WlmGroup,
-        };
-      });
+        const tempNodeCount: Record<string, number> = {};
+        const indexCount: Record<string, number> = {};
 
-      setQuery({ ...retrievedQueries, response: { live_queries: parsedQueries } });
+        const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
+          const indexMatch = q.description?.match(/indices\[(.*?)\]/);
+          const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
 
-      parsedQueries.forEach((liveQuery) => {
-        const nodeId = liveQuery.node_id;
-        tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
-        const index = liveQuery.index;
-        if (index && typeof index === 'string') {
-          indexCount[index] = (indexCount[index] || 0) + 1;
-        }
-      });
+          const wlmDisplay =
+            typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
+              ? idToName[q.query_group_id] ?? q.query_group_id
+              : 'N/A';
 
-      const sortedNodes = Object.entries(tempNodeCount).sort(([, a], [, b]) => b - a);
-      const nodeCount: Record<string, number> = {};
-      let othersCount = 0;
-      sortedNodes.forEach(([nodeId, count], index) => {
-        if (index < TOP_N_DISPLAY_LIMIT) nodeCount[nodeId] = count;
-        else othersCount += count;
-      });
-      if (othersCount > 0) nodeCount.others = othersCount;
-      setNodeCounts(nodeCount);
+          return {
+            ...q,
+            index: indexMatch ? indexMatch[1] : 'N/A',
+            search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
+            coordinator_node: q.node_id,
+            node_label: q.node_id,
+            wlm_group: wlmDisplay,
+          };
+        });
 
-      const sortedIndices = Object.entries(indexCount).sort(([, a], [, b]) => b - a);
-      const topIndexCount: Record<string, number> = {};
-      let indexOthersCount = 0;
-      sortedIndices.forEach(([indexName, count], i) => {
-        if (i < TOP_N_DISPLAY_LIMIT) topIndexCount[indexName] = count;
-        else indexOthersCount += count;
-      });
-      if (indexOthersCount > 0) topIndexCount.others = indexOthersCount;
-      setIndexCounts(topIndexCount);
-    }
-  };
+        setQuery({ ...retrieved, response: { live_queries: parsed } });
+
+        parsed.forEach((liveQuery) => {
+          const nodeId = liveQuery.node_id;
+          tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
+          const index = liveQuery.index;
+          if (index && typeof index === 'string') {
+            indexCount[index] = (indexCount[index] || 0) + 1;
+          }
+        });
+
+        const sortedNodes = Object.entries(tempNodeCount).sort(([, a], [, b]) => b - a);
+        const nodeCount: Record<string, number> = {};
+        let othersCount = 0;
+        sortedNodes.forEach(([nodeId, count], i) => {
+          if (i < TOP_N_DISPLAY_LIMIT) nodeCount[nodeId] = count;
+          else othersCount += count;
+        });
+        if (othersCount > 0) nodeCount.others = othersCount;
+        setNodeCounts(nodeCount);
+
+        const sortedIndices = Object.entries(indexCount).sort(([, a], [, b]) => b - a);
+        const topIndexCount: Record<string, number> = {};
+        let indexOthersCount = 0;
+        sortedIndices.forEach(([indexName, count], i) => {
+          if (i < TOP_N_DISPLAY_LIMIT) topIndexCount[indexName] = count;
+          else indexOthersCount += count;
+        });
+        if (indexOthersCount > 0) topIndexCount.others = indexOthersCount;
+        setIndexCounts(topIndexCount);
+      }
+    },
+    // deps for react-hooks/exhaustive-deps
+    [core, dataSource?.id, wlmGroup, wlmGroupOptions]
+  );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -264,31 +301,28 @@ export const InflightQueries = ({
     });
   }
 
-  const fetchliveQueriesSafe = async () => {
+  const fetchLiveQueriesSafe = useCallback(async () => {
     if (isFetching.current) return;
     isFetching.current = true;
-
     try {
-      const idToNameMap = await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
-      await fetchliveQueries(idToNameMap);
-    } catch (e) {
-      console.warn('[LiveQueries] fetchliveQueries timed out or failed', e);
+      const budget = Math.max(2000, refreshInterval - 500);
+      const map = await withTimeout(fetchActiveWlmGroups(), budget).catch(() => undefined);
+      await fetchLiveQueries(map);
     } finally {
       isFetching.current = false;
     }
-  };
+  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries]);
 
   useEffect(() => {
-    fetchliveQueriesSafe();
+    void fetchLiveQueriesSafe();
 
     if (!autoRefreshEnabled) return;
-
     const interval = setInterval(() => {
-      fetchliveQueriesSafe();
+      void fetchLiveQueriesSafe();
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refreshInterval, core, wlmGroup]);
+  }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const formatTime = (seconds: number): string => {
@@ -418,7 +452,6 @@ export const InflightQueries = ({
     }));
   };
 
-
   return (
     <div>
       <QueryInsightsDataSourceMenu
@@ -430,7 +463,7 @@ export const InflightQueries = ({
         selectedDataSource={dataSource}
         onManageDataSource={() => {}}
         onSelectedDataSource={() => {
-          fetchliveQueries(); // re-fetch queries when data source changes
+          fetchLiveQueries(); // re-fetch queries when data source changes
         }}
         dataSourcePickerReadOnly={false}
       />
@@ -483,7 +516,7 @@ export const InflightQueries = ({
               <EuiFormRow display="columnCompressed">
                 <select
                   value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                  onBlur={(e) => setRefreshInterval(Number((e.target as HTMLSelectElement).value))}
                   style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
                   disabled={!autoRefreshEnabled}
                   data-test-subj="live-queries-refresh-interval"
@@ -499,7 +532,7 @@ export const InflightQueries = ({
               <EuiButton
                 iconType="refresh"
                 onClick={async () => {
-                  await fetchliveQueries();
+                  await fetchLiveQueries();
                 }}
                 data-test-subj="live-queries-refresh-button"
               >
@@ -821,7 +854,7 @@ export const InflightQueries = ({
                 key="refresh-button"
                 iconType="refresh"
                 onClick={async () => {
-                  await fetchliveQueries();
+                  await fetchLiveQueries();
                 }}
               >
                 Refresh
@@ -944,7 +977,7 @@ export const InflightQueries = ({
 
                       await httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id));
                       await new Promise((r) => setTimeout(r, 300));
-                      await fetchliveQueries();
+                      await fetchLiveQueries();
                     } catch (err) {
                       console.error('Failed to cancel task', err);
                     }

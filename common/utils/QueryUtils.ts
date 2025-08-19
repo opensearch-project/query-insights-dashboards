@@ -110,37 +110,40 @@ export const retrieveLiveQueries = async (
 export const retrieveLiveQueriesWithWLMGroup = async (
   core: CustomCore,
   dataSourceId?: string,
-  wlm_group?: string
+  wlmGroup?: string
 ): Promise<LiveSearchQueryResponse> => {
-  const nullResponse: LiveSearchQueryResponse = {
-    ok: true,
-    response: { live_queries: [] },
-  };
-
-  const errorResponse: LiveSearchQueryResponse = {
-    ok: false,
-    response: { live_queries: [] },
-  };
+  const emptyOk: LiveSearchQueryResponse = { ok: true, response: { live_queries: [] } };
+  const emptyErr: LiveSearchQueryResponse = { ok: false, response: { live_queries: [] } };
 
   try {
     const http =
       dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
 
-    const response: LiveSearchQueryResponse = await http.get({
-      path: API_ENDPOINTS.LIVE_QUERIES,
-      query: { wlm_group },
-    });
+    const options: { query?: Record<string, string> } | undefined =
+      dataSourceId || wlmGroup
+        ? {
+            query: {
+              ...(dataSourceId ? { dataSourceId } : {}),
+              ...(wlmGroup ? { wlm_group: wlmGroup } : {}),
+            },
+          }
+        : undefined;
 
-    const liveQueries = response?.response?.live_queries;
+    const raw: unknown = await (http as {
+      get: (path: string, opts?: { query?: Record<string, string> }) => Promise<unknown>;
+    }).get(API_ENDPOINTS.LIVE_QUERIES, options);
 
-    if (Array.isArray(liveQueries)) {
-      return response;
-    } else {
-      console.warn('No live queries found in response');
-      return nullResponse;
-    }
-  } catch (error) {
-    console.error('Error retrieving live queries:', error);
-    return errorResponse;
+    const payload: LiveSearchQueryResponse = (raw as { body?: unknown })?.body
+      ? ((raw as { body: unknown }).body as LiveSearchQueryResponse)
+      : (raw as LiveSearchQueryResponse);
+
+    const live = payload?.response?.live_queries;
+    if (Array.isArray(live)) return payload;
+
+    console.warn('[retrieveLiveQueriesWithWLMGroup] live_queries missing or not an array');
+    return emptyOk;
+  } catch (err: unknown) {
+    console.error('[retrieveLiveQueriesWithWLMGroup] Error retrieving live queries:', err);
+    return emptyErr;
   }
 };

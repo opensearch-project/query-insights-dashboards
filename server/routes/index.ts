@@ -368,7 +368,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        const { dataSourceId, wlm_group } = request.query;
+        const { dataSourceId, wlm_group: wlmGroup } = request.query as {
+          dataSourceId?: string;
+          wlm_group?: string;
+        };
 
         const client =
           !dataSourceEnabled || !dataSourceId
@@ -376,8 +379,9 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             : context.dataSource.opensearch.legacy.getClient(dataSourceId);
 
         // Call the appropriate API based on whether wlm_group is provided
-        const res = wlm_group
-          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlm_group })
+        const hasGroup = typeof wlmGroup === 'string' && wlmGroup.trim().length > 0;
+        const res = hasGroup
+          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlm_group: wlmGroup })
           : await client('queryInsights.getLiveQueries');
 
         if (!res || res.ok === false) {
@@ -440,7 +444,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
 
   router.get(
     {
-      path: '/api/wlm/cat_plugins',
+      path: '/api/cat_plugins',
       validate: {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
