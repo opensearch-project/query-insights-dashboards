@@ -104,6 +104,13 @@ jobs:
           echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
           echo "Using Plugin version: ${{ env.OPENSEARCH_VERSION }}"
 
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OPENSEARCH_BRANCH }}
+
       - name: Build WLM Related Plugins
         run: |
           cd OpenSearch
