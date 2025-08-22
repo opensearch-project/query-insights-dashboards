@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppMountParameters, CoreSetup, CoreStart, DEFAULT_NAV_GROUPS, Plugin } from '../../../src/core/public';
+import {
+  AppMountParameters,
+  CoreSetup,
+  CoreStart,
+  DEFAULT_NAV_GROUPS,
+  Plugin,
+} from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -89,7 +95,7 @@ export class QueryInsightsDashboardsPlugin
           euiIconType: 'managementApp',
         },
         order: 200,
-      }
+      },
     ]);
 
     return {};

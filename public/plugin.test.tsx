@@ -24,7 +24,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
     coreSetupMock = coreMock.createSetup();
     coreStartMock = coreMock.createStart();
     addNavLinksToGroupMock = jest.fn();
-    
+
     // Properly mock the navGroup structure
     coreSetupMock.chrome.navGroup = {
       addNavLinksToGroup: addNavLinksToGroupMock,
@@ -105,21 +105,18 @@ describe('QueryInsightsDashboardsPlugin', () => {
   it('should add navigation links to group', () => {
     plugin.setup(coreSetupMock, {} as any);
 
-    expect(addNavLinksToGroupMock).toHaveBeenCalledWith(
-      DEFAULT_NAV_GROUPS.dataAdministration,
-      [
-        {
-          id: PLUGIN_NAME,
-          category: {
-            id: 'performance',
-            label: 'Performance',
-            order: 9000,
-            euiIconType: 'managementApp',
-          },
-          order: 200,
-        }
-      ]
-    );
+    expect(addNavLinksToGroupMock).toHaveBeenCalledWith(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: PLUGIN_NAME,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        order: 200,
+      },
+    ]);
   });
 
   it('should return empty start and stop methods', () => {
