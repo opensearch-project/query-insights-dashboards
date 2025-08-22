@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - "*"
+env:
+  EFFECTIVE_REF: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+
 jobs:
   tests:
     name: Run Cypress E2E tests
@@ -44,7 +47,7 @@ jobs:
               echo "OPENSEARCH_VERSION=${REF}.0-SNAPSHOT" >> "$GITHUB_ENV"
             fi
           fi
-      
+
 
       - name: Set up JDK
         uses: actions/setup-java@v4
