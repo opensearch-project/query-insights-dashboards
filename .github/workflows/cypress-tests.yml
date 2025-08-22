@@ -27,22 +27,24 @@ jobs:
       - name: Decide base refs (without version yet)
         shell: bash
         run: |
-          echo "Current branch: $GITHUB_REF_NAME"
-          if [[ "$GITHUB_REF_NAME" == "main" ]]; then
+          REF="$EFFECTIVE_REF"
+          echo "Current branch (effective): $REF"
+          if [[ "$REF" == "main" ]]; then
             echo "OPENSEARCH_BRANCH=main" >> "$GITHUB_ENV"
             echo "OPENSEARCH_DASHBOARDS_VERSION=main" >> "$GITHUB_ENV"
             echo "QUERY_INSIGHTS_BRANCH=main" >> "$GITHUB_ENV"
             echo "NEED_PARSE_VERSION=1" >> "$GITHUB_ENV"
           else
-            echo "OPENSEARCH_BRANCH=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
-            echo "OPENSEARCH_DASHBOARDS_VERSION=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
-            echo "QUERY_INSIGHTS_BRANCH=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+            echo "OPENSEARCH_BRANCH=$REF" >> "$GITHUB_ENV"
+            echo "OPENSEARCH_DASHBOARDS_VERSION=$REF" >> "$GITHUB_ENV"
+            echo "QUERY_INSIGHTS_BRANCH=$REF" >> "$GITHUB_ENV"
             echo "NEED_PARSE_VERSION=0" >> "$GITHUB_ENV"
             # Default OPENSEARCH_VERSION if not set and ref looks like X.Y
-            if [[ "$GITHUB_REF_NAME" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-              echo "OPENSEARCH_VERSION=${GITHUB_REF_NAME}.0-SNAPSHOT" >> "$GITHUB_ENV"
+            if [[ "$REF" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+              echo "OPENSEARCH_VERSION=${REF}.0-SNAPSHOT" >> "$GITHUB_ENV"
             fi
           fi
+      
 
       - name: Set up JDK
         uses: actions/setup-java@v4
