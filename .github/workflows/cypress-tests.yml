@@ -85,7 +85,6 @@ jobs:
 
           # Set the OpenSearch version as an environment variable
           echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
 
           # Print the version for debugging
           echo "Using OpenSearch version: $opensearch_version"
@@ -95,9 +94,9 @@ jobs:
       - name: Verify OpenSearch version
         run: |
           echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
-          echo "Using Plugin version: ${{ env.PLUGIN_VERSION }}"
+          echo "Using Plugin version: ${{ env.OPENSEARCH_VERSION }}"
 
-      - name: Build Required Plugins
+      - name: Build WLM Related Plugins
         run: |
           cd OpenSearch
           # Build rule-framework (autotagging-commons)
