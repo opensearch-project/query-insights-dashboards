@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`QueryInsights Component renders the table with the correct columns and data 1`] = `
+exports[`QueryInsights Component renders the table with the correct columns and data (snapshot) 1`] = `
 <div>
   <div>
     <div
