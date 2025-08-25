@@ -4,34 +4,29 @@
  */
 
 import React from 'react';
-import { waitFor, render, screen, fireEvent } from '@testing-library/react';
+import { waitFor, render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
-import { MockQueries } from '../../../test/testUtils';
+import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
-// Mock functions and data
+const sampleQueries = (stubTopQueries as any).response.top_queries;
+
 const mockOnTimeChange = jest.fn();
 const mockCore = {
-  chrome: {
-    setBreadcrumbs: jest.fn(),
-  },
-};
+  chrome: { setBreadcrumbs: jest.fn() },
+} as any;
 
 const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
-
 const dataSourceManagementMock = {
-  ui: {
-    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
-  },
-};
+  ui: { getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock) },
+} as any;
+
 const mockDataSourceContext = {
   dataSource: { id: 'test', label: 'Test' },
   setDataSource: jest.fn(),
 };
-
-const sampleQueries = MockQueries();
 
 const mockRetrieveQueries = jest.fn();
 
@@ -47,15 +42,53 @@ const renderQueryInsights = () =>
           currStart="now-15m"
           currEnd="now"
           retrieveQueries={mockRetrieveQueries}
-          // @ts-ignore
           core={mockCore}
-          depsStart={{ navigation: {} }}
+          depsStart={{} as any}
           params={{} as any}
           dataSourceManagement={dataSourceManagementMock}
         />
       </DataSourceContext.Provider>
     </MemoryRouter>
   );
+
+const findTypeFilterButton = (): HTMLElement => {
+  const byText = screen
+    .queryAllByText(/^Type$/i)
+    .map((n) => n.closest('button'))
+    .find(Boolean);
+  if (byText) return byText as HTMLElement;
+
+  const byRole = screen.queryAllByRole('button').find((b) => b.textContent?.trim() === 'Type');
+  if (byRole) return byRole as HTMLElement;
+
+  const availableButtons = screen
+    .queryAllByRole('button')
+    .map((b) => b.textContent?.trim())
+    .filter(Boolean);
+  throw new Error(
+    `Type filter button not found. Available buttons: ${availableButtons.join(', ')}`
+  );
+};
+
+const ensureTypePopoverOpen = async (): Promise<HTMLElement> => {
+  let pop = screen.queryByRole('dialog');
+  if (!pop) {
+    fireEvent.click(findTypeFilterButton());
+    pop = await screen.findByRole('dialog');
+  }
+  return pop;
+};
+
+const clickTypeOption = async (label: 'group' | 'query') => {
+  const pop = await ensureTypePopoverOpen();
+
+  const nodes = within(pop).getAllByText((content, element) => {
+    const text = element?.textContent?.trim() ?? '';
+    return new RegExp(`^${label}$`, 'i').test(text);
+  });
+  const btn = nodes[0].closest('button') as HTMLElement;
+  fireEvent.click(btn);
+};
 
 describe('QueryInsights Component', () => {
   beforeAll(() => {
@@ -71,7 +104,7 @@ describe('QueryInsights Component', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the table with the correct columns and data', () => {
+  it('renders the table with the correct columns and data (snapshot)', () => {
     const { container } = renderQueryInsights();
     expect(container).toMatchSnapshot();
   });
@@ -79,20 +112,16 @@ describe('QueryInsights Component', () => {
   it('calls setBreadcrumbs on mount', () => {
     renderQueryInsights();
     expect(mockCore.chrome.setBreadcrumbs).toHaveBeenCalledWith([
-      {
-        text: 'Query insights',
-        href: '/queryInsights',
-        onClick: expect.any(Function),
-      },
+      { text: 'Query insights', href: '/queryInsights', onClick: expect.any(Function) },
     ]);
   });
 
-  it('triggers onTimeChange when the date picker changes', () => {
+  it('triggers onTimeChange when the date picker refresh is clicked', () => {
     renderQueryInsights();
-
-    const updateButton = screen.getByRole('button', { name: /Refresh/i });
-    fireEvent.click(updateButton);
-
+    const btn =
+      screen.queryByRole('button', { name: /refresh/i }) ||
+      screen.getByRole('button', { name: /update/i });
+    fireEvent.click(btn!);
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
@@ -111,43 +140,40 @@ describe('QueryInsights Component', () => {
         group_by: 'NONE',
       },
     ];
+
     expect(() => {
       render(
         <MemoryRouter>
           <DataSourceContext.Provider value={mockDataSourceContext}>
             <QueryInsights
-              queries={testQueries}
+              queries={testQueries as any}
               loading={false}
               onTimeChange={mockOnTimeChange}
               recentlyUsedRanges={[]}
               currStart="now-15m"
               currEnd="now"
               retrieveQueries={mockRetrieveQueries}
-              // @ts-ignore
               core={mockCore}
               depsStart={{} as any}
               params={{} as any}
-              dataSourceManagement={dataSourceManagementMock as any}
+              dataSourceManagement={dataSourceManagementMock}
             />
           </DataSourceContext.Provider>
         </MemoryRouter>
       );
     }).not.toThrow();
 
-    // Verify that the table component renders successfully
     expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
-  it('renders the expected column headers in the correct sequence for default', async () => {
+  it('renders the expected column headers for default (mixed) view', async () => {
     renderQueryInsights();
-
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
 
     const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
+    const texts = headers.map((h) => h.textContent?.trim());
 
-    const renderedHeaders = headers.map((h) => h.textContent?.trim());
-
-    const expectedHeaders = [
+    expect(texts).toEqual([
       'Id',
       'Type',
       'Query Count',
@@ -159,47 +185,36 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ];
-
-    expect(renderedHeaders).toEqual(expectedHeaders);
+    ]);
   });
 
-  it('renders correct columns when SIMILARITY filter is applied', async () => {
+  it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
     renderQueryInsights();
 
-    const typeFilterButton = screen
-      .getAllByRole('button')
-      .find((btn) => btn.textContent?.trim() === 'Type');
-    fireEvent.click(typeFilterButton!);
-    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    const groupOption = await screen.findByText(/group/i); // Use this if options are plain text
-    fireEvent.click(groupOption);
+    await clickTypeOption('group');
+
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-    const expectedHeaders = [
+
+    expect(headerTexts).toEqual([
       'Id',
       'Type',
       'Query Count',
       'Average Latency',
       'Average CPU Time',
       'Average Memory Usage',
-    ];
-
-    expect(headerTexts).toEqual(expectedHeaders);
+    ]);
   });
 
-  it('renders only individual query-related column headers when NONE filter is applied', async () => {
+  it('renders only query-related headers when NONE filter (query-only) is applied', async () => {
     renderQueryInsights();
 
-    const typeFilterButton = screen
-      .getAllByRole('button')
-      .find((btn) => btn.textContent?.trim() === 'Type');
-    fireEvent.click(typeFilterButton!);
-    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('option', { name: /query/i }));
+    await clickTypeOption('query');
+
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-    const expectedHeaders = [
+
+    expect(headerTexts).toEqual([
       'Id',
       'Type',
       'Timestamp',
@@ -210,25 +225,19 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ];
-
-    expect(headerTexts).toEqual(expectedHeaders);
+    ]);
   });
 
-  it('renders column headers when both NONE and SIMILARITY filter is applied', async () => {
+  it('renders mixed headers when both NONE and SIMILARITY filters are applied', async () => {
     renderQueryInsights();
 
-    const typeFilterButton = screen
-      .getAllByRole('button')
-      .find((btn) => btn.textContent?.trim() === 'Type');
-    fireEvent.click(typeFilterButton!);
-    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('option', { name: /query/i }));
-    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('option', { name: /group/i }));
+    await clickTypeOption('query');
+    await clickTypeOption('group');
+
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-    const expectedHeaders = [
+
+    expect(headerTexts).toEqual([
       'Id',
       'Type',
       'Query Count',
@@ -240,8 +249,6 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ];
-
-    expect(headerTexts).toEqual(expectedHeaders);
+    ]);
   });
 });
