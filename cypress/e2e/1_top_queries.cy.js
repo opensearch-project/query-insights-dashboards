@@ -479,7 +479,7 @@ describe('Filters with intercepted data (mixed fixture)', () => {
     countRowsBy(FIXTURE, { groupBy: 'NONE', indices: 'my-index' });
   });
 
-  // TODO Since the {enter} 
+  // TODO Since the {enter}
   // it('free-text search by partial id → filters rows and keeps query view', () => {
   //   // pick a partial id from the stub; using "a2e1c822" from your sample
   //   const PARTIAL = 'a2e1c822';
