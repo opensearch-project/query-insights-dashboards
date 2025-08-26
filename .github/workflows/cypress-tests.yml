@@ -200,7 +200,11 @@ jobs:
         run: |
           cd OpenSearch-Dashboards
           export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
-          yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
+          echo "Starting Dashboards..."
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+          echo "Initial Dashboards log output:"
+          head -n 100 dashboards.log || true
         shell: bash
 
       - name: Wait for OpenSearch-Dashboards to be ready
