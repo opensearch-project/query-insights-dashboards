@@ -13,7 +13,7 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 const sampleQueries = (stubTopQueries as any).response.top_queries.map((q: any, idx: number) => ({
   ...q,
-  id: q.id === 'a2e1c822-3e3c-4d1b-adb2-9f73af094b43' && idx > 0 ? `${q.id}-${idx}` : q.id,
+  id: idx.toString(),
   source: {},
   phase_latency_map: {},
   task_resource_usages: [],

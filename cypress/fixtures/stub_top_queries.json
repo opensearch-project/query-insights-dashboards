@@ -3,136 +3,306 @@
   "response": {
     "top_queries": [
       {
-        "timestamp": 1713934974000,
-        "id": "a2e1c822-3e3c-4d1b-adb2-9f73af094b43",
+        "timestamp": 1693046400000,
+        "id": "03b4e3c2-9c3f-4e40-b013-4c5d6e7f8a01",
         "search_type": "query_then_fetch",
         "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "node_id": "node-01",
         "group_by": "NONE",
         "total_shards": 1,
-        "labels": {
-          "X-Opaque-Id": "90eb5c3b-8448-4af3-84ce-a941eee9ed5f"
-        },
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1450000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 25, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 256000, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1693050000000,
+        "id": "04c5f4d3-ad40-4f51-c124-5d6e7f8a9b02",
+        "search_type": "dfs_query_then_fetch",
+        "indices": [".kibana"],
+        "node_id": "node-02",
+        "group_by": "SIMILARITY",
+        "total_shards": 1,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1780000, "count": 2, "aggregationType": "AVERAGE" },
+          "latency": { "number": 10, "count": 2, "aggregationType": "AVERAGE" },
+          "memory": { "number": 58000, "count": 2, "aggregationType": "AVERAGE" }
+        }
+      },
+      {
+        "timestamp": 1693053600000,
+        "id": "05d605e4-be51-4052-d235-6e7f8a9b0c03",
+        "search_type": "query_then_fetch",
+        "indices": ["orders-2024.04"],
+        "node_id": "node-03",
+        "group_by": "NONE",
+        "total_shards": 3,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 2120000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 32, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 409600, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1693057200000,
+        "id": "06e716f5-cf62-4153-e346-7f8a9b0c1d04",
+        "search_type": "query_then_fetch",
+        "indices": ["my-index", "my-index-2"],
+        "node_id": "node-04",
+        "group_by": "NONE",
+        "total_shards": 2,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 760000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 12, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 131072, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+
+      {
+        "timestamp": 1692960000000,
+        "id": "07f82706-d073-4254-f457-8a9b0c1d2e05",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["logs-2024.04.24"],
+        "node_id": "node-05",
+        "group_by": "SIMILARITY",
+        "total_shards": 6,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 3050000, "count": 3, "aggregationType": "AVERAGE" },
+          "latency": { "number": 54, "count": 3, "aggregationType": "AVERAGE" },
+          "memory": { "number": 524288, "count": 3, "aggregationType": "AVERAGE" }
+        }
+      },
+      {
+        "timestamp": 1692963600000,
+        "id": "08093817-e184-4355-0568-9b0c1d2e3f06",
+        "search_type": "query_then_fetch",
+        "indices": ["catalog", "products"],
+        "node_id": "node-06",
+        "group_by": "NONE",
+        "total_shards": 4,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1580000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 23, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 393216, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1692967200000,
+        "id": "091a4938-f295-4456-1679-a0c1d2e3f07",
+        "search_type": "query_then_fetch",
+        "indices": ["metrics-2024.04"],
+        "node_id": "node-07",
+        "group_by": "NONE",
+        "total_shards": 2,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1220000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 19, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 221184, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1692970800000,
+        "id": "0a2b5a49-0396-4557-278a-b1d2e3f40508",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["payments"],
+        "node_id": "node-08",
+        "group_by": "SIMILARITY",
+        "total_shards": 3,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 2490000, "count": 2, "aggregationType": "AVERAGE" },
+          "latency": { "number": 41, "count": 2, "aggregationType": "AVERAGE" },
+          "memory": { "number": 475136, "count": 2, "aggregationType": "AVERAGE" }
+        }
+      },
+
+      {
+        "timestamp": 1692441600000,
+        "id": "0b3c6b5a-14a7-4658-389b-c2e3f4051609",
+        "search_type": "query_then_fetch",
+        "indices": ["inventory"],
+        "node_id": "node-09",
+        "group_by": "NONE",
+        "total_shards": 1,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 870000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 11, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 147456, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1692452400000,
+        "id": "0c4d7c6b-25b8-4759-49ac-d3f40516270a",
+        "search_type": "query_then_fetch",
+        "indices": ["search-history"],
+        "node_id": "node-10",
+        "group_by": "NONE",
+        "total_shards": 2,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1930000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 29, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 335872, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1692463200000,
+        "id": "0d5e8d7c-36c9-485a-5abd-e4f51627880b",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["orders-2024.04"],
+        "node_id": "node-11",
+        "group_by": "SIMILARITY",
+        "total_shards": 4,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 2760000, "count": 4, "aggregationType": "AVERAGE" },
+          "latency": { "number": 47, "count": 4, "aggregationType": "AVERAGE" },
+          "memory": { "number": 589824, "count": 4, "aggregationType": "AVERAGE" }
+        }
+      },
+      {
+        "timestamp": 1692474000000,
+        "id": "0e6f9e8d-47da-495b-6bce-f5f62788990c",
+        "search_type": "query_then_fetch",
+        "indices": ["analytics-2024.04"],
+        "node_id": "node-12",
+        "group_by": "NONE",
+        "total_shards": 3,
+        "labels": {},
         "measurements": {
           "cpu": { "number": 1340000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 22, "count": 1, "aggregationType": "NONE" },
-          "memory": { "number": 204800, "count": 1, "aggregationType": "NONE" }
+          "latency": { "number": 21, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 262144, "count": 1, "aggregationType": "NONE" }
         }
       },
       {
-        "timestamp": 1713934989000,
-        "id": "130a5d36-615e-43e8-ad99-e1b90d527f44",
+        "timestamp": 1690843200000,
+        "id": "0f70af9e-58eb-4a6c-7cdf-06f73899aa0d",
         "search_type": "query_then_fetch",
-        "indices": [".kibana"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "SIMILARITY",
-        "total_shards": 1,
-        "labels": {},
-        "query_group_hashcode": "2219a4bb71bd0d262e6d0f5504b88537",
-        "measurements": {
-          "memory": { "number": 58000, "count": 1, "aggregationType": "AVERAGE" },
-          "cpu": { "number": 1780000, "count": 1, "aggregationType": "AVERAGE" },
-          "latency": { "number": 10, "count": 1, "aggregationType": "AVERAGE" }
-        }
-      },
-      {
-        "timestamp": 1713935004000,
-        "id": "a2e1c822-3e3c-4d1b-adb2-9f73af094b43",
-        "search_type": "query_then_fetch",
-        "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "indices": ["my-index-2"],
+        "node_id": "node-13",
         "group_by": "NONE",
         "total_shards": 1,
-        "labels": {
-          "X-Opaque-Id": "90eb5c3b-8448-4af3-84ce-a941eee9ed5f"
-        },
+        "labels": {},
         "measurements": {
-          "memory": { "number": 170320, "count": 1, "aggregationType": "NONE" },
-          "cpu": { "number": 2100000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 13, "count": 1, "aggregationType": "NONE" }
+          "cpu": { "number": 720000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 9, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 114688, "count": 1, "aggregationType": "NONE" }
         }
       },
       {
-        "timestamp": 1713935019000,
-        "id": "7cd4c7f1-3803-4c5e-a41c-258e04f96f78",
+        "timestamp": 1690854000000,
+        "id": "1071b0af-69fc-4b7d-8de0-17f849aabb0e",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["profiles"],
+        "node_id": "node-14",
+        "group_by": "SIMILARITY",
+        "total_shards": 2,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1880000, "count": 2, "aggregationType": "AVERAGE" },
+          "latency": { "number": 27, "count": 2, "aggregationType": "AVERAGE" },
+          "memory": { "number": 311296, "count": 2, "aggregationType": "AVERAGE" }
+        }
+      },
+      {
+        "timestamp": 1690864800000,
+        "id": "1182c1b0-7a0d-4c8e-9ef1-28f95abcbc0f",
         "search_type": "query_then_fetch",
-        "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "indices": ["payments"],
+        "node_id": "node-15",
+        "group_by": "NONE",
+        "total_shards": 3,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 2420000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 39, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 458752, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+      {
+        "timestamp": 1690875600000,
+        "id": "1293d2c1-8b1e-4d9f-af02-39fa6bdcdd10",
+        "search_type": "query_then_fetch",
+        "indices": ["catalog"],
+        "node_id": "node-16",
+        "group_by": "NONE",
+        "total_shards": 2,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 1110000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 16, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 196608, "count": 1, "aggregationType": "NONE" }
+        }
+      },
+
+      {
+        "timestamp": 1661558400000,
+        "id": "13a4e3d2-9c2f-4ea0-b113-4afb7cedee11",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["logs-2024.04.24"],
+        "node_id": "node-17",
+        "group_by": "SIMILARITY",
+        "total_shards": 8,
+        "labels": {},
+        "measurements": {
+          "cpu": { "number": 3920000, "count": 5, "aggregationType": "AVERAGE" },
+          "latency": { "number": 68, "count": 5, "aggregationType": "AVERAGE" },
+          "memory": { "number": 851968, "count": 5, "aggregationType": "AVERAGE" }
+        }
+      },
+      {
+        "timestamp": 1661562000000,
+        "id": "14b5f4e3-ad30-4fb1-c224-5b0c8dfeff12",
+        "search_type": "query_then_fetch",
+        "indices": ["inventory"],
+        "node_id": "node-18",
         "group_by": "NONE",
         "total_shards": 1,
-        "labels": {
-          "X-Opaque-Id": "8a936346-8d19-409c-9fe6-8b890eca1f7c"
-        },
-        "measurements": {
-          "cpu": { "number": 990000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 18, "count": 1, "aggregationType": "NONE" },
-          "memory": { "number": 81200, "count": 1, "aggregationType": "NONE" }
-        }
-      },
-      {
-        "timestamp": 1713935033000,
-        "id": "76f5e51f-33f6-480c-8b20-8003abb93d19",
-        "search_type": "query_then_fetch",
-        "indices": [".kibana"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "SIMILARITY",
-        "total_shards": 1,
-        "labels": {
-          "X-Opaque-Id": "660baeb1-077b-4884-8bae-890cfe30e776"
-        },
-        "query_group_hashcode": "a336f9580d5d980f7403f6d179f454eb",
-        "measurements": {
-          "memory": { "number": 133600, "count": 1, "aggregationType": "AVERAGE" },
-          "cpu": { "number": 990000, "count": 1, "aggregationType": "AVERAGE" },
-          "latency": { "number": 9, "count": 1, "aggregationType": "AVERAGE" }
-        }
-      },
-      {
-        "timestamp": 1713935048000,
-        "id": "37d633a7-20e6-41a1-96e9-cd4806511dbf",
-        "search_type": "query_then_fetch",
-        "indices": [".kibana"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "SIMILARITY",
-        "total_shards": 1,
         "labels": {},
-        "query_group_hashcode": "7cef9a399c117a0278025a89e943eebc",
         "measurements": {
-          "memory": { "number": 640320, "count": 3, "aggregationType": "AVERAGE" },
-          "cpu": { "number": 3190000, "count": 3, "aggregationType": "AVERAGE" },
-          "latency": { "number": 6, "count": 1, "aggregationType": "NONE" }
+          "cpu": { "number": 640000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 8, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 106496, "count": 1, "aggregationType": "NONE" }
         }
       },
       {
-        "timestamp": 1713935062000,
-        "id": "9982b7fc-0339-47d8-b77f-8de1bda76b72",
+        "timestamp": 1661565600000,
+        "id": "15c6f5d4-bf41-4e62-d335-6e7f8a9b0c13",
         "search_type": "query_then_fetch",
-        "indices": [".kibana"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "SIMILARITY",
-        "total_shards": 1,
+        "indices": ["my-index"],
+        "node_id": "node-19",
+        "group_by": "NONE",
+        "total_shards": 3,
         "labels": {},
-        "query_group_hashcode": "7cef9a399c117a0278025a89e943eebc",
         "measurements": {
-          "memory": { "number": 812400, "count": 4, "aggregationType": "AVERAGE" },
-          "cpu": { "number": 2280000, "count": 4, "aggregationType": "AVERAGE" },
-          "latency": { "number": 4, "count": 4, "aggregationType": "AVERAGE" }
+          "cpu": { "number": 1710000, "count": 1, "aggregationType": "NONE" },
+          "latency": { "number": 24, "count": 1, "aggregationType": "NONE" },
+          "memory": { "number": 278528, "count": 1, "aggregationType": "NONE" }
         }
       },
       {
-        "timestamp": 1713935078000,
-        "id": "d8dccf54-8dcb-4411-9fd6-977844be8fb3",
-        "search_type": "query_then_fetch",
-        "indices": [".kibana"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "timestamp": 1661569200000,
+        "id": "16d7f6e5-d041-4f73-e446-7f8a9b0c1d14",
+        "search_type": "dfs_query_then_fetch",
+        "indices": ["users"],
+        "node_id": "node-20",
         "group_by": "SIMILARITY",
-        "total_shards": 1,
+        "total_shards": 2,
         "labels": {},
-        "query_group_hashcode": "2219a4bb71bd0d262e6d0f5504b88537",
         "measurements": {
-          "memory": { "number": 59000, "count": 1, "aggregationType": "AVERAGE" },
-          "cpu": { "number": 1720000, "count": 1, "aggregationType": "AVERAGE" },
-          "latency": { "number": 11, "count": 1, "aggregationType": "NONE" }
+          "cpu": { "number": 2050000, "count": 2, "aggregationType": "AVERAGE" },
+          "latency": { "number": 34, "count": 2, "aggregationType": "AVERAGE" },
+          "memory": { "number": 360448, "count": 2, "aggregationType": "AVERAGE" }
         }
       }
     ]

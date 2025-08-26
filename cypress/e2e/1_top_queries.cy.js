@@ -185,8 +185,10 @@ describe('Query Insights Dashboard', () => {
           expect(firstQuery.measurements[metric]).to.be.an('object');
         });
       });
+  });
 
-    after(() => clearAll());
+  after(() => {
+    clearAll();
   });
 });
 
@@ -383,12 +385,10 @@ describe('Query Insights Dashboard - Dynamic Columns with intercepted data', () 
   });
 });
 
-// Add below your existing "Dynamic Columns ..." suite
 
 describe('Filters with intercepted data (mixed fixture)', () => {
   const FIXTURE = 'stub_top_queries.json';
 
-  // helpers (JS only)
   const expectHeaders = (expected) => {
     cy.get('.euiTableHeaderCell').should('have.length', expected.length);
     cy.get('.euiTableHeaderCell').should(($h) => {
@@ -495,18 +495,16 @@ describe('Filters with intercepted data (mixed fixture)', () => {
   // });
 
   it('can clear Indices filter (toggle off) and return to mixed default', () => {
-    // apply
     cy.get('.euiFilterButton').contains('Indices').click();
     cy.get('.euiFilterSelectItem').contains('my-index').click();
     cy.get('body').click(0, 0);
     expectQueryHeaders();
 
-    // clear by toggling same option again
     cy.get('.euiFilterButton').contains('Indices').click();
     cy.get('.euiFilterSelectItem').contains('my-index').click();
     cy.get('body').click(0, 0);
 
-    // with mixed stub and no filters → the mixed header set should appear
+
     expectHeaders([
       'Id',
       'Type',
@@ -520,5 +518,154 @@ describe('Filters with intercepted data (mixed fixture)', () => {
       'Coordinator Node ID',
       'Total Shards',
     ]);
+  });
+});
+
+describe('Query Insights - Quick Ranges (Today / Yesterday / Last 7/30 days / Last 1 year)', () => {
+  // Anchor time that aligns with your fixture buckets (UTC)
+  const NOW = new Date('2023-08-26T16:00:00.000Z').getTime();
+
+  // ---- Minimal datemath parser to cover quick ranges we test ----
+  const startOfUtcDay = (ms) => {
+    const d = new Date(ms);
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0);
+    // If your app rounds in local time, switch to non-UTC Date(...) ctor instead.
+  };
+
+  const parseDateInput = (expr, nowMs) => {
+    if (!expr) return Number.NaN;
+
+    // Absolute ISO?
+    const abs = Date.parse(expr);
+    if (!Number.isNaN(abs)) return abs;
+
+    // Datemath minimal support: now, now/d, now-<n><unit>, now-<n><unit>/d
+    // Units supported: h (hours), d (days), w (weeks), M (months), y (years)
+    const m = expr.match(/^now(?:(-[0-9]+)([hdwMy]))?(?:\/d)?$/i);
+    if (!m) return Number.NaN;
+
+    let ms = nowMs;
+
+    if (m[1] && m[2]) {
+      const n = parseInt(m[1], 10); // negative number like -7
+      const u = m[2].toLowerCase();
+
+      const mult = {
+        h: 60 * 60 * 1000,
+        d: 24 * 60 * 60 * 1000,
+        w: 7 * 24 * 60 * 60 * 1000,
+        // For months/years we approximate. Adjust if you need calendar-true logic.
+        M: 30 * 24 * 60 * 60 * 1000,
+        y: 365 * 24 * 60 * 60 * 1000,
+      };
+      ms += n * (mult[u] ?? 0);
+    }
+
+    if (/\/d$/i.test(expr)) {
+      ms = startOfUtcDay(ms);
+    }
+
+    return ms;
+  };
+
+  /** Filter fixture by [from,to) – typical backend semantics */
+  const filterByRange = (list, fromMs, toMs) =>
+    list.filter((q) => typeof q.timestamp === 'number' && q.timestamp >= fromMs && q.timestamp < toMs);
+
+  /** Try a list of possible quick-range labels; click the first that exists */
+  const clickFirstLabel = (labels) => {
+    cy.get('[data-test-subj="superDatePickerToggleQuickMenuButton"]').click({ force: true });
+    let clicked = false;
+    labels.forEach((label) => {
+      if (!clicked) {
+        cy.contains(label).then(($el) => {
+          if ($el.length) {
+            cy.wrap($el).click({ force: true });
+            clicked = true;
+          }
+        });
+      }
+    });
+    cy.get('[data-test-subj="superDatePickerApplyTimeButton"]').click();
+  };
+
+  beforeEach(() => {
+    cy.clock(NOW, ['Date']); // freeze app time
+
+    cy.fixture('stub_top_queries.json').then((fixture) => {
+      cy.intercept('GET', '**/api/top_queries/*', (req) => {
+        const url = new URL(req.url);
+        const qs = new URLSearchParams(url.search);
+
+        const rawFrom = qs.get('from');
+        const rawTo = qs.get('to');
+
+        // Parse absolute or datemath. If missing, default to wide range.
+        const fromMs = parseDateInput(rawFrom, NOW);
+        const toMs = parseDateInput(rawTo, NOW);
+
+        const list = fixture?.response?.top_queries ?? fixture?.top_queries ?? [];
+        const body = Number.isNaN(fromMs) || Number.isNaN(toMs)
+          ? fixture
+          : {
+            ok: true,
+            response: { top_queries: filterByRange(list, fromMs, toMs) },
+          };
+
+        req.reply(body);
+      }).as('getTopQueries');
+    });
+
+    cy.waitForQueryInsightsPlugin();
+    cy.wait('@getTopQueries'); // initial load
+  });
+
+  /** After applying a range, compute expected count using the same logic and assert table rows */
+  const assertRowCountMatchesRequest = (expectedLabelForDebug) => {
+    cy.wait('@getTopQueries').then((call) => {
+      // Determine expected rows from the response we returned (already filtered)
+      const resp = call.response?.body;
+      const rows = resp?.response?.top_queries ?? [];
+      const expected = new Set(rows.map((r) => r.id)).size;
+
+      cy.log(`Range "${expectedLabelForDebug}" expected rows: ${expected}`);
+      cy.get('.euiBasicTable .euiTableRow').should('have.length', expected);
+    });
+  };
+
+  it('Today', () => {
+    // Today often shows as "Today" or "This day" in some builds; adjust if needed.
+    clickFirstLabel(['Today', 'This day']);
+    assertRowCountMatchesRequest('Today');
+  });
+
+  it('Yesterday', () => {
+    clickFirstLabel(['Yesterday']);
+    assertRowCountMatchesRequest('Yesterday');
+  });
+
+  it('Last 7 days (aka Last week)', () => {
+    // EUI default label is usually "Last 7 days"
+    clickFirstLabel(['Last 7 days', 'Last week']);
+    assertRowCountMatchesRequest('Last 7 days');
+  });
+
+  it('Last 30 days (aka Last month)', () => {
+    clickFirstLabel(['Last 30 days', 'Last month']);
+    assertRowCountMatchesRequest('Last 30 days');
+  });
+
+  it('Last 1 year (aka Last year)', () => {
+    clickFirstLabel(['Last 1 year', 'Last year']);
+    assertRowCountMatchesRequest('Last 1 year');
+  });
+
+  // Optional: also verify that "Recently used date ranges" lists the last selection
+  it('Recently used reflects last selection', () => {
+    clickFirstLabel(['Last 7 days', 'Last week']);
+    cy.get('[data-test-subj="superDatePickerToggleQuickMenuButton"]').click({ force: true });
+    cy.contains('Recently used date ranges').should('exist');
+    cy.contains('Last 7 days').should('exist'); // or Last week if your build shows that label
+    cy.get('body').click(0, 0);
   });
 });

@@ -28,6 +28,7 @@ import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 
+// --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
 const MEASUREMENTS_FIELD = 'measurements';
 const LATENCY_FIELD = 'measurements.latency';
@@ -40,19 +41,25 @@ const TOTAL_SHARDS_FIELD = 'total_shards';
 const METRIC_DEFAULT_MSG = 'Not enabled';
 const GROUP_BY_FIELD = 'group_by';
 
+/**
+ * QueryInsights component
+ *
+ * Renders a searchable, filterable, and sortable table of query insights data
+ * with metrics (latency, CPU, memory), contextual navigation, and datasource picker.
+ */
 const QueryInsights = ({
-  queries,
-  loading,
-  onTimeChange,
-  recentlyUsedRanges,
-  currStart,
-  currEnd,
-  core,
-  depsStart,
-  params,
-  retrieveQueries,
-  dataSourceManagement,
-}: {
+                         queries,
+                         loading,
+                         onTimeChange,
+                         recentlyUsedRanges,
+                         currStart,
+                         currEnd,
+                         core,
+                         depsStart,
+                         params,
+                         retrieveQueries,
+                         dataSourceManagement,
+                       }: {
   queries: SearchQueryRecord[];
   loading: boolean;
   onTimeChange: any;
@@ -67,8 +74,9 @@ const QueryInsights = ({
 }) => {
   const history = useHistory();
   const location = useLocation();
-  const [pagination, setPagination] = useState({ pageIndex: 0 });
 
+  // --- state for pagination and filters ---
+  const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [searchText, setSearchText] = useState('');
   const [selectedGroupBy, setSelectedGroupBy] = useState<string[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
@@ -77,7 +85,17 @@ const QueryInsights = ({
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
+
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const commonlyUsedRanges = [
+    { label: 'Today',      start: 'now/d',    end: 'now'   },
+    { label: 'This week',  start: 'now/w',    end: 'now'   },
+    { label: 'This month', start: 'now/M',    end: 'now'   },
+    { label: 'This year',  start: 'now/y',    end: 'now'   },
+    { label: 'Yesterday',  start: 'now-1d/d', end: 'now/d' },
+    { label: 'Last hour',  start: 'now-1h',   end: 'now'   },
+  ];
+
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -97,6 +115,95 @@ const QueryInsights = ({
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
+  /**
+   * Builds the table rows by applying all active UI filters.
+   *
+   * - Prevents misleading views: when any non-group filter (indices/searchType/node/text) is active
+   *   and the user hasn’t explicitly chosen a single group mode, we hide grouped aggregates
+   *   (`group_by !== 'NONE'`) to avoid double counting and missing per-index/search-type/node metadata.
+   */
+
+  const items = useMemo(() => {
+    const nonGroupActive =
+      selectedIndices.length > 0 ||
+      selectedSearchTypes.length > 0 ||
+      selectedNodeIds.length > 0 ||
+      !!searchText;
+
+    return queries.filter((q: SearchQueryRecord) => {
+      // If the user applied non-group filters (indices, search_type, node_id, or free-text),
+      // but has NOT explicitly chosen "group" (selectedGroupBy is empty or includes both),
+      // then hide grouped rows (group_by = SIMILARITY).
+      if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
+        if (q.group_by !== 'NONE') return false;
+      }
+
+      if (selectedIndices.length) {
+        const rowIdx = Array.isArray(q.indices) ? q.indices : [];
+        const overlap = rowIdx.some((i) => selectedIndices.includes(i));
+        if (!overlap) return false;
+      }
+
+      if (selectedSearchTypes.length && !selectedSearchTypes.includes(q.search_type)) return false;
+
+      if (selectedNodeIds.length && !selectedNodeIds.includes(q.node_id)) return false;
+
+      if (searchText) {
+        const id = (q.id ?? '').toLowerCase();
+        if (!id.includes(searchText.toLowerCase())) return false;
+      }
+
+      if (selectedGroupBy.length === 1) {
+        if (!selectedGroupBy.includes(q.group_by)) return false;
+      }
+
+      return true;
+    });
+  }, [queries, selectedIndices, selectedSearchTypes, selectedNodeIds, searchText, selectedGroupBy]);
+
+  // if no filtered items, show all queries
+  const forView = items.length ? items : queries;
+
+  /**
+   * Decide effective view:
+   * - "query" if only queries
+   * - "group" if only groups
+   * - "mixed" if both
+   */
+  const effectiveView = useMemo<'query' | 'group' | 'mixed'>(() => {
+    if (selectedGroupBy.length === 1) {
+      return selectedGroupBy[0] === 'SIMILARITY' ? 'group' : 'query';
+    }
+    const hasQuery = forView.some((q: SearchQueryRecord) => q.group_by === 'NONE');
+    const hasGroup = forView.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
+    if (hasQuery && hasGroup) return 'mixed';
+    return hasGroup ? 'group' : 'query';
+  }, [selectedGroupBy, forView]);
+
+  // --- Column headers change depending on effective view ---
+  const latencyHeader = useMemo(() => {
+    return effectiveView === 'mixed'
+      ? `Avg ${LATENCY} / ${LATENCY}`
+      : effectiveView === 'group'
+        ? `Average ${LATENCY}`
+        : `${LATENCY}`;
+  }, [effectiveView]);
+
+  const cpuHeader = useMemo(() => {
+    return effectiveView === 'mixed'
+      ? `Avg ${CPU_TIME} / ${CPU_TIME}`
+      : effectiveView === 'group'
+        ? `Average ${CPU_TIME}`
+        : `${CPU_TIME}`;
+  }, [effectiveView]);
+
+  const memHeader = useMemo(() => {
+    return effectiveView === 'mixed'
+      ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
+      : effectiveView === 'group'
+        ? `Average ${MEMORY_USAGE}`
+        : MEMORY_USAGE;
+  }, [effectiveView]);
 
   const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
     {
@@ -181,6 +288,7 @@ const QueryInsights = ({
     },
   ];
 
+  // columns shown only for query-type records
   const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
     {
       field: INDICES_FIELD as keyof SearchQueryRecord,
@@ -213,76 +321,8 @@ const QueryInsights = ({
       truncateText: true,
     },
   ];
-  const items = useMemo(() => {
-    const nonGroupActive =
-      selectedIndices.length > 0 ||
-      selectedSearchTypes.length > 0 ||
-      selectedNodeIds.length > 0 ||
-      !!searchText;
 
-    return queries.filter((q: SearchQueryRecord) => {
-      if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
-        if (q.group_by !== 'NONE') return false;
-      }
-
-      if (selectedIndices.length) {
-        const rowIdx = Array.isArray(q.indices) ? q.indices : [];
-        const overlap = rowIdx.some((i) => selectedIndices.includes(i));
-        if (!overlap) return false;
-      }
-
-      if (selectedSearchTypes.length && !selectedSearchTypes.includes(q.search_type)) return false;
-
-      if (selectedNodeIds.length && !selectedNodeIds.includes(q.node_id)) return false;
-
-      if (searchText) {
-        const id = (q.id ?? '').toLowerCase();
-        if (!id.includes(searchText.toLowerCase())) return false;
-      }
-
-      if (selectedGroupBy.length > 0 && selectedGroupBy.length < 2) {
-        if (!selectedGroupBy.includes(q.group_by)) return false;
-      }
-
-      return true;
-    });
-  }, [queries, selectedIndices, selectedSearchTypes, selectedNodeIds, searchText, selectedGroupBy]);
-
-  const forView = items.length ? items : queries;
-  const effectiveView = useMemo<'query' | 'group' | 'mixed'>(() => {
-    if (selectedGroupBy.length === 1) {
-      return selectedGroupBy[0] === 'SIMILARITY' ? 'group' : 'query';
-    }
-    const hasQuery = forView.some((q: SearchQueryRecord) => q.group_by === 'NONE');
-    const hasGroup = forView.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
-    if (hasQuery && hasGroup) return 'mixed';
-    return hasGroup ? 'group' : 'query';
-  }, [selectedGroupBy, forView]);
-
-  const latencyHeader = useMemo(() => {
-    return effectiveView === 'mixed'
-      ? `Avg ${LATENCY} / ${LATENCY}`
-      : effectiveView === 'group'
-      ? `Average ${LATENCY}`
-      : `${LATENCY}`;
-  }, [effectiveView]);
-
-  const cpuHeader = useMemo(() => {
-    return effectiveView === 'mixed'
-      ? `Avg ${CPU_TIME} / ${CPU_TIME}`
-      : effectiveView === 'group'
-      ? `Average ${CPU_TIME}`
-      : `${CPU_TIME}`;
-  }, [effectiveView]);
-
-  const memHeader = useMemo(() => {
-    return effectiveView === 'mixed'
-      ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
-      : effectiveView === 'group'
-      ? `Average ${MEMORY_USAGE}`
-      : MEMORY_USAGE;
-  }, [effectiveView]);
-
+  // metric columns (latency, cpu, memory)
   const metricColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = useMemo(
     () => [
       {
@@ -306,7 +346,7 @@ const QueryInsights = ({
             q.measurements?.cpu?.number,
             q.measurements?.cpu?.count,
             'ms',
-            1000000,
+            1000000, // convert ns → ms
             METRIC_DEFAULT_MSG
           ),
         sortable: (q: SearchQueryRecord) =>
@@ -346,22 +386,36 @@ const QueryInsights = ({
     querycountColumn,
     metricColumns,
   ]);
+
   const queryTypeColumns = useMemo(
     () => [...baseColumns, ...timestampColumn, ...metricColumns, ...QueryTypeSpecificColumns],
     [baseColumns, timestampColumn, metricColumns, QueryTypeSpecificColumns]
   );
 
+  /**
+   * Decide which column set to show
+   * based on selected filters and presence of query/group rows
+   */
   const columnsToShow = useMemo(() => {
+    // true if the user applied filters that only apply to queries
+    // (indices, searchType, nodeId, or free text).
+    // Groups don't have those fields.
     const nonGroupActive =
       selectedIndices.length > 0 ||
       selectedSearchTypes.length > 0 ||
       selectedNodeIds.length > 0 ||
       !!searchText;
 
+    // If the user explicitly picked only "group", show group columns.
+    // If they explicitly picked only "query", show query columns.
     if (selectedGroupBy.length === 1) {
       return selectedGroupBy[0] === 'SIMILARITY' ? groupTypeColumns : queryTypeColumns;
     }
 
+    // Non-group filters applied but group-by not explicitly chosen
+    // If filters like indices/searchType/nodeId are active,
+    // and group-by is either empty (no choice) or includes both,
+    // force the view into query mode (groups would look wrong here).
     if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
       return queryTypeColumns;
     }
@@ -369,9 +423,12 @@ const QueryInsights = ({
     const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by === 'NONE');
     const hasAnyGroup = items.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
 
-    if (items.length === 0) return defaultColumns; // empty & no filters → neutral
+    if (items.length === 0) return defaultColumns;
+
     if (hasAnyQuery && hasAnyGroup) return defaultColumns;
+
     if (hasAnyGroup) return groupTypeColumns;
+
     return queryTypeColumns;
   }, [
     items,
@@ -385,14 +442,16 @@ const QueryInsights = ({
     queryTypeColumns,
   ]);
 
-  const arraysEqualAsSets = (a: string[], b: string[]) =>
-    a.length === b.length && a.every((x) => b.includes(x));
+
+  const arraysEqualAsSets = (a: string[], b: string[]) => {
+    if (a.length !== b.length) return false;
+    const setB = new Set(b);
+    for (const x of a) if (!setB.has(x)) return false;
+    return true;
+  };
 
   const parseList = (s: string) =>
-    s
-      .split(/\s+or\s+/i)
-      .map((x) => x.trim())
-      .filter(Boolean);
+    s.split(/\s*(?:\bor\b|,)\s*/i).map(x => x.trim()).filter(Boolean);
 
   const extractField = (text: string, field: string): string[] => {
     const rx = new RegExp(`${field}:\\(([^)]+)\\)`, 'i');
@@ -403,8 +462,14 @@ const QueryInsights = ({
   const onSearchChange = ({ query }: { query: any }) => {
     const text: string = query?.text || '';
 
-    // free text (unchanged)
+    // Find every structured filter chunk like "field:(...)" in the search text and return the full matches.
+    // Regex: \b        → word boundary (start of a field name)
+    //        [\w.]+    → field name (letters/digits/_ or dots, e.g. "indices", "measurements.latency")
+    //        :         → literal colon
+    //        \( [^)]+ \) → parentheses containing any chars except ')' (the filter values)
+    // The 'g' flag finds all occurrences. matchAll() yields matches; map(m => m[0]) returns each full matched substring.
     const fieldChunks = [...text.matchAll(/\b[\w.]+:\([^)]+\)/g)].map((m) => m[0]);
+
     let free = text;
     fieldChunks.forEach((chunk) => (free = free.replace(chunk, '')));
     const nextText = free.trim().toLowerCase();
@@ -413,7 +478,6 @@ const QueryInsights = ({
     const gb = extractField(text, GROUP_BY_FIELD);
     if (!arraysEqualAsSets(gb, selectedGroupBy)) setSelectedGroupBy(gb);
 
-    // others (unchanged)
     const idx = extractField(text, INDICES_FIELD);
     if (!arraysEqualAsSets(idx, selectedIndices)) setSelectedIndices(idx);
 
@@ -533,6 +597,7 @@ const QueryInsights = ({
               end={currEnd}
               onTimeChange={onTimeChange}
               recentlyUsedRanges={recentlyUsedRanges}
+              commonlyUsedRanges={commonlyUsedRanges}
               onRefresh={onRefresh}
               updateButtonProps={{ fill: false }}
             />,
@@ -559,5 +624,6 @@ const QueryInsights = ({
     </>
   );
 };
+
 // eslint-disable-next-line import/no-default-export
 export default QueryInsights;

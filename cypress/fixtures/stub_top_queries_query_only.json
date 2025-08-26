@@ -1,52 +1,353 @@
 {
-  "ok": true,
-  "response": {
-    "top_queries": [
-      {
-        "timestamp": 1713934974000,
-        "id": "a2e1c822-3e3c-4d1b-adb2-9f73af094b43",
-        "search_type": "query_then_fetch",
-        "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "NONE",
-        "total_shards": 1,
-        "labels": { "X-Opaque-Id": "90eb5c3b-8448-4af3-84ce-a941eee9ed5f" },
-        "measurements": {
-          "cpu": { "number": 1340000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 22, "count": 1, "aggregationType": "NONE" },
-          "memory": { "number": 204800, "count": 1, "aggregationType": "NONE" }
-        }
-      },
-      {
-        "timestamp": 1713935004000,
-        "id": "a2e1c822-3e3c-4d1b-adb2-9f73af094b43",
-        "search_type": "query_then_fetch",
-        "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "NONE",
-        "total_shards": 1,
-        "labels": { "X-Opaque-Id": "90eb5c3b-8448-4af3-84ce-a941eee9ed5f" },
-        "measurements": {
-          "memory": { "number": 170320, "count": 1, "aggregationType": "NONE" },
-          "cpu": { "number": 2100000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 13, "count": 1, "aggregationType": "NONE" }
-        }
-      },
-      {
-        "timestamp": 1713935019000,
-        "id": "7cd4c7f1-3803-4c5e-a41c-258e04f96f78",
-        "search_type": "query_then_fetch",
-        "indices": ["my-index"],
-        "node_id": "UYKFun8PSAeJvkkt9cWf0w",
-        "group_by": "NONE",
-        "total_shards": 1,
-        "labels": { "X-Opaque-Id": "8a936346-8d19-409c-9fe6-8b890eca1f7c" },
-        "measurements": {
-          "cpu": { "number": 990000, "count": 1, "aggregationType": "NONE" },
-          "latency": { "number": 18, "count": 1, "aggregationType": "NONE" },
-          "memory": { "number": 81200, "count": 1, "aggregationType": "NONE" }
-        }
-      }
-    ]
-  }
+"ok": true,
+"response": {
+"top_queries": [
+{
+"timestamp": 1713935100000,
+"id": "0f7e2c12-35b1-4d0b-9f2d-21a3d1a8c001",
+"search_type": "query_then_fetch",
+"indices": ["orders-2024.04"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Ja",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "2a8f7c1e-1fbc-4f53-9a1a-2b3e4c5d6e01" },
+"measurements": {
+"cpu": { "number": 1450000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 25, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 256000, "count": 1, "aggregationType": "NONE" }
 }
+},
+{
+"timestamp": 1713935120000,
+"id": "1a9c3b45-12de-49ee-8a6b-5a0e3f66a102",
+"search_type": "dfs_query_then_fetch",
+"indices": ["users", "profiles"],
+"node_id": "QwErTyUiOpAsDfGhJkLz01",
+"group_by": "NONE",
+"total_shards": 5,
+"labels": { "X-Opaque-Id": "c7b4c4d1-1a2b-4f1a-98b7-9a2d3f4e5a12" },
+"measurements": {
+"cpu": { "number": 980000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 17, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 184320, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935135000,
+"id": "2b8f6d79-4e30-4e0f-9d7a-2ef1a4c0c203",
+"search_type": "query_then_fetch",
+"indices": ["analytics-2024.04"],
+"node_id": "UYKFun8PSAeJvkkt9cWf9x",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "acb7d4ae-9f0e-4d53-8775-2ad1c9f05f23" },
+"measurements": {
+"cpu": { "number": 2120000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 32, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 409600, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935150000,
+"id": "3c7a5e88-2b6f-4a2d-b0e1-4a8d6f77d304",
+"search_type": "query_then_fetch",
+"indices": ["my-index"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jb",
+"group_by": "NONE",
+"total_shards": 1,
+"labels": { "X-Opaque-Id": "b1a6e8c3-4d5f-4f7a-b6a9-e3c2d1a5f634" },
+"measurements": {
+"cpu": { "number": 760000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 12, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 131072, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935168000,
+"id": "4d3f9a21-8c0b-4a9f-aad2-2cb6e1d7e405",
+"search_type": "dfs_query_then_fetch",
+"indices": ["logs-2024.04.24"],
+"node_id": "QwErTyUiOpAsDfGhJkLz02",
+"group_by": "NONE",
+"total_shards": 6,
+"labels": { "X-Opaque-Id": "f0c1b2a3-4d5e-6f70-8a9b-bc1d2e3f4a45" },
+"measurements": {
+"cpu": { "number": 3050000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 54, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 524288, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935184000,
+"id": "5e1a2b33-9d4f-4f0b-9c3d-b12a6e7f4606",
+"search_type": "query_then_fetch",
+"indices": ["catalog", "products"],
+"node_id": "UYKFun8PSAeJvkkt9cWf9y",
+"group_by": "NONE",
+"total_shards": 4,
+"labels": { "X-Opaque-Id": "a7d4c2b1-9f8e-4d6a-8c3b-7e1f2a9d5c56" },
+"measurements": {
+"cpu": { "number": 1580000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 23, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 393216, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935201000,
+"id": "6f4b7c55-1a2d-43e0-8f7a-0c1b2d3e4707",
+"search_type": "query_then_fetch",
+"indices": ["metrics-2024.04"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jc",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "0d1e2f3a-4b5c-6d7e-8f90-a1b2c3d4e567" },
+"measurements": {
+"cpu": { "number": 1220000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 19, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 221184, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935217000,
+"id": "7a2d9e66-3c4b-4f5a-8a1b-2c3d4e5f4808",
+"search_type": "dfs_query_then_fetch",
+"indices": ["payments"],
+"node_id": "QwErTyUiOpAsDfGhJkLz03",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "e1f2d3c4-b5a6-7890-1a2b-3c4d5e6f7089" },
+"measurements": {
+"cpu": { "number": 2490000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 41, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 475136, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935233000,
+"id": "8b1c2d77-4e5f-4a6b-9c8d-0e1f2a3b4909",
+"search_type": "query_then_fetch",
+"indices": ["inventory"],
+"node_id": "UYKFun8PSAeJvkkt9cWf9z",
+"group_by": "NONE",
+"total_shards": 1,
+"labels": { "X-Opaque-Id": "a3b2c1d0-9e8f-7d6c-5b4a-3f2e1d0c9b88" },
+"measurements": {
+"cpu": { "number": 870000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 11, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 147456, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935250000,
+"id": "9c2d3e88-5f60-4b7a-8c9d-1e2f3a4b4a10",
+"search_type": "query_then_fetch",
+"indices": ["search-history"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jd",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "9f8e7d6c-5b4a-3f2e-1d0c-9b8a7c6d5e44" },
+"measurements": {
+"cpu": { "number": 1930000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 29, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 335872, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935266000,
+"id": "0ad1be99-6a71-483b-9dae-2f3a4b5c4b11",
+"search_type": "dfs_query_then_fetch",
+"indices": ["orders-2024.04"],
+"node_id": "QwErTyUiOpAsDfGhJkLz04",
+"group_by": "NONE",
+"total_shards": 4,
+"labels": { "X-Opaque-Id": "7c6d5e4f-3a2b-1c0d-9e8f-7d6c5b4a3f22" },
+"measurements": {
+"cpu": { "number": 2760000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 47, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 589824, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935283000,
+"id": "1be2cfaa-7b82-49cc-8ebf-3a4b5c6d4c12",
+"search_type": "query_then_fetch",
+"indices": ["analytics-2024.04"],
+"node_id": "UYKFun8PSAeJvkkt9cWf90",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "6b5a4c3d-2e1f-0a9b-8c7d-6e5f4a3b2c11" },
+"measurements": {
+"cpu": { "number": 1340000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 21, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 262144, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935299000,
+"id": "2cf3d0bb-8c93-4ad1-9fc0-4b5c6d7e4d13",
+"search_type": "query_then_fetch",
+"indices": ["my-index-2"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Je",
+"group_by": "NONE",
+"total_shards": 1,
+"labels": { "X-Opaque-Id": "5a4b3c2d-1e0f-9a8b-7c6d-5e4f3a2b1c10" },
+"measurements": {
+"cpu": { "number": 720000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 9, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 114688, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935314000,
+"id": "3df4e1cc-9da4-4be2-afd1-5c6d7e8f4e14",
+"search_type": "dfs_query_then_fetch",
+"indices": ["profiles"],
+"node_id": "QwErTyUiOpAsDfGhJkLz05",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "4b3c2d1e-0f9a-8b7c-6d5e-4f3a2b1c0d09" },
+"measurements": {
+"cpu": { "number": 1880000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 27, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 311296, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935330000,
+"id": "4e05f2dd-aeb5-4cf3-b0e2-6d7e8f904f15",
+"search_type": "query_then_fetch",
+"indices": ["payments"],
+"node_id": "UYKFun8PSAeJvkkt9cWf91",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "3c2d1e0f-9a8b-7c6d-5e4f-3a2b1c0d0e08" },
+"measurements": {
+"cpu": { "number": 2420000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 39, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 458752, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935346000,
+"id": "5f16a3ee-bfc6-4df4-c1f3-7e8f90915a16",
+"search_type": "query_then_fetch",
+"indices": ["catalog"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jf",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "2d1e0f9a-8b7c-6d5e-4f3a-2b1c0d0e0f07" },
+"measurements": {
+"cpu": { "number": 1110000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 16, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 196608, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935361000,
+"id": "6a27b4ff-c0d7-4ef5-d2f4-8f9091626b17",
+"search_type": "dfs_query_then_fetch",
+"indices": ["logs-2024.04.24", "logs-2024.04.25"],
+"node_id": "QwErTyUiOpAsDfGhJkLz06",
+"group_by": "NONE",
+"total_shards": 8,
+"labels": { "X-Opaque-Id": "1e0f9a8b-7c6d-5e4f-3a2b-1c0d0e0f1a06" },
+"measurements": {
+"cpu": { "number": 3920000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 68, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 851968, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935377000,
+"id": "7b38c510-d1e8-4ff6-e305-9091627c7c18",
+"search_type": "query_then_fetch",
+"indices": ["inventory"],
+"node_id": "UYKFun8PSAeJvkkt9cWf92",
+"group_by": "NONE",
+"total_shards": 1,
+"labels": { "X-Opaque-Id": "0f9a8b7c-6d5e-4f3a-2b1c-0d0e0f1a2b05" },
+"measurements": {
+"cpu": { "number": 640000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 8, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 106496, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935393000,
+"id": "8c49d621-e2f9-40f7-f416-91627c8d8d19",
+"search_type": "query_then_fetch",
+"indices": ["my-index", "my-index-2"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jg",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "f1a2b3c4-d5e6-f708-9a0b-1c2d3e4f5a04" },
+"measurements": {
+"cpu": { "number": 1710000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 24, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 278528, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935409000,
+"id": "9d5ae732-f30a-41f8-0517-a1627c9e9e20",
+"search_type": "dfs_query_then_fetch",
+"indices": ["users"],
+"node_id": "QwErTyUiOpAsDfGhJkLz07",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "e2b3c4d5-e6f7-089a-0b1c-2d3e4f5a6b03" },
+"measurements": {
+"cpu": { "number": 2050000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 34, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 360448, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935424000,
+"id": "0e6bf843-041b-42f9-1628-b27c9ea0af21",
+"search_type": "query_then_fetch",
+"indices": ["payments", "refunds"],
+"node_id": "UYKFun8PSAeJvkkt9cWf93",
+"group_by": "NONE",
+"total_shards": 4,
+"labels": { "X-Opaque-Id": "d3c4d5e6-f708-9a0b-1c2d-3e4f5a6b7c02" },
+"measurements": {
+"cpu": { "number": 2330000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 38, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 491520, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935440000,
+"id": "1f7c0944-152c-430a-2739-c39ea1b1bf22",
+"search_type": "query_then_fetch",
+"indices": ["catalog"],
+"node_id": "NdA1b2C3d4E5f6G7h8I9Jh",
+"group_by": "NONE",
+"total_shards": 2,
+"labels": { "X-Opaque-Id": "c4d5e6f7-089a-0b1c-2d3e-4f5a6b7c8d01" },
+"measurements": {
+"cpu": { "number": 1290000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 18, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 212992, "count": 1, "aggregationType": "NONE" }
+}
+},
+{
+"timestamp": 1713935456000,
+"id": "20ed1a55-263d-441b-384a-d4a1b2c2cf23",
+"search_type": "dfs_query_then_fetch",
+"indices": ["analytics-2024.04"],
+"node_id": "QwErTyUiOpAsDfGhJkLz08",
+"group_by": "NONE",
+"total_shards": 3,
+"labels": { "X-Opaque-Id": "b5e6f708-9a0b-1c2d-3e4f-5a6b7c8d9e00" },
+"measurements": {
+"cpu": { "number": 2890000, "count": 1, "aggregationType": "NONE" },
+"latency": { "number": 52, "count": 1, "aggregationType": "NONE" },
+"memory": { "number": 622592, "count": 1, "aggregationType": "NONE" }
+}
+}
+]
+}
+}
+

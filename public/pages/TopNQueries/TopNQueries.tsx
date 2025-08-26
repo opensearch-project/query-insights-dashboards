@@ -357,6 +357,7 @@ const TopNQueries = ({
     setStart(start);
     setEnd(end);
     setRecentlyUsedRanges(usedRange.length > 10 ? usedRange.slice(0, 9) : usedRange);
+    console.log('Recently used Ranges',recentlyUsedRanges);
     retrieveConfigInfo(true);
   };
 
