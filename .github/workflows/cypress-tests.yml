@@ -149,7 +149,7 @@ jobs:
           echo -e "\nInstalled Plugins:"
           curl -s http://localhost:9200/_cat/plugins | sort
 
-          # Enable WLM mode using short-form key
+          # Enable WLM mode
           echo -e "\nEnabling WLM mode:"
           curl -X PUT "http://localhost:9200/_cluster/settings" \
           -H 'Content-Type: application/json' \
@@ -160,7 +160,7 @@ jobs:
           echo -e "\nTesting WLM stats endpoint:"
           curl -s http://localhost:9200/_wlm/workload_group | jq '.'
           echo -e "\nTesting if wlm mode is enabled:"
-          curl -s http://localhost:9200/_cluster/settings | jq '.persistent."wlm.workload_group.mode"'
+          curl -s http://localhost:9200/_cluster/settings | jq '.persistent.wlm.workload_group.mode'
         shell: bash
 
 
