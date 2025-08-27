@@ -155,7 +155,6 @@ jobs:
           -H 'Content-Type: application/json' \
           -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
 
-
           # Test WLM stats endpoint
           echo -e "\nTesting WLM stats endpoint:"
           curl -s http://localhost:9200/_wlm/workload_group | jq '.'
