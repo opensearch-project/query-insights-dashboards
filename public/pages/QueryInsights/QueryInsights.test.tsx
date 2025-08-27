@@ -61,7 +61,8 @@ const findTypeFilterButton = (): HTMLElement => {
   const byRole = screen.queryAllByRole('button').find((b) => b.textContent?.trim() === 'Type');
   if (byRole) return byRole as HTMLElement;
 
-  throw new Error('Type filter button not found');
+  const availableButtons = screen.queryAllByRole('button').map(b => b.textContent?.trim()).filter(Boolean);
+  throw new Error(`Type filter button not found. Available buttons: ${availableButtons.join(', ')}`);
 };
 
 const ensureTypePopoverOpen = async (): Promise<HTMLElement> => {
@@ -76,17 +77,11 @@ const ensureTypePopoverOpen = async (): Promise<HTMLElement> => {
 const clickTypeOption = async (label: 'group' | 'query') => {
   const pop = await ensureTypePopoverOpen();
 
-  const opt = within(pop).queryByRole('option', { name: new RegExp(`^${label}$`, 'i') });
-  if (opt) {
-    fireEvent.click(opt);
-    return;
-  }
-
-  const node = within(pop).getByText((content, element) => {
+  const nodes = within(pop).getAllByText((content, element) => {
     const text = element?.textContent?.trim() ?? '';
     return new RegExp(`^${label}$`, 'i').test(text);
   });
-  const btn = node.closest('button') as HTMLElement;
+  const btn = nodes[0].closest('button') as HTMLElement;
   fireEvent.click(btn);
 };
 
@@ -125,10 +120,20 @@ describe('QueryInsights Component', () => {
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
-  it('uses query ID as itemId for table rows (no duplicate key rendering)', () => {
+  it('uses query ID as itemId for table rows to prevent duplicate row rendering', () => {
     const testQueries = [
-      { ...sampleQueries[0], id: 'unique-1', timestamp: 1000, group_by: 'NONE' },
-      { ...sampleQueries[1], id: 'unique-2', timestamp: 2000, group_by: 'NONE' },
+      {
+        ...sampleQueries[0],
+        id: 'unique-query-id-1',
+        timestamp: 1000,
+        group_by: 'NONE',
+      },
+      {
+        ...sampleQueries[0],
+        id: 'unique-query-id-2',
+        timestamp: 2000,
+        group_by: 'NONE',
+      },
     ];
 
     expect(() => {
