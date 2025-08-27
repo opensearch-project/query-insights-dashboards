@@ -385,7 +385,6 @@ describe('Query Insights Dashboard - Dynamic Columns with intercepted data', () 
   });
 });
 
-
 describe('Filters with intercepted data (mixed fixture)', () => {
   const FIXTURE = 'stub_top_queries.json';
 
@@ -479,21 +478,6 @@ describe('Filters with intercepted data (mixed fixture)', () => {
     countRowsBy(FIXTURE, { groupBy: 'NONE', indices: 'my-index' });
   });
 
-  // TODO Since the {enter}
-  // it('free-text search by partial id → filters rows and keeps query view', () => {
-  //   // pick a partial id from the stub; using "a2e1c822" from your sample
-  //   const PARTIAL = 'a2e1c822';
-  //   cy.get('.euiFieldSearch').type(PARTIAL);
-  //
-  //   expectQueryHeaders();
-  //   countRowsBy(FIXTURE, { groupBy: 'NONE', idIncludes: PARTIAL });
-  //
-  //   // clear search resets (still using intercepted data)
-  //   cy.get('.euiFieldSearch').clear();
-  //   // should be > 0 rows again
-  //   cy.get('.euiBasicTable .euiTableRow').its('length').should('be.greaterThan', 0);
-  // });
-
   it('can clear Indices filter (toggle off) and return to mixed default', () => {
     cy.get('.euiFilterButton').contains('Indices').click();
     cy.get('.euiFilterSelectItem').contains('my-index').click();
@@ -503,7 +487,6 @@ describe('Filters with intercepted data (mixed fixture)', () => {
     cy.get('.euiFilterButton').contains('Indices').click();
     cy.get('.euiFilterSelectItem').contains('my-index').click();
     cy.get('body').click(0, 0);
-
 
     expectHeaders([
       'Id',
@@ -570,7 +553,9 @@ describe('Query Insights - Quick Ranges (Today / Yesterday / Last 7/30 days / La
 
   /** Filter fixture by [from,to) – typical backend semantics */
   const filterByRange = (list, fromMs, toMs) =>
-    list.filter((q) => typeof q.timestamp === 'number' && q.timestamp >= fromMs && q.timestamp < toMs);
+    list.filter(
+      (q) => typeof q.timestamp === 'number' && q.timestamp >= fromMs && q.timestamp < toMs
+    );
 
   /** Try a list of possible quick-range labels; click the first that exists */
   const clickFirstLabel = (labels) => {
@@ -605,12 +590,13 @@ describe('Query Insights - Quick Ranges (Today / Yesterday / Last 7/30 days / La
         const toMs = parseDateInput(rawTo, NOW);
 
         const list = fixture?.response?.top_queries ?? fixture?.top_queries ?? [];
-        const body = Number.isNaN(fromMs) || Number.isNaN(toMs)
-          ? fixture
-          : {
-            ok: true,
-            response: { top_queries: filterByRange(list, fromMs, toMs) },
-          };
+        const body =
+          Number.isNaN(fromMs) || Number.isNaN(toMs)
+            ? fixture
+            : {
+                ok: true,
+                response: { top_queries: filterByRange(list, fromMs, toMs) },
+              };
 
         req.reply(body);
       }).as('getTopQueries');

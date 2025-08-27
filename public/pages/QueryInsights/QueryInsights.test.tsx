@@ -11,13 +11,7 @@ import { MemoryRouter } from 'react-router-dom';
 import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
-const sampleQueries = (stubTopQueries as any).response.top_queries.map((q: any, idx: number) => ({
-  ...q,
-  id: idx.toString(),
-  source: {},
-  phase_latency_map: {},
-  task_resource_usages: [],
-}));
+const sampleQueries = (stubTopQueries as any).response.top_queries;
 
 const mockOnTimeChange = jest.fn();
 const mockCore = {

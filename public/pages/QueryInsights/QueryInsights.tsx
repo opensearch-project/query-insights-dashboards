@@ -48,18 +48,18 @@ const GROUP_BY_FIELD = 'group_by';
  * with metrics (latency, CPU, memory), contextual navigation, and datasource picker.
  */
 const QueryInsights = ({
-                         queries,
-                         loading,
-                         onTimeChange,
-                         recentlyUsedRanges,
-                         currStart,
-                         currEnd,
-                         core,
-                         depsStart,
-                         params,
-                         retrieveQueries,
-                         dataSourceManagement,
-                       }: {
+  queries,
+  loading,
+  onTimeChange,
+  recentlyUsedRanges,
+  currStart,
+  currEnd,
+  core,
+  depsStart,
+  params,
+  retrieveQueries,
+  dataSourceManagement,
+}: {
   queries: SearchQueryRecord[];
   loading: boolean;
   onTimeChange: any;
@@ -88,14 +88,13 @@ const QueryInsights = ({
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const commonlyUsedRanges = [
-    { label: 'Today',      start: 'now/d',    end: 'now'   },
-    { label: 'This week',  start: 'now/w',    end: 'now'   },
-    { label: 'This month', start: 'now/M',    end: 'now'   },
-    { label: 'This year',  start: 'now/y',    end: 'now'   },
-    { label: 'Yesterday',  start: 'now-1d/d', end: 'now/d' },
-    { label: 'Last hour',  start: 'now-1h',   end: 'now'   },
+    { label: 'Today', start: 'now/d', end: 'now' },
+    { label: 'This week', start: 'now/w', end: 'now' },
+    { label: 'This month', start: 'now/M', end: 'now' },
+    { label: 'This year', start: 'now/y', end: 'now' },
+    { label: 'Yesterday', start: 'now-1d/d', end: 'now/d' },
+    { label: 'Last hour', start: 'now-1h', end: 'now' },
   ];
-
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -185,24 +184,24 @@ const QueryInsights = ({
     return effectiveView === 'mixed'
       ? `Avg ${LATENCY} / ${LATENCY}`
       : effectiveView === 'group'
-        ? `Average ${LATENCY}`
-        : `${LATENCY}`;
+      ? `Average ${LATENCY}`
+      : `${LATENCY}`;
   }, [effectiveView]);
 
   const cpuHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${CPU_TIME} / ${CPU_TIME}`
       : effectiveView === 'group'
-        ? `Average ${CPU_TIME}`
-        : `${CPU_TIME}`;
+      ? `Average ${CPU_TIME}`
+      : `${CPU_TIME}`;
   }, [effectiveView]);
 
   const memHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
       : effectiveView === 'group'
-        ? `Average ${MEMORY_USAGE}`
-        : MEMORY_USAGE;
+      ? `Average ${MEMORY_USAGE}`
+      : MEMORY_USAGE;
   }, [effectiveView]);
 
   const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
@@ -442,7 +441,6 @@ const QueryInsights = ({
     queryTypeColumns,
   ]);
 
-
   const arraysEqualAsSets = (a: string[], b: string[]) => {
     if (a.length !== b.length) return false;
     const setB = new Set(b);
@@ -451,7 +449,10 @@ const QueryInsights = ({
   };
 
   const parseList = (s: string) =>
-    s.split(/\s*(?:\bor\b|,)\s*/i).map(x => x.trim()).filter(Boolean);
+    s
+      .split(/\s*(?:\bor\b|,)\s*/i)
+      .map((x) => x.trim())
+      .filter(Boolean);
 
   const extractField = (text: string, field: string): string[] => {
     const rx = new RegExp(`${field}:\\(([^)]+)\\)`, 'i');
