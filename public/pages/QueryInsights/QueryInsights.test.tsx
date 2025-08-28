@@ -11,16 +11,22 @@ import { MemoryRouter } from 'react-router-dom';
 import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
+// Mock functions and data
 const sampleQueries = (stubTopQueries as any).response.top_queries;
 
 const mockOnTimeChange = jest.fn();
 const mockCore = {
-  chrome: { setBreadcrumbs: jest.fn() },
+  chrome: {
+    setBreadcrumbs: jest.fn(),
+  },
 } as any;
 
 const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
+
 const dataSourceManagementMock = {
-  ui: { getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock) },
+  ui: {
+    getDataSourceMenu: jest.fn().mockReturnValue(dataSourceMenuMock),
+  },
 } as any;
 
 const mockDataSourceContext = {
@@ -42,6 +48,7 @@ const renderQueryInsights = () =>
           currStart="now-15m"
           currEnd="now"
           retrieveQueries={mockRetrieveQueries}
+          // @ts-ignore
           core={mockCore}
           depsStart={{} as any}
           params={{} as any}
@@ -104,7 +111,7 @@ describe('QueryInsights Component', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the table with the correct columns and data (snapshot)', () => {
+  it('renders the table with the correct columns and data', () => {
     const { container } = renderQueryInsights();
     expect(container).toMatchSnapshot();
   });
@@ -112,16 +119,20 @@ describe('QueryInsights Component', () => {
   it('calls setBreadcrumbs on mount', () => {
     renderQueryInsights();
     expect(mockCore.chrome.setBreadcrumbs).toHaveBeenCalledWith([
-      { text: 'Query insights', href: '/queryInsights', onClick: expect.any(Function) },
+      {
+        text: 'Query insights',
+        href: '/queryInsights',
+        onClick: expect.any(Function),
+      },
     ]);
   });
 
-  it('triggers onTimeChange when the date picker refresh is clicked', () => {
+  it('triggers onTimeChange when the date picker refresh is changes', () => {
     renderQueryInsights();
-    const btn =
-      screen.queryByRole('button', { name: /refresh/i }) ||
-      screen.getByRole('button', { name: /update/i });
-    fireEvent.click(btn!);
+
+    const updateButton = screen.getByRole('button', { name: /Refresh/i });
+    fireEvent.click(updateButton);
+    
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
