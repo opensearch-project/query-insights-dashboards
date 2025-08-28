@@ -127,12 +127,12 @@ describe('QueryInsights Component', () => {
     ]);
   });
 
-  it('triggers onTimeChange when the date picker refresh is changes', () => {
+  it('triggers onTimeChange when the date picker changes', () => {
     renderQueryInsights();
 
     const updateButton = screen.getByRole('button', { name: /Refresh/i });
     fireEvent.click(updateButton);
-    
+
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
@@ -151,7 +151,6 @@ describe('QueryInsights Component', () => {
         group_by: 'NONE',
       },
     ];
-
     expect(() => {
       render(
         <MemoryRouter>
@@ -164,6 +163,7 @@ describe('QueryInsights Component', () => {
               currStart="now-15m"
               currEnd="now"
               retrieveQueries={mockRetrieveQueries}
+              // @ts-ignore
               core={mockCore}
               depsStart={{} as any}
               params={{} as any}
@@ -174,17 +174,18 @@ describe('QueryInsights Component', () => {
       );
     }).not.toThrow();
 
+    // Verify that the table component renders successfully
     expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
   it('renders the expected column headers for default (mixed) view', async () => {
     renderQueryInsights();
+
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
 
     const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
-    const texts = headers.map((h) => h.textContent?.trim());
-
-    expect(texts).toEqual([
+    const headerTexts = headers.map((h) => h.textContent?.trim());
+    const expectedHeaders = [
       'Id',
       'Type',
       'Query Count',
@@ -196,7 +197,9 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ]);
+    ];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 
   it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
@@ -206,15 +209,16 @@ describe('QueryInsights Component', () => {
 
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-
-    expect(headerTexts).toEqual([
+    const expectedHeaders = [
       'Id',
       'Type',
       'Query Count',
       'Average Latency',
       'Average CPU Time',
       'Average Memory Usage',
-    ]);
+    ];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 
   it('renders only query-related headers when NONE filter (query-only) is applied', async () => {
@@ -224,8 +228,7 @@ describe('QueryInsights Component', () => {
 
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-
-    expect(headerTexts).toEqual([
+    const expectedHeaders = [
       'Id',
       'Type',
       'Timestamp',
@@ -236,7 +239,9 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ]);
+    ];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 
   it('renders mixed headers when both NONE and SIMILARITY filters are applied', async () => {
@@ -247,8 +252,7 @@ describe('QueryInsights Component', () => {
 
     const headers = await screen.findAllByRole('columnheader', { hidden: true });
     const headerTexts = headers.map((h) => h.textContent?.trim());
-
-    expect(headerTexts).toEqual([
+    const expectedHeaders = [
       'Id',
       'Type',
       'Query Count',
@@ -260,6 +264,8 @@ describe('QueryInsights Component', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
-    ]);
+    ];
+
+    expect(headerTexts).toEqual(expectedHeaders);
   });
 });
