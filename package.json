@@ -21,7 +21,7 @@
     "build": "yarn plugin-helpers build",
     "plugin-helpers": "../../scripts/use_node ../../scripts/plugin_helpers",
     "osd": "../../scripts/use_node ../../scripts/osd",
-    "test:jest": "jest --config ./test/jest.config.js --coverage",
+    "test:jest": "../../node_modules/.bin/jest --config ./test/jest.config.js",
     "test:jest:dev": "../../node_modules/.bin/jest --watch --config ./test/jest.config.js",
     "test:jest:update-snapshots": "yarn run test:jest -u",
     "lint": "node ../../scripts/eslint .",
