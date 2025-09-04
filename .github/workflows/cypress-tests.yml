@@ -158,8 +158,19 @@ jobs:
           # Test WLM stats endpoint
           echo -e "\nTesting WLM stats endpoint:"
           curl -s http://localhost:9200/_wlm/workload_group | jq '.'
+
+          set -e
+
           echo -e "\nTesting if wlm mode is enabled:"
-          curl -s http://localhost:9200/_cluster/settings | jq '.persistent.wlm.workload_group.mode'
+          MODE=$(curl -s http://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode')
+
+          if [ "$MODE" != "enabled" ]; then
+          echo "WLM mode is not enabled (found: $MODE)"
+          exit 1
+          fi
+
+          echo "WLM mode is enabled."
+
         shell: bash
 
 
