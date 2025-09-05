@@ -106,9 +106,28 @@ jobs:
           echo -e "\nInstalled Plugins:"
           curl -s http://localhost:9200/_cat/plugins | sort
 
+          # Enable WLM mode
+          echo -e "\nEnabling WLM mode:"
+          curl -X PUT "http://localhost:9200/_cluster/settings" \
+          -H 'Content-Type: application/json' \
+          -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
+
           # Test WLM stats endpoint
           echo -e "\nTesting WLM stats endpoint:"
           curl -s http://localhost:9200/_wlm/workload_group | jq '.'
+
+          set -e
+
+          echo -e "\nTesting if wlm mode is enabled:"
+          MODE=$(curl -s http://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode')
+
+          if [ "$MODE" != "enabled" ]; then
+          echo "WLM mode is not enabled (found: $MODE)"
+          exit 1
+          fi
+
+          echo "WLM mode is enabled."
+
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
@@ -149,7 +168,11 @@ jobs:
           cd OpenSearch-Dashboards
           # Set memory limits and DNS resolution for better performance
           export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
-          yarn start --no-base-path --no-watch --server.host="0.0.0.0" &
+          echo "Starting Dashboards..."
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+          echo "Initial Dashboards log output:"
+          head -n 100 dashboards.log || true
         shell: bash
 
       - name: Wait for OpenSearch-Dashboards to be ready
