@@ -97,6 +97,18 @@ export class QueryInsightsDashboardsPlugin
         order: 200,
       },
     ]);
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: 'workloadManagement',
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        order: 200,
+      },
+    ]);
 
     return {};
   }
