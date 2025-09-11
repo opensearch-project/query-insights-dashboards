@@ -100,20 +100,22 @@ describe('QueryInsightsDashboardsPlugin', () => {
   it('should register both applications in correct order', () => {
     plugin.setup(coreSetupMock, {} as any);
     expect(registerMock).toHaveBeenCalledTimes(2);
-    
+
     // First call should be Query Insights
-    expect(registerMock).toHaveBeenNthCalledWith(1, 
+    expect(registerMock).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         id: PLUGIN_NAME,
-        title: 'Query Insights'
+        title: 'Query Insights',
       })
     );
-    
+
     // Second call should be Workload Management
-    expect(registerMock).toHaveBeenNthCalledWith(2,
+    expect(registerMock).toHaveBeenNthCalledWith(
+      2,
       expect.objectContaining({
         id: 'workloadManagement',
-        title: 'Workload Management'
+        title: 'Workload Management',
       })
     );
   });
