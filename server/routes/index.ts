@@ -430,4 +430,63 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+  router.get(
+    {
+      path: '/api/cluster_settings',
+      validate: { query: schema.object({ include_defaults: schema.maybe(schema.boolean({ defaultValue: true })) }) },
+    },
+    async (context, request, response) => {
+      try {
+        const es = context.core.opensearch.client.asCurrentUser;
+        const { include_defaults } = request.query;
+        const res = await es.transport.request({
+          method: 'GET',
+          path: '/_cluster/settings',
+          querystring: { include_defaults, pretty: true },
+        });
+        return response.ok({ body: { ok: true, response: res } });
+      } catch (error) {
+        console.error('Unable to get cluster settings:', error);
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
+      }
+    }
+  );
+
+  router.put(
+    {
+      path: '/api/cluster_settings',
+      validate: {
+        body: schema.object({
+          persistent: schema.maybe(schema.recordOf(schema.string(), schema.any())),
+          transient: schema.maybe(schema.recordOf(schema.string(), schema.any())),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const es = context.core.opensearch.client.asCurrentUser;
+        const { persistent = {}, transient = {} } = request.body as {
+          persistent?: Record<string, any>;
+          transient?: Record<string, any>;
+        };
+        const res = await es.transport.request({
+          method: 'PUT',
+          path: '/_cluster/settings',
+          body: { persistent, transient },
+        });
+        return response.ok({ body: { ok: true, response: res } });
+      } catch (error) {
+        console.error('Unable to update cluster settings:', error);
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
+      }
+    }
+  );
 }
+
+
