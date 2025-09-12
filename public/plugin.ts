@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
+import {
+  AppMountParameters,
+  CoreSetup,
+  CoreStart,
+  DEFAULT_NAV_GROUPS,
+  Plugin,
+} from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -34,8 +40,10 @@ export class QueryInsightsDashboardsPlugin
       category: {
         id: 'opensearch',
         label: 'OpenSearch Plugins',
+        // Order 2000 positions this category after core OpenSearch categories
         order: 2000,
       },
+      // Order 5000 places Query Insights within the OpenSearch Plugins category
       order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle
@@ -60,8 +68,10 @@ export class QueryInsightsDashboardsPlugin
       category: {
         id: 'opensearch',
         label: 'OpenSearch Plugins',
+        // Order 2000 positions this category after core OpenSearch categories
         order: 2000,
       },
+      // Order 5100 places Workload Management after Query Insights (5000)
       order: 5100,
       async mount(params: AppMountParameters) {
         // Dynamically import the WLM page
@@ -77,6 +87,36 @@ export class QueryInsightsDashboardsPlugin
         );
       },
     });
+
+    // Registration for new navigation
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: PLUGIN_NAME,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          // Order 9000 positions Performance category at the end of Data Administration
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        // Order 200 places this item within the Performance category
+        order: 200,
+      },
+    ]);
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: 'workloadManagement',
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          // Order 9000 positions Performance category at the end of Data Administration
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        // Order 200 places this item within the Performance category
+        order: 200,
+      },
+    ]);
 
     return {};
   }
