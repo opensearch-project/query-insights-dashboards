@@ -362,17 +362,28 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       validate: {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
+          wlm_group: schema.maybe(schema.string()),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const client =
-          !dataSourceEnabled || !request.query?.dataSourceId
-            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
-            : context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+        const { dataSourceId, wlm_group: wlmGroup } = request.query as {
+          dataSourceId?: string;
+          wlm_group?: string;
+        };
 
-        const res = await client('queryInsights.getLiveQueries');
+        const client =
+          !dataSourceEnabled || !dataSourceId
+            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
+            : context.dataSource.opensearch.legacy.getClient(dataSourceId);
+
+        // Call the appropriate API based on whether wlm_group is provided
+        const hasGroup = typeof wlmGroup === 'string' && wlmGroup.trim().length > 0;
+        const res = hasGroup
+          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlm_group: wlmGroup })
+          : await client('queryInsights.getLiveQueries');
+
         if (!res || res.ok === false) {
           throw new Error(res?.error || 'Query Insights service returned an error');
         }
@@ -426,6 +437,57 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           body: {
             message: error.message || 'Internal server error',
           },
+        });
+      }
+    }
+  );
+
+  router.get(
+    {
+      path: '/api/cat_plugins',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const { dataSourceId } = request.query;
+
+        // Always use _cat (JSON) as requested
+        const catPath = '/_cat/plugins?format=json';
+
+        let resp: any;
+        if (dataSourceEnabled && dataSourceId) {
+          // Data source-aware client (proxies to the selected cluster)
+          const dsClient = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          resp = await dsClient.callAPI('transport.request', {
+            method: 'GET',
+            path: catPath,
+          });
+        } else {
+          // Fallback: core client as current user
+          const es = context.core.opensearch.client.asCurrentUser;
+          resp = await es.transport.request({
+            method: 'GET',
+            path: catPath,
+          });
+        }
+
+        const body = resp?.body ?? resp; // legacy/new client normalization
+        const rows: Array<Record<string, any>> = Array.isArray(body) ? body : [];
+
+        // Typical _cat/plugins fields include "name" or "component"
+        const hasWlm = rows.some((p) => {
+          const s = `${p?.component ?? ''} ${p?.name ?? ''}`.toLowerCase();
+          return s.includes('workload') || s.includes('wlm');
+        });
+
+        return response.ok({ body: { ok: true, hasWlm, rows } });
+      } catch (err: any) {
+        return response.ok({
+          body: { ok: false, hasWlm: false, error: err?.message ?? 'cat plugins failed' },
         });
       }
     }
