@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CoreSetup, CoreStart } from '../../../src/core/public';
+import { CoreSetup, CoreStart, DEFAULT_NAV_GROUPS } from '../../../src/core/public';
 import { QueryInsightsDashboardsPlugin } from './plugin';
 import { PLUGIN_NAME } from '../common';
 import { renderApp } from './application';
@@ -18,10 +18,17 @@ describe('QueryInsightsDashboardsPlugin', () => {
   let coreSetupMock: jest.Mocked<CoreSetup>;
   let coreStartMock: jest.Mocked<CoreStart>;
   let registerMock: jest.Mock;
+  let addNavLinksToGroupMock: jest.Mock;
 
   beforeEach(() => {
     coreSetupMock = coreMock.createSetup();
     coreStartMock = coreMock.createStart();
+    addNavLinksToGroupMock = jest.fn();
+
+    // Properly mock the navGroup structure
+    coreSetupMock.chrome.navGroup = {
+      addNavLinksToGroup: addNavLinksToGroupMock,
+    } as any;
 
     plugin = new QueryInsightsDashboardsPlugin();
     registerMock = coreSetupMock.application.register;
@@ -58,7 +65,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
     await mountFunction(paramsMock);
 
     const depsMock = { dataSourceManagement: undefined };
-    coreSetupMock.getStartServices.mockResolvedValue([coreStartMock, depsMock]);
+    coreSetupMock.getStartServices.mockResolvedValue([coreStartMock, depsMock, undefined]);
 
     await mountFunction(paramsMock);
 
@@ -70,8 +77,67 @@ describe('QueryInsightsDashboardsPlugin', () => {
     );
   });
 
+  it('should register workload management application', () => {
+    plugin.setup(coreSetupMock, {} as any);
+
+    expect(registerMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'workloadManagement',
+        title: 'Workload Management',
+        appRoute: '/app/workload-management',
+        description: 'Monitor and manage workload distribution across the cluster.',
+        category: expect.objectContaining({
+          id: 'opensearch',
+          label: 'OpenSearch Plugins',
+          order: 2000,
+        }),
+        order: 5100,
+        mount: expect.any(Function),
+      })
+    );
+  });
+
+  it('should register both applications in correct order', () => {
+    plugin.setup(coreSetupMock, {} as any);
+    expect(registerMock).toHaveBeenCalledTimes(2);
+
+    // First call should be Query Insights
+    expect(registerMock).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        id: PLUGIN_NAME,
+        title: 'Query Insights',
+      })
+    );
+
+    // Second call should be Workload Management
+    expect(registerMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        id: 'workloadManagement',
+        title: 'Workload Management',
+      })
+    );
+  });
+
+  it('should add navigation links to group', () => {
+    plugin.setup(coreSetupMock, {} as any);
+
+    expect(addNavLinksToGroupMock).toHaveBeenCalledWith(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: PLUGIN_NAME,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        order: 200,
+      },
+    ]);
+  });
+
   it('should return empty start and stop methods', () => {
-    // Ensures `start` and `stop` do not introduce unwanted behavior
     expect(plugin.start(coreStartMock)).toEqual({});
     expect(plugin.stop()).toBeUndefined();
   });
