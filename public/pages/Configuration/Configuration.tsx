@@ -117,7 +117,6 @@ const getClusterSetting = (root: any, nested: string[], dotted: string) => {
 
 const unwrapClusterPayload = (res: any) => res?.response?.body ?? res?.body ?? res;
 
-// ---------- component ----------
 export default function Configuration({
                                         groupBySettings,
                                         dataRetentionSettings,
