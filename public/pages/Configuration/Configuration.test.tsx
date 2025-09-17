@@ -141,7 +141,9 @@ describe('Configuration Component', () => {
   it('renders with default settings', async () => {
     const { container } = renderConfiguration();
     await waitFor(() => {
-      expect(screen.getByText('Top N queries monitoring configuration settings')).toBeInTheDocument();
+      expect(
+        screen.getByText('Top N queries monitoring configuration settings')
+      ).toBeInTheDocument();
     });
     expect(container).toMatchSnapshot('should match default settings snapshot');
   });
@@ -430,7 +432,9 @@ describe('Configuration Component', () => {
       mockCoreStart.http.get.mockResolvedValue({});
       renderConfiguration();
       await waitFor(() => {
-        expect(screen.getByText('Top N queries monitoring configuration settings')).toBeInTheDocument();
+        expect(
+          screen.getByText('Top N queries monitoring configuration settings')
+        ).toBeInTheDocument();
       });
     });
 

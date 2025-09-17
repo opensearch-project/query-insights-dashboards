@@ -3,13 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState, useEffect, useContext, useMemo } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
   EuiButtonEmpty,
   EuiCallOut,
-  EuiDescriptionList,
   EuiFieldNumber,
   EuiFieldText,
   EuiFlexGrid,
@@ -24,6 +23,7 @@ import {
   EuiSwitch,
   EuiText,
   EuiTitle,
+  EuiDescriptionList,
 } from '@elastic/eui';
 import type { EuiSwitchEvent } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -89,7 +89,9 @@ const parseBool = (v: any): boolean => {
 };
 // Accepts "10m" / "1h"
 const parseWindowSizeStrict = (raw?: string): { value: number; unit: UnitUI } | null => {
-  const s = String(raw ?? '').trim().toLowerCase();
+  const s = String(raw ?? '')
+    .trim()
+    .toLowerCase();
   const m = s.match(/^(\d+)\s*([mh])$/);
   if (!m) return null;
   const value = parseInt(m[1], 10);
@@ -112,20 +114,22 @@ const getClusterSetting = (root: any, nested: string[], dotted: string) => {
     if (dotted in lvl) return lvl[dotted];
     return undefined;
   };
-  return [root?.persistent, root?.transient, root?.defaults].map(tryLevel).find((v) => v !== undefined);
+  return [root?.persistent, root?.transient, root?.defaults]
+    .map(tryLevel)
+    .find((v) => v !== undefined);
 };
 
 const unwrapClusterPayload = (res: any) => res?.response?.body ?? res?.body ?? res;
 
 export default function Configuration({
-                                        groupBySettings,
-                                        dataRetentionSettings,
-                                        configInfo,
-                                        core,
-                                        depsStart,
-                                        params,
-                                        dataSourceManagement,
-                                      }: Props) {
+  groupBySettings,
+  dataRetentionSettings,
+  configInfo,
+  core,
+  depsStart,
+  params,
+  dataSourceManagement,
+}: Props) {
   const history = useHistory();
   const location = useLocation();
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
@@ -310,6 +314,7 @@ export default function Configuration({
     setDeleteAfterDays(baseline.deleteAfterDays);
   };
 
+  const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
   const disabledSymb = <EuiHealth color="default">Disabled</EuiHealth>;
 
@@ -351,7 +356,12 @@ export default function Configuration({
                   <EuiFlexItem>
                     <EuiDescriptionList
                       compressed
-                      listItems={[{ title: <h3>Metric Type</h3>, description: 'Specify the metric type to set settings for.' }]}
+                      listItems={[
+                        {
+                          title: <h3>Metric Type</h3>,
+                          description: 'Specify the metric type to set settings for.',
+                        },
+                      ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
@@ -370,7 +380,12 @@ export default function Configuration({
                   <EuiFlexItem>
                     <EuiDescriptionList
                       compressed
-                      listItems={[{ title: <h3>Enabled</h3>, description: `Enable/disable top N query monitoring by ${metric}.` }]}
+                      listItems={[
+                        {
+                          title: <h3>Enabled</h3>,
+                          description: `Enable/disable top N query monitoring by ${metric}.`,
+                        },
+                      ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
@@ -388,7 +403,12 @@ export default function Configuration({
                   <EuiFlexItem>
                     <EuiDescriptionList
                       compressed
-                      listItems={[{ title: <h3>Value of N (count)</h3>, description: 'Number of queries to collect within the window.' }]}
+                      listItems={[
+                        {
+                          title: <h3>Value of N (count)</h3>,
+                          description: 'Number of queries to collect within the window.',
+                        },
+                      ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
@@ -409,13 +429,17 @@ export default function Configuration({
                       listItems={[
                         {
                           title: <h3>Window size</h3>,
-                          description: 'Enter number + unit, e.g. 10m or 1h (minutes: 1–1440, hours: 1–24).',
+                          description:
+                            'Enter number + unit, e.g. 10m or 1h (minutes: 1–1440, hours: 1–24).',
                         },
                       ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFormRow label={`${metric}.window_size`} helpText="Examples: 15m, 45m, 1h, 6h.">
+                    <EuiFormRow
+                      label={`${metric}.window_size`}
+                      helpText="Examples: 15m, 45m, 1h, 6h."
+                    >
                       <EuiFieldText
                         value={windowRaw}
                         onChange={(e) => setWindowRaw(e.target.value)}
@@ -430,7 +454,8 @@ export default function Configuration({
               {isEnabled && !isValidWindow && (
                 <EuiCallOut title="Invalid window size" color="warning" iconType="alert">
                   <p>
-                    Use a number followed by <strong>m</strong> or <strong>h</strong>. Minutes: 1–1440. Hours: 1–24.
+                    Use a number followed by <strong>m</strong> or <strong>h</strong>. Minutes:
+                    1–1440. Hours: 1–24.
                   </p>
                 </EuiCallOut>
               )}
@@ -441,20 +466,37 @@ export default function Configuration({
         <EuiFlexItem grow={2}>
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
-              <EuiTitle size="s"><h2>Statuses for configuration metrics</h2></EuiTitle>
+              <EuiTitle size="s">
+                <h2>Statuses for configuration metrics</h2>
+              </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
-                <EuiFlexItem><EuiText size="s">Latency</EuiText></EuiFlexItem>
-                <EuiFlexItem><EuiSpacer size="xs" />{statusLatency ? enabledSymb : disabledSymb}</EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiText size="s">Latency</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {statusLatency ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
               </EuiFlexGroup>
               <EuiFlexGroup>
-                <EuiFlexItem><EuiText size="s">CPU Usage</EuiText></EuiFlexItem>
-                <EuiFlexItem><EuiSpacer size="xs" />{statusCpu ? enabledSymb : disabledSymb}</EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiText size="s">CPU Usage</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {statusCpu ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
               </EuiFlexGroup>
               <EuiFlexGroup>
-                <EuiFlexItem><EuiText size="s">Memory</EuiText></EuiFlexItem>
-                <EuiFlexItem><EuiSpacer size="xs" />{statusMemory ? enabledSymb : disabledSymb}</EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiText size="s">Memory</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {statusMemory ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
               </EuiFlexGroup>
             </EuiFlexItem>
           </EuiPanel>
@@ -466,12 +508,19 @@ export default function Configuration({
           <EuiPanel paddingSize="m">
             <EuiForm>
               <EuiFlexItem>
-                <EuiTitle size="s"><h2>Top N queries grouping configuration settings</h2></EuiTitle>
+                <EuiTitle size="s">
+                  <h2>Top N queries grouping configuration settings</h2>
+                </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
                   <EuiFlexItem>
-                    <EuiDescriptionList compressed listItems={[{ title: <h3>Group By</h3>, description: 'Specify the group by type.' }]} />
+                    <EuiDescriptionList
+                      compressed
+                      listItems={[
+                        { title: <h3>Group By</h3>, description: 'Specify the group by type.' },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow>
@@ -494,12 +543,19 @@ export default function Configuration({
         <EuiFlexItem grow={2}>
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
-              <EuiTitle size="s"><h2>Statuses for group by</h2></EuiTitle>
+              <EuiTitle size="s">
+                <h2>Statuses for group by</h2>
+              </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
-                <EuiFlexItem><EuiText size="s">Group By</EuiText></EuiFlexItem>
-                <EuiFlexItem><EuiSpacer size="xs" />{groupBy === 'similarity' ? enabledSymb : disabledSymb}</EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiText size="s">Group By</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {groupBy === 'similarity' ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
               </EuiFlexGroup>
             </EuiFlexItem>
           </EuiPanel>
@@ -511,18 +567,28 @@ export default function Configuration({
           <EuiPanel paddingSize="m">
             <EuiForm>
               <EuiFlexItem>
-                <EuiTitle size="s"><h2>Query Insights export and data retention settings</h2></EuiTitle>
+                <EuiTitle size="s">
+                  <h2>Query Insights export and data retention settings</h2>
+                </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
                   <EuiFlexItem>
-                    <EuiDescriptionList compressed listItems={[{ title: <h3>Exporter</h3>, description: 'Configure a sink for exporting Query Insights data.' }]} />
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Exporter</h3>,
+                          description: 'Configure a sink for exporting Query Insights data.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFormRow>
+                    <EuiFormRow style={formRowPadding}>
                       <EuiSelect
                         id="exporterType"
-                        required
+                        required={true}
                         options={EXPORTER_TYPES_LIST}
                         value={exporterType}
                         onChange={(e) => setExporterType(e.target.value)}
@@ -531,7 +597,15 @@ export default function Configuration({
                     </EuiFormRow>
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiDescriptionList compressed listItems={[{ title: <h3>Delete After (days)</h3>, description: 'Number of days to retain Query Insights data.' }]} />
+                    <EuiDescriptionList
+                      compressed
+                      listItems={[
+                        {
+                          title: <h3>Delete After (days)</h3>,
+                          description: 'Number of days to retain Query Insights data.',
+                        },
+                      ]}
+                    />
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiFormRow>
@@ -539,7 +613,9 @@ export default function Configuration({
                         disabled={exporterType !== EXPORTER_TYPE.localIndex}
                         min={1}
                         max={180}
-                        value={exporterType !== EXPORTER_TYPE.localIndex ? undefined : deleteAfterDays}
+                        value={
+                          exporterType !== EXPORTER_TYPE.localIndex ? undefined : deleteAfterDays
+                        }
                         onChange={(e) => setDeleteAfterDays(clamp(toInt(e.target.value), 1, 180))}
                         aria-label="Delete after days"
                       />
@@ -554,11 +630,15 @@ export default function Configuration({
         <EuiFlexItem grow={2}>
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
-              <EuiTitle size="s"><h2>Statuses for data retention</h2></EuiTitle>
+              <EuiTitle size="s">
+                <h2>Statuses for data retention</h2>
+              </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
               <EuiFlexGroup>
-                <EuiFlexItem><EuiText size="s">Exporter</EuiText></EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiText size="s">Exporter</EuiText>
+                </EuiFlexItem>
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
                   {exporterType === EXPORTER_TYPE.localIndex ? enabledSymb : disabledSymb}
