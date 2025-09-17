@@ -329,15 +329,14 @@ export default function Configuration({
 
   const TIME_UNITS_TEXT = useMemo(
     () => [
-      { value: 'm', text: 'Minutes (m)' },
-      { value: 'h', text: 'Hours (h)' },
+      { value: 'm', text: 'm' },
+      { value: 'h', text: 'h' },
     ],
     []
   );
 
   const onTimeChange = (nextUnit: UnitUI) => {
     setTimeUnit(nextUnit);
-    // also update windowRaw so baseline/isChanged comparisons stay consistent
     setWindowRaw(`${time}${nextUnit}`);
   };
 
@@ -378,12 +377,6 @@ export default function Configuration({
         }}
         dataSourcePickerReadOnly={false}
       />
-
-      {/* {fetchError && (*/}
-      {/*  <EuiCallOut title="Could not load cluster settings" color="danger" iconType="alert">*/}
-      {/*    <p>{fetchError}</p>*/}
-      {/*  </EuiCallOut>*/}
-      {/* )}*/}
 
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
@@ -512,14 +505,6 @@ export default function Configuration({
                 </EuiFlexGrid>
               </EuiFlexItem>
 
-              {/* {isEnabled && !isValidWindow && (*/}
-              {/*  <EuiCallOut title="Invalid window size" color="warning" iconType="alert">*/}
-              {/*    <p>*/}
-              {/*      Use a number followed by <strong>m</strong> or <strong>h</strong>. Minutes:*/}
-              {/*      1–1440. Hours: 1–24.*/}
-              {/*    </p>*/}
-              {/*  </EuiCallOut>*/}
-              {/* )}*/}
             </EuiForm>
           </EuiPanel>
         </EuiFlexItem>
