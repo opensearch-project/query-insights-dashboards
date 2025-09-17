@@ -15,7 +15,7 @@ permissions:
 
 env:
   OPENSEARCH_BRANCH: '3.2'
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
+  OPENSEARCH_DASHBOARDS_VERSION: '3.2.0'
   OPENSEARCH_VERSION: '3.2.0-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
@@ -220,7 +220,7 @@ jobs:
           tail -n 500 ../dashboards.log || true
           exit 1
         shell: bash
-      
+
 
       - name: Verify services are running
         run: |
