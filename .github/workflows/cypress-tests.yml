@@ -163,45 +163,64 @@ jobs:
         run: |
           set -euo pipefail
           cd OpenSearch-Dashboards
-          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
+          # Give optimizer more headroom and reduce parallelism to avoid OOM on CI
+          export NODE_OPTIONS="--max-old-space-size=8192 --dns-result-order=ipv4first"
+          export OSD_OPTIMIZER_MAX_WORKERS=2
           echo "Starting Dashboards..."
           nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > ../dashboards.log 2>&1 &
-          sleep 10
+          echo $! > ../dashboards.pid
+          sleep 5
           echo "Initial Dashboards log output:"
-          head -n 100 ../dashboards.log || true
+          head -n 200 ../dashboards.log || true
         shell: bash
 
-      - name: Wait for OpenSearch-Dashboards to be ready
+      - name: Wait for OpenSearch-Dashboards to be ready (stream logs + detect crash)
         run: |
           set -euo pipefail
+          cd OpenSearch-Dashboards
+          PID=$(cat ../dashboards.pid || echo "")
+          if [ -z "${PID}" ]; then
+            echo "No Dashboards PID found; server failed to start."
+            tail -n 500 ../dashboards.log || true
+            exit 1
+          fi
+
+          echo "Tailing dashboards.log in background…"
+          ( timeout 45m tail -n +1 -f ../dashboards.log || true ) &
+
           echo "Waiting for OpenSearch-Dashboards to start..."
-          max_attempts=150
+          max_attempts=360  # up to 60 min (360 * 10s). Fresh runners can take a while.
           for attempt in $(seq 1 ${max_attempts}); do
-            if curl -fsS http://localhost:5601/api/status > /dev/null; then
-              echo "OpenSearch-Dashboards is ready!"
-              echo "=== OpenSearch-Dashboards Status Debug Info ==="
-              curl -fsS http://localhost:5601/api/status | jq '.' || curl -fsS http://localhost:5601/api/status || true
-              echo "=============================================="
-              sleep 45
-              break
-            fi
-            echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
-            if [ $((attempt % 10)) -eq 0 ]; then
-              echo "Debug: Attempting to connect to http://localhost:5601/api/status"
-              curl -s -v http://localhost:5601/api/status || echo "Connection failed"
-            fi
-            sleep 10
-            if [ $attempt -eq $max_attempts ]; then
-              echo "OpenSearch-Dashboards failed to start within timeout"
-              curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
+            # If the process died, fail immediately with log tail
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo "Dashboards process exited unexpectedly. Last 500 log lines:"
+              tail -n 500 ../dashboards.log || true
               exit 1
             fi
+
+            if curl -fsS http://localhost:5601/api/status >/dev/null; then
+              echo "OpenSearch-Dashboards is ready!"
+              curl -fsS http://localhost:5601/api/status | jq '.' || true
+              # small buffer so plugin routes finish registering
+              sleep 30
+              exit 0
+            fi
+
+            # Heartbeat every 10 attempts with recent logs + memory
+            if [ $((attempt % 10)) -eq 0 ]; then
+              echo "--- attempt $attempt/${max_attempts} ---"
+              tail -n 80 ../dashboards.log || true
+              echo "Node process memory:"
+              ps -o pid,pmem,rss,comm -p "$PID" || true
+            fi
+            sleep 10
           done
 
-          curl -fsS http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
-          echo "Waiting additional time for plugin initialization..."
-          sleep 15
+          echo "Timed out waiting for Dashboards; last 500 log lines:"
+          tail -n 500 ../dashboards.log || true
+          exit 1
         shell: bash
+      
 
       - name: Verify services are running
         run: |
