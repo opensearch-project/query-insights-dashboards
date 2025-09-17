@@ -8,9 +8,7 @@ import {
   EuiBottomBar,
   EuiButton,
   EuiButtonEmpty,
-  EuiCallOut,
   EuiFieldNumber,
-  EuiFieldText,
   EuiFlexGrid,
   EuiFlexGroup,
   EuiFlexItem,
@@ -24,8 +22,8 @@ import {
   EuiText,
   EuiTitle,
   EuiDescriptionList,
+  EuiSwitchEvent,
 } from '@elastic/eui';
-import type { EuiSwitchEvent } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
@@ -139,6 +137,9 @@ export default function Configuration({
   const [isEnabled, setIsEnabled] = useState(false);
   const [topNSize, setTopNSize] = useState(10);
   const [windowRaw, setWindowRaw] = useState('5m');
+  // derived window controls state (kept in sync with windowRaw)
+  const [time, setTime] = useState<number>(5);
+  const [timeUnit, setTimeUnit] = useState<UnitUI>('m');
   const [groupBy, setGroupBy] = useState(groupBySettings.groupBy ?? 'none');
   const [exporterType, setExporterType] = useState(
     dataRetentionSettings.exporterType ?? EXPORTER_TYPE.none
@@ -254,11 +255,16 @@ export default function Configuration({
   // initial + on DS switch + on metric change
   useEffect(() => {
     loadFromCluster();
-  }, [loadFromCluster]);
+  }, [loadFromCluster]); // loadFromCluster depends on `metric`, so this also reacts to metric changes
 
+  // keep number/unit controls in sync when windowRaw changes (including after fetch)
   useEffect(() => {
-    loadFromCluster();
-  }, [metric, loadFromCluster]);
+    const p = parseWindowSizeStrict(windowRaw);
+    if (p) {
+      setTime(p.value);
+      setTimeUnit(p.unit);
+    }
+  }, [windowRaw]);
 
   // breadcrumbs
   useEffect(() => {
@@ -274,7 +280,10 @@ export default function Configuration({
     ]);
   }, [core.chrome, history, location]);
 
-  const isValidWindow = useMemo(() => !!parseWindowSizeStrict(windowRaw), [windowRaw]);
+  const isValidWindow = useMemo(() => !!parseWindowSizeStrict(`${time}${timeUnit}`), [
+    time,
+    timeUnit,
+  ]);
 
   const isChanged = useMemo(() => {
     return (
@@ -288,7 +297,7 @@ export default function Configuration({
   }, [baseline, deleteAfterDays, exporterType, groupBy, isEnabled, topNSize, windowRaw]);
 
   const onSave = () => {
-    const parsed = parseWindowSizeStrict(windowRaw);
+    const parsed = parseWindowSizeStrict(`${time}${timeUnit}`);
     if (!parsed) return;
 
     configInfo(
@@ -318,6 +327,41 @@ export default function Configuration({
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
   const disabledSymb = <EuiHealth color="default">Disabled</EuiHealth>;
 
+  const TIME_UNITS_TEXT = useMemo(
+    () => [
+      { value: 'm', text: 'Minutes (m)' },
+      { value: 'h', text: 'Hours (h)' },
+    ],
+    []
+  );
+
+  const onTimeChange = (nextUnit: UnitUI) => {
+    setTimeUnit(nextUnit);
+    // also update windowRaw so baseline/isChanged comparisons stay consistent
+    setWindowRaw(`${time}${nextUnit}`);
+  };
+
+  const WindowChoice = () => (
+    <EuiFieldNumber
+      min={timeUnit === 'h' ? 1 : 1}
+      max={timeUnit === 'h' ? 24 : 1440}
+      required={isEnabled}
+      value={time}
+      onChange={(e) => {
+        const v = clamp(
+          toInt(e.target.value),
+          timeUnit === 'h' ? 1 : 1,
+          timeUnit === 'h' ? 24 : 1440
+        );
+        setTime(v);
+        setWindowRaw(`${v}${timeUnit}`);
+      }}
+      aria-label="Window size value"
+      data-test-subj="window-size-value"
+      isInvalid={isEnabled && !isValidWindow}
+    />
+  );
+
   return (
     <div>
       <QueryInsightsDataSourceMenu
@@ -335,11 +379,11 @@ export default function Configuration({
         dataSourcePickerReadOnly={false}
       />
 
-      {fetchError && (
-        <EuiCallOut title="Could not load cluster settings" color="danger" iconType="alert">
-          <p>{fetchError}</p>
-        </EuiCallOut>
-      )}
+      {/* {fetchError && (*/}
+      {/*  <EuiCallOut title="Could not load cluster settings" color="danger" iconType="alert">*/}
+      {/*    <p>{fetchError}</p>*/}
+      {/*  </EuiCallOut>*/}
+      {/* )}*/}
 
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
@@ -399,70 +443,86 @@ export default function Configuration({
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
+                  {isEnabled ? (
+                    <>
+                      <EuiFlexItem>
+                        <EuiDescriptionList
+                          compressed
+                          listItems={[
+                            {
+                              title: <h3>Value of N (count)</h3>,
+                              description:
+                                'Specify the value of N. N is the number of queries to be collected within the window size.',
+                            },
+                          ]}
+                        />
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiFormRow
+                          label={`${metric}.top_n_size`}
+                          helpText="Max allowed limit 100."
+                        >
+                          <EuiFieldNumber
+                            min={1}
+                            max={100}
+                            required
+                            value={topNSize}
+                            onChange={(e) => setTopNSize(clamp(toInt(e.target.value), 1, 100))}
+                          />
+                        </EuiFormRow>
+                      </EuiFlexItem>
 
-                  <EuiFlexItem>
-                    <EuiDescriptionList
-                      compressed
-                      listItems={[
-                        {
-                          title: <h3>Value of N (count)</h3>,
-                          description: 'Number of queries to collect within the window.',
-                        },
-                      ]}
-                    />
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiFormRow label={`${metric}.top_n_size`} helpText="Max allowed limit 100.">
-                      <EuiFieldNumber
-                        min={1}
-                        max={100}
-                        required
-                        value={topNSize}
-                        onChange={(e) => setTopNSize(clamp(toInt(e.target.value), 1, 100))}
-                      />
-                    </EuiFormRow>
-                  </EuiFlexItem>
-
-                  <EuiFlexItem>
-                    <EuiDescriptionList
-                      compressed
-                      listItems={[
-                        {
-                          title: <h3>Window size</h3>,
-                          description:
-                            'Enter number + unit, e.g. 10m or 1h (minutes: 1–1440, hours: 1–24).',
-                        },
-                      ]}
-                    />
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiFormRow
-                      label={`${metric}.window_size`}
-                      helpText="Examples: 15m, 45m, 1h, 6h."
-                    >
-                      <EuiFieldText
-                        value={windowRaw}
-                        onChange={(e) => setWindowRaw(e.target.value)}
-                        placeholder="e.g. 10m or 1h"
-                        data-test-subj="window-size-raw"
-                      />
-                    </EuiFormRow>
-                  </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiDescriptionList
+                          compressed={true}
+                          listItems={[
+                            {
+                              title: <h3>Window size</h3>,
+                              description:
+                                ' The duration during which the Top N queries are collected.',
+                            },
+                          ]}
+                        />
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiFormRow
+                          label={`${metric}.window_size`}
+                          helpText="Max allowed limit 24 hours."
+                          style={{ padding: '15px 0px 5px' }}
+                        >
+                          <EuiFlexGroup>
+                            <EuiFlexItem style={{ flexDirection: 'row' }}>
+                              <WindowChoice />
+                            </EuiFlexItem>
+                            <EuiFlexItem>
+                              <EuiSelect
+                                id="timeUnit"
+                                required={isEnabled}
+                                options={TIME_UNITS_TEXT}
+                                value={timeUnit}
+                                onChange={(e) => onTimeChange(e.target.value as UnitUI)}
+                                aria-label="Window size unit"
+                              />
+                            </EuiFlexItem>
+                          </EuiFlexGroup>
+                        </EuiFormRow>
+                      </EuiFlexItem>
+                    </>
+                  ) : null}
                 </EuiFlexGrid>
               </EuiFlexItem>
 
-              {isEnabled && !isValidWindow && (
-                <EuiCallOut title="Invalid window size" color="warning" iconType="alert">
-                  <p>
-                    Use a number followed by <strong>m</strong> or <strong>h</strong>. Minutes:
-                    1–1440. Hours: 1–24.
-                  </p>
-                </EuiCallOut>
-              )}
+              {/* {isEnabled && !isValidWindow && (*/}
+              {/*  <EuiCallOut title="Invalid window size" color="warning" iconType="alert">*/}
+              {/*    <p>*/}
+              {/*      Use a number followed by <strong>m</strong> or <strong>h</strong>. Minutes:*/}
+              {/*      1–1440. Hours: 1–24.*/}
+              {/*    </p>*/}
+              {/*  </EuiCallOut>*/}
+              {/* )}*/}
             </EuiForm>
           </EuiPanel>
         </EuiFlexItem>
-
         <EuiFlexItem grow={2}>
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
@@ -509,7 +569,7 @@ export default function Configuration({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                  <h2>Top N queries grouping configuration settings</h2>
+                  <h2>Top n queries grouping configuration settings</h2>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -518,15 +578,18 @@ export default function Configuration({
                     <EuiDescriptionList
                       compressed
                       listItems={[
-                        { title: <h3>Group By</h3>, description: 'Specify the group by type.' },
+                        {
+                          title: <h3>Group By</h3>,
+                          description: 'Specify the group by type.',
+                        },
                       ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFormRow>
+                    <EuiFormRow style={formRowPadding}>
                       <EuiSelect
                         id="groupBy"
-                        required
+                        required={true}
                         options={GROUP_BY_OPTIONS}
                         value={groupBy}
                         onChange={(e) => setGroupBy(e.target.value)}
@@ -539,7 +602,6 @@ export default function Configuration({
             </EuiForm>
           </EuiPanel>
         </EuiFlexItem>
-
         <EuiFlexItem grow={2}>
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
@@ -579,7 +641,7 @@ export default function Configuration({
                       listItems={[
                         {
                           title: <h3>Exporter</h3>,
-                          description: 'Configure a sink for exporting Query Insights data.',
+                          description: ' Configure a sink for exporting Query Insights data.',
                         },
                       ]}
                     />
@@ -598,17 +660,17 @@ export default function Configuration({
                   </EuiFlexItem>
                   <EuiFlexItem>
                     <EuiDescriptionList
-                      compressed
+                      compressed={true}
                       listItems={[
                         {
                           title: <h3>Delete After (days)</h3>,
-                          description: 'Number of days to retain Query Insights data.',
+                          description: ' Number of days to retain Query Insights data.',
                         },
                       ]}
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFormRow>
+                    <EuiFormRow style={formRowPadding}>
                       <EuiFieldNumber
                         disabled={exporterType !== EXPORTER_TYPE.localIndex}
                         min={1}
