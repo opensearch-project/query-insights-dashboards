@@ -9,6 +9,7 @@ import {
   CoreStart,
   DEFAULT_NAV_GROUPS,
   Plugin,
+  PluginInitializerContext,
 } from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
@@ -18,6 +19,12 @@ import {
 } from './types';
 import { PLUGIN_NAME } from '../common';
 
+interface ConfigSchema {
+  wlm: { enabled: boolean };
+}
+const defaultConfig: ConfigSchema = { wlm: { enabled: true } };
+export const WLM_CONFIG = defaultConfig.wlm;
+
 export class QueryInsightsDashboardsPlugin
   implements
     Plugin<
@@ -26,6 +33,10 @@ export class QueryInsightsDashboardsPlugin
       {},
       QueryInsightsDashboardsPluginStartDependencies
     > {
+  private config: ConfigSchema = defaultConfig; // default ON
+
+  constructor(_ctx: PluginInitializerContext) {}
+
   public setup(
     core: CoreSetup,
     deps: QueryInsightsDashboardsPluginSetupDependencies
@@ -60,33 +71,35 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    core.application.register({
-      id: 'workloadManagement',
-      title: 'Workload Management',
-      appRoute: '/app/workload-management',
-      description: 'Monitor and manage workload distribution across the cluster.',
-      category: {
-        id: 'opensearch',
-        label: 'OpenSearch Plugins',
-        // Order 2000 positions this category after core OpenSearch categories
-        order: 2000,
-      },
-      // Order 5100 places Workload Management after Query Insights (5000)
-      order: 5100,
-      async mount(params: AppMountParameters) {
-        // Dynamically import the WLM page
-        const { renderApp } = await import('./application');
+    if (this.config.wlm.enabled) {
+      core.application.register({
+        id: 'workloadManagement',
+        title: 'Workload Management',
+        appRoute: '/app/workload-management',
+        description: 'Monitor and manage workload distribution across the cluster.',
+        category: {
+          id: 'opensearch',
+          label: 'OpenSearch Plugins',
+          // Order 2000 positions this category after core OpenSearch categories
+          order: 2000,
+        },
+        // Order 5100 places Workload Management after Query Insights (5000)
+        order: 5100,
+        async mount(params: AppMountParameters) {
+          // Dynamically import the WLM page
+          const { renderApp } = await import('./application');
 
-        const [coreStart, depsStart] = await core.getStartServices();
+          const [coreStart, depsStart] = await core.getStartServices();
 
-        return renderApp(
-          coreStart,
-          depsStart as QueryInsightsDashboardsPluginStartDependencies,
-          params,
-          deps.dataSourceManagement
-        );
-      },
-    });
+          return renderApp(
+            coreStart,
+            depsStart as QueryInsightsDashboardsPluginStartDependencies,
+            params,
+            deps.dataSourceManagement
+          );
+        },
+      });
+    }
 
     // Registration for new navigation
     core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
@@ -103,20 +116,22 @@ export class QueryInsightsDashboardsPlugin
         order: 200,
       },
     ]);
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
-      {
-        id: 'workloadManagement',
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          // Order 9000 positions Performance category at the end of Data Administration
-          order: 9000,
-          euiIconType: 'managementApp',
+    if (this.config.wlm.enabled) {
+      core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+        {
+          id: 'workloadManagement',
+          category: {
+            id: 'performance',
+            label: 'Performance',
+            // Order 9000 positions Performance category at the end of Data Administration
+            order: 9000,
+            euiIconType: 'managementApp',
+          },
+          // Order 200 places this item within the Performance category
+          order: 200,
         },
-        // Order 200 places this item within the Performance category
-        order: 200,
-      },
-    ]);
+      ]);
+    }
 
     return {};
   }

@@ -4,7 +4,7 @@
  */
 
 import { CoreSetup, CoreStart, DEFAULT_NAV_GROUPS } from '../../../src/core/public';
-import { QueryInsightsDashboardsPlugin } from './plugin';
+import { QueryInsightsDashboardsPlugin, WLM_CONFIG } from './plugin';
 import { PLUGIN_NAME } from '../common';
 import { renderApp } from './application';
 import { coreMock } from '../../../src/core/public/mocks';
@@ -77,47 +77,44 @@ describe('QueryInsightsDashboardsPlugin', () => {
     );
   });
 
-  it('should register workload management application', () => {
-    plugin.setup(coreSetupMock, {} as any);
+  if (WLM_CONFIG.enabled) {
+    it('should register workload management application', () => {
+      plugin.setup(coreSetupMock, {} as any);
 
-    expect(registerMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'workloadManagement',
-        title: 'Workload Management',
-        appRoute: '/app/workload-management',
-        description: 'Monitor and manage workload distribution across the cluster.',
-        category: expect.objectContaining({
-          id: 'opensearch',
-          label: 'OpenSearch Plugins',
-          order: 2000,
-        }),
-        order: 5100,
-        mount: expect.any(Function),
-      })
-    );
-  });
+      expect(registerMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'workloadManagement',
+          title: 'Workload Management',
+          appRoute: '/app/workload-management',
+          description: 'Monitor and manage workload distribution across the cluster.',
+          category: expect.objectContaining({
+            id: 'opensearch',
+            label: 'OpenSearch Plugins',
+            order: 2000,
+          }),
+          order: 5100,
+          mount: expect.any(Function),
+        })
+      );
+    });
+  }
 
   it('should register both applications in correct order', () => {
     plugin.setup(coreSetupMock, {} as any);
-    expect(registerMock).toHaveBeenCalledTimes(2);
+    const calls = registerMock.mock.calls.map(([app]) => ({
+      id: app.id,
+      title: app.title,
+    }));
 
-    // First call should be Query Insights
-    expect(registerMock).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        id: PLUGIN_NAME,
-        title: 'Query Insights',
-      })
-    );
+    const expected = WLM_CONFIG.enabled
+      ? [
+          { id: PLUGIN_NAME, title: 'Query Insights' },
+          { id: 'workloadManagement', title: 'Workload Management' },
+        ]
+      : [{ id: PLUGIN_NAME, title: 'Query Insights' }];
 
-    // Second call should be Workload Management
-    expect(registerMock).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        id: 'workloadManagement',
-        title: 'Workload Management',
-      })
-    );
+    expect(registerMock).toHaveBeenCalledTimes(expected.length);
+    expect(calls).toEqual(expected);
   });
 
   it('should add navigation links to group', () => {
