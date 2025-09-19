@@ -8,7 +8,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3D4E5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 7990852130,
@@ -33,7 +33,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4B",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 6412938258,
@@ -58,7 +58,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X9Y8Z7W6",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 9633985711,
@@ -83,7 +83,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-P0Q9R8S7",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 9530744641,
@@ -108,7 +108,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-oB7dSrYz4",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 6084339201,
@@ -133,7 +133,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-M2O3P4Q5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5967857684,
@@ -158,7 +158,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-B2C3D4E5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 6454136095,
@@ -183,7 +183,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-N2O3P4Q5",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 8450990820,
@@ -208,7 +208,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "2VTHIgQY-oB7dSrYz4BQ",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 7308762773,
@@ -233,7 +233,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X9Y8Z7W6V5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5167823987,
@@ -258,7 +258,7 @@
         "description": "indices[opensearch], search_type[Query_THEN_FETCH]",
         "node_id": "de-M1N2O3P4Q5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5708789476,
@@ -283,7 +283,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "no-P0Q9R8S7T6",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 7501207171,
@@ -308,7 +308,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4WTHIgQY-oB7dSrYz4BQ",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 8887346819,
@@ -333,7 +333,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHQY-oB7dSrYz4BQ",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5672726176,
@@ -358,7 +358,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C4E5",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 9691523794,
@@ -383,7 +383,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X8Z7W6V5",
         "is_cancelled": false,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 6840833580,
@@ -408,7 +408,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-M1N2P4Q5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5718519414,
@@ -433,7 +433,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3E5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 6063407743,
@@ -458,7 +458,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "4W2VTHIgQY-7dSrYz4BQ",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 9215252980,
@@ -483,7 +483,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3D4E5",
         "is_cancelled": true,
-        "query_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "DEFAULT_QUERY_GROUP",
         "measurements": {
           "latency": {
             "number": 5409476701,
