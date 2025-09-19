@@ -419,7 +419,7 @@ describe('InflightQueries', () => {
         live_queries: [
           {
             ...stubLiveQueries.response.live_queries[0],
-            query_group_id: 'group1',
+            wlm_group_id: 'group1',
           },
         ],
       },

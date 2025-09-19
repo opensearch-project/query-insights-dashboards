@@ -362,15 +362,15 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       validate: {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
-          wlm_group: schema.maybe(schema.string()),
+          wlmGroupId: schema.maybe(schema.string()),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { dataSourceId, wlm_group: wlmGroup } = request.query as {
+        const { dataSourceId, wlmGroupId: wlmGroup } = request.query as {
           dataSourceId?: string;
-          wlm_group?: string;
+          wlmGroupId?: string;
         };
 
         const client =
@@ -381,7 +381,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         // Call the appropriate API based on whether wlm_group is provided
         const hasGroup = typeof wlmGroup === 'string' && wlmGroup.trim().length > 0;
         const res = hasGroup
-          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlm_group: wlmGroup })
+          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
           : await client('queryInsights.getLiveQueries');
 
         if (!res || res.ok === false) {

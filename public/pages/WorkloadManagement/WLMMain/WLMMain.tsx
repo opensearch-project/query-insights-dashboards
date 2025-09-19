@@ -568,7 +568,7 @@ export const WorkloadManagementMain = ({
         <EuiLink
           onClick={() => {
             core.application.navigateToApp('query-insights-dashboards', {
-              path: `#/LiveQueries?wlm_group=${item.groupId}`,
+              path: `#/LiveQueries?wlmGroupId=${item.groupId}`,
             });
           }}
           style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}

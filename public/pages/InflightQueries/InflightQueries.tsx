@@ -100,9 +100,9 @@ export const InflightQueries = ({
 
   const location = useLocation();
   const urlSearchParams = new URLSearchParams(location.search);
-  const initialWlmGroup = urlSearchParams.get('wlm_group') || '';
+  const initialWlmGroup = urlSearchParams.get('wlmGroupId') || '';
 
-  const [wlmGroup, setWlmGroup] = useState<string | undefined>(
+  const [wlmGroupId, setWlmGroupId] = useState<string | undefined>(
     initialWlmGroup !== '' ? initialWlmGroup : undefined
   );
   const wlmIdToNameMap = React.useMemo(
@@ -171,7 +171,7 @@ export const InflightQueries = ({
       const workloadGroups = nodeStats.workload_groups ?? {};
       for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
         activeGroupIds.add(groupId);
-        if (!wlmGroup || wlmGroup === groupId) {
+        if (!wlmGroupId || wlmGroupId === groupId) {
           const s = groupStats;
           completions += s.total_completions ?? 0;
           cancellations += s.total_cancellations ?? 0;
@@ -206,7 +206,7 @@ export const InflightQueries = ({
     const options = Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }));
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroup, detectWlm]);
+  }, [core.http, dataSource?.id, wlmGroupId, detectWlm]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -218,8 +218,8 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = wlmGroup
-        ? await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroup)
+      const retrieved = wlmGroupId
+        ? await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroupId)
         : await retrieveLiveQueries(core, dataSource?.id);
 
       if (retrieved?.response?.live_queries) {
@@ -236,8 +236,8 @@ export const InflightQueries = ({
           const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
 
           const wlmDisplay =
-            typeof q.query_group_id === 'string' && q.query_group_id.trim() !== ''
-              ? idToName[q.query_group_id] ?? q.query_group_id
+            typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
+              ? idToName[q.wlm_group_id] ?? q.wlm_group_id
               : 'N/A';
 
           return {
@@ -283,7 +283,7 @@ export const InflightQueries = ({
       }
     },
     // deps for react-hooks/exhaustive-deps
-    [core, dataSource?.id, wlmGroup, wlmGroupOptions]
+    [core, dataSource?.id, wlmGroupId, wlmGroupOptions]
   );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -491,8 +491,8 @@ export const InflightQueries = ({
                 { value: '', text: 'All workload groups' },
                 ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
               ]}
-              value={wlmGroup ?? ''}
-              onChange={(e) => setWlmGroup(e.target.value || undefined)}
+              value={wlmGroupId ?? ''}
+              onChange={(e) => setWlmGroupId(e.target.value || undefined)}
               aria-label="Workload group selector"
               compressed
             />
@@ -514,18 +514,20 @@ export const InflightQueries = ({
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiFormRow display="columnCompressed">
-                <select
-                  value={refreshInterval}
-                  onBlur={(e) => setRefreshInterval(Number((e.target as HTMLSelectElement).value))}
-                  style={{ padding: '6px', borderRadius: '6px', minWidth: 120 }}
+                <EuiSelect
+                  value={String(refreshInterval)}
+                  onChange={(e) => setRefreshInterval(parseInt(e.target.value, 10))}
+                  options={[
+                    { value: '5000', text: '5 seconds' },
+                    { value: '10000', text: '10 seconds' },
+                    { value: '30000', text: '30 seconds' },
+                    { value: '60000', text: '1 minute' },
+                  ]}
                   disabled={!autoRefreshEnabled}
                   data-test-subj="live-queries-refresh-interval"
-                >
-                  <option value={5000}>5 seconds</option>
-                  <option value={10000}>10 seconds</option>
-                  <option value={30000}>30 seconds</option>
-                  <option value={60000}>1 minute</option>
-                </select>
+                  compressed
+                  style={{ minWidth: 140 }}
+                />
               </EuiFormRow>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>

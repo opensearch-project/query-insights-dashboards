@@ -110,7 +110,7 @@ export const retrieveLiveQueries = async (
 export const retrieveLiveQueriesWithWLMGroup = async (
   core: CustomCore,
   dataSourceId?: string,
-  wlmGroup?: string
+  wlmGroupId?: string
 ): Promise<LiveSearchQueryResponse> => {
   const emptyOk: LiveSearchQueryResponse = { ok: true, response: { live_queries: [] } };
   const emptyErr: LiveSearchQueryResponse = { ok: false, response: { live_queries: [] } };
@@ -120,11 +120,11 @@ export const retrieveLiveQueriesWithWLMGroup = async (
       dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
 
     const options: { query?: Record<string, string> } | undefined =
-      dataSourceId || wlmGroup
+      dataSourceId || wlmGroupId
         ? {
             query: {
               ...(dataSourceId ? { dataSourceId } : {}),
-              ...(wlmGroup ? { wlm_group: wlmGroup } : {}),
+              ...(wlmGroupId ? { wlmGroupId } : {}),
             },
           }
         : undefined;
