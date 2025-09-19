@@ -75,11 +75,11 @@ interface WlmGroupDetail {
 }
 
 export const InflightQueries = ({
-  core,
-  depsStart,
-  params,
-  dataSourceManagement,
-}: {
+                                  core,
+                                  depsStart,
+                                  params,
+                                  dataSourceManagement,
+                                }: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -93,8 +93,14 @@ export const InflightQueries = ({
   const [nodeCounts, setNodeCounts] = useState<Record<string, number>>({});
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(() => {
+    const saved = localStorage.getItem('inflightQueries.autoRefreshEnabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [refreshInterval, setRefreshInterval] = useState(() => {
+    const saved = localStorage.getItem('inflightQueries.refreshInterval');
+    return saved !== null ? parseInt(saved, 10) : DEFAULT_REFRESH_INTERVAL;
+  });
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
@@ -102,9 +108,11 @@ export const InflightQueries = ({
   const urlSearchParams = new URLSearchParams(location.search);
   const initialWlmGroup = urlSearchParams.get('wlmGroupId') || '';
 
-  const [wlmGroupId, setWlmGroupId] = useState<string | undefined>(
-    initialWlmGroup !== '' ? initialWlmGroup : undefined
-  );
+  const [wlmGroupId, setWlmGroupId] = useState<string | undefined>(() => {
+    if (initialWlmGroup !== '') return initialWlmGroup;
+    const saved = localStorage.getItem('inflightQueries.wlmGroupId');
+    return saved || undefined;
+  });
   const wlmIdToNameMap = React.useMemo(
     () => Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name])),
     [wlmGroupOptions]
@@ -193,7 +201,7 @@ export const InflightQueries = ({
       if (available) {
         const groupsRes = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
         const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
-          ?.workload_groups ??
+            ?.workload_groups ??
           (groupsRes as { workload_groups?: WlmGroupDetail[] }).workload_groups ??
           []) as WlmGroupDetail[];
 
@@ -325,6 +333,42 @@ export const InflightQueries = ({
   }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
+  const [tableQuery, setTableQuery] = useState(() => {
+    const saved = localStorage.getItem('inflightQueries.tableQuery');
+    return saved ? JSON.parse(saved) : '';
+  });
+  const [tableFilters, setTableFilters] = useState([]);
+
+  // Clear invalid filters when data changes
+  useEffect(() => {
+    const saved = localStorage.getItem('inflightQueries.tableFilters');
+    if (saved && liveQueries.length > 0) {
+      const savedFilters = JSON.parse(saved);
+      const currentIndices = new Set(liveQueries.map(q => q.index));
+      const currentSearchTypes = new Set(liveQueries.map(q => q.search_type));
+      const currentNodes = new Set(liveQueries.map(q => q.node_id));
+
+      const validFilters = savedFilters.filter((filter: any) => {
+        if (filter.field === 'index') {
+          return filter.value === 'on' || currentIndices.has(filter.value);
+        }
+        if (filter.field === 'search_type') {
+          return filter.value === 'on' || currentSearchTypes.has(filter.value);
+        }
+        if (filter.field === 'coordinator_node') {
+          return filter.value === 'on' || currentNodes.has(filter.value);
+        }
+        return true;
+      });
+
+      if (validFilters.length !== savedFilters.length) {
+        setTableFilters(validFilters);
+        localStorage.setItem('inflightQueries.tableFilters', JSON.stringify(validFilters));
+      } else {
+        setTableFilters(savedFilters);
+      }
+    }
+  }, [liveQueries]);
   const formatTime = (seconds: number): string => {
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
@@ -354,21 +398,52 @@ export const InflightQueries = ({
     { id: 'bar', label: 'Bar', iconType: 'visBarHorizontal' },
   ];
 
-  const [selectedChartIdByIndex, setSelectedChartIdByIndex] = useState('donut');
-  const [selectedChartIdByNode, setSelectedChartIdByNode] = useState('donut');
+  const [selectedChartIdByIndex, setSelectedChartIdByIndex] = useState(() => {
+    const saved = localStorage.getItem('inflightQueries.selectedChartIdByIndex');
+    return saved || 'donut';
+  });
+  const [selectedChartIdByNode, setSelectedChartIdByNode] = useState(() => {
+    const saved = localStorage.getItem('inflightQueries.selectedChartIdByNode');
+    return saved || 'donut';
+  });
 
   const onChartChangeByIndex = (optionId: string) => {
     setSelectedChartIdByIndex(optionId);
+    localStorage.setItem('inflightQueries.selectedChartIdByIndex', optionId);
   };
 
   const onChartChangeByNode = (optionId: string) => {
     setSelectedChartIdByNode(optionId);
+    localStorage.setItem('inflightQueries.selectedChartIdByNode', optionId);
   };
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+
+  // Save auto-refresh settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('inflightQueries.autoRefreshEnabled', JSON.stringify(autoRefreshEnabled));
+  }, [autoRefreshEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('inflightQueries.refreshInterval', String(refreshInterval));
+  }, [refreshInterval]);
+
+  useEffect(() => {
+    if (wlmGroupId) {
+      localStorage.setItem('inflightQueries.wlmGroupId', wlmGroupId);
+    } else {
+      localStorage.removeItem('inflightQueries.wlmGroupId');
+    }
+  }, [wlmGroupId]);
+  const [selectedItems, setSelectedItems] = useState<any[]>(() => {
+    const saved = localStorage.getItem('inflightQueries.selectedItems');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const selection = {
     selectable: (item: any) => item.is_cancelled !== true,
-    onSelectionChange: (selected: any[]) => setSelectedItems(selected),
+    onSelectionChange: (selected: any[]) => {
+      setSelectedItems(selected);
+      localStorage.setItem('inflightQueries.selectedItems', JSON.stringify(selected));
+    },
   };
 
   const chartColors = [
@@ -492,7 +567,10 @@ export const InflightQueries = ({
                 ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
               ]}
               value={wlmGroupId ?? ''}
-              onChange={(e) => setWlmGroupId(e.target.value || undefined)}
+              onChange={(e) => {
+                const value = e.target.value || undefined;
+                setWlmGroupId(value);
+              }}
               aria-label="Workload group selector"
               compressed
             />
@@ -822,10 +900,16 @@ export const InflightQueries = ({
         <EuiInMemoryTable
           items={liveQueries}
           search={{
+            query: tableQuery,
+            onChange: ({ query, queryText }) => {
+              setTableQuery(queryText || '');
+              localStorage.setItem('inflightQueries.tableQuery', JSON.stringify(queryText || ''));
+            },
             box: {
               placeholder: 'Search queries',
               schema: false,
             },
+            filters: tableFilters,
             toolsLeft: selectedItems.length > 0 && [
               <EuiButton
                 key="delete-button"
@@ -897,6 +981,10 @@ export const InflightQueries = ({
                 })),
               },
             ],
+            onFiltersChange: (filters) => {
+              setTableFilters(filters);
+              localStorage.setItem('inflightQueries.tableFilters', JSON.stringify(filters));
+            },
           }}
           columns={[
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
