@@ -75,11 +75,11 @@ interface WlmGroupDetail {
 }
 
 export const InflightQueries = ({
-                                  core,
-                                  depsStart,
-                                  params,
-                                  dataSourceManagement,
-                                }: {
+  core,
+  depsStart,
+  params,
+  dataSourceManagement,
+}: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -201,7 +201,7 @@ export const InflightQueries = ({
       if (available) {
         const groupsRes = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
         const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
-            ?.workload_groups ??
+          ?.workload_groups ??
           (groupsRes as { workload_groups?: WlmGroupDetail[] }).workload_groups ??
           []) as WlmGroupDetail[];
 
@@ -344,9 +344,9 @@ export const InflightQueries = ({
     const saved = localStorage.getItem('inflightQueries.tableFilters');
     if (saved && liveQueries.length > 0) {
       const savedFilters = JSON.parse(saved);
-      const currentIndices = new Set(liveQueries.map(q => q.index));
-      const currentSearchTypes = new Set(liveQueries.map(q => q.search_type));
-      const currentNodes = new Set(liveQueries.map(q => q.node_id));
+      const currentIndices = new Set(liveQueries.map((q) => q.index));
+      const currentSearchTypes = new Set(liveQueries.map((q) => q.search_type));
+      const currentNodes = new Set(liveQueries.map((q) => q.node_id));
 
       const validFilters = savedFilters.filter((filter: any) => {
         if (filter.field === 'index') {
@@ -901,7 +901,7 @@ export const InflightQueries = ({
           items={liveQueries}
           search={{
             query: tableQuery,
-            onChange: ({ query, queryText }) => {
+            onChange: ({ queryText }) => {
               setTableQuery(queryText || '');
               localStorage.setItem('inflightQueries.tableQuery', JSON.stringify(queryText || ''));
             },
