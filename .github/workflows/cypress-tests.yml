@@ -1,15 +1,22 @@
 name: Cypress e2e integration tests workflow
+
 on:
   pull_request:
-    branches:
-      - "*"
+    branches: ["*"]
   push:
-    branches:
-      - "*"
+    branches: ["*"]
+
+concurrency:
+  group: cypress-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
-  OPENSEARCH_BRANCH: '3.1'
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  OPENSEARCH_VERSION: '3.1.0-SNAPSHOT'
+  OPENSEARCH_BRANCH: '3.2'
+  OPENSEARCH_DASHBOARDS_VERSION: '3.2.0'
+  OPENSEARCH_VERSION: '3.2.0-SNAPSHOT'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
@@ -28,10 +35,9 @@ jobs:
             cypress_cache_folder: ~/.cache/Cypress
     runs-on: ${{ matrix.os }}
     env:
-      # prevents extra Cypress installation progress messages
       CI: 1
-      # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
+
     steps:
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -53,28 +59,24 @@ jobs:
           repository: opensearch-project/OpenSearch
           ref: ${{ env.OPENSEARCH_BRANCH }}
 
-
       - name: Build Required Plugins
         run: |
+          set -euo pipefail
           cd OpenSearch
-          # Build rule-framework (autotagging-commons)
           ./gradlew :modules:autotagging-commons:assemble
-          # Build WLM plugin
           ./gradlew :plugins:workload-management:assemble
 
           echo "Checking autotagging-commons build directory:"
-          ls -la modules/autotagging-commons/build/distributions/
+          ls -la modules/autotagging-commons/build/distributions/ || true
           echo "Checking WLM build directory:"
-          ls -la plugins/workload-management/build/distributions/
+          ls -la plugins/workload-management/build/distributions/ || true
 
       - name: Copy Plugins to Query Insights
         run: |
+          set -euo pipefail
           mkdir -p query-insights/plugins
-
           find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
           find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
-
-          # List copied plugins
           echo "Contents of plugins directory:"
           ls -la query-insights/plugins/
 
@@ -85,49 +87,38 @@ jobs:
 
       - name: Run OpenSearch with Query Insights plugin
         run: |
+          set -euo pipefail
           cd query-insights
-          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
-
-          # Wait for OpenSearch to be ready with health check
+          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} > ../opensearch.log 2>&1 &
           echo "Waiting for OpenSearch to start..."
           for i in {1..60}; do
-            if curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; then
+            if curl -fsS http://localhost:9200/_cluster/health > /dev/null; then
               echo "OpenSearch is ready!"
               break
             fi
             echo "Attempt $i/60: OpenSearch not ready yet, waiting 10 seconds..."
             sleep 10
           done
+          curl -fsS http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
 
-          # Verify OpenSearch is actually running
-          curl -s http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
-
-          # List installed plugins
           echo -e "\nInstalled Plugins:"
-          curl -s http://localhost:9200/_cat/plugins | sort
+          curl -fsS http://localhost:9200/_cat/plugins || true
 
-          # Enable WLM mode
           echo -e "\nEnabling WLM mode:"
-          curl -X PUT "http://localhost:9200/_cluster/settings" \
-          -H 'Content-Type: application/json' \
-          -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
+          curl -fsS -X PUT "http://localhost:9200/_cluster/settings" \
+            -H 'Content-Type: application/json' \
+            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.' || true
 
-          # Test WLM stats endpoint
           echo -e "\nTesting WLM stats endpoint:"
-          curl -s http://localhost:9200/_wlm/workload_group | jq '.'
+          curl -fsS http://localhost:9200/_wlm/workload_group | jq '.' || true
 
-          set -e
-
-          echo -e "\nTesting if wlm mode is enabled:"
-          MODE=$(curl -s http://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode')
-
-          if [ "$MODE" != "enabled" ]; then
-          echo "WLM mode is not enabled (found: $MODE)"
-          exit 1
+          echo -e "\nVerifying WLM mode:"
+          MODE=$(curl -fsS http://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode // empty')
+          if [ "${MODE:-disabled}" != "enabled" ]; then
+            echo "WLM mode is not enabled (found: ${MODE:-unset})"
+            exit 1
           fi
-
           echo "WLM mode is enabled."
-
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
@@ -143,125 +134,136 @@ jobs:
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: './OpenSearch-Dashboards/.nvmrc'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+          cache-dependency-path: |
+            OpenSearch-Dashboards/yarn.lock
+            OpenSearch-Dashboards/plugins/query-insights-dashboards/yarn.lock
 
-      - name: Install Yarn
-        # Need to use bash to avoid having a windows/linux specific step
+      - name: Install Yarn (exact engine version)
         shell: bash
         run: |
+          set -euo pipefail
           YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
-          echo "Installing yarn@$YARN_VERSION"
-          npm i -g yarn@$YARN_VERSION
+          echo "Installing yarn@${YARN_VERSION}"
+          npm i -g yarn@"${YARN_VERSION}"
       - run: node -v
       - run: yarn -v
 
       - name: Bootstrap plugin/OpenSearch-Dashboards
         run: |
+          set -euo pipefail
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
           yarn osd bootstrap --single-version=loose
 
       - name: Run OpenSearch-Dashboards server
         run: |
+          set -euo pipefail
           cd OpenSearch-Dashboards
-          # Set memory limits and DNS resolution for better performance
-          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
+          # Give optimizer more headroom and reduce parallelism to avoid OOM on CI
+          export NODE_OPTIONS="--max-old-space-size=8192 --dns-result-order=ipv4first"
+          export OSD_OPTIMIZER_MAX_WORKERS=2
           echo "Starting Dashboards..."
-          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
-          sleep 10
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > ../dashboards.log 2>&1 &
+          echo $! > ../dashboards.pid
+          sleep 5
           echo "Initial Dashboards log output:"
-          head -n 100 dashboards.log || true
+          head -n 200 ../dashboards.log || true
         shell: bash
 
-      - name: Wait for OpenSearch-Dashboards to be ready
+      - name: Wait for OpenSearch-Dashboards to be ready (stream logs + detect crash)
         run: |
-          echo "Waiting for OpenSearch-Dashboards to start..."
-          max_attempts=150
-          attempt=0
-
-          while [ $attempt -lt $max_attempts ]; do
-            if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
-              echo "OpenSearch-Dashboards is ready!"
-              # Output status for debugging
-              echo "=== OpenSearch-Dashboards Status Debug Info ==="
-              curl -s http://localhost:5601/api/status | jq '.' || curl -s http://localhost:5601/api/status
-              echo "=============================================="
-              # Additional wait to ensure plugin is fully loaded
-              sleep 45
-              break
-            fi
-
-            attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
-
-            # Show debug info every 10 attempts
-            if [ $((attempt % 10)) -eq 0 ]; then
-              echo "Debug: Attempting to connect to http://localhost:5601/api/status"
-              curl -s -v http://localhost:5601/api/status || echo "Connection failed"
-            fi
-
-            sleep 10
-
-          done
-
-          if [ $attempt -eq $max_attempts ]; then
-            echo "OpenSearch-Dashboards failed to start within timeout"
-            echo "Final debug attempt:"
-            curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
+          set -euo pipefail
+          cd OpenSearch-Dashboards
+          PID=$(cat ../dashboards.pid || echo "")
+          if [ -z "${PID}" ]; then
+            echo "No Dashboards PID found; server failed to start."
+            tail -n 500 ../dashboards.log || true
             exit 1
           fi
 
-          # Verify the service is responding
-          curl -s http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
+          echo "Tailing dashboards.log in background…"
+          ( timeout 45m tail -n +1 -f ../dashboards.log || true ) &
 
-          # Additional verification for plugin loading
-          echo "Waiting additional time for plugin initialization..."
-          sleep 15
+          echo "Waiting for OpenSearch-Dashboards to start..."
+          max_attempts=360  # up to 60 min (360 * 10s). Fresh runners can take a while.
+          for attempt in $(seq 1 ${max_attempts}); do
+            # If the process died, fail immediately with log tail
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo "Dashboards process exited unexpectedly. Last 500 log lines:"
+              tail -n 500 ../dashboards.log || true
+              exit 1
+            fi
+
+            if curl -fsS http://localhost:5601/api/status >/dev/null; then
+              echo "OpenSearch-Dashboards is ready!"
+              curl -fsS http://localhost:5601/api/status | jq '.' || true
+              # small buffer so plugin routes finish registering
+              sleep 30
+              exit 0
+            fi
+
+            # Heartbeat every 10 attempts with recent logs + memory
+            if [ $((attempt % 10)) -eq 0 ]; then
+              echo "--- attempt $attempt/${max_attempts} ---"
+              tail -n 80 ../dashboards.log || true
+              echo "Node process memory:"
+              ps -o pid,pmem,rss,comm -p "$PID" || true
+            fi
+            sleep 10
+          done
+
+          echo "Timed out waiting for Dashboards; last 500 log lines:"
+          tail -n 500 ../dashboards.log || true
+          exit 1
         shell: bash
+
 
       - name: Verify services are running
         run: |
+          set -euo pipefail
           echo "Checking OpenSearch status..."
-          curl -s http://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
+          curl -fsS http://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
 
-          echo "Checking OpenSearch-Dashboards status..."
           echo "=== Full OpenSearch-Dashboards Status ==="
-          curl -s http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
+          curl -fsS http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
           echo "========================================"
 
           echo "Checking OpenSearch-Dashboards overall state..."
-          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
+          curl -fsS http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
 
-          echo "Checking plugin endpoint..."
-          curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
+          echo "Checking plugin endpoint (unauthenticated dev route)…"
+          curl -fsS http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
         shell: bash
         continue-on-error: true
 
       - name: Install Cypress
         run: |
+          set -euo pipefail
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
-          # This will install Cypress in case the binary is missing which can happen on Windows and Mac
-          # If the binary exists, this will exit quickly so it should not be an expensive operation
           npx cypress install
         shell: bash
 
       - name: Get Cypress version
         id: cypress_version
         run: |
+          set -euo pipefail
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
-          echo "::set-output name=cypress_version::$(cat ./package.json | jq '.dependencies.cypress' | tr -d '"')"
+          version=$(jq -r '.dependencies.cypress // .devDependencies.cypress // empty' package.json)
+          echo "Resolved Cypress version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Cache Cypress
         id: cache-cypress
         uses: actions/cache@v4
         with:
           path: ${{ matrix.cypress_cache_folder }}
-          key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
+          key: cypress-cache-v3-${{ matrix.os }}-${{ steps.cypress_version.outputs.version }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
 
-      # for now just chrome, use matrix to do all browsers later
-      - name: Cypress tests
+      - name: Cypress tests (Chrome)
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
@@ -274,16 +276,20 @@ jobs:
           CI: true
         timeout-minutes: 60
 
-      # Screenshots are only captured on failure, will change this once we do visual regression tests
-      - uses: actions/upload-artifact@v4
+      - name: Upload failure artifacts (screenshots, videos, logs)
         if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          name: cypress-screenshots-${{ matrix.os }}
-          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
+          name: failure-artifacts-${{ matrix.os }}
+          path: |
+            OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
+            OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos
+            dashboards.log
+            opensearch.log
 
-      # Test run video was always captured, so this action uses "always()" condition
-      - uses: actions/upload-artifact@v4
+      - name: Upload test videos (always)
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-videos-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos
