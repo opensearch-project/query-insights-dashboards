@@ -9,7 +9,6 @@ import {
   CoreStart,
   DEFAULT_NAV_GROUPS,
   Plugin,
-  PluginInitializerContext,
 } from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
@@ -18,12 +17,7 @@ import {
   QueryInsightsDashboardsPluginStartDependencies,
 } from './types';
 import { PLUGIN_NAME } from '../common';
-
-interface ConfigSchema {
-  wlm: { enabled: boolean };
-}
-const defaultConfig: ConfigSchema = { wlm: { enabled: true } };
-export const WLM_CONFIG = defaultConfig.wlm;
+import { WLM_CONFIG } from '../common/constants';
 
 export class QueryInsightsDashboardsPlugin
   implements
@@ -33,10 +27,6 @@ export class QueryInsightsDashboardsPlugin
       {},
       QueryInsightsDashboardsPluginStartDependencies
     > {
-  private config: ConfigSchema = defaultConfig; // default ON
-
-  constructor(_ctx: PluginInitializerContext) {}
-
   public setup(
     core: CoreSetup,
     deps: QueryInsightsDashboardsPluginSetupDependencies
@@ -71,7 +61,7 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    if (this.config.wlm.enabled) {
+    if (WLM_CONFIG.enabled) {
       core.application.register({
         id: 'workloadManagement',
         title: 'Workload Management',
@@ -116,7 +106,7 @@ export class QueryInsightsDashboardsPlugin
         order: 200,
       },
     ]);
-    if (this.config.wlm.enabled) {
+    if (WLM_CONFIG.enabled) {
       core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
         {
           id: 'workloadManagement',
