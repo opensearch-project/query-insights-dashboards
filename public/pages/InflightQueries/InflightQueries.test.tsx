@@ -68,10 +68,15 @@ const mockLiveQueries = (payload: any) => {
   );
 };
 
-// Ensure stubLiveQueries has the correct structure
+// Create mock data with fixed timestamps to avoid timezone issues in snapshots
 const mockStubLiveQueries = {
-  ...stubLiveQueries,
   ok: true,
+  response: {
+    live_queries: stubLiveQueries.response.live_queries.map((query, index) => ({
+      ...query,
+      timestamp: 1640995200000 + index * 1000, // Fixed timestamp: 2022-01-01 00:00:00 UTC + index seconds
+    })),
+  },
 };
 
 // Some tests rely on periodic refresh. Keep timers disciplined.
@@ -90,6 +95,10 @@ afterEach(() => {
 
 describe('InflightQueries', () => {
   it('matches snapshot', async () => {
+    // Mock Date.now to ensure consistent timestamps in snapshots
+    const mockDate = new Date('2022-01-01T00:00:00.000Z');
+    jest.spyOn(Date, 'now').mockReturnValue(mockDate.getTime());
+
     const core = makeCore();
     mockLiveQueries(mockStubLiveQueries);
 
@@ -320,6 +329,42 @@ describe('InflightQueries', () => {
     );
 
     expect(await screen.findByRole('switch')).toBeInTheDocument();
+  });
+
+  it('handles WLM stats API error gracefully', async () => {
+    const core = makeCore();
+    (core.http.get as jest.Mock)
+      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }]) // _cat/plugins
+      .mockRejectedValueOnce(new Error('Stats API failed')) // stats endpoint fails
+      .mockResolvedValueOnce({
+        body: { workload_groups: [{ _id: 'group1', name: 'Test Group' }] },
+      }); // groups
+
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    });
+
+    // Should still render workload group selector even when stats fail
+    expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
+    expect(console.warn).toHaveBeenCalledWith(
+      '[LiveQueries] Failed to fetch WLM stats',
+      expect.any(Error)
+    );
   });
 
   it('handles query cancellation buttons presence', async () => {
