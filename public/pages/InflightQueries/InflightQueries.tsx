@@ -39,6 +39,11 @@ import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import {
+  DEFAULT_REFRESH_INTERVAL,
+  TOP_N_DISPLAY_LIMIT,
+  WLM_GROUP_ID_PARAM,
+} from '../../../common/constants';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
@@ -82,8 +87,6 @@ export const InflightQueries = ({
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
 }) => {
-  const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
-  const TOP_N_DISPLAY_LIMIT = 9;
   const isFetching = useRef(false);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
@@ -97,7 +100,7 @@ export const InflightQueries = ({
 
   const location = useLocation();
   const urlSearchParams = new URLSearchParams(location.search);
-  const initialWlmGroup = urlSearchParams.get('wlmGroupId') || '';
+  const initialWlmGroup = urlSearchParams.get(WLM_GROUP_ID_PARAM) || '';
 
   const [wlmGroupId, setWlmGroupId] = useState<string | undefined>(
     initialWlmGroup !== '' ? initialWlmGroup : undefined
@@ -107,34 +110,33 @@ export const InflightQueries = ({
     [wlmGroupOptions]
   );
 
-  const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const wlmCacheRef = useRef<Record<string, boolean>>({});
 
-  const wlmCheckPromiseRef = useRef<Promise<boolean> | null>(null);
+  const getWlmAvailable = useCallback((): boolean => {
+    const cacheKey = dataSource?.id || 'default';
+    return wlmCacheRef.current[cacheKey] ?? false;
+  }, [dataSource?.id]);
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
-    if (wlmCheckPromiseRef.current) return wlmCheckPromiseRef.current;
-    const p = (async () => {
-      try {
-        const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
-        const res = await core.http.get('/api/cat_plugins', { query: httpQuery });
-        const has = !!res?.hasWlm;
-        setWlmAvailable(has);
-        return has;
-      } catch (e) {
-        console.warn('[LiveQueries] _cat/plugins detection failed; assuming WLM unavailable', e);
-        setWlmAvailable(false);
-        return false;
-      } finally {
-        // allow future re-checks
-        wlmCheckPromiseRef.current = null;
-      }
-    })();
-    wlmCheckPromiseRef.current = p;
-    return p;
+    const cacheKey = dataSource?.id || 'default';
+    if (wlmCacheRef.current[cacheKey] !== undefined) {
+      return wlmCacheRef.current[cacheKey];
+    }
+
+    try {
+      const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+      const res = await core.http.get('/api/cat_plugins', { query: httpQuery });
+      const has = !!res?.hasWlm;
+      wlmCacheRef.current[cacheKey] = has;
+      return has;
+    } catch (e) {
+      console.warn('[LiveQueries] _cat/plugins detection failed; assuming WLM unavailable', e);
+      wlmCacheRef.current[cacheKey] = false;
+      return false;
+    }
   }, [core.http, dataSource?.id]);
 
   useEffect(() => {
-    setWlmAvailable(false);
     void detectWlm();
   }, [detectWlm]);
 
@@ -186,8 +188,7 @@ export const InflightQueries = ({
     // fetch group NAMES only if plugin exists (but do not block the stats)
     const idToNameMap: Record<string, string> = {};
     try {
-      const available = await detectWlm();
-      if (available) {
+      if (getWlmAvailable()) {
         const groupsRes = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
         const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
           ?.workload_groups ??
@@ -952,7 +953,7 @@ export const InflightQueries = ({
 
                 const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
 
-                if (wlmAvailable === true) {
+                if (getWlmAvailable()) {
                   // Plugin enabled → clickable link
                   return (
                     <EuiLink
