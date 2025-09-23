@@ -153,7 +153,7 @@ export const InflightQueries = ({
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
-      const statsRes = await core.http.get('/api/_wlm/stats', { query: httpQuery });
+      const statsRes = await core.http.get(API_ENDPOINTS.WLM_STATS, { query: httpQuery });
       statsBody = ((statsRes as { body?: unknown }).body ?? statsRes) as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
@@ -192,7 +192,9 @@ export const InflightQueries = ({
     const idToNameMap: Record<string, string> = {};
     try {
       if (getWlmAvailable()) {
-        const groupsRes = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
+        const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
+          query: httpQuery,
+        });
         const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
           ?.workload_groups ??
           (groupsRes as { workload_groups?: WlmGroupDetail[] }).workload_groups ??
