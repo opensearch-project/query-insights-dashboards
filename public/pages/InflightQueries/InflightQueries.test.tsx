@@ -175,7 +175,7 @@ describe('InflightQueries', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
-      expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('0')).toHaveLength(8);
     });
   });
 
