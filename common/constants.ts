@@ -18,10 +18,7 @@ export const GROUP_BY = 'Group by';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';
 export const AVERAGE_MEMORY_USAGE = 'Average Memory Usage';
-/*
- * Copyright OpenSearch Contributors
- * SPDX-License-Identifier: Apache-2.0
- */
+
 export const MetricType = {
   LATENCY: 'latency',
   CPU: 'cpu',
@@ -72,3 +69,13 @@ export const DEFAULT_DELETE_AFTER_DAYS = '7';
 export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
 export const TOP_N_DISPLAY_LIMIT = 9;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
+
+export interface ConfigSchema {
+  wlm: { enabled: boolean };
+}
+
+const DEFAULT_CONFIG: ConfigSchema = {
+  wlm: { enabled: true },
+};
+
+export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
