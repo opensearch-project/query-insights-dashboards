@@ -37,10 +37,7 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
-import {
-  retrieveLiveQueries,
-  retrieveLiveQueriesWithWLMGroup,
-} from '../../../common/utils/QueryUtils';
+import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
@@ -218,9 +215,7 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = wlmGroupId
-        ? await retrieveLiveQueriesWithWLMGroup(core, dataSource?.id, wlmGroupId)
-        : await retrieveLiveQueries(core, dataSource?.id);
+      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId);
 
       if (retrieved?.response?.live_queries) {
         const mapFromOptions: Record<string, string> = Object.fromEntries(
@@ -328,7 +323,6 @@ export const InflightQueries = ({
   const [tableQuery, setTableQuery] = useState('');
   const [tableFilters, setTableFilters] = useState([]);
 
-
   const formatTime = (seconds: number): string => {
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
@@ -368,7 +362,6 @@ export const InflightQueries = ({
   const onChartChangeByNode = (optionId: string) => {
     setSelectedChartIdByNode(optionId);
   };
-
 
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 

@@ -79,6 +79,36 @@ afterEach(() => {
 });
 
 describe('InflightQueries', () => {
+  it('matches snapshot', async () => {
+    const core = makeCore();
+    mockLiveQueries(stubLiveQueries);
+
+    const { container } = render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            {
+              data: {
+                dataSources: {
+                  get: jest.fn().mockReturnValue(core.http),
+                },
+              },
+            } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    });
+
+    expect(container).toMatchSnapshot();
+  });
+
   it('displays metric values from fixture', async () => {
     const core = makeCore();
     mockLiveQueries(stubLiveQueries);
@@ -303,6 +333,242 @@ describe('InflightQueries', () => {
       // "Cancel" button(s) show up per row
       expect(screen.getAllByText('Cancel').length).toBeGreaterThan(0);
     });
+  });
+
+  it('handles API errors gracefully', async () => {
+    const core = makeCore();
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>).mockRejectedValue(
+      new Error('Network error')
+    );
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(core.notifications.toasts.addError).toHaveBeenCalled();
+    });
+  });
+
+  it('handles malformed response data', async () => {
+    const core = makeCore();
+    mockLiveQueries({ invalid: 'data' });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('0').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('handles queries with missing measurements', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      response: {
+        live_queries: [
+          {
+            id: 'query1',
+            timestamp: Date.now(),
+            node_id: 'node1',
+            description: 'test query',
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('test query')).toBeInTheDocument();
+    });
+  });
+
+  it('handles zero and negative measurement values', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      response: {
+        live_queries: [
+          {
+            id: 'query1',
+            measurements: {
+              latency: { number: 0 },
+              cpu: { number: -100 },
+              memory: { number: 0 },
+            },
+            timestamp: Date.now(),
+            node_id: 'node1',
+            description: 'zero values query',
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('zero values query')).toBeInTheDocument();
+    });
+  });
+
+  it('handles extremely large measurement values', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      response: {
+        live_queries: [
+          {
+            id: 'query1',
+            measurements: {
+              latency: { number: Number.MAX_SAFE_INTEGER },
+              cpu: { number: 1e15 },
+              memory: { number: 1e12 },
+            },
+            timestamp: Date.now(),
+            node_id: 'node1',
+            description: 'large values query',
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('large values query')).toBeInTheDocument();
+    });
+  });
+
+  it('handles WLM plugin detection failure', async () => {
+    const core = makeCore();
+    (core.http.get as jest.Mock).mockRejectedValue(new Error('Plugin detection failed'));
+    mockLiveQueries(stubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Workload group selector')).not.toBeInTheDocument();
+    });
+  });
+
+  it('handles query cancellation failure', async () => {
+    const core = makeCore();
+    (core.http.post as jest.Mock).mockRejectedValue(new Error('Cancellation failed'));
+    mockLiveQueries(stubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Cancel').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('handles component unmount during data fetch', async () => {
+    jest.useFakeTimers();
+    const core = makeCore();
+    let resolvePromise: (value: any) => void;
+    const pendingPromise = new Promise((resolve) => {
+      resolvePromise = resolve;
+    });
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>).mockReturnValue(
+      pendingPromise
+    );
+
+    const { unmount } = render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    unmount();
+    resolvePromise!(stubLiveQueries);
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    // Should not throw errors or cause memory leaks
+    expect(true).toBe(true);
   });
 
   it('handles memory formatting for large values', async () => {

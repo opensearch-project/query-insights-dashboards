@@ -7,10 +7,10 @@ import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
 import { API_ENDPOINTS } from './apiendpoints';
 
 interface CustomCore {
-  http: { get: (endpoint: string) => Promise<any> };
+  http: { get: (endpoint: string, options?: any) => Promise<any> };
   data?: {
     dataSources: {
-      get: (id: string) => { get: (endpoint: string) => Promise<any> };
+      get: (id: string) => { get: (endpoint: string, options?: any) => Promise<any> };
     };
   };
 }
@@ -76,7 +76,8 @@ export const retrieveQueryById = async (
 
 export const retrieveLiveQueries = async (
   core: CustomCore,
-  dataSourceId?: string
+  dataSourceId?: string,
+  wlmGroupId?: string
 ): Promise<LiveSearchQueryResponse> => {
   const nullResponse: LiveSearchQueryResponse = {
     ok: true,
@@ -92,7 +93,17 @@ export const retrieveLiveQueries = async (
     const http =
       dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
 
-    const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES);
+    const options: { query?: Record<string, string> } | undefined =
+      dataSourceId || wlmGroupId
+        ? {
+            query: {
+              ...(dataSourceId ? { dataSourceId } : {}),
+              ...(wlmGroupId ? { wlmGroupId } : {}),
+            },
+          }
+        : undefined;
+
+    const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES, options);
     const liveQueries = response?.response?.live_queries;
 
     if (Array.isArray(liveQueries)) {
@@ -104,46 +115,5 @@ export const retrieveLiveQueries = async (
   } catch (error) {
     console.error('Error retrieving live queries:', error);
     return errorResponse;
-  }
-};
-
-export const retrieveLiveQueriesWithWLMGroup = async (
-  core: CustomCore,
-  dataSourceId?: string,
-  wlmGroupId?: string
-): Promise<LiveSearchQueryResponse> => {
-  const emptyOk: LiveSearchQueryResponse = { ok: true, response: { live_queries: [] } };
-  const emptyErr: LiveSearchQueryResponse = { ok: false, response: { live_queries: [] } };
-
-  try {
-    const http =
-      dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
-
-    const options: { query?: Record<string, string> } | undefined =
-      dataSourceId || wlmGroupId
-        ? {
-            query: {
-              ...(dataSourceId ? { dataSourceId } : {}),
-              ...(wlmGroupId ? { wlmGroupId } : {}),
-            },
-          }
-        : undefined;
-
-    const raw: unknown = await (http as {
-      get: (path: string, opts?: { query?: Record<string, string> }) => Promise<unknown>;
-    }).get(API_ENDPOINTS.LIVE_QUERIES, options);
-
-    const payload: LiveSearchQueryResponse = (raw as { body?: unknown })?.body
-      ? ((raw as { body: unknown }).body as LiveSearchQueryResponse)
-      : (raw as LiveSearchQueryResponse);
-
-    const live = payload?.response?.live_queries;
-    if (Array.isArray(live)) return payload;
-
-    console.warn('[retrieveLiveQueriesWithWLMGroup] live_queries missing or not an array');
-    return emptyOk;
-  } catch (err: unknown) {
-    console.error('[retrieveLiveQueriesWithWLMGroup] Error retrieving live queries:', err);
-    return emptyErr;
   }
 };
