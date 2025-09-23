@@ -81,6 +81,7 @@ const mockStubLiveQueries = {
 
 // Some tests rely on periodic refresh. Keep timers disciplined.
 beforeEach(() => {
+  process.env.TZ = 'UTC';
   jest.clearAllMocks();
   cleanup();
   // Suppress console warnings for cleaner test output
