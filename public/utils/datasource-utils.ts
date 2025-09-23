@@ -67,12 +67,9 @@ export const isDataSourceCompatible = (dataSource: SavedObject<DataSourceAttribu
 export const isWLMDataSourceCompatible = (dataSource: SavedObject<DataSourceAttributes>) => {
   if (
     'supportedOSDataSourceVersions' in pluginManifest &&
-    !semver.satisfies(
-      dataSource.attributes.dataSourceVersion,
-      ">=3.1.0"
-    )
+    !semver.satisfies(dataSource.attributes.dataSourceVersion, '>=3.1.0')
   ) {
     return false;
   }
   return true;
-}
+};

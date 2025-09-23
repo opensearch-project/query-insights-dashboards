@@ -11,7 +11,11 @@ import {
 } from 'src/plugins/data_source_management/public';
 import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
-import { getDataSourceEnabledUrl, isDataSourceCompatible, isWLMDataSourceCompatible } from '../utils/datasource-utils';
+import {
+  getDataSourceEnabledUrl,
+  isDataSourceCompatible,
+  isWLMDataSourceCompatible,
+} from '../utils/datasource-utils';
 
 export interface DataSourceMenuProps {
   dataSourceManagement?: DataSourceManagementPluginSetup;
