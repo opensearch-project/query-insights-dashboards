@@ -11,6 +11,7 @@ import {
   QueryInsightsDashboardsPluginStartDependencies,
 } from './types';
 import { PLUGIN_NAME } from '../common';
+import { WLM_CONFIG } from '../common/constants';
 
 export class QueryInsightsDashboardsPlugin
   implements
@@ -52,31 +53,67 @@ export class QueryInsightsDashboardsPlugin
       },
     });
 
-    core.application.register({
-      id: 'workloadManagement',
-      title: 'Workload Management',
-      appRoute: '/app/workload-management',
-      description: 'Monitor and manage workload distribution across the cluster.',
-      category: {
-        id: 'opensearch',
-        label: 'OpenSearch Plugins',
-        order: 2000,
-      },
-      order: 5100,
-      async mount(params: AppMountParameters) {
-        // Dynamically import the WLM page
-        const { renderApp } = await import('./application');
+    if (WLM_CONFIG.enabled) {
+      core.application.register({
+        id: 'workloadManagement',
+        title: 'Workload Management',
+        appRoute: '/app/workload-management',
+        description: 'Monitor and manage workload distribution across the cluster.',
+        category: {
+          id: 'opensearch',
+          label: 'OpenSearch Plugins',
+          // Order 2000 positions this category after core OpenSearch categories
+          order: 2000,
+        },
+        // Order 5100 places Workload Management after Query Insights (5000)
+        order: 5100,
+        async mount(params: AppMountParameters) {
+          // Dynamically import the WLM page
+          const { renderApp } = await import('./application');
 
-        const [coreStart, depsStart] = await core.getStartServices();
+          const [coreStart, depsStart] = await core.getStartServices();
 
-        return renderApp(
-          coreStart,
-          depsStart as QueryInsightsDashboardsPluginStartDependencies,
-          params,
-          deps.dataSourceManagement
-        );
+          return renderApp(
+            coreStart,
+            depsStart as QueryInsightsDashboardsPluginStartDependencies,
+            params,
+            deps.dataSourceManagement
+          );
+        },
+      });
+    }
+
+    // Registration for new navigation
+    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+      {
+        id: PLUGIN_NAME,
+        category: {
+          id: 'performance',
+          label: 'Performance',
+          // Order 9000 positions Performance category at the end of Data Administration
+          order: 9000,
+          euiIconType: 'managementApp',
+        },
+        // Order 200 places this item within the Performance category
+        order: 200,
       },
-    });
+    ]);
+    if (WLM_CONFIG.enabled) {
+      core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
+        {
+          id: 'workloadManagement',
+          category: {
+            id: 'performance',
+            label: 'Performance',
+            // Order 9000 positions Performance category at the end of Data Administration
+            order: 9000,
+            euiIconType: 'managementApp',
+          },
+          // Order 200 places this item within the Performance category
+          order: 200,
+        },
+      ]);
+    }
 
     return {};
   }
