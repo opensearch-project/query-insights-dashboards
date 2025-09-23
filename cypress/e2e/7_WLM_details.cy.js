@@ -17,7 +17,7 @@ describe('WLM Details Page', () => {
     }).then((res) => {
       const groups = res.body?.workload_groups ?? [];
       groups.forEach((g) => {
-        if (g.name !== 'DEFAUL_WORKLOAD_GROUP') {
+        if (g.name !== 'DEFAULT_WORKLOAD_GROUP') {
           cy.request({
             method: 'DELETE',
             url: `/api/_wlm/workload_group/${g.name}`,
