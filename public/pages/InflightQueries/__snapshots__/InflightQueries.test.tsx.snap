@@ -1472,9 +1472,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-A1B2C3D4E5:3600-1749187466964"
+                          data-test-subj="checkboxSelectRow-node-A1B2C3D4E5:3600-1640995200000"
                           disabled=""
-                          id="_selection_column_node-A1B2C3D4E5:3600-1749187466964-checkbox"
+                          id="_selection_column_node-A1B2C3D4E5:3600-1640995200000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -1495,7 +1495,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:00 PM
                     </div>
                   </td>
                   <td
@@ -1677,9 +1677,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4B:3601-1749187466969"
+                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000"
                           disabled=""
-                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4B:3601-1749187466969-checkbox"
+                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -1700,7 +1700,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:01 PM
                     </div>
                   </td>
                   <td
@@ -1882,8 +1882,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6:3602-1749187466974"
-                          id="_selection_column_node-X9Y8Z7W6:3602-1749187466974-checkbox"
+                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6:3602-1640995202000"
+                          id="_selection_column_node-X9Y8Z7W6:3602-1640995202000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -1904,7 +1904,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:02 PM
                     </div>
                   </td>
                   <td
@@ -2114,8 +2114,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-P0Q9R8S7:3603-1749187466979"
-                          id="_selection_column_node-P0Q9R8S7:3603-1749187466979-checkbox"
+                          data-test-subj="checkboxSelectRow-node-P0Q9R8S7:3603-1640995203000"
+                          id="_selection_column_node-P0Q9R8S7:3603-1640995203000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -2136,7 +2136,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:03 PM
                     </div>
                   </td>
                   <td
@@ -2346,8 +2346,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4:3604-1749187466984"
-                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4:3604-1749187466984-checkbox"
+                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4:3604-1640995204000"
+                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4:3604-1640995204000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -2368,7 +2368,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:04 PM
                     </div>
                   </td>
                   <td
@@ -2578,9 +2578,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-M2O3P4Q5:3605-1749187466989"
+                          data-test-subj="checkboxSelectRow-node-M2O3P4Q5:3605-1640995205000"
                           disabled=""
-                          id="_selection_column_node-M2O3P4Q5:3605-1749187466989-checkbox"
+                          id="_selection_column_node-M2O3P4Q5:3605-1640995205000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -2601,7 +2601,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:05 PM
                     </div>
                   </td>
                   <td
@@ -2783,9 +2783,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-B2C3D4E5:3606-1749187466994"
+                          data-test-subj="checkboxSelectRow-node-B2C3D4E5:3606-1640995206000"
                           disabled=""
-                          id="_selection_column_node-B2C3D4E5:3606-1749187466994-checkbox"
+                          id="_selection_column_node-B2C3D4E5:3606-1640995206000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -2806,7 +2806,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:06 PM
                     </div>
                   </td>
                   <td
@@ -2988,8 +2988,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-N2O3P4Q5:3607-1749187466999"
-                          id="_selection_column_node-N2O3P4Q5:3607-1749187466999-checkbox"
+                          data-test-subj="checkboxSelectRow-node-N2O3P4Q5:3607-1640995207000"
+                          id="_selection_column_node-N2O3P4Q5:3607-1640995207000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -3010,7 +3010,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:26 PM
+                      Dec 31, 2021 @ 4:00:07 PM
                     </div>
                   </td>
                   <td
@@ -3220,9 +3220,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-2VTHIgQY-oB7dSrYz4BQ:3608-1749187467004"
+                          data-test-subj="checkboxSelectRow-2VTHIgQY-oB7dSrYz4BQ:3608-1640995208000"
                           disabled=""
-                          id="_selection_column_2VTHIgQY-oB7dSrYz4BQ:3608-1749187467004-checkbox"
+                          id="_selection_column_2VTHIgQY-oB7dSrYz4BQ:3608-1640995208000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -3243,7 +3243,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:27 PM
+                      Dec 31, 2021 @ 4:00:08 PM
                     </div>
                   </td>
                   <td
@@ -3425,9 +3425,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <input
                           aria-label="Select this row"
                           class="euiCheckbox__input"
-                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6V5:3609-1749187467009"
+                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6V5:3609-1640995209000"
                           disabled=""
-                          id="_selection_column_node-X9Y8Z7W6V5:3609-1749187467009-checkbox"
+                          id="_selection_column_node-X9Y8Z7W6V5:3609-1640995209000-checkbox"
                           title="Select this row"
                           type="checkbox"
                         />
@@ -3448,7 +3448,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Jun 05, 2025 @ 10:24:27 PM
+                      Dec 31, 2021 @ 4:00:09 PM
                     </div>
                   </td>
                   <td
