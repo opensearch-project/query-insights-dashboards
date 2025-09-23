@@ -11,7 +11,7 @@ import {
 } from 'src/plugins/data_source_management/public';
 import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
-import { getDataSourceEnabledUrl, isDataSourceCompatible } from '../utils/datasource-utils';
+import { getDataSourceEnabledUrl, isDataSourceCompatible, isWLMDataSourceCompatible } from '../utils/datasource-utils';
 
 export interface DataSourceMenuProps {
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -63,6 +63,53 @@ export const QueryInsightsDataSourceMenu = React.memo(
           onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
           fullWidth: true,
           dataSourceFilter: isDataSourceCompatible,
+        }}
+      />
+    ) : null;
+  },
+  (prevProps, newProps) =>
+    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
+    prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
+);
+
+export const WLMDataSourceMenu = React.memo(
+  (props: DataSourceMenuProps) => {
+    const {
+      coreStart,
+      depsStart,
+      dataSourceManagement,
+      params,
+      setDataSource,
+      selectedDataSource,
+      onManageDataSource,
+      onSelectedDataSource,
+      dataSourcePickerReadOnly,
+    } = props;
+    const { setHeaderActionMenu } = params;
+    const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
+
+    const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
+
+    const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
+      window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
+      setDataSource(dataSources[0]);
+      onSelectedDataSource();
+    };
+
+    return dataSourceEnabled ? (
+      <DataSourceMenu
+        onManageDataSource={onManageDataSource}
+        setMenuMountPoint={setHeaderActionMenu}
+        componentType={dataSourcePickerReadOnly ? 'DataSourceView' : 'DataSourceSelectable'}
+        componentConfig={{
+          onManageDataSource,
+          savedObjects: coreStart.savedObjects.client,
+          notifications: coreStart.notifications,
+          activeOption:
+            selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
+          onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
+          fullWidth: true,
+          dataSourceFilter: isWLMDataSourceCompatible,
         }}
       />
     ) : null;

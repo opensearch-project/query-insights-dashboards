@@ -22,7 +22,7 @@ import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE, WLM_MAIN } from '../WorkloadManagement';
-import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { DataSourceContext } from '../WorkloadManagement';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import { PageHeader } from '../../../components/PageHeader';
@@ -160,7 +160,7 @@ export const WLMCreate = ({
         coreStart={core}
         depsStart={depsStart}
         fallBackComponent={
-          <QueryInsightsDataSourceMenu
+          <WLMDataSourceMenu
             coreStart={core}
             depsStart={depsStart}
             params={params}
