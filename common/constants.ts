@@ -69,6 +69,25 @@ export const DEFAULT_DELETE_AFTER_DAYS = '7';
 export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
 export const TOP_N_DISPLAY_LIMIT = 9;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
+export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
+export const CHART_COLORS = [
+  '#1f77b4',
+  '#ff7f0e',
+  '#2ca02c',
+  '#d62728',
+  '#9467bd',
+  '#8c564b',
+  '#e377c2',
+  '#7f7f7f',
+  '#bcbd22',
+  '#17becf',
+];
+export const REFRESH_INTERVAL_OPTIONS = [
+  { value: '5000', text: '5 seconds' },
+  { value: '10000', text: '10 seconds' },
+  { value: '30000', text: '30 seconds' },
+  { value: '60000', text: '1 minute' },
+];
 
 export interface ConfigSchema {
   wlm: { enabled: boolean };

@@ -43,6 +43,9 @@ import {
   DEFAULT_REFRESH_INTERVAL,
   TOP_N_DISPLAY_LIMIT,
   WLM_GROUP_ID_PARAM,
+  ALL_WORKLOAD_GROUPS_TEXT,
+  CHART_COLORS,
+  REFRESH_INTERVAL_OPTIONS,
 } from '../../../common/constants';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
@@ -373,19 +376,6 @@ export const InflightQueries = ({
     },
   };
 
-  const chartColors = [
-    '#1f77b4',
-    '#ff7f0e',
-    '#2ca02c',
-    '#d62728',
-    '#9467bd',
-    '#8c564b',
-    '#e377c2',
-    '#7f7f7f',
-    '#bcbd22',
-    '#17becf',
-  ];
-
   const Legend = ({ data }: { data: Record<string, number> }) => (
     <EuiFlexGroup direction="row" wrap responsive={false} gutterSize="s">
       {Object.entries(data).map(([label, value], idx) => (
@@ -396,7 +386,7 @@ export const InflightQueries = ({
                 display: 'inline-block',
                 width: 12,
                 height: 12,
-                backgroundColor: chartColors[idx % chartColors.length],
+                backgroundColor: CHART_COLORS[idx % CHART_COLORS.length],
                 marginRight: 6,
               }}
             />
@@ -450,7 +440,7 @@ export const InflightQueries = ({
       y: label, // category
       angle: value,
       label,
-      color: chartColors[index % chartColors.length],
+      color: CHART_COLORS[index % CHART_COLORS.length],
     }));
   };
 
@@ -490,7 +480,7 @@ export const InflightQueries = ({
             <EuiSelect
               id="wlm-group-select"
               options={[
-                { value: '', text: 'All workload groups' },
+                { value: '', text: ALL_WORKLOAD_GROUPS_TEXT },
                 ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
               ]}
               value={wlmGroupId ?? ''}
@@ -522,12 +512,7 @@ export const InflightQueries = ({
                 <EuiSelect
                   value={String(refreshInterval)}
                   onChange={(e) => setRefreshInterval(parseInt(e.target.value, 10))}
-                  options={[
-                    { value: '5000', text: '5 seconds' },
-                    { value: '10000', text: '10 seconds' },
-                    { value: '30000', text: '30 seconds' },
-                    { value: '60000', text: '1 minute' },
-                  ]}
+                  options={REFRESH_INTERVAL_OPTIONS}
                   disabled={!autoRefreshEnabled}
                   data-test-subj="live-queries-refresh-interval"
                   compressed
