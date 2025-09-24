@@ -81,12 +81,22 @@ const mockStubLiveQueries = {
 
 // Some tests rely on periodic refresh. Keep timers disciplined.
 beforeEach(() => {
-  process.env.TZ = 'UTC';
+  process.env.TZ = 'America/Los_Angeles';
   jest.clearAllMocks();
   cleanup();
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
+  // Freeze clock for deterministic formatting
+  jest.spyOn(Date, 'now').mockReturnValue(1640995200000); // 2022-01-01T00:00:00Z
+  // Ensure Intl formatting doesn't vary across CI images/locales
+  const RealDTF = Intl.DateTimeFormat;
+  jest.spyOn(Intl, 'DateTimeFormat').mockImplementation((locales?: any, options?: any) => {
+    return new RealDTF(locales || 'en-US', {
+      timeZone: 'America/Los_Angeles',
+      ...(options || {}),
+    }) as any;
+  });
 });
 
 afterEach(() => {
