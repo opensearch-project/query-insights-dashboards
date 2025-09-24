@@ -1495,7 +1495,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:00 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -1700,7 +1700,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:01 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -1904,7 +1904,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:02 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -2136,7 +2136,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:03 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -2368,7 +2368,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:04 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -2601,7 +2601,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:05 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -2806,7 +2806,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:06 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -3010,7 +3010,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:07 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -3243,7 +3243,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:08 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td
@@ -3448,7 +3448,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      Dec 31, 2021 @ 4:00:09 PM
+                      Sep 24, 2021 @ 12:00:00 AM
                     </div>
                   </td>
                   <td

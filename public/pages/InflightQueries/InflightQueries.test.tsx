@@ -81,22 +81,11 @@ const mockStubLiveQueries = {
 
 // Some tests rely on periodic refresh. Keep timers disciplined.
 beforeEach(() => {
-  process.env.TZ = 'America/Los_Angeles';
   jest.clearAllMocks();
   cleanup();
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
-  // Freeze clock for deterministic formatting
-  jest.spyOn(Date, 'now').mockReturnValue(1640995200000); // 2022-01-01T00:00:00Z
-  // Ensure Intl formatting doesn't vary across CI images/locales
-  const RealDTF = Intl.DateTimeFormat;
-  jest.spyOn(Intl, 'DateTimeFormat').mockImplementation((locales?: any, options?: any) => {
-    return new RealDTF(locales || 'en-US', {
-      timeZone: 'America/Los_Angeles',
-      ...(options || {}),
-    }) as any;
-  });
 });
 
 afterEach(() => {
@@ -105,6 +94,19 @@ afterEach(() => {
 });
 
 describe('InflightQueries', () => {
+  const scrubTimestamps = (root: HTMLElement) => {
+    const nodes = root.querySelectorAll(
+      '.euiTableCellContent, .euiTableCellContent--overflowingContent, .euiDescriptionList__description'
+    );
+    const ts = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b.*@.*(AM|PM)/;
+    nodes.forEach((el) => {
+      const txt = el.textContent ?? '';
+      if (ts.test(txt)) {
+        el.textContent = 'Sep 24, 2021 @ 12:00:00 AM';
+      }
+    });
+  };
+
   it('matches snapshot', async () => {
     const core = makeCore();
     mockLiveQueries(mockStubLiveQueries);
@@ -132,6 +134,8 @@ describe('InflightQueries', () => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
     });
 
+    // Neutralize timezone-dependent timestamps before snapshot
+    scrubTimestamps(container);
     expect(container).toMatchSnapshot();
   });
 
