@@ -113,12 +113,8 @@ export const InflightQueries = ({
     [wlmGroupOptions]
   );
 
+  const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
-
-  const getWlmAvailable = useCallback((): boolean => {
-    const cacheKey = dataSource?.id || 'default';
-    return wlmCacheRef.current[cacheKey] ?? false;
-  }, [dataSource?.id]);
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
     const cacheKey = dataSource?.id || 'default';
@@ -140,7 +136,7 @@ export const InflightQueries = ({
   }, [core.http, dataSource?.id]);
 
   useEffect(() => {
-    void detectWlm();
+    detectWlm().then(setWlmAvailable);
   }, [detectWlm]);
 
   const [workloadGroupStats, setWorkloadGroupStats] = useState<{
@@ -191,7 +187,7 @@ export const InflightQueries = ({
     // fetch group NAMES only if plugin exists (but do not block the stats)
     const idToNameMap: Record<string, string> = {};
     try {
-      if (getWlmAvailable()) {
+      if (wlmAvailable) {
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
         });
@@ -209,7 +205,7 @@ export const InflightQueries = ({
     const options = Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }));
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroupId, detectWlm]);
+  }, [core.http, dataSource?.id, wlmGroupId, wlmAvailable]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -940,8 +936,7 @@ export const InflightQueries = ({
 
                 const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
 
-                if (getWlmAvailable()) {
-                  // Plugin enabled → clickable link
+                if (wlmAvailable) {
                   return (
                     <EuiLink
                       onClick={() => {
