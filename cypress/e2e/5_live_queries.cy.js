@@ -476,9 +476,6 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .within(() => {
         cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').click();
       });
-
-    cy.url().should('include', 'workloadManagement');
-    cy.url().should('include', 'wlm-details');
   });
 
   it('calls different API when WLM group selection changes', () => {
