@@ -27,7 +27,7 @@ import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE } from '../WorkloadManagement';
 import { DataSourceContext } from '../WorkloadManagement';
-import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 
 export const WLM = '/workloadManagement';
@@ -585,7 +585,7 @@ export const WorkloadManagementMain = ({
         coreStart={core}
         depsStart={depsStart}
         fallBackComponent={
-          <QueryInsightsDataSourceMenu
+          <WLMDataSourceMenu
             coreStart={core}
             depsStart={depsStart}
             params={params}

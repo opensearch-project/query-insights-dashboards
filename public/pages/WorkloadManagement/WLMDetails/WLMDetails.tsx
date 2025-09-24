@@ -32,7 +32,7 @@ import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_managem
 import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_MAIN, DataSourceContext } from '../WorkloadManagement';
-import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
+import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 
 // === Constants & Types ===
@@ -564,7 +564,7 @@ export const WLMDetails = ({
         depsStart={depsStart}
         fallBackComponent={
           <>
-            <QueryInsightsDataSourceMenu
+            <WLMDataSourceMenu
               coreStart={core}
               depsStart={depsStart}
               params={params}
