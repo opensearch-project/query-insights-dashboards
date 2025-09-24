@@ -432,4 +432,35 @@ describe('InflightQueries', () => {
       );
     });
   });
+
+  it('handles WLM stats API error gracefully', async () => {
+    const core = makeCore();
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+    (core.http.get as jest.Mock)
+      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }]) 
+      .mockRejectedValueOnce(new Error('Network error'));
+
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('[LiveQueries] Failed to fetch WLM stats', expect.any(Error));
+    });
+
+    consoleSpy.mockRestore();
+  });
+
 });
