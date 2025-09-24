@@ -6,7 +6,7 @@
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
 import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
@@ -14,6 +14,10 @@ import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useLocation: jest.fn(),
+}));
 
 // super-lightweight react-vis stubs
 jest.mock('react-vis', () => ({
@@ -83,6 +87,8 @@ const mockStubLiveQueries = {
 beforeEach(() => {
   jest.clearAllMocks();
   cleanup();
+  // Reset useLocation mock to default
+  (useLocation as jest.Mock).mockReturnValue({ search: '' });
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -340,5 +346,90 @@ describe('InflightQueries', () => {
     );
 
     expect(await screen.findByRole('switch')).toBeInTheDocument();
+  });
+
+  it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+  });
+
+  it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    (useLocation as jest.Mock).mockReturnValue({
+      search: '?wlmGroupId=SEARCH_WORKLOAD_GROUP',
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(retrieveLiveQueries).toHaveBeenCalledWith(
+        expect.any(Object),
+        'default',
+        'SEARCH_WORKLOAD_GROUP'
+      );
+    });
+  });
+
+  it('calls API with ANALYTICS_WORKLOAD_GROUP parameter', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    (useLocation as jest.Mock).mockReturnValue({
+      search: '?wlmGroupId=ANALYTICS_WORKLOAD_GROUP',
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(retrieveLiveQueries).toHaveBeenCalledWith(
+        expect.any(Object),
+        'default',
+        'ANALYTICS_WORKLOAD_GROUP'
+      );
+    });
   });
 });

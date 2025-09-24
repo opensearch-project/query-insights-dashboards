@@ -8,7 +8,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-A1B2C3D4E5",
         "is_cancelled": true,
-        "wlm_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "ANALYTICS_WORKLOAD_GROUP",
         "measurements": {
           "latency": {
             "number": 7990852130,
@@ -58,7 +58,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-X9Y8Z7W6",
         "is_cancelled": false,
-        "wlm_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "ANALYTICS_WORKLOAD_GROUP",
         "measurements": {
           "latency": {
             "number": 9633985711,
@@ -133,7 +133,7 @@
         "description": "indices[top_queries-2025.06.06-11009], search_type[QUERY_THEN_FETCH]",
         "node_id": "node-M2O3P4Q5",
         "is_cancelled": true,
-        "wlm_group_id": "DEFAULT_QUERY_GROUP",
+        "wlm_group_id": "SEARCH_WORKLOAD_GROUP",
         "measurements": {
           "latency": {
             "number": 5967857684,

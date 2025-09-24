@@ -1650,7 +1650,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class=""
                       >
-                        DEFAULT_QUERY_GROUP
+                        ANALYTICS_WORKLOAD_GROUP
                       </span>
                     </div>
                   </td>
@@ -2056,7 +2056,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class=""
                       >
-                        DEFAULT_QUERY_GROUP
+                        ANALYTICS_WORKLOAD_GROUP
                       </span>
                     </div>
                   </td>
@@ -2756,7 +2756,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class=""
                       >
-                        DEFAULT_QUERY_GROUP
+                        SEARCH_WORKLOAD_GROUP
                       </span>
                     </div>
                   </td>
