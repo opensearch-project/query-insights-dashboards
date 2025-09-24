@@ -128,6 +128,7 @@ export const WorkloadManagementMain = ({
     [SUMMARY_STATS_KEYS.totalGroups]: '-' as string | number,
     [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
+  const [isQueryInsightsAvailable, setIsQueryInsightsAvailable] = useState(false);
 
   // === Table Sorting / Pagination ===
   const pagination = {
@@ -161,6 +162,17 @@ export const WorkloadManagementMain = ({
   };
 
   // === API Calls ===
+  const checkQueryInsightsAvailability = async () => {
+    try {
+      await core.http.get('/api/live_queries', {
+        query: { dataSourceId: dataSource.id },
+      });
+      setIsQueryInsightsAvailable(true);
+    } catch (error) {
+      setIsQueryInsightsAvailable(false);
+    }
+  };
+
   const fetchClusterLevelStats = async () => {
     setLoading(true);
 
@@ -462,6 +474,7 @@ export const WorkloadManagementMain = ({
 
   // === Lifecycle ===
   useEffect(() => {
+    checkQueryInsightsAvailability();
     fetchClusterLevelStats();
 
     // Set up interval to fetch every 60 seconds
@@ -561,22 +574,26 @@ export const WorkloadManagementMain = ({
       sortable: true,
       render: (val: number) => val.toLocaleString(),
     },
-    {
-      field: 'liveQueriesLink',
-      name: <EuiText size="m">Live Queries</EuiText>,
-      render: (link: string, item: WorkloadGroupData) => (
-        <EuiLink
-          onClick={() => {
-            core.application.navigateToApp('query-insights-dashboards', {
-              path: `#/LiveQueries?wlmGroupId=${item.groupId}`,
-            });
-          }}
-          style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
-        >
-          View <EuiIcon type="popout" size="s" />
-        </EuiLink>
-      ),
-    },
+    ...(isQueryInsightsAvailable
+      ? [
+          {
+            field: 'liveQueriesLink',
+            name: <EuiText size="m">Live Queries</EuiText>,
+            render: (link: string, item: WorkloadGroupData) => (
+              <EuiLink
+                onClick={() => {
+                  core.application.navigateToApp('query-insights-dashboards', {
+                    path: `#/LiveQueries?wlmGroupId=${item.groupId}`,
+                  });
+                }}
+                style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                View <EuiIcon type="popout" size="s" />
+              </EuiLink>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

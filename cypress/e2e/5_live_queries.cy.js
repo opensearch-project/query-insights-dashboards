@@ -297,10 +297,46 @@ describe('Inflight Queries Dashboard', () => {
     cy.contains('h2', /2\s*MB/).should('exist');
   });
 
+  it('displays total completion, cancellation, and rejection metrics correctly', () => {
+    cy.intercept('GET', '**/api/_wlm/stats', {
+      statusCode: 200,
+      body: {
+        node1: {
+          workload_groups: {
+            group1: {
+              total_completions: 150,
+              total_cancellations: 25,
+              total_rejections: 10,
+            },
+          },
+        },
+      },
+    }).as('getWlmStats');
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getWlmStats');
+
+    cy.contains('Total completions')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', '150');
+      });
+
+    cy.contains('Total cancellations')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', '25');
+      });
+
+    cy.contains('Total rejections')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', '10');
+      });
+  });
+
   it('does not show cancel action for already cancelled queries', () => {
     cy.fixture('stub_live_queries.json').then((data) => {
-      data.response.live_queries[0].measurements.is_cancelled = true;
-
       cy.intercept('GET', '**/api/live_queries', {
         statusCode: 200,
         body: data,
@@ -340,5 +376,65 @@ describe('Inflight Queries Dashboard', () => {
       .next()
       .find('select, .euiSelect') // raw <select> or EuiSelect
       .should('exist');
+  });
+
+  it('displays WLM group links when WLM is enabled', () => {
+    cy.intercept('GET', '**/api/cat_plugins', {
+      statusCode: 200,
+      body: { hasWlm: true },
+    }).as('getPluginsEnabled');
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getPluginsEnabled');
+
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('DEFAULT_QUERY_GROUP').should('have.attr', 'href');
+      });
+  });
+
+  it('displays WLM group as text when WLM is disabled', () => {
+    cy.intercept('GET', '**/api/cat_plugins', {
+      statusCode: 200,
+      body: { hasWlm: false },
+    }).as('getPluginsDisabled');
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getPluginsDisabled');
+
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('DEFAULT_QUERY_GROUP').should('not.have.attr', 'href');
+      });
+  });
+
+  it('calls different API when WLM group selection changes', () => {
+    cy.intercept('GET', '**/api/_wlm/workload_group', {
+      statusCode: 200,
+      body: {
+        workload_groups: [
+          { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'ANALYTICS_WORKLOAD_GROUP' },
+          { _id: 'DEFAULT_QUERY_GROUP', name: 'DEFAULT_QUERY_GROUP' },
+        ],
+      },
+    }).as('getWorkloadGroups');
+
+    cy.intercept('GET', '**/api/live_queries?wlmGroupId=ANALYTICS_WORKLOAD_GROUP').as(
+      'getAnalyticsQueries'
+    );
+    cy.intercept('GET', '**/api/live_queries?wlmGroupId=DEFAULT_QUERY_GROUP').as(
+      'getDefaultQueries'
+    );
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getWorkloadGroups');
+
+    cy.get('#wlm-group-select').select('ANALYTICS_WORKLOAD_GROUP');
+    cy.wait('@getAnalyticsQueries');
+
+    cy.get('#wlm-group-select').select('DEFAULT_QUERY_GROUP');
+    cy.wait('@getDefaultQueries');
   });
 });

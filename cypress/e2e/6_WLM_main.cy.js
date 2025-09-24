@@ -67,4 +67,12 @@ describe('WLM Main Page', () => {
     cy.get('input[data-testid="cpu-threshold-input"]').should('exist');
     cy.get('input[data-testid="memory-threshold-input"]').should('exist');
   });
+
+  it('should have Live Queries View link when available', () => {
+    cy.get('.euiTableHeaderCell').then(($headers) => {
+      if ($headers.text().includes('Live Queries')) {
+        cy.get('.euiTableRowCell').contains('View').should('be.visible');
+      }
+    });
+  });
 });
