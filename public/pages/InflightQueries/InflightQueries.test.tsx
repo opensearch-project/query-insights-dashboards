@@ -457,10 +457,12 @@ describe('InflightQueries', () => {
     );
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('[LiveQueries] Failed to fetch WLM stats', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[LiveQueries] Failed to fetch WLM stats',
+        expect.any(Error)
+      );
     });
 
     consoleSpy.mockRestore();
   });
-
 });

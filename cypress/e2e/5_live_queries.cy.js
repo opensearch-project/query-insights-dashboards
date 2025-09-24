@@ -412,8 +412,6 @@ describe('Inflight Queries Dashboard', () => {
         cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
       });
   });
-
-
 });
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
@@ -461,7 +459,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       },
     }).as('getWorkloadGroups');
     cy.intercept('GET', '**/api/cat_plugins', {
-     statusCode: 200,
+      statusCode: 200,
       body: { hasWlm: true },
     }).as('getPluginsEnabled');
 
@@ -484,8 +482,6 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
   });
 
   it('calls different API when WLM group selection changes', () => {
-
-
     cy.intercept('GET', '**/api/live_queries?wlmGroupId=ANALYTICS_WORKLOAD_GROUP').as(
       'getAnalyticsQueries'
     );
