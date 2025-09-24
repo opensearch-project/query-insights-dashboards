@@ -18,7 +18,11 @@
  *   permissions and limitations under the License.
  */
 
-import { getDataSourceFromUrl, isDataSourceCompatible } from './datasource-utils';
+import {
+  getDataSourceFromUrl,
+  isDataSourceCompatible,
+  isWLMDataSourceCompatible,
+} from './datasource-utils';
 
 describe('Tests datasource utils', () => {
   it('Tests getting the datasource from the url', () => {
@@ -164,6 +168,96 @@ describe('Tests datasource utils', () => {
           type: '',
           references: [],
         })
+      ).toBe(false);
+    });
+  });
+
+  describe('isWLMDataSourceCompatible', () => {
+    it('returns true for versions >= 3.1.0', () => {
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '3.1.0',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
+      ).toBe(true);
+
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '3.3.0',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
+      ).toBe(true);
+    });
+
+    it('returns false for versions < 3.1.0 or invalid/pre-release', () => {
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '3.0.0',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
+      ).toBe(false);
+
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '2.19.0',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
+      ).toBe(false);
+
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
+      ).toBe(false);
+
+      expect(
+        isWLMDataSourceCompatible({
+          attributes: {
+            dataSourceVersion: '3.1.0-rc.1',
+            title: '',
+            endpoint: '',
+            auth: { type: '', credentials: undefined },
+          },
+          id: '',
+          type: '',
+          references: [],
+        } as any)
       ).toBe(false);
     });
   });
