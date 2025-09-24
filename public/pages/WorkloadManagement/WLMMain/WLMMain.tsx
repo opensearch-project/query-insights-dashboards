@@ -164,10 +164,10 @@ export const WorkloadManagementMain = ({
   // === API Calls ===
   const checkQueryInsightsAvailability = async () => {
     try {
-      await core.http.get('/api/live_queries', {
+      const response = await core.http.get('/api/cat_plugins', {
         query: { dataSourceId: dataSource.id },
       });
-      setIsQueryInsightsAvailable(true);
+      setIsQueryInsightsAvailable(response.hasQueryInsights || false);
     } catch (error) {
       setIsQueryInsightsAvailable(false);
     }
@@ -475,6 +475,9 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     checkQueryInsightsAvailability();
+  }, []);
+
+  useEffect(() => {
     fetchClusterLevelStats();
 
     // Set up interval to fetch every 60 seconds
