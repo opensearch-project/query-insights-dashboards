@@ -430,4 +430,32 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+  router.get(
+    {
+      path: '/api/cluster_settings',
+      validate: {
+        query: schema.object({
+          include_defaults: schema.maybe(schema.boolean({ defaultValue: true })),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const es = context.core.opensearch.client.asCurrentUser;
+        const { include_defaults } = request.query;
+        const res = await es.transport.request({
+          method: 'GET',
+          path: '/_cluster/settings',
+          querystring: { include_defaults, pretty: true },
+        });
+        return response.ok({ body: { ok: true, response: res } });
+      } catch (error) {
+        console.error('Unable to get cluster settings:', error);
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
+      }
+    }
+  );
 }
