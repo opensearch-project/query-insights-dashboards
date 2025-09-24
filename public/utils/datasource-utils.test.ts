@@ -18,7 +18,11 @@
  *   permissions and limitations under the License.
  */
 
-import { getDataSourceFromUrl, isDataSourceCompatible, isWLMDataSourceCompatible } from './datasource-utils';
+import {
+  getDataSourceFromUrl,
+  isDataSourceCompatible,
+  isWLMDataSourceCompatible,
+} from './datasource-utils';
 
 describe('Tests datasource utils', () => {
   it('Tests getting the datasource from the url', () => {
