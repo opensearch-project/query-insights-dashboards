@@ -438,7 +438,7 @@ describe('InflightQueries', () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
     (core.http.get as jest.Mock)
-      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }]) 
+      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }])
       .mockRejectedValueOnce(new Error('Network error'));
 
     mockLiveQueries(mockStubLiveQueries);
