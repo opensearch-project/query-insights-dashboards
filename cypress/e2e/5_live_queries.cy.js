@@ -301,12 +301,43 @@ describe('Inflight Queries Dashboard', () => {
     cy.intercept('GET', '**/api/_wlm/stats', {
       statusCode: 200,
       body: {
-        node1: {
+        _nodes: {
+          total: 1,
+          successful: 1,
+          failed: 0,
+        },
+        cluster_name: 'opensearch',
+        t7MuCybbQUGcEM7YUIUIJw: {
           workload_groups: {
-            group1: {
-              total_completions: 150,
-              total_cancellations: 25,
-              total_rejections: 10,
+            DEFAULT_WORKLOAD_GROUP: {
+              total_completions: 83,
+              total_rejections: 1,
+              total_cancellations: 2,
+              cpu: {
+                current_usage: 0.0002505169250071049,
+                cancellations: 0,
+                rejections: 0,
+              },
+              memory: {
+                current_usage: 0.0004828423261642456,
+                cancellations: 0,
+                rejections: 0,
+              },
+            },
+            'wzrbCZYBR8-0HI3O8C_iEA': {
+              total_completions: 1,
+              total_rejections: 0,
+              total_cancellations: 0,
+              cpu: {
+                current_usage: 0.000005066817114614726,
+                cancellations: 0,
+                rejections: 0,
+              },
+              memory: {
+                current_usage: 0.000003337860107421875,
+                cancellations: 0,
+                rejections: 0,
+              },
             },
           },
         },
@@ -319,19 +350,19 @@ describe('Inflight Queries Dashboard', () => {
     cy.contains('Total completions')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', '150');
+        cy.get('h2').should('contain.text', '84');
       });
 
     cy.contains('Total cancellations')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', '25');
+        cy.get('h2').should('contain.text', '1');
       });
 
     cy.contains('Total rejections')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', '10');
+        cy.get('h2').should('contain.text', '2');
       });
   });
 

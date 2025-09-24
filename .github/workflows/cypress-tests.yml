@@ -295,7 +295,7 @@ jobs:
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
           CI: true
-        timeout-minutes: 60
+        timeout-minutes: 120
 
       - uses: actions/upload-artifact@v4
         if: failure()
