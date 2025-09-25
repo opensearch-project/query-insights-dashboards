@@ -12,6 +12,32 @@ describe('Inflight Queries Dashboard', () => {
       }).as('getLiveQueries');
     });
 
+    cy.intercept('GET', '**/api/_wlm/stats', {
+      statusCode: 200,
+      body: {
+        _nodes: {
+          total: 1,
+          successful: 1,
+          failed: 0,
+        },
+        cluster_name: 'opensearch',
+        t7MuCybbQUGcEM7YUIUIJw: {
+          workload_groups: {
+            DEFAULT_WORKLOAD_GROUP: {
+              total_completions: 83,
+              total_rejections: 1,
+              total_cancellations: 2,
+            },
+            'wzrbCZYBR8-0HI3O8C_iEA': {
+              total_completions: 1,
+              total_rejections: 0,
+              total_cancellations: 0,
+            },
+          },
+        },
+      },
+    }).as('getWlmStats');
+
     cy.navigateToLiveQueries();
     cy.wait(1000);
     cy.wait('@getLiveQueries');
@@ -64,6 +90,7 @@ describe('Inflight Queries Dashboard', () => {
       'Memory usage',
       'Search type',
       'Status',
+      'WLM Group',
       'Actions',
     ];
 
@@ -296,10 +323,47 @@ describe('Inflight Queries Dashboard', () => {
     cy.contains('h2', /2\s*MB/).should('exist');
   });
 
+  it('displays total completion, cancellation, and rejection metrics correctly', () => {
+    cy.wait('@getWlmStats');
+
+    // Debug: log the DOM structure for all three metrics
+    cy.contains('Total completions').then(($el) => {
+      cy.log('Total completions element:', $el[0].outerHTML);
+      cy.log('Parent element:', $el.parent()[0].outerHTML);
+    });
+
+    cy.contains('Total cancellations').then(($el) => {
+      cy.log('Total cancellations element:', $el[0].outerHTML);
+      cy.log('Parent element:', $el.parent()[0].outerHTML);
+    });
+
+    cy.contains('Total rejections').then(($el) => {
+      cy.log('Total rejections element:', $el[0].outerHTML);
+      cy.log('Parent element:', $el.parent()[0].outerHTML);
+    });
+
+    // Try different selectors for all three
+    cy.contains('Total completions')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.get('h2').should('contain.text', '84');
+      });
+
+    cy.contains('Total cancellations')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.get('h2').should('contain.text', '2');
+      });
+
+    cy.contains('Total rejections')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.get('h2').should('contain.text', '1');
+      });
+  });
+
   it('does not show cancel action for already cancelled queries', () => {
     cy.fixture('stub_live_queries.json').then((data) => {
-      data.response.live_queries[0].measurements.is_cancelled = true;
-
       cy.intercept('GET', '**/api/live_queries', {
         statusCode: 200,
         body: data,
@@ -330,5 +394,105 @@ describe('Inflight Queries Dashboard', () => {
       .within(() => {
         cy.contains('td', 'opensearch');
       });
+  });
+  it('shows a grey "Workload group" badge with a dropdown next to it', () => {
+    cy.contains('.euiBadge', 'Workload group').should('be.visible');
+    // The select should be the next control after the badge
+    cy.contains('.euiBadge', 'Workload group')
+      .parent()
+      .next()
+      .find('select, .euiSelect') // raw <select> or EuiSelect
+      .should('exist');
+  });
+
+  it('displays WLM group as text when WLM is disabled', () => {
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
+      });
+  });
+});
+
+describe('Inflight Queries Dashboard - WLM Enabled', () => {
+  beforeEach(() => {
+    cy.fixture('stub_live_queries.json').then((stubResponse) => {
+      cy.intercept('GET', '**/api/live_queries', {
+        statusCode: 200,
+        body: stubResponse,
+      }).as('getLiveQueries');
+    });
+
+    cy.intercept('GET', '**/api/_wlm/stats', {
+      statusCode: 200,
+      body: {
+        _nodes: {
+          total: 1,
+          successful: 1,
+          failed: 0,
+        },
+        cluster_name: 'opensearch',
+        t7MuCybbQUGcEM7YUIUIJw: {
+          workload_groups: {
+            ANALYTICS_WORKLOAD_GROUP: {
+              total_completions: 50,
+              total_rejections: 0,
+              total_cancellations: 1,
+            },
+            DEFAULT_QUERY_GROUP: {
+              total_completions: 33,
+              total_rejections: 1,
+              total_cancellations: 1,
+            },
+          },
+        },
+      },
+    }).as('getWlmStats');
+
+    cy.intercept('GET', '**/api/_wlm/workload_group', {
+      statusCode: 200,
+      body: {
+        workload_groups: [
+          { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'ANALYTICS_WORKLOAD_GROUP' },
+          { _id: 'DEFAULT_QUERY_GROUP', name: 'DEFAULT_QUERY_GROUP' },
+        ],
+      },
+    }).as('getWorkloadGroups');
+    cy.intercept('GET', '**/api/cat_plugins', {
+      statusCode: 200,
+      body: { hasWlm: true },
+    }).as('getPluginsEnabled');
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getLiveQueries');
+  });
+
+  it('displays WLM group links when WLM is enabled', () => {
+    cy.wait('@getWorkloadGroups');
+    cy.wait('@getPluginsEnabled');
+
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').click();
+      });
+  });
+
+  it('calls different API when WLM group selection changes', () => {
+    cy.intercept('GET', '**/api/live_queries?wlmGroupId=ANALYTICS_WORKLOAD_GROUP').as(
+      'getAnalyticsQueries'
+    );
+    cy.intercept('GET', '**/api/live_queries?wlmGroupId=DEFAULT_QUERY_GROUP').as(
+      'getDefaultQueries'
+    );
+
+    cy.navigateToLiveQueries();
+    cy.wait('@getWorkloadGroups');
+
+    cy.get('#wlm-group-select').select('ANALYTICS_WORKLOAD_GROUP');
+    cy.wait('@getAnalyticsQueries');
+
+    cy.get('#wlm-group-select').select('DEFAULT_QUERY_GROUP');
+    cy.wait('@getDefaultQueries');
   });
 });

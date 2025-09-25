@@ -175,6 +175,16 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     method: 'GET',
   });
 
+  queryInsights.getLiveQueriesWLMGroup = ca({
+    url: {
+      fmt: `/_insights/live_queries?wlmGroupId=<%=wlmGroupId%>`,
+      req: {
+        wlmGroupId: { type: 'string', required: true },
+      },
+    },
+    method: 'GET',
+  });
+
   queryInsights.cancelTask = ca({
     url: {
       fmt: `/_tasks/<%=taskId%>/_cancel`,
