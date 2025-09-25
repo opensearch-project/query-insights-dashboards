@@ -517,13 +517,19 @@ const Configuration = ({
                       style={formRowPadding}
                       helpText="Max allowed limit 180."
                       isInvalid={isLocalIndex && !isDeleteAfterValid}
-                      error={isLocalIndex && !isDeleteAfterValid ? 'Please enter a value between 1 and 180.' : undefined}
+                      error={
+                        isLocalIndex && !isDeleteAfterValid
+                          ? 'Please enter a value between 1 and 180.'
+                          : undefined
+                      }
                     >
                       <EuiFieldNumber
                         disabled={!isLocalIndex}
                         min={1}
                         max={180}
-                        value={!isLocalIndex ? '' : (deleteAfterDays === '' ? '' : Number(deleteAfterDays))}
+                        value={
+                          !isLocalIndex ? '' : deleteAfterDays === '' ? '' : Number(deleteAfterDays)
+                        }
                         onChange={onDeleteAfterDaysChange}
                         isInvalid={isLocalIndex && !isDeleteAfterValid}
                       />
