@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
+import {
+  AppMountParameters,
+  CoreSetup,
+  CoreStart,
+  DEFAULT_NAV_GROUPS,
+  Plugin,
+} from '../../../src/core/public';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -35,8 +41,10 @@ export class QueryInsightsDashboardsPlugin
       category: {
         id: 'opensearch',
         label: 'OpenSearch Plugins',
+        // Order 2000 positions this category after core OpenSearch categories
         order: 2000,
       },
+      // Order 5000 places Query Insights within the OpenSearch Plugins category
       order: 5000,
       async mount(params: AppMountParameters) {
         // Load application bundle

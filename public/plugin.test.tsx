@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { CoreSetup, CoreStart } from '../../../src/core/public';
+import { CoreSetup, CoreStart, DEFAULT_NAV_GROUPS } from '../../../src/core/public';
 import { QueryInsightsDashboardsPlugin } from './plugin';
 import { PLUGIN_NAME } from '../common';
 import { renderApp } from './application';
@@ -23,10 +23,17 @@ describe('QueryInsightsDashboardsPlugin', () => {
   let coreSetupMock: jest.Mocked<CoreSetup>;
   let coreStartMock: jest.Mocked<CoreStart>;
   let registerMock: jest.Mock;
+  let addNavLinksToGroupMock: jest.Mock;
 
   beforeEach(() => {
     coreSetupMock = coreMock.createSetup();
     coreStartMock = coreMock.createStart();
+    addNavLinksToGroupMock = jest.fn();
+
+    // Properly mock the navGroup structure
+    coreSetupMock.chrome.navGroup = {
+      addNavLinksToGroup: addNavLinksToGroupMock,
+    } as any;
 
     plugin = new QueryInsightsDashboardsPlugin();
     registerMock = coreSetupMock.application.register;
