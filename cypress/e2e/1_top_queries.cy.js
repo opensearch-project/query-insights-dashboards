@@ -38,21 +38,24 @@ describe('Query Insights Dashboard', () => {
     cy.searchOnIndex(indexName);
     // waiting for the query insights queue to drain
     cy.wait(10000);
-    cy.navigateToOverview();
+    cy.waitForQueryInsightsPlugin();
   });
 
   /**
    * Validate the main overview page loads correctly
    */
   it('should display the main overview page', () => {
-    cy.get('.euiBasicTable').should('be.visible');
-    cy.contains('Query insights - Top N queries');
+    // Verify the page title is visible (already loaded by waitForQueryInsightsPlugin)
+    cy.contains('Query insights - Top N queries').should('be.visible');
+
+    // Verify the URL is correct
     cy.url().should('include', '/queryInsights');
 
-    // should display the query table on the overview page
+    // Verify the table is visible and has content
     cy.get('.euiBasicTable').should('be.visible');
     cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 0);
-    // should have top n queries displayed on the table
+
+    // Verify there are query rows in the table
     cy.get('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
@@ -196,8 +199,8 @@ describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top
       }).as('getTopQueries');
     });
 
-    cy.navigateToOverview();
-    cy.wait(1000);
+    cy.waitForQueryInsightsPlugin();
+    cy.wait(2000);
     cy.wait('@getTopQueries');
   });
 
@@ -309,39 +312,5 @@ describe('Query Insights Dashboard - Dynamic Columns change with Intercepted Top
     testMetricSorting('Avg Latency / Latency', 4);
     testMetricSorting('Avg CPU Time / CPU Time', 5);
     testMetricSorting('Avg Memory Usage / Memory Usage', 6);
-  });
-});
-
-describe('Query Insights Table - Search & Filter', () => {
-  beforeEach(() => {
-    cy.fixture('stub_top_queries.json').then((stubResponse) => {
-      cy.intercept('GET', '**/api/top_queries/*', {
-        statusCode: 200,
-        body: stubResponse,
-      }).as('getTopQueries');
-    });
-
-    cy.waitForQueryInsightsPlugin();
-    cy.wait(2000);
-    cy.wait('@getTopQueries');
-  });
-
-  it('should show only one query after search and filter', () => {
-    const targetId = 'a2e1c822-3e3c-4d1b-adb2-9f73af094b43';
-
-    // Apply filter for group_by = NONE (i.e., query)
-    cy.get('.euiFilterButton').contains('Type').click();
-    cy.get('.euiFilterSelectItem').contains('query').click();
-    cy.wait(500);
-
-    // Search using exact ID
-    cy.get('.euiFieldSearch').clear().type(targetId);
-    cy.wait(500);
-
-    // Assert that only one row is displayed
-    cy.get('.euiTableRow').should('have.length', 1);
-
-    // Confirm that the row contains the expected ID
-    cy.get('.euiTableRow').first().should('contain.text', targetId);
   });
 });

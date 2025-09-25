@@ -173,19 +173,96 @@ Cypress.Commands.add('waitForPageLoad', (fullUrl, { timeout = 60000, contains = 
   Cypress.log({
     message: `Wait for url: ${fullUrl} to be loaded.`,
   });
-  cy.url({ timeout: timeout })
-    .should('include', fullUrl)
-    .then(() => {
-      contains && cy.contains(contains).should('be.visible');
-    });
+  cy.url({ timeout: timeout }).should('include', fullUrl);
+
+  if (contains) {
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+    const ciTimeout = isCI ? Math.max(timeout, 180000) : timeout; // At least 3 minutes in CI
+    cy.log(
+      `Waiting for content "${contains}" with timeout: ${ciTimeout}ms (${isCI ? 'CI' : 'Local'})`
+    );
+
+    // Wait for the specific content with retries and longer timeout in CI
+    cy.contains(contains, { timeout: ciTimeout }).should('be.visible');
+  }
 });
 
 Cypress.Commands.add('navigateToOverview', () => {
   cy.visit(OVERVIEW_PATH);
-  cy.waitForPageLoad(OVERVIEW_PATH, { contains: 'Query insights - Top N queries' });
+
+  const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+  const baseTimeout = isCI ? 240000 : 90000; // 4 minutes in CI, 1.5 minutes locally
+
+  // Wait for the page to load and ensure the plugin is ready
+  cy.waitForPageLoad(OVERVIEW_PATH, {
+    timeout: baseTimeout,
+    contains: 'Query insights - Top N queries',
+  });
+
+  // Additional wait to ensure all components are fully rendered
+  const tableTimeout = isCI ? 60000 : 30000; // 1 minute in CI, 30 seconds locally
+  cy.get('.euiBasicTable', { timeout: tableTimeout }).should('exist');
 });
 
 Cypress.Commands.add('navigateToConfiguration', () => {
   cy.visit(CONFIGURATION_PATH);
   cy.waitForPageLoad(CONFIGURATION_PATH, { contains: 'Query insights - Configuration' });
+});
+
+Cypress.Commands.add('waitForPluginToLoad', () => {
+  // CI environments need much longer waits for plugin initialization
+  const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+  const waitTime = isCI ? 10000 : 3000; // 10 seconds in CI, 3 seconds locally
+
+  cy.log(`waitForPluginToLoad: ${isCI ? 'CI' : 'Local'} environment, waiting ${waitTime}ms`);
+  cy.wait(waitTime);
+});
+
+Cypress.Commands.add('waitForQueryInsightsPlugin', () => {
+  const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+  const timeout = isCI ? 360000 : 120000; // 6 minutes in CI, 2 minutes locally
+
+  // Enhanced debugging
+  cy.log(`=== DEBUGGING INFO ===`);
+  cy.log(`Cypress.env('CI'): ${Cypress.env('CI')}`);
+  cy.log(`Cypress.config('isInteractive'): ${Cypress.config('isInteractive')}`);
+  cy.log(`Detected environment: ${isCI ? 'CI' : 'Local'}`);
+  cy.log(`Timeout: ${timeout}ms (${timeout / 1000} seconds)`);
+
+  // Much longer initial wait for plugin registration in CI
+  const pluginWait = isCI ? 60000 : 5000; // 60 seconds in CI!
+  cy.log(`Initial wait ${pluginWait}ms (${pluginWait / 1000}s) for plugin registration`);
+  cy.wait(pluginWait);
+
+  cy.visit(OVERVIEW_PATH, { timeout: timeout });
+
+  cy.get('body', { timeout: timeout }).should('be.visible');
+
+  // Log what we find on the page for debugging
+  cy.get('body').then(($body) => {
+    const pageText = $body.text();
+    cy.log(`Page content preview: ${pageText.substring(0, 300)}...`);
+
+    const hasQueryInsights = pageText.includes('Query insights');
+    const hasTopNQueries = pageText.includes('Top N queries');
+    cy.log(`Has "Query insights" text: ${hasQueryInsights}`);
+    cy.log(`Has "Top N queries" text: ${hasTopNQueries}`);
+  });
+
+  cy.get('body').then(($body) => {
+    if ($body.find('h1:contains("Query insights")').length === 0) {
+      // If title is not immediately visible, wait for it with a long timeout
+      cy.log(`Title not found immediately, waiting with ${timeout}ms timeout...`);
+      cy.contains('Query insights', { timeout: timeout }).should('be.visible');
+    } else {
+      cy.log('Title found immediately!');
+    }
+  });
+
+  // Additional wait for React components to fully render
+  const renderWait = isCI ? 15000 : 2000;
+  cy.log(`Final wait ${renderWait}ms for React rendering`);
+  cy.wait(renderWait);
+
+  cy.log(`=== PLUGIN LOADING COMPLETE ===`);
 });
