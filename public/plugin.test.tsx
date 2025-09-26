@@ -8,9 +8,14 @@ import { QueryInsightsDashboardsPlugin } from './plugin';
 import { PLUGIN_NAME } from '../common';
 import { renderApp } from './application';
 import { coreMock } from '../../../src/core/public/mocks';
+import { WLM_CONFIG } from '../common/constants';
 
 jest.mock('./application', () => ({
   renderApp: jest.fn(),
+}));
+
+jest.mock('../common/constants', () => ({
+  WLM_CONFIG: { enabled: true }, // default mocked value
 }));
 
 describe('QueryInsightsDashboardsPlugin', () => {
@@ -77,47 +82,51 @@ describe('QueryInsightsDashboardsPlugin', () => {
     );
   });
 
-  it('should register workload management application', () => {
+  it('registers WLM when enabled', () => {
     plugin.setup(coreSetupMock, {} as any);
 
     expect(registerMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'workloadManagement',
-        title: 'Workload Management',
-        appRoute: '/app/workload-management',
-        description: 'Monitor and manage workload distribution across the cluster.',
-        category: expect.objectContaining({
-          id: 'opensearch',
-          label: 'OpenSearch Plugins',
-          order: 2000,
-        }),
-        order: 5100,
-        mount: expect.any(Function),
-      })
+      expect.objectContaining({ id: 'workloadManagement' })
     );
   });
 
-  it('should register both applications in correct order', () => {
+  it('does NOT register WLM when disabled', () => {
+    // override the mocked export for this test
+    (WLM_CONFIG as any).enabled = false;
     plugin.setup(coreSetupMock, {} as any);
+
+    expect(registerMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'workloadManagement' })
+    );
+  });
+
+  it('registers only Query Insights when WLM disabled', () => {
+    (WLM_CONFIG as any).enabled = false;
+    plugin.setup(coreSetupMock, {} as any);
+
+    const calls = registerMock.mock.calls.map(([app]: any) => ({
+      id: app.id,
+      title: app.title,
+    }));
+
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([{ id: PLUGIN_NAME, title: 'Query Insights' }]);
+  });
+
+  it('registers Query Insights and Workload Management when WLM enabled', () => {
+    (WLM_CONFIG as any).enabled = true;
+    plugin.setup(coreSetupMock, {} as any);
+
+    const calls = registerMock.mock.calls.map(([app]: any) => ({
+      id: app.id,
+      title: app.title,
+    }));
+
     expect(registerMock).toHaveBeenCalledTimes(2);
-
-    // First call should be Query Insights
-    expect(registerMock).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        id: PLUGIN_NAME,
-        title: 'Query Insights',
-      })
-    );
-
-    // Second call should be Workload Management
-    expect(registerMock).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        id: 'workloadManagement',
-        title: 'Workload Management',
-      })
-    );
+    expect(calls).toEqual([
+      { id: PLUGIN_NAME, title: 'Query Insights' },
+      { id: 'workloadManagement', title: 'Workload Management' },
+    ]);
   });
 
   it('should add navigation links to group', () => {

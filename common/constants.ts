@@ -69,3 +69,13 @@ export const DEFAULT_TIME_UNIT = TIME_UNIT.MINUTES;
 export const DEFAULT_GROUP_BY = 'none';
 export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
+
+export interface ConfigSchema {
+  wlm: { enabled: boolean };
+}
+
+const DEFAULT_CONFIG: ConfigSchema = {
+  wlm: { enabled: true },
+};
+
+export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
