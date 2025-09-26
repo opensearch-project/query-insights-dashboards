@@ -123,36 +123,6 @@ export class QueryInsightsDashboardsPlugin
       ]);
     }
 
-    // Registration for new navigation
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
-      {
-        id: PLUGIN_NAME,
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          // Order 9000 positions Performance category at the end of Data Administration
-          order: 9000,
-          euiIconType: 'managementApp',
-        },
-        // Order 200 places this item within the Performance category
-        order: 200,
-      },
-    ]);
-    core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
-      {
-        id: 'workloadManagement',
-        category: {
-          id: 'performance',
-          label: 'Performance',
-          // Order 9000 positions Performance category at the end of Data Administration
-          order: 9000,
-          euiIconType: 'managementApp',
-        },
-        // Order 200 places this item within the Performance category
-        order: 200,
-      },
-    ]);
-
     return {};
   }
 
