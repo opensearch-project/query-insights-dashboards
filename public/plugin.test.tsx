@@ -70,7 +70,7 @@ describe('QueryInsightsDashboardsPlugin', () => {
     await mountFunction(paramsMock);
 
     const depsMock = { dataSourceManagement: undefined };
-    coreSetupMock.getStartServices.mockResolvedValue([coreStartMock, depsMock]);
+    coreSetupMock.getStartServices.mockResolvedValue([coreStartMock, depsMock, undefined]);
 
     await mountFunction(paramsMock);
 
@@ -147,7 +147,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should return empty start and stop methods', () => {
-    // Ensures `start` and `stop` do not introduce unwanted behavior
     expect(plugin.start(coreStartMock)).toEqual({});
     expect(plugin.stop()).toBeUndefined();
   });
