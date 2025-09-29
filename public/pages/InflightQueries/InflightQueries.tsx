@@ -150,7 +150,7 @@ export const InflightQueries = ({
     let statsBody: WlmStatsBody = {};
     try {
       const statsRes = await core.http.get(API_ENDPOINTS.WLM_STATS, { query: httpQuery });
-      statsBody = ((statsRes as { body?: unknown }).body ?? statsRes) as WlmStatsBody;
+      statsBody = (statsRes as { body?: unknown }).body as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
       setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
@@ -163,8 +163,32 @@ export const InflightQueries = ({
     let cancellations = 0;
     let rejections = 0;
 
-    for (const [nodeId, maybeNode] of Object.entries(statsBody)) {
-      if (nodeId === '_nodes' || nodeId === 'cluster_name') continue;
+    // Sample WLM stats response:
+    // {
+    //   "_nodes": { "total": 2, "successful": 2, "failed": 0 },
+    //   "cluster_name": "integTest",
+    //   "tFvUEfRYTDq2LvVP52QKRg": {
+    //     "workload_groups": {
+    //       "DEFAULT_WORKLOAD_GROUP": {
+    //         "total_completions": 318,
+    //         "total_rejections": 0,
+    //         "total_cancellations": 0
+    //       }
+    //     }
+    //   },
+    //   "kdQwbWg-RKmfaGf9K0uRFg": {
+    //     "workload_groups": {
+    //       "DEFAULT_WORKLOAD_GROUP": {
+    //         "total_completions": 638,
+    //         "total_rejections": 0,
+    //         "total_cancellations": 0
+    //       }
+    //     }
+    //   }
+    // }
+    for (const [key, maybeNode] of Object.entries(statsBody)) {
+      // Skip metadata fields - only process actual node entries
+      if (key === '_nodes' || key === 'cluster_name') continue;
       const nodeStats = maybeNode as WlmNodeStats;
       const workloadGroups = nodeStats.workload_groups ?? {};
       for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
