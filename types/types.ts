@@ -78,6 +78,7 @@ export interface LiveSearchQueryRecord {
   };
   node_id: string;
   is_cancelled: boolean;
+  wlm_group_id: string;
 }
 
 export interface LiveSearchQueryResponse {
