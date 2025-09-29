@@ -70,6 +70,22 @@ export const DEFAULT_GROUP_BY = 'none';
 export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
 
+// Validation constants
+export const VALIDATION_LIMITS = {
+  TOP_N_SIZE: {
+    MIN: 1,
+    MAX: 100,
+  },
+  WINDOW_SIZE_HOURS: {
+    MIN: 1,
+    MAX: 24,
+  },
+  DELETE_AFTER_DAYS: {
+    MIN: 1,
+    MAX: 180,
+  },
+};
+
 export interface ConfigSchema {
   wlm: { enabled: boolean };
 }

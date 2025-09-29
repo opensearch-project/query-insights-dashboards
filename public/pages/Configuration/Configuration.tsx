@@ -200,8 +200,7 @@ const Configuration = ({
   const WindowChoice = time === TIME_UNITS_TEXT[0].value ? MinutesBox : HoursBox;
   const isLocalIndex = exporterType === EXPORTER_TYPE.localIndex;
   const parsedDeleteAfter = parseInt(deleteAfterDays, 10);
-  const deleteAfterNum = Number.isFinite(parsedDeleteAfter) ? parsedDeleteAfter : NaN;
-  const isDeleteAfterValid = !isLocalIndex || (deleteAfterNum >= 1 && deleteAfterNum <= 180);
+  const isDeleteAfterValid = !isLocalIndex || (parsedDeleteAfter >= 1 && parsedDeleteAfter <= 180);
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
@@ -216,8 +215,10 @@ const Configuration = ({
     const nVal = parseInt(topNSize, 10);
     if (nVal < 1 || nVal > 100) return false;
     if (time === TIME_UNITS_TEXT[0].value) {
+      // MINUTES
       if (windowSize === '' || Number.isNaN(parseInt(windowSize, 10))) return false;
     } else {
+      // HOURS
       const windowVal = parseInt(windowSize, 10);
       if (!(windowVal >= 1 && windowVal <= 24)) return false;
     }
