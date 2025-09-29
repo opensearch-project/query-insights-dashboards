@@ -575,7 +575,7 @@ export const WLMDetails = ({
               onSelectedDataSource={() => {
                 window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
               }}
-              dataSourcePickerReadOnly={false}
+              dataSourcePickerReadOnly={true}
             />
           </>
         }
