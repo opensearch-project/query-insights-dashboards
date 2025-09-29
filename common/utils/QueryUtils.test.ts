@@ -106,4 +106,49 @@ describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
     expect(result).toBeNull();
     expect(mockCore.http.get).toHaveBeenCalledTimes(3);
   });
+
+  it('should find query by id from records array', async () => {
+    const query1 = { ...mockQuery, id: '1111c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const query2 = { ...mockQuery, id: '2222c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const targetQuery = { ...mockQuery, id: '5073c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const query3 = { ...mockQuery, id: '3333c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const mockResponseWithTarget = {
+      response: {
+        top_queries: [query1, query2, targetQuery, query3],
+      },
+    };
+    mockCore.http.get.mockResolvedValue(mockResponseWithTarget);
+
+    const result = await retrieveQueryById(
+      mockCore,
+      undefined,
+      testStart,
+      testEnd,
+      '5073c38a-8eb8-436c-b825-ff97d75b8bd8'
+    );
+
+    expect(result).toEqual(targetQuery);
+  });
+
+  it('should return null when id not found in records', async () => {
+    const query1 = { ...mockQuery, id: '1111c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const query2 = { ...mockQuery, id: '2222c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const query3 = { ...mockQuery, id: '3333c38a-8eb8-436c-b825-ff97d75b8bd8' };
+    const mockResponseWithMultiple = {
+      response: {
+        top_queries: [query1, query2, query3],
+      },
+    };
+    mockCore.http.get.mockResolvedValue(mockResponseWithMultiple);
+
+    const result = await retrieveQueryById(
+      mockCore,
+      undefined,
+      testStart,
+      testEnd,
+      'a1a2a3a4-a5a6-7890-aaaa-aa1234567890'
+    );
+
+    expect(result).toBeNull();
+  });
 });
