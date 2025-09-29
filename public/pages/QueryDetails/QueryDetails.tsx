@@ -132,7 +132,19 @@ const QueryDetails = ({
   }, [query, history, core.chrome, convertTime, initPlotlyChart]);
 
   const queryString = query
-    ? JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2)
+    ? JSON.stringify(
+        typeof query.source === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(query.source);
+              } catch {
+                return query.source;
+              }
+            })()
+          : query.source,
+        null,
+        2
+      )
     : '';
   const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
 
