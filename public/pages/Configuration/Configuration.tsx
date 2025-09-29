@@ -43,6 +43,7 @@ import {
 } from '../../../common/constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { validateConfiguration } from './configurationValidation';
 
 const Configuration = ({
   latencySettings,
@@ -211,19 +212,7 @@ const Configuration = ({
     exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
     deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays;
 
-  const isValid = (() => {
-    const nVal = parseInt(topNSize, 10);
-    if (nVal < 1 || nVal > 100) return false;
-    if (time === TIME_UNITS_TEXT[0].value) {
-      // MINUTES
-      if (windowSize === '' || Number.isNaN(parseInt(windowSize, 10))) return false;
-    } else {
-      // HOURS
-      const windowVal = parseInt(windowSize, 10);
-      if (!(windowVal >= 1 && windowVal <= 24)) return false;
-    }
-    return isDeleteAfterValid;
-  })();
+  const isValid = validateConfiguration(topNSize, windowSize, time, deleteAfterDays, exporterType);
 
   const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
