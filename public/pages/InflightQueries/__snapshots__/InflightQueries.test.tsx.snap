@@ -1,141 +1,259 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`InflightQueries shows 0 when there are no queries 1`] = `
+exports[`InflightQueries matches snapshot 1`] = `
 <div>
   <div>
     <div
       class="euiSpacer euiSpacer--m"
     />
     <div
-      class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentFlexEnd euiFlexGroup--directionRow euiFlexGroup--responsive"
+      class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
     >
       <div
-        class="euiFlexItem euiFlexItem--flexGrowZero"
+        class="euiFlexGroup euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive"
       >
-        <div
-          class="euiSwitch euiSwitch--primary"
+        <span
+          class="euiBadge euiBadge--iconLeft"
+          style="background-color: rgb(211, 218, 230); color: rgb(0, 0, 0); padding: 6px 12px; height: 32px; display: flex; align-items: center; font-weight: bold;"
+          title="Workload group"
         >
-          <button
-            aria-checked="true"
-            aria-labelledby="random_html_id"
-            class="euiSwitch__button"
-            data-test-subj="live-queries-autorefresh-toggle"
-            id="random_html_id"
-            role="switch"
-            type="button"
+          <span
+            class="euiBadge__content"
           >
             <span
-              class="euiSwitch__body"
+              class="euiBadge__text"
             >
-              <span
-                class="euiSwitch__thumb"
-              />
-              <span
-                class="euiSwitch__track"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiSwitch__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M7.293 8 3.146 3.854a.5.5 0 1 1 .708-.708L8 7.293l4.146-4.147a.5.5 0 0 1 .708.708L8.707 8l4.147 4.146a.5.5 0 0 1-.708.708L8 8.707l-4.146 4.147a.5.5 0 0 1-.708-.708L7.293 8Z"
-                  />
-                </svg>
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiSwitch__icon euiSwitch__icon--checked"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M6.5 12a.502.502 0 0 1-.354-.146l-4-4a.502.502 0 0 1 .708-.708L6.5 10.793l6.646-6.647a.502.502 0 0 1 .708.708l-7 7A.502.502 0 0 1 6.5 12"
-                    fill-rule="evenodd"
-                  />
-                </svg>
-              </span>
+              Workload group
             </span>
-          </button>
-          <span
-            class="euiSwitch__label"
-            id="random_html_id"
-          >
-            Auto-refresh
           </span>
+        </span>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <div
+            class="euiFormControlLayout euiFormControlLayout--compressed"
+          >
+            <div
+              class="euiFormControlLayout__childrenWrapper"
+            >
+              <select
+                aria-label="Workload group selector"
+                class="euiSelect euiSelect--compressed"
+                id="wlm-group-select"
+              >
+                <option
+                  value=""
+                >
+                  All workload groups
+                </option>
+              </select>
+              <div
+                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+              >
+                <span
+                  class="euiFormControlLayoutCustomIcon"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--small euiIcon-isLoaded euiFormControlLayoutCustomIcon__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                      fill-rule="non-zero"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div
         class="euiFlexItem euiFlexItem--flexGrowZero"
       >
-        <select
-          data-test-subj="live-queries-refresh-interval"
-          style="padding: 6px; border-radius: 6px; min-width: 120px;"
+        <div
+          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
         >
-          <option
-            value="5000"
+          <div
+            class="euiFlexItem euiFlexItem--flexGrowZero"
           >
-            5 seconds
-          </option>
-          <option
-            value="10000"
-          >
-            10 seconds
-          </option>
-          <option
-            value="30000"
-          >
-            30 seconds
-          </option>
-          <option
-            value="60000"
-          >
-            1 minute
-          </option>
-        </select>
-      </div>
-      <div
-        class="euiFlexItem euiFlexItem--flexGrowZero"
-      >
-        <button
-          class="euiButton euiButton--primary"
-          data-test-subj="live-queries-refresh-button"
-          type="button"
-        >
-          <span
-            class="euiButtonContent euiButton__content"
-          >
-            <svg
-              aria-hidden="true"
-              class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-              focusable="false"
-              height="16"
-              role="img"
-              viewBox="0 0 16 16"
-              width="16"
-              xmlns="http://www.w3.org/2000/svg"
+            <div
+              class="euiSwitch euiSwitch--primary"
             >
-              <path
-                d="M11.228 2.942a.5.5 0 1 1-.538.842A5 5 0 1 0 13 8a.5.5 0 1 1 1 0 6 6 0 1 1-2.772-5.058ZM14 1.5v3A1.5 1.5 0 0 1 12.5 6h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 1 1 1 0Z"
-              />
-            </svg>
-            <span
-              class="euiButton__text"
+              <button
+                aria-checked="true"
+                aria-labelledby="random_html_id"
+                class="euiSwitch__button"
+                data-test-subj="live-queries-autorefresh-toggle"
+                id="random_html_id"
+                role="switch"
+                type="button"
+              >
+                <span
+                  class="euiSwitch__body"
+                >
+                  <span
+                    class="euiSwitch__thumb"
+                  />
+                  <span
+                    class="euiSwitch__track"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon-isLoaded euiSwitch__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7.293 8 3.146 3.854a.5.5 0 1 1 .708-.708L8 7.293l4.146-4.147a.5.5 0 0 1 .708.708L8.707 8l4.147 4.146a.5.5 0 0 1-.708.708L8 8.707l-4.146 4.147a.5.5 0 0 1-.708-.708L7.293 8Z"
+                      />
+                    </svg>
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon-isLoaded euiSwitch__icon euiSwitch__icon--checked"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M6.5 12a.502.502 0 0 1-.354-.146l-4-4a.502.502 0 0 1 .708-.708L6.5 10.793l6.646-6.647a.502.502 0 0 1 .708.708l-7 7A.502.502 0 0 1 6.5 12"
+                        fill-rule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </span>
+              </button>
+              <span
+                class="euiSwitch__label"
+                id="random_html_id"
+              >
+                Auto-refresh
+              </span>
+            </div>
+          </div>
+          <div
+            class="euiFlexItem euiFlexItem--flexGrowZero"
+          >
+            <div
+              class="euiFormRow euiFormRow--compressed euiFormRow--horizontal"
+              id="random_html_id-row"
             >
-              Refresh
-            </span>
-          </span>
-        </button>
+              <div
+                class="euiFormRow__fieldWrapper"
+              >
+                <div
+                  class="euiFormControlLayout euiFormControlLayout--compressed"
+                >
+                  <div
+                    class="euiFormControlLayout__childrenWrapper"
+                  >
+                    <select
+                      class="euiSelect euiSelect--compressed"
+                      data-test-subj="live-queries-refresh-interval"
+                      id="random_html_id"
+                      style="min-width: 140px;"
+                    >
+                      <option
+                        value="5000"
+                      >
+                        5 seconds
+                      </option>
+                      <option
+                        value="10000"
+                      >
+                        10 seconds
+                      </option>
+                      <option
+                        value="30000"
+                      >
+                        30 seconds
+                      </option>
+                      <option
+                        value="60000"
+                      >
+                        1 minute
+                      </option>
+                    </select>
+                    <div
+                      class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                    >
+                      <span
+                        class="euiFormControlLayoutCustomIcon"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--small euiIcon-isLoaded euiFormControlLayoutCustomIcon__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                            fill-rule="non-zero"
+                          />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="euiFlexItem euiFlexItem--flexGrowZero"
+          >
+            <button
+              class="euiButton euiButton--primary"
+              data-test-subj="live-queries-refresh-button"
+              type="button"
+            >
+              <span
+                class="euiButtonContent euiButton__content"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11.228 2.942a.5.5 0 1 1-.538.842A5 5 0 1 0 13 8a.5.5 0 1 1 1 0 6 6 0 1 1-2.772-5.058ZM14 1.5v3A1.5 1.5 0 0 1 12.5 6h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 1 1 1 0Z"
+                  />
+                </svg>
+                <span
+                  class="euiButton__text"
+                >
+                  Refresh
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+    <div
+      class="euiSpacer euiSpacer--m"
+    />
     <div
       class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
     >
@@ -163,12 +281,12 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  0
+                  20
                 </b>
               </h2>
               <svg
                 aria-hidden="true"
-                class="euiIcon euiIcon--medium"
+                class="euiIcon euiIcon--medium euiIcon-isLoaded"
                 focusable="false"
                 height="16"
                 role="img"
@@ -208,7 +326,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  0
+                  7.19 s
                 </b>
               </h2>
               <div
@@ -216,7 +334,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
               >
                 <p>
                   (Avg. across 
-                  0
+                  20
                   )
                 </p>
               </div>
@@ -248,9 +366,17 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  0
+                  9.69 s
                 </b>
               </h2>
+              <div
+                class="euiText euiText--small"
+              >
+                <p>
+                  ID: 
+                  node-A1B2C4E5:3614
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -279,7 +405,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  0
+                  1.68 ms
                 </b>
               </h2>
               <div
@@ -287,7 +413,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
               >
                 <p>
                   (Sum across 
-                  0
+                  20
                   )
                 </p>
               </div>
@@ -319,7 +445,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  0
+                  69.12 KB
                 </b>
               </h2>
               <div
@@ -327,7 +453,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
               >
                 <p>
                   (Sum across 
-                  0
+                  20
                   )
                 </p>
               </div>
@@ -373,7 +499,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   >
                     <svg
                       aria-labelledby="random_html_id"
-                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                       focusable="false"
                       height="16"
                       role="img"
@@ -417,7 +543,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   >
                     <svg
                       aria-labelledby="random_html_id"
-                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                       focusable="false"
                       height="16"
                       role="img"
@@ -458,25 +584,154 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
             class="euiSpacer euiSpacer--l"
           />
           <div
-            class="euiTextAlign euiTextAlign--center"
+            data-testid="chart-node-donut"
+          />
+          <div
+            class="euiSpacer euiSpacer--s"
+          />
+          <div
+            class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--directionRow euiFlexGroup--wrap"
           >
             <div
-              class="euiSpacer euiSpacer--xl"
-            />
-            <div
-              class="euiText euiText--medium"
+              class="euiFlexItem euiFlexItem--flexGrowZero"
             >
               <div
-                class="euiTextColor euiTextColor--subdued"
+                class="euiText euiText--extraSmall"
               >
-                <p>
-                  No data available
-                </p>
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(31, 119, 180); margin-right: 6px;"
+                />
+                node-A1B2C3D4E5
+                : 
+                2
               </div>
             </div>
             <div
-              class="euiSpacer euiSpacer--xl"
-            />
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(255, 127, 14); margin-right: 6px;"
+                />
+                4W2VTHIgQY-oB7dSrYz4B
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(44, 160, 44); margin-right: 6px;"
+                />
+                node-X9Y8Z7W6
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(214, 39, 40); margin-right: 6px;"
+                />
+                node-P0Q9R8S7
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(148, 103, 189); margin-right: 6px;"
+                />
+                4W2VTHIgQY-oB7dSrYz4
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(140, 86, 75); margin-right: 6px;"
+                />
+                node-M2O3P4Q5
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(227, 119, 194); margin-right: 6px;"
+                />
+                node-B2C3D4E5
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(127, 127, 127); margin-right: 6px;"
+                />
+                node-N2O3P4Q5
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(188, 189, 34); margin-right: 6px;"
+                />
+                2VTHIgQY-oB7dSrYz4BQ
+                : 
+                1
+              </div>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(23, 190, 207); margin-right: 6px;"
+                />
+                others
+                : 
+                10
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -514,7 +769,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   >
                     <svg
                       aria-labelledby="random_html_id"
-                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                       focusable="false"
                       height="16"
                       role="img"
@@ -558,7 +813,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   >
                     <svg
                       aria-labelledby="random_html_id"
-                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                       focusable="false"
                       height="16"
                       role="img"
@@ -599,25 +854,118 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
             class="euiSpacer euiSpacer--l"
           />
           <div
-            class="euiTextAlign euiTextAlign--center"
+            data-testid="chart-index-donut"
+          />
+          <div
+            class="euiSpacer euiSpacer--s"
+          />
+          <div
+            class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--directionRow euiFlexGroup--wrap"
           >
             <div
-              class="euiSpacer euiSpacer--xl"
-            />
-            <div
-              class="euiText euiText--medium"
+              class="euiFlexItem euiFlexItem--flexGrowZero"
             >
               <div
-                class="euiTextColor euiTextColor--subdued"
+                class="euiText euiText--extraSmall"
               >
-                <p>
-                  No data available
-                </p>
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(31, 119, 180); margin-right: 6px;"
+                />
+                top_queries-2025.06.06-11009
+                : 
+                19
               </div>
             </div>
             <div
-              class="euiSpacer euiSpacer--xl"
-            />
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <div
+                class="euiText euiText--extraSmall"
+              >
+                <span
+                  style="display: inline-block; width: 12px; height: 12px; background-color: rgb(255, 127, 14); margin-right: 6px;"
+                />
+                opensearch
+                : 
+                1
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+    >
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiTextAlign euiTextAlign--center"
+          >
+            <div
+              class="euiText euiText--small"
+            >
+              <p>
+                Total completions
+              </p>
+            </div>
+            <h2
+              class="euiTitle euiTitle--large"
+            >
+              0
+            </h2>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiTextAlign euiTextAlign--center"
+          >
+            <div
+              class="euiText euiText--small"
+            >
+              <p>
+                Total cancellations
+              </p>
+            </div>
+            <h2
+              class="euiTitle euiTitle--large"
+            >
+              0
+            </h2>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiTextAlign euiTextAlign--center"
+          >
+            <div
+              class="euiText euiText--small"
+            >
+              <p>
+                Total rejections
+              </p>
+            </div>
+            <h2
+              class="euiTitle euiTitle--large"
+            >
+              0
+            </h2>
           </div>
         </div>
       </div>
@@ -656,7 +1004,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   >
                     <svg
                       aria-hidden="true"
-                      class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
+                      class="euiIcon euiIcon--medium euiIcon-isLoaded euiFormControlLayoutCustomIcon__icon"
                       focusable="false"
                       height="16"
                       role="img"
@@ -695,7 +1043,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                        class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                         focusable="false"
                         height="16"
                         role="img"
@@ -739,7 +1087,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                        class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                         focusable="false"
                         height="16"
                         role="img"
@@ -783,7 +1131,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                        class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                         focusable="false"
                         height="16"
                         role="img"
@@ -825,7 +1173,7 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
                   focusable="false"
                   height="16"
                   role="img"
@@ -868,7 +1216,6 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                     <input
                       aria-label="Select all rows"
                       class="euiCheckbox__input"
-                      disabled=""
                       id="_selection_column-checkbox_random_html_id"
                       type="checkbox"
                     />
@@ -912,7 +1259,6 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                           aria-label="Select all rows"
                           class="euiCheckbox__input"
                           data-test-subj="checkboxSelectAll"
-                          disabled=""
                           id="_selection_column-checkbox_random_html_id"
                           type="checkbox"
                         />
@@ -1077,6 +1423,23 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
                   </th>
                   <th
                     class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_WLM Group_9"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="WLM Group"
+                      >
+                        WLM Group
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    class="euiTableHeaderCell"
                     role="columnheader"
                     scope="col"
                   >
@@ -1095,25 +1458,2322 @@ exports[`InflightQueries shows 0 when there are no queries 1`] = `
               </thead>
               <tbody>
                 <tr
-                  class="euiTableRow"
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
                 >
                   <td
-                    class="euiTableRowCell euiTableRowCell--isMobileFullWidth"
-                    colspan="11"
+                    class="euiTableRowCellCheckbox"
                   >
                     <div
-                      class="euiTableCellContent euiTableCellContent--alignCenter"
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-A1B2C3D4E5:3600-1640995200000"
+                          disabled=""
+                          id="_selection_column_node-A1B2C3D4E5:3600-1640995200000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
                     >
                       <span
                         class="euiTableCellContent__text"
                       >
-                        No items found
+                        node-A1B2C3D4E5:3600
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-A1B2C3D4E5
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      7.99 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      89.95 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.73 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        ANALYTICS_WORKLOAD_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000"
+                          disabled=""
+                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        4W2VTHIgQY-oB7dSrYz4B:3601
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        4W2VTHIgQY-oB7dSrYz4B
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      6.41 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      113.70 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      2.59 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6:3602-1640995202000"
+                          id="_selection_column_node-X9Y8Z7W6:3602-1640995202000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-X9Y8Z7W6:3602
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-X9Y8Z7W6
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      9.63 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      65.78 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.9 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                        style="color: rgb(0, 115, 230);"
+                      >
+                        <b>
+                          Running
+                        </b>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        ANALYTICS_WORKLOAD_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class="euiToolTipAnchor"
+                      >
+                        <button
+                          aria-labelledby="random_html_id"
+                          class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          class="euiScreenReaderOnly"
+                          id="random_html_id"
+                        >
+                          Cancel
+                        </span>
                       </span>
                     </div>
                   </td>
                 </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-P0Q9R8S7:3603-1640995203000"
+                          id="_selection_column_node-P0Q9R8S7:3603-1640995203000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-P0Q9R8S7:3603
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-P0Q9R8S7
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      9.53 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      84.33 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.72 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                        style="color: rgb(0, 115, 230);"
+                      >
+                        <b>
+                          Running
+                        </b>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class="euiToolTipAnchor"
+                      >
+                        <button
+                          aria-labelledby="random_html_id"
+                          class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          class="euiScreenReaderOnly"
+                          id="random_html_id"
+                        >
+                          Cancel
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4:3604-1640995204000"
+                          id="_selection_column_4W2VTHIgQY-oB7dSrYz4:3604-1640995204000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        4W2VTHIgQY-oB7dSrYz4:3604
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        4W2VTHIgQY-oB7dSrYz4
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      6.08 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      99.93 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      4.26 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                        style="color: rgb(0, 115, 230);"
+                      >
+                        <b>
+                          Running
+                        </b>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class="euiToolTipAnchor"
+                      >
+                        <button
+                          aria-labelledby="random_html_id"
+                          class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          class="euiScreenReaderOnly"
+                          id="random_html_id"
+                        >
+                          Cancel
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-M2O3P4Q5:3605-1640995205000"
+                          disabled=""
+                          id="_selection_column_node-M2O3P4Q5:3605-1640995205000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-M2O3P4Q5:3605
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-M2O3P4Q5
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      5.97 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      102.07 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.86 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        SEARCH_WORKLOAD_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-B2C3D4E5:3606-1640995206000"
+                          disabled=""
+                          id="_selection_column_node-B2C3D4E5:3606-1640995206000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-B2C3D4E5:3606
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-B2C3D4E5
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      6.45 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      86.46 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.82 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-N2O3P4Q5:3607-1640995207000"
+                          id="_selection_column_node-N2O3P4Q5:3607-1640995207000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-N2O3P4Q5:3607
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-N2O3P4Q5
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      8.45 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      70.64 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      2.07 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                        style="color: rgb(0, 115, 230);"
+                      >
+                        <b>
+                          Running
+                        </b>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class="euiToolTipAnchor"
+                      >
+                        <button
+                          aria-labelledby="random_html_id"
+                          class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                          type="button"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          class="euiScreenReaderOnly"
+                          id="random_html_id"
+                        >
+                          Cancel
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-2VTHIgQY-oB7dSrYz4BQ:3608-1640995208000"
+                          disabled=""
+                          id="_selection_column_2VTHIgQY-oB7dSrYz4BQ:3608-1640995208000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        2VTHIgQY-oB7dSrYz4BQ:3608
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        2VTHIgQY-oB7dSrYz4BQ
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      7.31 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      68.28 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      4.25 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
+                <tr
+                  class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+                >
+                  <td
+                    class="euiTableRowCellCheckbox"
+                  >
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <div
+                        class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                      >
+                        <input
+                          aria-label="Select this row"
+                          class="euiCheckbox__input"
+                          data-test-subj="checkboxSelectRow-node-X9Y8Z7W6V5:3609-1640995209000"
+                          disabled=""
+                          id="_selection_column_node-X9Y8Z7W6V5:3609-1640995209000-checkbox"
+                          title="Select this row"
+                          type="checkbox"
+                        />
+                        <div
+                          class="euiCheckbox__square"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Timestamp
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      Sep 24, 2021 @ 12:00:00 AM
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-X9Y8Z7W6V5:3609
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Index
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        top_queries-2025.06.06-11009
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Coordinator node
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        node-X9Y8Z7W6V5
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Time elapsed
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      5.17 s
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      113.61 µs
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory usage
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      2.71 KB
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Search type
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        QUERY_THEN_FETCH
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Status
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <div
+                        class="euiText euiText--medium"
+                      >
+                        <div
+                          class="euiTextColor euiTextColor--danger"
+                        >
+                          <b>
+                            Cancelled
+                          </b>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      WLM Group
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      <span
+                        class=""
+                      >
+                        DEFAULT_QUERY_GROUP
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell euiTableRowCell--hasActions"
+                  >
+                    <div
+                      class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                    />
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+          <div>
+            <div
+              class="euiSpacer euiSpacer--m"
+            />
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+            >
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <div
+                  class="euiPopover euiPopover--anchorUpRight"
+                >
+                  <div
+                    class="euiPopover__anchor"
+                  >
+                    <button
+                      class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall"
+                      data-test-subj="tablePaginationPopoverButton"
+                      type="button"
+                    >
+                      <span
+                        class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                            fill-rule="non-zero"
+                          />
+                        </svg>
+                        <span
+                          class="euiButtonEmpty__text"
+                        >
+                          Rows per page
+                          : 
+                          10
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <nav
+                  class="euiPagination"
+                >
+                  <button
+                    aria-label="Previous page"
+                    class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                    data-test-subj="pagination-button-previous"
+                    disabled=""
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z"
+                        fill-rule="nonzero"
+                      />
+                    </svg>
+                  </button>
+                  <ul
+                    class="euiPagination__list"
+                  >
+                    <li
+                      class="euiPagination__item"
+                    >
+                      <button
+                        aria-controls="random_html_id"
+                        aria-current="true"
+                        aria-label="Page 1 of 2"
+                        class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile"
+                        data-test-subj="pagination-button-0"
+                        disabled=""
+                        type="button"
+                      >
+                        <span
+                          class="euiButtonContent euiButtonEmpty__content"
+                        >
+                          <span
+                            class="euiButtonEmpty__text"
+                          >
+                            1
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                    <li
+                      class="euiPagination__item"
+                    >
+                      <a
+                        aria-controls="random_html_id"
+                        aria-label="Page 2 of 2"
+                        class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiPaginationButton euiPaginationButton--hideOnMobile"
+                        data-test-subj="pagination-button-1"
+                        href="#random_html_id"
+                        rel="noreferrer"
+                      >
+                        <span
+                          class="euiButtonContent euiButtonEmpty__content"
+                        >
+                          <span
+                            class="euiButtonEmpty__text"
+                          >
+                            2
+                          </span>
+                        </span>
+                      </a>
+                    </li>
+                  </ul>
+                  <a
+                    aria-controls="random_html_id"
+                    aria-label="Next page, 2"
+                    class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                    data-test-subj="pagination-button-next"
+                    href="#random_html_id"
+                    rel="noreferrer"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
+                        fill-rule="nonzero"
+                      />
+                    </svg>
+                  </a>
+                </nav>
+              </div>
+            </div>
           </div>
         </div>
       </div>
