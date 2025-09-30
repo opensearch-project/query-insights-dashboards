@@ -18,10 +18,7 @@ export const GROUP_BY = 'Group by';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';
 export const AVERAGE_MEMORY_USAGE = 'Average Memory Usage';
-/*
- * Copyright OpenSearch Contributors
- * SPDX-License-Identifier: Apache-2.0
- */
+
 export const MetricType = {
   LATENCY: 'latency',
   CPU: 'cpu',
@@ -69,3 +66,18 @@ export const DEFAULT_TIME_UNIT = TIME_UNIT.MINUTES;
 export const DEFAULT_GROUP_BY = 'none';
 export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
+// Validation constants
+export const VALIDATION_LIMITS = {
+  TOP_N_SIZE: {
+    MIN: 1,
+    MAX: 100,
+  },
+  WINDOW_SIZE_HOURS: {
+    MIN: 1,
+    MAX: 24,
+  },
+  DELETE_AFTER_DAYS: {
+    MIN: 1,
+    MAX: 180,
+  },
+};
