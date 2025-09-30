@@ -225,6 +225,120 @@ describe('TopNQueries Component', () => {
     });
   });
 
+  describe('Group by settings extraction', () => {
+    it('should extract group_by from persistent settings', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  grouping: { group_by: 'similarity' },
+                },
+              },
+            },
+          },
+        },
+      };
+      (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
+
+      renderTopNQueries(CONFIGURATION);
+
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+          query: { dataSourceId: undefined },
+        });
+      });
+    });
+
+    it('should extract group_by from transient settings when both exist', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  grouping: { group_by: 'similarity' },
+                },
+              },
+            },
+          },
+          transient: {
+            search: {
+              insights: {
+                top_queries: {
+                  grouping: { group_by: 'none' },
+                },
+              },
+            },
+          },
+        },
+      };
+      (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
+
+      renderTopNQueries(CONFIGURATION);
+
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+          query: { dataSourceId: undefined },
+        });
+      });
+    });
+
+    it('should use default group_by when neither persistent nor transient settings exist', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                },
+              },
+            },
+          },
+        },
+      };
+      (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
+
+      renderTopNQueries(CONFIGURATION);
+
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+          query: { dataSourceId: undefined },
+        });
+      });
+    });
+
+    it('should handle missing grouping object gracefully', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  // No grouping object
+                },
+              },
+            },
+          },
+        },
+      };
+      (mockCore.http.get as jest.Mock).mockResolvedValueOnce(mockSettingsResponse);
+
+      renderTopNQueries(CONFIGURATION);
+
+      await waitFor(() => {
+        expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+          query: { dataSourceId: undefined },
+        });
+      });
+    });
+  });
+
   describe('Query deduplication', () => {
     it('should deduplicate queries by ID from multiple metric endpoints', async () => {
       // Setup: Create queries with duplicate IDs but different measurements

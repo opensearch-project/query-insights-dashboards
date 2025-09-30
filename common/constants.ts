@@ -89,6 +89,22 @@ export const REFRESH_INTERVAL_OPTIONS = [
   { value: '60000', text: '1 minute' },
 ];
 
+// Validation constants
+export const VALIDATION_LIMITS = {
+  TOP_N_SIZE: {
+    MIN: 1,
+    MAX: 100,
+  },
+  WINDOW_SIZE_HOURS: {
+    MIN: 1,
+    MAX: 24,
+  },
+  DELETE_AFTER_DAYS: {
+    MIN: 1,
+    MAX: 180,
+  },
+};
+
 export interface ConfigSchema {
   wlm: { enabled: boolean };
 }
