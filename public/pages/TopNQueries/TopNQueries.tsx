@@ -288,8 +288,8 @@ const TopNQueries = ({
             }
           });
           const groupBy = getMergedStringSettings(
-            persistentSettings?.group_by,
-            transientSettings?.group_by,
+            persistentSettings?.grouping.group_by,
+            transientSettings?.grouping.group_by,
             DEFAULT_GROUP_BY
           );
           setGroupBySettings({ groupBy });
