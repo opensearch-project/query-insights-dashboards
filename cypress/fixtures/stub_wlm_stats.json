@@ -1,0 +1,93 @@
+{
+  "body": {
+    "_nodes": {
+      "total": 2,
+      "successful": 2,
+      "failed": 0
+    },
+    "cluster_name": "integTest",
+    "SHDcLauDQh67LA8qqB5TwQ": {
+      "workload_groups": {
+        "DEFAULT_WORKLOAD_GROUP": {
+          "total_completions": 100,
+          "total_rejections": 10,
+          "total_cancellations": 50,
+          "cpu": {
+            "current_usage": 0,
+            "cancellations": 0,
+            "rejections": 0
+          },
+          "memory": {
+            "current_usage": 0,
+            "cancellations": 0,
+            "rejections": 0
+          }
+        }
+      }
+    },
+    "_gug9KjWRJWigQ82Olxr1Q": {
+      "workload_groups": {
+        "ANALYTICS_WORKLOAD_GROUP": {
+          "total_completions": 200,
+          "total_rejections": 0,
+          "total_cancellations": 30,
+          "cpu": {
+            "current_usage": 0.000022556724919316,
+            "cancellations": 0,
+            "rejections": 0
+          },
+          "memory": {
+            "current_usage": 0.000005796551704406,
+            "cancellations": 0,
+            "rejections": 0
+          }
+        }
+      }
+    }
+  },
+  "statusCode": 200,
+  "headers": {
+    "x-opaque-id": "5ab306a3-98b7-45fb-9878-8b6b106be8a9",
+    "x-opensearch-version": "OpenSearch/3.3.0-SNAPSHOT (opensearch)",
+    "content-type": "application/json; charset=UTF-8",
+    "content-length": "648"
+  },
+  "meta": {
+    "context": null,
+    "request": {
+      "params": {
+        "method": "GET",
+        "path": "/_wlm/stats",
+        "headers": {
+          "user-agent": "opensearch-js/2.13.0 (darwin 24.6.0-arm64; Node.js v20.18.3)",
+          "x-opensearch-product-origin": "opensearch-dashboards",
+          "x-opaque-id": "5ab306a3-98b7-45fb-9878-8b6b106be8a9"
+        },
+        "querystring": "",
+        "timeout": 30000
+      },
+      "options": {
+
+      },
+      "id": 1
+    },
+    "name": "opensearch-js",
+    "connection": {
+      "url": "http://localhost:9200/",
+      "id": "http://localhost:9200/",
+      "headers": {
+
+      },
+      "deadCount": 0,
+      "resurrectTimeout": 0,
+      "_openRequests": 0,
+      "status": "alive",
+      "roles": {
+        "data": true,
+        "ingest": true
+      }
+    },
+    "attempts": 0,
+    "aborted": false
+  }
+}
