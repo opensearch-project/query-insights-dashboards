@@ -43,6 +43,7 @@ import {
 } from '../../../common/constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { validateConfiguration } from './configurationValidation';
 
 const Configuration = ({
   latencySettings,
@@ -198,6 +199,9 @@ const Configuration = ({
   );
 
   const WindowChoice = time === TIME_UNITS_TEXT[0].value ? MinutesBox : HoursBox;
+  const isLocalIndex = exporterType === EXPORTER_TYPE.localIndex;
+  const parsedDeleteAfter = parseInt(deleteAfterDays, 10);
+  const isDeleteAfterValid = !isLocalIndex || (parsedDeleteAfter >= 1 && parsedDeleteAfter <= 180);
 
   const isChanged =
     isEnabled !== metricSettingsMap[metric].isEnabled ||
@@ -208,13 +212,7 @@ const Configuration = ({
     exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
     deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays;
 
-  const isValid = (() => {
-    const nVal = parseInt(topNSize, 10);
-    if (nVal < 1 || nVal > 100) return false;
-    if (time === TIME_UNITS_TEXT[0].value) return true;
-    const windowVal = parseInt(windowSize, 10);
-    return windowVal >= 1 && windowVal <= 24;
-  })();
+  const isValid = validateConfiguration(topNSize, windowSize, time, deleteAfterDays, exporterType);
 
   const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
@@ -505,13 +503,25 @@ const Configuration = ({
                     />
                   </EuiFlexItem>
                   <EuiFlexItem>
-                    <EuiFormRow style={formRowPadding}>
+                    <EuiFormRow
+                      style={formRowPadding}
+                      helpText="Max allowed limit 180."
+                      isInvalid={isLocalIndex && !isDeleteAfterValid}
+                      error={
+                        isLocalIndex && !isDeleteAfterValid
+                          ? 'Please enter a value between 1 and 180.'
+                          : undefined
+                      }
+                    >
                       <EuiFieldNumber
-                        disabled={exporterType !== EXPORTER_TYPE.localIndex}
+                        disabled={!isLocalIndex}
                         min={1}
                         max={180}
-                        value={exporterType !== EXPORTER_TYPE.localIndex ? '' : deleteAfterDays}
+                        value={
+                          !isLocalIndex ? '' : deleteAfterDays === '' ? '' : Number(deleteAfterDays)
+                        }
                         onChange={onDeleteAfterDaysChange}
+                        isInvalid={isLocalIndex && !isDeleteAfterValid}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
