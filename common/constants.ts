@@ -18,10 +18,7 @@ export const GROUP_BY = 'Group by';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';
 export const AVERAGE_MEMORY_USAGE = 'Average Memory Usage';
-/*
- * Copyright OpenSearch Contributors
- * SPDX-License-Identifier: Apache-2.0
- */
+
 export const MetricType = {
   LATENCY: 'latency',
   CPU: 'cpu',
@@ -69,3 +66,41 @@ export const DEFAULT_TIME_UNIT = TIME_UNIT.MINUTES;
 export const DEFAULT_GROUP_BY = 'none';
 export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
+export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
+export const TOP_N_DISPLAY_LIMIT = 9;
+export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
+export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
+export const CHART_COLORS = [
+  '#1f77b4',
+  '#ff7f0e',
+  '#2ca02c',
+  '#d62728',
+  '#9467bd',
+  '#8c564b',
+  '#e377c2',
+  '#7f7f7f',
+  '#bcbd22',
+  '#17becf',
+];
+export const REFRESH_INTERVAL_OPTIONS = [
+  { value: '5000', text: '5 seconds' },
+  { value: '10000', text: '10 seconds' },
+  { value: '30000', text: '30 seconds' },
+  { value: '60000', text: '1 minute' },
+];
+
+// Validation constants
+export const VALIDATION_LIMITS = {
+  TOP_N_SIZE: {
+    MIN: 1,
+    MAX: 100,
+  },
+  WINDOW_SIZE_HOURS: {
+    MIN: 1,
+    MAX: 24,
+  },
+  DELETE_AFTER_DAYS: {
+    MIN: 1,
+    MAX: 180,
+  },
+};

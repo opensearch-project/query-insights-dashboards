@@ -962,6 +962,7 @@ exports[`Configuration Component renders with default settings: should match def
                           class="euiFormControlLayout__childrenWrapper"
                         >
                           <input
+                            aria-describedby="random_html_id-help-0"
                             class="euiFieldNumber"
                             id="random_html_id"
                             max="180"
@@ -970,6 +971,12 @@ exports[`Configuration Component renders with default settings: should match def
                             value="179"
                           />
                         </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 180.
                       </div>
                     </div>
                   </div>
@@ -1991,6 +1998,7 @@ exports[`Configuration Component updates state when toggling metrics and enables
                           class="euiFormControlLayout__childrenWrapper"
                         >
                           <input
+                            aria-describedby="random_html_id-help-0"
                             class="euiFieldNumber"
                             id="random_html_id"
                             max="180"
@@ -1999,6 +2007,12 @@ exports[`Configuration Component updates state when toggling metrics and enables
                             value="179"
                           />
                         </div>
+                      </div>
+                      <div
+                        class="euiFormHelpText euiFormRow__text"
+                        id="random_html_id-help-0"
+                      >
+                        Max allowed limit 180.
                       </div>
                     </div>
                   </div>
