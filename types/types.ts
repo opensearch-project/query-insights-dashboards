@@ -14,7 +14,7 @@ export interface SearchQueryRecord {
   };
   total_shards: number;
   node_id: string;
-  source: ISearchSource;
+  source: ISearchSource | string;
   labels: Record<string, string>;
   search_type: string;
   indices: string[];
