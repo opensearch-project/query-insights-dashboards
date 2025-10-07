@@ -287,7 +287,13 @@ export function defineWlmRoutes(router: IRouter) {
       validate: {
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
       },
@@ -298,12 +304,26 @@ export function defineWlmRoutes(router: IRouter) {
         const description = request.body.description;
         const indexPattern = request.body.index_pattern;
         const workloadGroup = request.body.workload_group;
+        const principal = request.body.principal;
+
+        const hasAny =
+          (indexPattern?.length ?? 0) > 0 ||
+          (principal?.username?.length ?? 0) > 0 ||
+          (principal?.role?.length ?? 0) > 0;
+
+        if (!hasAny) {
+          return response.badRequest({
+            body:
+              'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
+          });
+        }
 
         const result = await client.transport.request({
           method: 'PUT',
           path: '/_rules/workload_group',
           body: {
             description,
+            principal,
             index_pattern: indexPattern,
             workload_group: workloadGroup,
           },
@@ -311,10 +331,10 @@ export function defineWlmRoutes(router: IRouter) {
 
         return response.ok({ body: result });
       } catch (error: any) {
-        console.error(`Failed to create index rule:`, error);
+        console.error(`Failed to create rule:`, error);
         return response.custom({
           statusCode: error.statusCode || 500,
-          body: { message: `Failed to create index rule: ${error.message}` },
+          body: { message: `Failed to create rule: ${error.message}` },
         });
       }
     }
@@ -337,9 +357,9 @@ export function defineWlmRoutes(router: IRouter) {
 
         return response.ok({ body: result });
       } catch (e: any) {
-        console.error('Failed to fetch index rules:', e);
+        console.error('Failed to fetch rules:', e);
         return response.internalError({
-          body: { message: `Failed to fetch index rules: ${e.message}` },
+          body: { message: `Failed to fetch rules: ${e.message}` },
         });
       }
     }
@@ -385,7 +405,13 @@ export function defineWlmRoutes(router: IRouter) {
         }),
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
       },
@@ -393,6 +419,19 @@ export function defineWlmRoutes(router: IRouter) {
     async (context, request, response) => {
       const { ruleId } = request.params;
       const body = request.body;
+      const { principal, indexPattern } = body as any;
+
+      const hasAny =
+        (indexPattern?.length ?? 0) > 0 ||
+        (principal?.username?.length ?? 0) > 0 ||
+        (principal?.role?.length ?? 0) > 0;
+
+      if (!hasAny) {
+        return response.badRequest({
+          body:
+            'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
+        });
+      }
 
       try {
         const result = await context.core.opensearch.client.asCurrentUser.transport.request({
