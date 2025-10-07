@@ -283,7 +283,6 @@ export const WorkloadManagementMain = ({
         cpuRejectionThreshold: number;
         memoryRejectionThreshold: number;
       }>('/api/_wlm/thresholds');
-
       const cpuThreshold = thresholds?.cpuRejectionThreshold ?? 1;
       const memoryThreshold = thresholds?.memoryRejectionThreshold ?? 1;
 
@@ -336,14 +335,14 @@ export const WorkloadManagementMain = ({
       query: { dataSourceId: dataSource.id },
     });
 
-    return res.body as Record<string, NodeStats>;
+    return res as Record<string, NodeStats>;
   }, [dataSource]);
 
   const fetchWorkloadGroups = async () => {
     const res = await core.http.get('/api/_wlm/workload_group', {
       query: { dataSourceId: dataSource.id },
     });
-    return res.body?.workload_groups ?? [];
+    return res?.workload_groups ?? [];
   };
 
   const computeBoxStats = (arr: number[]): number[] => {
