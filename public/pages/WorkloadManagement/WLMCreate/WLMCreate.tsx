@@ -28,6 +28,8 @@ import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 
 interface Rule {
   index: string;
+  username: string;
+  role: string;
 }
 
 export const WLMCreate = ({
@@ -48,7 +50,7 @@ export const WLMCreate = ({
   const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
   const [cpuThreshold, setCpuThreshold] = useState<number | undefined>();
   const [memThreshold, setMemThreshold] = useState<number | undefined>();
-  const [rules, setRules] = useState<Rule[]>([{ index: '' }]);
+  const [rules, setRules] = useState<Rule[]>([{ index: '', username: '', role: '' }]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -123,12 +125,34 @@ export const WLMCreate = ({
               .map((s) => s.trim())
               .filter(Boolean);
 
-            if (indexPattern.length === 0) return null;
+            const usernames = rule.username
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            const roles = rule.role
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            const hasIndexes = indexPattern.length > 0;
+            const hasUsernames = usernames.length > 0;
+            const hasRoles = roles.length > 0;
+
+            if (!hasIndexes && !hasUsernames && !hasRoles) return null;
 
             return core.http.put('/api/_rules/workload_group', {
               body: JSON.stringify({
                 description: (description && description.trim()) || '-',
-                index_pattern: indexPattern,
+                ...(hasUsernames || hasRoles
+                  ? {
+                      principal: {
+                        ...(hasUsernames ? { username: usernames } : {}),
+                        ...(hasRoles ? { role: roles } : {}),
+                      },
+                    }
+                  : {}),
+                ...(hasIndexes ? { index_pattern: indexPattern } : {}),
                 workload_group: groupId,
               }),
               headers: { 'Content-Type': 'application/json' },
@@ -260,81 +284,80 @@ export const WLMCreate = ({
             </EuiTitle>
 
             <EuiText size="s" style={{ marginTop: 8, marginBottom: 16 }}>
-              {/* <p>Define your rule using any combination of index, role, or username.</p>*/}
-              <p>Define your rule using index.</p>
+              <p>Define your rule using any combination of username, role, or index.</p>
             </EuiText>
 
-            {/* Index wildcard */}
             <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
               <>
-                <EuiText size="m" style={{ fontWeight: 600 }}>
-                  Index wildcard
-                </EuiText>
-                <EuiSpacer size="s" />
-                <EuiFieldText
-                  data-testid="indexInput"
-                  value={rule.index}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const commaCount = (value.match(/,/g) || []).length;
+                <div>
+                  <EuiText size="m" style={{ fontWeight: 600 }}>
+                    Username
+                  </EuiText>
+                  <EuiTextArea
+                    placeholder="Enter username"
+                    value={rule.username}
+                    onChange={(e) => {
+                      const updated = [...rules];
+                      updated[idx].username = e.target.value;
+                      setRules(updated);
+                    }}
+                  />
+                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                    You can use (,) to add multiple usernames.
+                  </EuiText>
+                </div>
 
-                    const updatedRules = [...rules];
-                    const updatedErrors = [...indexErrors];
+                <div style={{ marginTop: 16 }}>
+                  <EuiText size="m" style={{ fontWeight: 600 }}>
+                    Role
+                  </EuiText>
+                  <EuiTextArea
+                    placeholder="Enter role"
+                    value={rule.role}
+                    onChange={(e) => {
+                      const updated = [...rules];
+                      updated[idx].role = e.target.value;
+                      setRules(updated);
+                    }}
+                  />
+                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                    You can use (,) to add multiple roles.
+                  </EuiText>
+                </div>
 
-                    updatedRules[idx].index = value;
-                    updatedErrors[idx] =
-                      commaCount >= 10 ? 'You can specify at most 10 indexes per rule.' : null;
+                <div style={{ marginTop: 16 }}>
+                  <EuiText size="m" style={{ fontWeight: 600 }}>
+                    Index wildcard
+                  </EuiText>
+                  <EuiSpacer size="s" />
+                  <EuiTextArea
+                    data-testid="indexInput"
+                    placeholder="Enter index"
+                    value={rule.index}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const commaCount = (value.match(/,/g) || []).length;
 
-                    setRules(updatedRules);
-                    setIndexErrors(updatedErrors);
-                  }}
-                  isInvalid={Boolean(indexErrors[idx])}
-                />
-                <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                  You can use (,) to add multiple indexes.
-                </EuiText>
+                      const updatedRules = [...rules];
+                      const updatedErrors = [...indexErrors];
+
+                      updatedRules[idx].index = value;
+                      updatedErrors[idx] =
+                        commaCount >= 10 ? 'You can specify at most 10 indexes per rule.' : null;
+
+                      setRules(updatedRules);
+                      setIndexErrors(updatedErrors);
+                    }}
+                    isInvalid={Boolean(indexErrors[idx])}
+                  />
+                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                    You can use (,) to add multiple indexes.
+                  </EuiText>
+                </div>
               </>
             </EuiFormRow>
 
-            {/* <EuiSpacer size="s" />*/}
-
-            {/* <div style={{ marginTop: 16 }}>*/}
-            {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
-            {/*    Role*/}
-            {/*  </EuiText>*/}
-            {/*  <EuiTextArea*/}
-            {/*    placeholder="Enter role"*/}
-            {/*    value={rule.role}*/}
-            {/*    onChange={(e) => {*/}
-            {/*      const updated = [...rules];*/}
-            {/*      updated[idx].role = e.target.value;*/}
-            {/*      setRules(updated);*/}
-            {/*    }}*/}
-            {/*  />*/}
-            {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
-            {/*    You can use (,) to add multiple roles.*/}
-            {/*  </EuiText>*/}
-            {/* </div>*/}
-
-            {/* <EuiSpacer size="s" />*/}
-
-            {/* <div>*/}
-            {/*  <EuiText size="m" style={{ fontWeight: 600 }}>*/}
-            {/*    Username*/}
-            {/*  </EuiText>*/}
-            {/*  <EuiTextArea*/}
-            {/*    placeholder="Username"*/}
-            {/*    value={rule.username}*/}
-            {/*    onChange={(e) => {*/}
-            {/*      const updated = [...rules];*/}
-            {/*      updated[idx].username = e.target.value;*/}
-            {/*      setRules(updated);*/}
-            {/*    }}*/}
-            {/*  />*/}
-            {/*  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>*/}
-            {/*    You can use (,) to add multiple usernames.*/}
-            {/*  </EuiText>*/}
-            {/* </div>*/}
+            <EuiSpacer size="s" />
 
             <EuiButtonIcon
               iconType="trash"
@@ -346,7 +369,13 @@ export const WLMCreate = ({
           </EuiPanel>
         ))}
 
-        <EuiButton onClick={() => setRules([...rules, { index: '' }])} disabled={rules.length >= 5}>
+        <EuiButton
+          onClick={() => {
+            setRules((prev) => [...prev, { index: '', username: '', role: '' }]);
+            setIndexErrors((prev) => [...prev, null]);
+          }}
+          disabled={rules.length >= 5}
+        >
           + Add another rule
         </EuiButton>
       </EuiPanel>

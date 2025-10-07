@@ -307,7 +307,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
       validate: {
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
         query: schema.object({
@@ -321,6 +327,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
           description: request.body.description,
           index_pattern: request.body.index_pattern,
           workload_group: request.body.workload_group,
+          principal: request.body.principal,
         };
         let result;
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
@@ -332,10 +339,10 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: result });
       } catch (error: any) {
-        console.error(`Failed to create index rule:`, error);
+        console.error(`Failed to create rule:`, error);
         return response.custom({
           statusCode: error.statusCode || 500,
-          body: { message: `Failed to create index rule: ${error.message}` },
+          body: { message: `Failed to create rule: ${error.message}` },
         });
       }
     }
@@ -363,9 +370,9 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: result });
       } catch (e: any) {
-        console.error('Failed to fetch index rules:', e);
+        console.error('Failed to fetch rules:', e);
         return response.internalError({
-          body: { message: `Failed to fetch index rules: ${e.message}` },
+          body: { message: `Failed to fetch rules: ${e.message}` },
         });
       }
     }
@@ -415,7 +422,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }),
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
         query: schema.object({
@@ -426,6 +439,19 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
     async (context, request, response) => {
       const { ruleId } = request.params;
       const body = request.body;
+      const { principal, indexPattern } = body as any;
+
+      const hasAny =
+        (indexPattern?.length ?? 0) > 0 ||
+        (principal?.username?.length ?? 0) > 0 ||
+        (principal?.role?.length ?? 0) > 0;
+
+      if (!hasAny) {
+        return response.badRequest({
+          body:
+            'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
+        });
+      }
 
       try {
         let result;

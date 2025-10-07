@@ -254,4 +254,170 @@ describe('WLMCreate', () => {
     fireEvent.click(memoryHeader);
     expect(memoryHeader).toBeInTheDocument();
   });
+
+  // Testing rules related
+  const fillRequiredFields = async () => {
+    await userEvent.type(screen.getByTestId('name-input'), 'MyGroup');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), { target: { value: '50' } });
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+  };
+
+  describe('WLMCreate – new rules payload behavior', () => {
+    beforeEach(() => {
+      coreMock.http.put.mockReset();
+    });
+
+    it('skips creating a rule when index/username/role are all empty', async () => {
+      // 1) create group -> returns id
+      coreMock.http.put.mockResolvedValueOnce({ body: { _id: 'gid-skip' } });
+
+      renderComponent();
+      await fillRequiredFields();
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        // Only 1 PUT (group). No second PUT to /api/_rules/workload_group
+        expect(coreMock.http.put).toHaveBeenCalledTimes(1);
+        expect(coreMock.http.put).toHaveBeenNthCalledWith(
+          1,
+          '/api/_wlm/workload_group',
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('includes principal.username only when usernames provided', async () => {
+      coreMock.http.put
+        .mockResolvedValueOnce({ body: { _id: 'gid-usernames' } }) // group create
+        .mockResolvedValueOnce({}); // rules create
+
+      renderComponent();
+      await fillRequiredFields();
+
+      await userEvent.type(screen.getByPlaceholderText(/username/i), 'alice, bob');
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        const call = coreMock.http.put.mock.calls.find(([u]) => u === '/api/_rules/workload_group');
+        expect(call).toBeTruthy();
+        const [, args] = call!;
+        const body = JSON.parse((args as any).body);
+        expect(body.workload_group).toBe('gid-usernames');
+        expect(body).not.toHaveProperty('index_pattern');
+        expect(body).toHaveProperty('principal.username', ['alice', 'bob']);
+        expect(body.principal).not.toHaveProperty('role');
+      });
+    });
+
+    it('includes principal.role only when roles provided', async () => {
+      coreMock.http.put
+        .mockResolvedValueOnce({ body: { _id: 'gid-roles' } })
+        .mockResolvedValueOnce({});
+
+      renderComponent();
+      await fillRequiredFields();
+
+      await userEvent.type(screen.getByPlaceholderText(/role/i), 'admin, reader');
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        const call = coreMock.http.put.mock.calls.find(([u]) => u === '/api/_rules/workload_group');
+        const [, args] = call!;
+        const body = JSON.parse((args as any).body);
+        expect(body.workload_group).toBe('gid-roles');
+        expect(body).not.toHaveProperty('index_pattern');
+        expect(body).toHaveProperty('principal.role', ['admin', 'reader']);
+        expect(body.principal).not.toHaveProperty('username');
+      });
+    });
+
+    it('includes both username and role when both are provided', async () => {
+      coreMock.http.put
+        .mockResolvedValueOnce({ body: { _id: 'gid-both' } })
+        .mockResolvedValueOnce({});
+
+      renderComponent();
+      await fillRequiredFields();
+
+      await userEvent.type(screen.getByPlaceholderText(/username/i), 'alice');
+      await userEvent.type(screen.getByPlaceholderText(/role/i), 'admin');
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        const call = coreMock.http.put.mock.calls.find(([u]) => u === '/api/_rules/workload_group');
+        const [, args] = call!;
+        const body = JSON.parse((args as any).body);
+        expect(body.principal).toEqual({ username: ['alice'], role: ['admin'] });
+      });
+    });
+
+    it('includes index_pattern only when non-empty and trims entries', async () => {
+      coreMock.http.put
+        .mockResolvedValueOnce({ body: { _id: 'gid-index' } })
+        .mockResolvedValueOnce({});
+
+      renderComponent();
+      await fillRequiredFields();
+
+      const indexInput = screen.getByTestId('indexInput');
+      await userEvent.type(indexInput, ' logs-*,  ,  metrics-*  ');
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        const call = coreMock.http.put.mock.calls.find(([u]) => u === '/api/_rules/workload_group');
+        const [, args] = call!;
+        const body = JSON.parse((args as any).body);
+        expect(body).toHaveProperty('index_pattern', ['logs-*', 'metrics-*']);
+        expect(body).not.toHaveProperty('principal');
+      });
+    });
+
+    it('sends resource_limits only when valid CPU/memory provided', async () => {
+      coreMock.http.put.mockResolvedValueOnce({ body: { _id: 'gid-rl' } });
+
+      renderComponent();
+      // name + resiliency
+      await userEvent.type(screen.getByTestId('name-input'), 'MyGroup');
+      await userEvent.click(screen.getByLabelText(/Soft/i));
+
+      // valid cpu and memory
+      fireEvent.change(screen.getByTestId('cpu-threshold-input'), { target: { value: '40' } });
+      fireEvent.change(screen.getByTestId('memory-threshold-input'), { target: { value: '80' } });
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        const [, args] = coreMock.http.put.mock.calls[0];
+        const body = JSON.parse((args as any).body);
+        expect(body.resource_limits).toEqual({ cpu: 0.4, memory: 0.8 });
+      });
+    });
+
+    it('shows error toast and does not navigate when rules PUT fails', async () => {
+      // group create OK
+      coreMock.http.put
+        .mockResolvedValueOnce({ body: { _id: 'gid-fail' } })
+        .mockRejectedValueOnce({ body: { message: 'Rules create failed' } }); // rules create FAIL
+
+      renderComponent();
+      await fillRequiredFields();
+
+      await userEvent.type(screen.getByTestId('indexInput'), 'logs-*');
+
+      fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        expect(mockAddDanger).toHaveBeenCalledWith({
+          title: 'Failed to create workload group',
+          text: 'Rules create failed',
+        });
+        expect(mockPush).not.toHaveBeenCalled();
+      });
+    });
+  });
 });
