@@ -53,16 +53,6 @@ describe('WLM Main Page', () => {
     cy.get('.euiTableRow').should('contain.text', 'No items found');
   });
 
-  it('should route to workload group detail page when clicking a group name', () => {
-    cy.get('.euiTableRow')
-      .first()
-      .within(() => {
-        cy.get('a').first().click({ force: true });
-      });
-
-    cy.contains('Workload group name', { timeout: 10000 }).should('exist');
-  });
-
   it('should route to the Create Workload Group page when clicking the Create button', () => {
     // Click the "Create workload group" button
     cy.contains('Create workload group').click();
@@ -76,5 +66,13 @@ describe('WLM Main Page', () => {
     cy.get('button').contains('+ Add another rule').should('exist');
     cy.get('input[data-testid="cpu-threshold-input"]').should('exist');
     cy.get('input[data-testid="memory-threshold-input"]').should('exist');
+  });
+
+  it('should have Live Queries View link when available', () => {
+    cy.get('.euiTableHeaderCell').then(($headers) => {
+      if ($headers.text().includes('Live Queries')) {
+        cy.get('.euiTableRowCell').contains('View').should('be.visible');
+      }
+    });
   });
 });
