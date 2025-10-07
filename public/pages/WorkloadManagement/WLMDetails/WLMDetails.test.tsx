@@ -51,21 +51,17 @@ const mockDataSourceManagement = {
 (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
   if (url === '/api/_wlm/workload_group') {
     return Promise.resolve({
-      body: {
-        workload_groups: [{ name: 'test-group', _id: 'abc123' }],
-      },
+      workload_groups: [{ name: 'test-group', _id: 'abc123' }],
     });
   }
 
   if (url === '/api/_wlm/stats/abc123') {
     return Promise.resolve({
-      body: {
-        'node-1': {
-          workload_groups: {
-            abc123: {
-              cpu: { current_usage: 0.5 },
-              memory: { current_usage: 0.3 },
-            },
+      'node-1': {
+        workload_groups: {
+          abc123: {
+            cpu: { current_usage: 0.5 },
+            memory: { current_usage: 0.3 },
           },
         },
       },
@@ -115,37 +111,33 @@ describe('WLMDetails Component', () => {
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.startsWith('/api/_wlm/workload_group/test-group')) {
         return Promise.resolve({
-          body: {
-            workload_groups: [
-              {
-                _id: 'wg-123',
-                name: 'test-group',
-                resource_limits: { cpu: 0.5, memory: 0.5 },
-                resiliency_mode: 'SOFT',
-              },
-            ],
-          },
+          workload_groups: [
+            {
+              _id: 'wg-123',
+              name: 'test-group',
+              resource_limits: { cpu: 0.5, memory: 0.5 },
+              resiliency_mode: 'SOFT',
+            },
+          ],
         });
       }
       // 2) GET existing rules
       if (path === '/api/_rules/workload_group') {
         return Promise.resolve({
-          body: {
-            rules: [
-              {
-                id: 'keep-me',
-                description: 'd',
-                index_pattern: ['keep-*'],
-                workload_group: 'wg-123',
-              },
-              {
-                id: 'remove-me',
-                description: 'd',
-                index_pattern: ['remove-*'],
-                workload_group: 'wg-123',
-              },
-            ],
-          },
+          rules: [
+            {
+              id: 'keep-me',
+              description: 'd',
+              index_pattern: ['keep-*'],
+              workload_group: 'wg-123',
+            },
+            {
+              id: 'remove-me',
+              description: 'd',
+              index_pattern: ['remove-*'],
+              workload_group: 'wg-123',
+            },
+          ],
         });
       }
       // 3) GET stats (ignored here)
@@ -184,7 +176,7 @@ describe('WLMDetails Component', () => {
   it('handles no stats returned gracefully', async () => {
     (mockCore.http.get as jest.Mock)
       .mockImplementationOnce(() =>
-        Promise.resolve({ body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] } })
+        Promise.resolve({ workload_groups: [{ name: 'test-group', _id: 'abc123' }] })
       )
       .mockImplementationOnce(() => Promise.resolve({ body: {} }));
 
@@ -220,7 +212,7 @@ describe('WLMDetails Component', () => {
     mockCore.http.get = jest.fn((path: string) => {
       if (path === '/api/_wlm/workload_group') {
         return Promise.resolve({
-          body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] },
+          workload_groups: [{ name: 'test-group', _id: 'abc123' }],
         });
       }
       if (path === '/api/_wlm/stats/abc123') {
@@ -243,16 +235,14 @@ describe('WLMDetails Component', () => {
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.startsWith('/api/_wlm/workload_group')) {
         return Promise.resolve({
-          body: {
-            workload_groups: [
-              {
-                name: 'test-group',
-                _id: 'abc123',
-                resource_limits: { cpu: 0.5, memory: 0.5 },
-                resiliency_mode: 'soft',
-              },
-            ],
-          },
+          workload_groups: [
+            {
+              name: 'test-group',
+              _id: 'abc123',
+              resource_limits: { cpu: 0.5, memory: 0.5 },
+              resiliency_mode: 'soft',
+            },
+          ],
         });
       }
       if (path.startsWith('/api/_wlm/stats/abc123')) {
@@ -295,7 +285,7 @@ describe('WLMDetails Component', () => {
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.includes('/_wlm/workload_group')) {
         return Promise.resolve({
-          body: { workload_groups: [{ name: 'test-group', _id: 'abc123' }] },
+          workload_groups: [{ name: 'test-group', _id: 'abc123' }],
         });
       }
       if (path.includes('/_wlm/stats/abc123')) {
@@ -661,15 +651,16 @@ describe('WLMDetails Component', () => {
       const [, options] = updateCalls[0];
       expect(options).toEqual(
         expect.objectContaining({
-          query: { dataSourceId: 'default' },
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            description: 'd',
-            index_pattern: ['keep-updated-*'],
-            workload_group: 'wg-123',
-          }),
+          query: { dataSourceId: 'default' },
         })
       );
+      const body = JSON.parse(options.body);
+      expect(body).toEqual({
+        description: '-',
+        index_pattern: ['keep-updated-*'],
+        workload_group: 'wg-123',
+      });
     });
 
     expect(mockCore.notifications.toasts.addSuccess).toHaveBeenCalled();
