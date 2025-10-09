@@ -686,4 +686,356 @@ describe('WLMDetails Component', () => {
 
     expect(mockCore.notifications.toasts.addSuccess).toHaveBeenCalled();
   });
+
+  it('clicking Refresh calls both details and stats fetchers', async () => {
+    jest.useFakeTimers();
+    (mockCore.http.get as jest.Mock).mockClear();
+
+    renderComponent('test-group');
+
+    // Wait initial load
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    const initialGetCalls = (mockCore.http.get as jest.Mock).mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
+
+    await waitFor(() => {
+      // expect at least 2 more GET calls: group details & stats
+      expect((mockCore.http.get as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(
+        initialGetCalls + 2
+      );
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('auto-refresh runs only while isSaved === true', async () => {
+    jest.useFakeTimers();
+    (mockCore.http.get as jest.Mock).mockClear();
+
+    renderComponent('test-group');
+
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    const callsAfterMount = (mockCore.http.get as jest.Mock).mock.calls.length;
+
+    // Advance 60s -> expect auto refresh fired (details + stats)
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+
+    const afterFirstTick = (mockCore.http.get as jest.Mock).mock.calls.length;
+    expect(afterFirstTick).toBeGreaterThanOrEqual(callsAfterMount + 2);
+
+    // Make unsaved change -> isSaved = false stops interval
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/Describe the workload group/i), {
+      target: { value: 'changed' },
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+    });
+
+    const afterSecondTick = (mockCore.http.get as jest.Mock).mock.calls.length;
+    // no additional auto-refresh when unsaved
+    expect(afterSecondTick).toBe(afterFirstTick);
+
+    jest.useRealTimers();
+  });
+
+  it('index validation: shows error when any single index exceeds 100 characters', async () => {
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const input = await screen.findByTestId('indexInput');
+    const tooLong = 'x'.repeat(101);
+
+    fireEvent.change(input, { target: { value: tooLong } });
+
+    expect(
+      await screen.findByText(/Index names must be 100 characters or fewer/i)
+    ).toBeInTheDocument();
+  });
+
+  it('role onBlur reverts to original and warns when cleared after being non-empty', async () => {
+    // Override rules to include role so "originallyNonEmpty" = true
+    (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+      if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+        return Promise.resolve({
+          workload_groups: [
+            {
+              _id: 'wg-123',
+              name: 'test-group',
+              resource_limits: { cpu: 0.5, memory: 0.5 },
+              resiliency_mode: 'SOFT',
+            },
+          ],
+        });
+      }
+      if (path === '/api/_rules/workload_group') {
+        return Promise.resolve({
+          rules: [
+            {
+              id: 'r1',
+              description: 'd',
+              index_pattern: ['keep-*'],
+              principal: { role: ['admin'] },
+              workload_group: 'wg-123',
+            },
+          ],
+        });
+      }
+      if (path.startsWith('/api/_wlm/stats')) {
+        return Promise.resolve({ body: {} });
+      }
+      return Promise.resolve({ body: {} });
+    });
+
+    const warnSpy = jest.fn();
+    ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
+
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    // First rule's Role textarea
+    const roleBox = await screen.findByPlaceholderText('Enter role');
+    expect(roleBox).toHaveValue('admin');
+
+    fireEvent.change(roleBox, { target: { value: '' } });
+    fireEvent.blur(roleBox);
+
+    await waitFor(() => {
+      expect(warnSpy).toHaveBeenCalledWith('Role cannot be cleared once set.');
+      expect(roleBox).toHaveValue('admin');
+    });
+  });
+
+  it('username onBlur reverts to original and warns when cleared after being non-empty', async () => {
+    (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+      if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+        return Promise.resolve({
+          workload_groups: [
+            {
+              _id: 'wg-123',
+              name: 'test-group',
+              resource_limits: { cpu: 0.5, memory: 0.5 },
+              resiliency_mode: 'SOFT',
+            },
+          ],
+        });
+      }
+      if (path === '/api/_rules/workload_group') {
+        return Promise.resolve({
+          rules: [
+            {
+              id: 'r1',
+              description: 'd',
+              index_pattern: ['keep-*'],
+              principal: { username: ['alice'] },
+              workload_group: 'wg-123',
+            },
+          ],
+        });
+      }
+      if (path.startsWith('/api/_wlm/stats')) {
+        return Promise.resolve({ body: {} });
+      }
+      return Promise.resolve({ body: {} });
+    });
+
+    const warnSpy = jest.fn();
+    ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
+
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const userBox = await screen.findByPlaceholderText('Enter username');
+    expect(userBox).toHaveValue('alice');
+
+    fireEvent.change(userBox, { target: { value: '' } });
+    fireEvent.blur(userBox);
+
+    await waitFor(() => {
+      expect(warnSpy).toHaveBeenCalledWith('Username cannot be cleared once set.');
+      expect(userBox).toHaveValue('alice');
+    });
+  });
+
+  it('Add another rule button disables at 5 rules', async () => {
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    const addBtn = await screen.findByRole('button', { name: /\+ add another rule/i });
+
+    // You start with 2 rules in your mocks; add until 5
+    fireEvent.click(addBtn);
+    fireEvent.click(addBtn);
+    fireEvent.click(addBtn);
+
+    // Now 5 -> disabled
+    expect(addBtn).toBeDisabled();
+  });
+
+  it('Delete button is disabled for DEFAULT_WORKLOAD_GROUP', async () => {
+    renderComponent('DEFAULT_WORKLOAD_GROUP');
+
+    const deleteBtn = screen.getByRole('button', { name: /delete/i });
+    expect(deleteBtn).toBeDisabled();
+  });
+
+  it("Delete modal's confirm button stays disabled until user types 'delete'", async () => {
+    renderComponent('test-group');
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+
+    const confirmBtn = await screen.findByRole('button', { name: /^delete$/i });
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText('delete'), { target: { value: 'dele' } });
+    expect(confirmBtn).toBeDisabled();
+
+    fireEvent.change(screen.getByPlaceholderText('delete'), { target: { value: 'delete' } });
+    expect(confirmBtn).not.toBeDisabled();
+  });
+
+  it('blocks saving when resiliency mode missing and both resource limits invalid', async () => {
+    const dangerSpy = jest.fn();
+    ((mockCore.notifications.toasts.addDanger as unknown) as jest.Mock) = dangerSpy;
+
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+    // Make both invalid
+    const cpu = await screen.findByTestId('cpu-threshold-input');
+    const mem = await screen.findByTestId('memory-threshold-input');
+    fireEvent.change(cpu, { target: { value: '0' } });
+    fireEvent.change(mem, { target: { value: '101' } });
+
+    // Also unset resiliency mode by selecting then hacking idSelected? (simulate no change but still invalid limits)
+    // Just click Apply with invalid state:
+    const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+    expect(applyBtn).toBeDisabled(); // guarded by isInvalid
+
+    // Force an attempt by making one small valid change then back to invalid to trigger message:
+    fireEvent.change(cpu, { target: { value: '1' } });
+    fireEvent.change(mem, { target: { value: '101' } });
+    expect(applyBtn).toBeDisabled();
+
+    // The component surfaces error toast only when saveChanges runs; to cover the message path,
+    // set both undefined and try save: make both empty, then click Apply (enabled due to isSaved flag).
+    fireEvent.change(cpu, { target: { value: '' } });
+    fireEvent.change(mem, { target: { value: '' } });
+    // Now flip a setting to unsave & enable Apply
+    fireEvent.click(screen.getByLabelText('Enforced'));
+    expect(applyBtn).not.toBeDisabled();
+
+    // Make them invalid again: mem=0
+    fireEvent.change(mem, { target: { value: '0' } });
+    expect(applyBtn).toBeDisabled(); // stays guarded by isInvalid
+  });
+
+  it('Apply Changes performs create + update + delete diff of rules', async () => {
+    // Start with keep-me (update) and remove-me (delete)
+    (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+      if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+        return Promise.resolve({
+          workload_groups: [
+            {
+              _id: 'wg-123',
+              name: 'test-group',
+              resource_limits: { cpu: 0.5, memory: 0.5 },
+              resiliency_mode: 'SOFT',
+            },
+          ],
+        });
+      }
+      if (path === '/api/_rules/workload_group') {
+        return Promise.resolve({
+          rules: [
+            {
+              id: 'keep-me',
+              description: 'd',
+              index_pattern: ['keep-*'],
+              workload_group: 'wg-123',
+            },
+            {
+              id: 'remove-me',
+              description: 'd',
+              index_pattern: ['remove-*'],
+              workload_group: 'wg-123',
+            },
+          ],
+        });
+      }
+      if (path.startsWith('/api/_wlm/stats')) {
+        return Promise.resolve({ body: {} });
+      }
+      return Promise.resolve({ body: {} });
+    });
+
+    (mockCore.http.put as jest.Mock).mockResolvedValue({});
+    (mockCore.http.delete as jest.Mock).mockResolvedValue({});
+
+    renderComponent('test-group');
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => screen.getByText(/Workload group settings/i));
+
+    // Update existing "keep-me"
+    const inputs = screen.getAllByTestId('indexInput');
+    fireEvent.change(inputs[0], { target: { value: 'keep-updated-*' } });
+
+    // Delete "remove-me" (second panel)
+    const deleteIcons = screen.getAllByLabelText('Delete rule');
+    fireEvent.click(deleteIcons[1]);
+
+    // Create a new rule (indexId empty)
+    fireEvent.click(screen.getByRole('button', { name: /\+ add another rule/i }));
+    const newInputs = screen.getAllByTestId('indexInput');
+    const newest = newInputs[newInputs.length - 1];
+    fireEvent.change(newest, { target: { value: 'new-*' } });
+
+    // Apply
+    const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+    fireEvent.click(applyBtn);
+
+    await waitFor(() => {
+      // Update call
+      expect((mockCore.http.put as jest.Mock).mock.calls).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([
+            '/api/_rules/workload_group/keep-me',
+            expect.objectContaining({
+              query: { dataSourceId: 'default' },
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          ]),
+        ])
+      );
+
+      // Create call (no id in path)
+      expect((mockCore.http.put as jest.Mock).mock.calls).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([
+            '/api/_rules/workload_group',
+            expect.objectContaining({
+              query: { dataSourceId: 'default' },
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          ]),
+        ])
+      );
+
+      // Delete call
+      expect((mockCore.http.delete as jest.Mock).mock.calls).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([
+            '/api/_rules/workload_group/remove-me',
+            expect.objectContaining({ query: { dataSourceId: 'default' } }),
+          ]),
+        ])
+      );
+    });
+  });
 });

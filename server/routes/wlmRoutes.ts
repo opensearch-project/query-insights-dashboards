@@ -447,9 +447,12 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         (principal?.role?.length ?? 0) > 0;
 
       if (!hasAny) {
-        return response.badRequest({
-          body:
-            'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
+        return response.custom({
+          statusCode: 400,
+          body: {
+            message:
+              'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
+          },
         });
       }
 

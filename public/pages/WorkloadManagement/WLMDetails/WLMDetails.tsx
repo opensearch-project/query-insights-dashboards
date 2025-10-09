@@ -122,6 +122,12 @@ interface Rule {
   username: string;
 }
 
+interface DataSourceAttributes {
+  title: string;
+  dataSourceVersion?: string; // 👈 the field we want
+  // ...others the DS plugin stores
+}
+
 // === Main Component ===
 export const WLMDetails = ({
   core,
