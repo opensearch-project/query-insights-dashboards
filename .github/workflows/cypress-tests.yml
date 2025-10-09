@@ -111,36 +111,46 @@ jobs:
 
       - name: Decide target ref for OpenSearch
         shell: bash
+        working-directory: OpenSearch
         run: |
           set -euo pipefail
-          cd OpenSearch
 
-          # Read version from OpenSearch/build.gradle
-          if [[ -f build.gradle ]]; then
-            os_version="$(node -e "const fs=require('fs'); const s=fs.readFileSync('build.gradle','utf8'); const m=s.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/); console.log(m?m[1]:'');")"
-          else
-            echo "build.gradle not found in OpenSearch repo"; os_version=""
+          os_version=""
+
+          # check version in buildSrc/version.properties
+          if [[ -f buildSrc/version.properties ]]; then
+            echo "Found buildSrc/version.properties; reading opensearch…"
+            os_version="$(awk -F'=' '
+              $1 ~ /^[[:space:]]*opensearch[[:space:]]*$/ {
+                v=$2; sub(/\r$/,"",v); gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v; exit
+              }
+            ' buildSrc/version.properties || true)"
+            echo "version.properties opensearch: ${os_version:-<empty>}"
           fi
 
           if [[ -z "${os_version}" ]]; then
-            echo "Could not determine OpenSearch main repo version; defaulting to main."
+            echo "Could not determine OpenSearch repo version; defaulting to main."
             echo "TARGET_REF=main" >> "$GITHUB_ENV"
             exit 0
           fi
 
+          # Convert to major.minor (e.g., 3.4 from 3.4.0 or 3.4.0-SNAPSHOT)
           os_short="$(echo "$os_version" | sed -E 's/^([0-9]+)\.([0-9]+).*$/\1.\2/')"
+
           echo "OpenSearch repo version: ${os_version}"
           echo "OpenSearch repo short:   ${os_short}"
           echo "QI short (env):          ${QI_BRANCH}"
 
-          if [[ "$os_short" == "$QI_BRANCH" ]]; then
+          if [[ "$os_short" == "${QI_BRANCH}" ]]; then
             target="main"
           else
-            # If your repo uses a prefix like "release/2.19", set: target="release/${QI_BRANCH}"
+            # If your repo uses release branches like "release/3.4", use:
+            # target="release/${QI_BRANCH}"
             target="${QI_BRANCH}"
           fi
 
           echo "TARGET_REF=$target" >> "$GITHUB_ENV"
+          echo "Decided TARGET_REF=$target"
 
       - name: Switch OpenSearch to target ref (if needed)
         shell: bash
