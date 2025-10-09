@@ -45,21 +45,11 @@ jobs:
           repository: opensearch-project/query-insights
           ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
 
-      - name: Checkout OpenSearch
-        uses: actions/checkout@v4
-        with:
-          path: OpenSearch
-          repository: opensearch-project/OpenSearch
-          ref: ${{ env.OPENSEARCH_BRANCH }}
-
-      - name: Check working directory and list files
-        run: |
-          echo "Current Directory: $(pwd)"
-          echo "Listing files:"
-          ls -la
-
       - name: Fetch OpenSearch version from build.gradle
+        shell: bash
         run: |
+          set -euo pipefail
+
           # Navigate to the query-insights directory
           cd query-insights
 
@@ -71,31 +61,111 @@ jobs:
             exit 1
           fi
 
-          # Print the content of build.gradle for debugging
           echo "Printing build.gradle content:"
           cat build.gradle
 
-          # Extract the version from build.gradle using Node.js with the updated regex
-          opensearch_version=$(node -e "
-            const fs = require('fs');
-            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
-            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
-            console.log(match ? match[1] : 'No version found');
-          ")
+          # Extract the version from build.gradle using Node.js (robust regex, dot-all)
+          opensearch_version="$(
+            node -e "
+              const fs = require('fs');
+              const s = fs.readFileSync('build.gradle', 'utf8');
+              // Allow whitespace/newlines between tokens
+              const re = /opensearch_version\s*=\s*System\.getProperty\(\s*['\"][^'\"]+['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*\)/s;
+              const m = s.match(re);
+              if (!m) {
+                process.exitCode = 2;
+              } else {
+                console.log(m[1]);
+              }
+            " || true
+          )"
 
-          # Set the OpenSearch version as an environment variable
-          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
+          if [[ -z "${opensearch_version:-}" ]]; then
+            echo "Failed to parse opensearch_version from build.gradle"
+            exit 1
+          fi
 
-          # Print the version for debugging
+          # Short major.minor (e.g., 2.19 from 2.19.0-SNAPSHOT)
+          qi_branch="$(echo "$opensearch_version" | sed -E 's/^([0-9]+)\.([0-9]+).*$/\1.\2/')"
+
+          if ! [[ "$qi_branch" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Parsed version \"$opensearch_version\" did not yield a valid major.minor (got \"$qi_branch\")"
+            exit 1
+          fi
+
+          # Export to env
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=$opensearch_version" >> "$GITHUB_ENV"
+          echo "QI_BRANCH=$qi_branch" >> "$GITHUB_ENV"
+
           echo "Using OpenSearch version: $opensearch_version"
+          echo "Using QI branch (short): $qi_branch"
+
+      - name: Checkout OpenSearch@main (to read its version)
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: main
+
+
+      - name: Decide target ref for OpenSearch
         shell: bash
-
-
-      - name: Verify OpenSearch version
         run: |
-          echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
-          echo "Using Plugin version: ${{ env.PLUGIN_VERSION }}"
+          set -euo pipefail
+          cd OpenSearch
+
+          # Read version from OpenSearch/build.gradle
+          if [[ -f build.gradle ]]; then
+            os_version="$(node -e "const fs=require('fs'); const s=fs.readFileSync('build.gradle','utf8'); const m=s.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/); console.log(m?m[1]:'');")"
+          else
+            echo "build.gradle not found in OpenSearch repo"; os_version=""
+          fi
+
+          if [[ -z "${os_version}" ]]; then
+            echo "Could not determine OpenSearch main repo version; defaulting to main."
+            echo "TARGET_REF=main" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          os_short="$(echo "$os_version" | sed -E 's/^([0-9]+)\.([0-9]+).*$/\1.\2/')"
+          echo "OpenSearch repo version: ${os_version}"
+          echo "OpenSearch repo short:   ${os_short}"
+          echo "QI short (env):          ${QI_BRANCH}"
+
+          if [[ "$os_short" == "$QI_BRANCH" ]]; then
+            target="main"
+          else
+            # If your repo uses a prefix like "release/2.19", set: target="release/${QI_BRANCH}"
+            target="${QI_BRANCH}"
+          fi
+
+          echo "TARGET_REF=$target" >> "$GITHUB_ENV"
+
+      - name: Switch OpenSearch to target ref (if needed)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd OpenSearch
+
+          if [[ "${TARGET_REF:-main}" != "main" ]]; then
+            echo "Switching to ${TARGET_REF}"
+            # Fetch the branch; tolerate missing remote branch to fall back to main
+            git fetch origin "${TARGET_REF}" || true
+            git checkout "${TARGET_REF}" || {
+              echo "Branch ${TARGET_REF} not found; staying on main."
+              git checkout main
+            }
+          else
+            echo "Staying on main."
+            git checkout main
+          fi
+
+      - name: Check working directory and list files
+        run: |
+          echo "Current Directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
 
       - name: Build Required Plugins
         run: |
