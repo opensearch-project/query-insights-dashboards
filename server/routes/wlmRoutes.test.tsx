@@ -213,7 +213,10 @@ describe('defineWlmRoutes: responses must not expose `meta`', () => {
       },
       res
     );
-    expectNoMeta(res.ok.mock.calls[0][0].body);
+    expect(res.custom).toHaveBeenCalledWith({
+      statusCode: 400,
+      body: { message: expect.stringContaining('Empty rule found') },
+    });
   });
 
   test('GET /api/_wlm/thresholds', async () => {
