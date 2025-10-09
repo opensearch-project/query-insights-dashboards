@@ -13,11 +13,24 @@ jobs:
     name: Run lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Set env
+        run: |
+          opensearch_version=$(node -p "require('./package.json').opensearchDashboards.version")
+          major_version=$(echo $opensearch_version | cut -d. -f1)
+          minor_version=$(echo $opensearch_version | cut -d. -f2)
+          branch_version=${major_version}.${minor_version}
+          opensearch_dashboards_branch=$branch_version
+          base_branch=${{ github.base_ref }}
+          if [ "$base_branch" = "main" ]; then
+            opensearch_dashboards_branch=main
+          fi
+          echo "OPENSEARCH_DASHBOARDS_BRANCH=$opensearch_dashboards_branch" >> $GITHUB_ENV
       - name: Checkout OpenSearch Dashboards
         uses: actions/checkout@v4
         with:
           repository: opensearch-project/OpenSearch-Dashboards
-          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+          ref: ${{ env.OPENSEARCH_DASHBOARDS_BRANCH }}
           path: OpenSearch-Dashboards
       - name: Setup Node
         uses: actions/setup-node@v3
