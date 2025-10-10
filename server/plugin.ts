@@ -53,7 +53,7 @@ export class QueryInsightsDashboardsPlugin
 
     // Register server side APIs
     defineRoutes(router, dataSourceEnabled);
-    defineWlmRoutes(router);
+    defineWlmRoutes(router, dataSourceEnabled);
 
     return {};
   }

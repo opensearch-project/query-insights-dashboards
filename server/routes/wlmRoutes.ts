@@ -6,25 +6,39 @@
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
 
-export function defineWlmRoutes(router: IRouter) {
+export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean = false) {
   // Get WLM stats across all nodes in the cluster
   router.get(
     {
       path: '/api/_wlm/stats',
-      validate: false,
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const stats = await client.transport.request({
-          method: 'GET',
-          path: '/_wlm/stats',
-        });
+        const { dataSourceId } = request.query;
+        let stats;
+
+        if (dataSourceEnabled && dataSourceId) {
+          const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          stats = await client.transport.request({
+            method: 'GET',
+            path: '/_wlm/stats',
+          });
+        } else {
+          const client = context.core.opensearch.client.asCurrentUser;
+          stats = await client.transport.request({
+            method: 'GET',
+            path: '/_wlm/stats',
+          });
+        }
+
         return response.ok({ body: stats });
       } catch (error: any) {
-        context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
-          error,
-        });
+        console.error(`Failed to fetch WLM stats: ${error.message}`, error);
         return response.custom({
           statusCode: error.statusCode || 500,
           body: {
@@ -70,15 +84,31 @@ export function defineWlmRoutes(router: IRouter) {
   router.get(
     {
       path: '/api/_wlm/workload_group',
-      validate: false,
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const result = await client.transport.request({
-          method: 'GET',
-          path: '/_wlm/workload_group',
-        });
+        const { dataSourceId } = request.query;
+        let result;
+
+        if (dataSourceEnabled && dataSourceId) {
+          const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          result = await client.transport.request({
+            method: 'GET',
+            path: '/_wlm/workload_group',
+          });
+        } else {
+          const client = context.core.opensearch.client.asCurrentUser;
+          result = await client.transport.request({
+            method: 'GET',
+            path: '/_wlm/workload_group',
+          });
+        }
+
         return response.ok({ body: result });
       } catch (error: any) {
         return response.customError({
