@@ -10,10 +10,12 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { getVersionOnce } from '../../utils/version-utils';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
+jest.mock('../../utils/version-utils');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useLocation: jest.fn(),
@@ -89,6 +91,8 @@ beforeEach(() => {
   cleanup();
   // Reset useLocation mock to default
   (useLocation as jest.Mock).mockReturnValue({ search: '' });
+  // Mock version utilities - default to 3.3.0 for WLM support
+  (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -185,6 +189,8 @@ describe('InflightQueries', () => {
   it('shows zeros when there are no queries', async () => {
     const core = makeCore();
     mockLiveQueries({ ok: true, response: { live_queries: [] } });
+    // Mock version < 3.3.0 to disable WLM features
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.0.0');
 
     render(
       withDataSource(
@@ -201,7 +207,7 @@ describe('InflightQueries', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
-      expect(screen.getAllByText('0')).toHaveLength(8);
+      expect(screen.getAllByText('0')).toHaveLength(5); // No WLM panels in older versions
     });
   });
 
@@ -301,8 +307,9 @@ describe('InflightQueries', () => {
 
   it('handles WLM group selection when WLM plugin is present', async () => {
     const core = makeCore();
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (core.http.get as jest.Mock)
-      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }]) // _cat/plugins
+      .mockResolvedValueOnce({ hasWlm: true }) // _cat/plugins
       .mockResolvedValueOnce({
         body: { node1: { workload_groups: { group1: { total_completions: 5 } } } },
       }) // stats
@@ -350,6 +357,12 @@ describe('InflightQueries', () => {
 
   it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
     const core = makeCore();
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
+    (core.http.get as jest.Mock)
+      .mockResolvedValue({ hasWlm: true })
+      .mockResolvedValue({ body: {} })
+      .mockResolvedValue({ body: { workload_groups: [] } });
+
     mockLiveQueries(mockStubLiveQueries);
 
     render(
@@ -435,11 +448,8 @@ describe('InflightQueries', () => {
 
   it('handles WLM stats API error gracefully', async () => {
     const core = makeCore();
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-    (core.http.get as jest.Mock)
-      .mockResolvedValueOnce([{ component: 'workload-management', name: 'wlm-plugin' }])
-      .mockRejectedValueOnce(new Error('Network error'));
+    const consoleSpy = jest.spyOn(console, 'warn');
+    (getVersionOnce as jest.Mock).mockResolvedValue('2.0.0'); // Version below 3.3.0
 
     mockLiveQueries(mockStubLiveQueries);
 
@@ -457,12 +467,72 @@ describe('InflightQueries', () => {
     );
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[LiveQueries] Failed to fetch WLM stats',
-        expect.any(Error)
-      );
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
     });
 
+    // For older versions, WLM features should not be available
+    expect(screen.queryByText('Workload group')).not.toBeInTheDocument();
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      '[LiveQueries] Failed to fetch WLM stats',
+      expect.any(Error)
+    );
+
     consoleSpy.mockRestore();
+  });
+
+  it('shows 8 zeros when WLM is supported (version 3.3+)', async () => {
+    const core = makeCore();
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
+    (core.http.get as jest.Mock)
+      .mockResolvedValue({ hasWlm: true })
+      .mockResolvedValue({ body: {} })
+      .mockResolvedValue({ body: { workload_groups: [] } });
+
+    mockLiveQueries({ ok: true, response: { live_queries: [] } });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
+      expect(screen.getAllByText('0')).toHaveLength(8); // 5 base + 3 WLM panels
+    });
+  });
+
+  it('hides WLM features for versions below 3.3.0', async () => {
+    const core = makeCore();
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.0.0');
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    });
+
+    // Should not show WLM selector or panels
+    expect(screen.queryByLabelText('Workload group selector')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total completions')).not.toBeInTheDocument();
   });
 });

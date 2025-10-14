@@ -17,6 +17,7 @@ import {
   QueryInsightsDashboardsPluginStartDependencies,
 } from './types';
 import { PLUGIN_NAME } from '../common';
+import { setStartServices } from './service';
 import { WLM_CONFIG } from '../common/constants';
 
 export class QueryInsightsDashboardsPlugin
@@ -127,6 +128,7 @@ export class QueryInsightsDashboardsPlugin
   }
 
   public start(_core: CoreStart): QueryInsightsDashboardsPluginStart {
+    setStartServices(_core);
     return {};
   }
 
