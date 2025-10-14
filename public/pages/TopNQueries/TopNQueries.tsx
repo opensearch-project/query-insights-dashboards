@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
+import { DateTime } from 'luxon';
+import semver from 'semver';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -17,6 +19,11 @@ import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
+import {
+  getVersionOnce,
+  getGroupBySettingsPath,
+  isVersion31OrHigher,
+} from '../../utils/version-utils';
 import {
   DEFAULT_DELETE_AFTER_DAYS,
   DEFAULT_EXPORTER_TYPE,
@@ -86,6 +93,12 @@ const TopNQueries = ({
   const [loading, setLoading] = useState(false);
   const [currStart, setStart] = useState(initialStart);
   const [currEnd, setEnd] = useState(initialEnd);
+  const [showLiveQueries, setShowLiveQueries] = useState<boolean>(true);
+  const dataSourceFromUrl = getDataSourceFromUrl();
+  const dataSourceId = dataSourceFromUrl.id;
+
+  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
+
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: currStart, end: currEnd },
   ]);
@@ -132,23 +145,39 @@ const TopNQueries = ({
 
   const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
 
-  const tabs: Array<{ id: string; name: string; route: string }> = [
-    {
-      id: 'liveQueries',
-      name: 'Live queries',
-      route: LIVE_QUERIES,
-    },
-    {
-      id: 'topNQueries',
-      name: 'Top N queries',
-      route: QUERY_INSIGHTS,
-    },
-    {
-      id: 'configuration',
-      name: 'Configuration',
-      route: CONFIGURATION,
-    },
-  ];
+  useEffect(() => {
+    let isComponentUnmounted = false;
+
+    (async () => {
+      try {
+        const version = await getVersionOnce(dataSourceId);
+        const shouldShowLiveQueries = isVersion31OrHigher(version);
+
+        if (!isComponentUnmounted) {
+          setShowLiveQueries(shouldShowLiveQueries);
+        }
+      } catch (error) {
+        console.error('Failed to fetch data source version:', error);
+        if (!isComponentUnmounted) {
+          setShowLiveQueries(true);
+        }
+      }
+    })();
+
+    return () => {
+      isComponentUnmounted = true;
+    };
+  }, [dataSourceId]);
+
+  const tabs = useMemo<Array<{ id: string; name: string; route: string }>>(() => {
+    const base = [
+      { id: 'topNQueries', name: 'Top N queries', route: QUERY_INSIGHTS },
+      { id: 'configuration', name: 'Configuration', route: CONFIGURATION },
+    ];
+    return showLiveQueries
+      ? [{ id: 'liveQueries', name: 'Live queries', route: LIVE_QUERIES }, ...base]
+      : base;
+  }, [showLiveQueries]);
 
   const onSelectedTabChanged = (route: string) => {
     const { pathname: currPathname } = location;
@@ -217,7 +246,22 @@ const TopNQueries = ({
         const noDuplicates: SearchQueryRecord[] = newQueries.filter(
           (query, index, self) => index === self.findIndex((q) => q.id === query.id)
         );
-        setQueries(noDuplicates);
+
+        const version = await getVersionOnce(dataSourceId);
+        const is219OSVersion = version ? semver.eq(version, '2.19.0') : false;
+
+        const fromTime = DateTime.fromISO(parseDateString(start));
+        const toTime = DateTime.fromISO(parseDateString(end));
+
+        const isWithinTimeWindow = (q: SearchQueryRecord) => {
+          const ts = DateTime.fromMillis(q.timestamp);
+          return ts.isValid && ts >= fromTime && ts <= toTime;
+        };
+
+        const filteredQueries = is219OSVersion
+          ? noDuplicates.filter(isWithinTimeWindow)
+          : noDuplicates;
+        setQueries(filteredQueries);
       } catch (error) {
         console.error('Error retrieving queries:', error);
       } finally {
@@ -287,9 +331,10 @@ const TopNQueries = ({
               });
             }
           });
+          const version = await getVersionOnce(dataSourceId);
           const groupBy = getMergedStringSettings(
-            persistentSettings?.grouping.group_by,
-            transientSettings?.grouping.group_by,
+            getGroupBySettingsPath(version, persistentSettings),
+            getGroupBySettingsPath(version, transientSettings),
             DEFAULT_GROUP_BY
           );
           setGroupBySettings({ groupBy });
@@ -369,10 +414,6 @@ const TopNQueries = ({
     retrieveQueries(currStart, currEnd);
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
-  const dataSourceFromUrl = getDataSourceFromUrl();
-
-  const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
-
   return (
     <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
       <div style={{ padding: '35px 35px' }}>
@@ -401,28 +442,30 @@ const TopNQueries = ({
               );
             }}
           </Route>
-          <Route exact path={LIVE_QUERIES}>
-            <PageHeader
-              coreStart={core}
-              depsStart={depsStart}
-              fallBackComponent={
-                <>
-                  <EuiTitle size="l">
-                    <h1>Query insights - In-flight queries</h1>
-                  </EuiTitle>
-                  <EuiSpacer size="l" />
-                </>
-              }
-            />
-            <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
-            <EuiSpacer size="l" />
-            <InflightQueries
-              core={core}
-              depsStart={depsStart}
-              params={params}
-              dataSourceManagement={dataSourceManagement}
-            />
-          </Route>
+          {showLiveQueries && (
+            <Route exact path={LIVE_QUERIES}>
+              <PageHeader
+                coreStart={core}
+                depsStart={depsStart}
+                fallBackComponent={
+                  <>
+                    <EuiTitle size="l">
+                      <h1>Query insights - In-flight queries</h1>
+                    </EuiTitle>
+                    <EuiSpacer size="l" />
+                  </>
+                }
+              />
+              <EuiTabs>{tabs.map(renderTab)}</EuiTabs>
+              <EuiSpacer size="l" />
+              <InflightQueries
+                core={core}
+                depsStart={depsStart}
+                params={params}
+                dataSourceManagement={dataSourceManagement}
+              />
+            </Route>
+          )}
           <Route exact path={QUERY_INSIGHTS}>
             <PageHeader
               coreStart={core}

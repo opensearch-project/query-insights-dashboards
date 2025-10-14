@@ -55,7 +55,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                 >
                   <svg
                     aria-hidden="true"
-                    class="euiIcon euiIcon--small euiIcon-isLoaded euiFormControlLayoutCustomIcon__icon"
+                    class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
                     focusable="false"
                     height="16"
                     role="img"
