@@ -51,7 +51,7 @@ import {
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { getVersionOnce } from '../../utils/version-utils';
+import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -142,7 +142,7 @@ export const InflightQueries = ({
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
-        if (version && semver.gte(version, '3.3.0')) {
+        if (isVersion33OrHigher(version)) {
           const hasWlm = await detectWlm();
           setWlmAvailable(hasWlm);
           setWlmGroupsSupported(true);

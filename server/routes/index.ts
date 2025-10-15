@@ -508,4 +508,33 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
     }
   );
+
+  router.get(
+    {
+      path: '/api/cluster/version',
+      validate: {},
+    },
+    async (context, request, response) => {
+      try {
+        const esClient = context.core.opensearch.client.asCurrentUser;
+        const res = await esClient.info();
+        const version = res.body?.version?.number;
+        
+        return response.ok({
+          body: {
+            ok: true,
+            version,
+          },
+        });
+      } catch (error) {
+        console.error('Unable to get cluster version: ', error);
+        return response.ok({
+          body: {
+            ok: false,
+            error: error.message,
+          },
+        });
+      }
+    }
+  );
 }
