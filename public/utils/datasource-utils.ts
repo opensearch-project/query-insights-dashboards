@@ -23,7 +23,7 @@ import { DataSourceOption } from 'src/plugins/data_source_management/public';
 import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
-import { getSavedObjectsClient } from '../../public/service';
+import { getSavedObjectsClient, getRouteService } from '../service';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
@@ -35,8 +35,8 @@ export const getDataSourceVersion = async (
   dataSourceId: string | undefined
 ): Promise<string | undefined> => {
   try {
-    if (dataSourceId === undefined) {
-      return undefined;
+    if (dataSourceId === undefined || dataSourceId === '') {
+      return await getRouteService().getLocalClusterVersion();
     }
 
     const savedObjectsClient = getSavedObjectsClient();

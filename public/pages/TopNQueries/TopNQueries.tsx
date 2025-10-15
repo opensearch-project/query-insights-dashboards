@@ -10,7 +10,6 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { DataSourceOption } from 'src/plugins/data_source_management/public/components/data_source_menu/types';
 import { DateTime } from 'luxon';
-import semver from 'semver';
 import QueryInsights from '../QueryInsights/QueryInsights';
 import Configuration from '../Configuration/Configuration';
 import QueryDetails from '../QueryDetails/QueryDetails';
@@ -23,6 +22,7 @@ import {
   getVersionOnce,
   getGroupBySettingsPath,
   isVersion31OrHigher,
+  isVersion219,
 } from '../../utils/version-utils';
 import {
   DEFAULT_DELETE_AFTER_DAYS,
@@ -248,7 +248,7 @@ const TopNQueries = ({
         );
 
         const version = await getVersionOnce(dataSourceId);
-        const is219OSVersion = version ? semver.eq(version, '2.19.0') : false;
+        const is219OSVersion = isVersion219(version);
 
         const fromTime = DateTime.fromISO(parseDateString(start));
         const toTime = DateTime.fromISO(parseDateString(end));
