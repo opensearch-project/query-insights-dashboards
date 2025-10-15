@@ -351,20 +351,23 @@ describe('Inflight Queries Dashboard', () => {
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
   beforeEach(() => {
-    cy.fixture('stub_live_queries.json').then((stubResponse) => {
-      cy.intercept('GET', '**/api/live_queries', {
+    // Stub ONLY the initial NO-QUERY snapshot: /api/live_queries (no '?')
+    cy.fixture('stub_live_queries.json').then((stubLive) => {
+      cy.intercept('GET', /\/api\/live_queries$/, {
         statusCode: 200,
-        body: stubResponse,
-      }).as('getLiveQueries');
+        body: stubLive,
+      }).as('liveQueriesNoGroup');
     });
 
-    cy.fixture('stub_wlm_stats.json').then((wlmStatsResponse) => {
+    // WLM stats
+    cy.fixture('stub_wlm_stats.json').then((wlmStats) => {
       cy.intercept('GET', '**/api/_wlm/stats', {
         statusCode: 200,
-        body: wlmStatsResponse,
+        body: wlmStats,
       }).as('getWlmStats');
     });
 
+    // WLM enabled + workload groups
     cy.intercept('GET', '**/api/cat_plugins', {
       statusCode: 200,
       body: { hasWlm: true },
@@ -375,17 +378,14 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       body: {
         workload_groups: [
           { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'ANALYTICS_WORKLOAD_GROUP' },
-          { _id: 'DEFAULT_QUERY_GROUP', name: 'DEFAULT_QUERY_GROUP' },
+          { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'DEFAULT_WORKLOAD_GROUP' },
         ],
       },
     }).as('getWorkloadGroups');
-    cy.intercept('GET', '**/api/cat_plugins', {
-      statusCode: 200,
-      body: { hasWlm: true },
-    }).as('getPluginsEnabled');
 
+    // Navigate AFTER all intercepts are ready, then wait initial snapshot
     cy.navigateToLiveQueries();
-    cy.wait('@getLiveQueries');
+    cy.wait('@liveQueriesNoGroup');
   });
 
   it('displays WLM group links when WLM is enabled', () => {
@@ -395,34 +395,46 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.get('tbody tr')
       .first()
       .within(() => {
-        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').click({ force: true });
+        cy.contains('td', 'ANALYTICS_WORKLOAD_GROUP').click({ force: true });
       });
   });
 
   it('calls different API when WLM group selection changes', () => {
-    // Intercept all live_queries calls
-    cy.intercept('GET', '**/api/live_queries*').as('liveQueries');
+    // Robust spies that tolerate extra query params & any order
+    cy.intercept('GET', /\/api\/live_queries\?(?=.*\bwlmGroupId=ANALYTICS_WORKLOAD_GROUP\b).*/).as(
+      'liveQueriesAnalytics'
+    );
 
-    // 1) Select ANALYTICS first
-    cy.get('#wlm-group-select').should('exist').select('ANALYTICS_WORKLOAD_GROUP');
+    cy.intercept('GET', /\/api\/live_queries\?(?=.*\bwlmGroupId=DEFAULT_WORKLOAD_GROUP\b).*/).as(
+      'liveQueriesDefault'
+    );
 
-    cy.wait('@liveQueries')
+    cy.get('#wlm-group-select').should('exist');
+
+    // 1) Select ANALYTICS
+    cy.get('#wlm-group-select').select('ANALYTICS_WORKLOAD_GROUP');
+    cy.wait('@liveQueriesAnalytics')
       .its('request.url')
-      .should('include', 'wlmGroupId=ANALYTICS_WORKLOAD_GROUP');
+      .should((urlStr) => {
+        const url = new URL(urlStr);
+        expect(url.searchParams.get('wlmGroupId')).to.eq('ANALYTICS_WORKLOAD_GROUP');
+      });
 
-    // Component re-fetches workload groups after selection — wait for that
+    // Component re-fetches groups after selection
     cy.wait('@getWorkloadGroups');
 
-    // 2) Select DEFAULT_WORKLOAD_GROUP explicitly
+    // 2) Select DEFAULT
     cy.get('#wlm-group-select').select('DEFAULT_WORKLOAD_GROUP');
 
-    cy.wait('@liveQueries')
+    cy.wait('@liveQueriesDefault')
       .its('request.url')
-      .should('include', 'wlmGroupId=DEFAULT_WORKLOAD_GROUP');
+      .should((urlStr) => {
+        const url = new URL(urlStr);
+        expect(url.searchParams.get('wlmGroupId')).to.eq('DEFAULT_WORKLOAD_GROUP');
+      });
   });
 
   it('displays total completion, cancellation, and rejection metrics correctly', () => {
-    // Trigger a refresh to ensure WLM stats are loaded
     cy.get('[data-test-subj="live-queries-refresh-button"]').click();
     cy.wait('@getWlmStats');
 

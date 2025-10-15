@@ -141,13 +141,19 @@ export const InflightQueries = ({
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
-        if (isVersion33OrHigher(version)) {
+        const versionSupported = isVersion33OrHigher(version);
+        setWlmGroupsSupported(versionSupported);
+
+        if (versionSupported) {
           const hasWlm = await detectWlm();
           setWlmAvailable(hasWlm);
-          setWlmGroupsSupported(true);
+        } else {
+          setWlmAvailable(false);
         }
       } catch (e) {
         console.warn('Failed to check version for WLM groups support', e);
+        setWlmGroupsSupported(false);
+        setWlmAvailable(false);
       }
     };
 
@@ -161,7 +167,7 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    if (!wlmAvailable || !wlmGroupsSupported) {
+    if (!wlmGroupsSupported) {
       setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
       setWlmGroupOptions([]);
       return {};
