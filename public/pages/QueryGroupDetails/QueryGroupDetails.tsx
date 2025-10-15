@@ -31,6 +31,7 @@ import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
+import { formatQueryDisplay } from '../QueryDetails/QueryDetails';
 
 export const QueryGroupDetails = ({
   core,
@@ -137,10 +138,7 @@ export const QueryGroupDetails = ({
     }
   }, [query]);
 
-  const queryString = query
-    ? JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2)
-    : '';
-  const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
+  const queryDisplay = formatQueryDisplay(query);
 
   return (
     <div>
