@@ -14,6 +14,8 @@ import { MemoryRouter, Route } from 'react-router-dom';
 import hash from 'object-hash';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
+import { formatQueryDisplay } from './QueryDetails';
+import { SearchQueryRecord } from '../../../types/types';
 
 jest.mock('plotly.js-dist', () => ({
   newPlot: jest.fn(),
@@ -137,5 +139,85 @@ describe('QueryDetails component', () => {
     });
 
     expect(container).toMatchSnapshot();
+  });
+
+  describe('formatQueryDisplay', () => {
+    it('handles source as complete JSON string', () => {
+      const query: SearchQueryRecord = {
+        timestamp: 1234567890,
+        measurements: {},
+        total_shards: 1,
+        node_id: 'node1',
+        source:
+          '{"query": {"bool": {"must": [{"match": {"title": "opensearch"}}, {"range": {"timestamp": {"gte": "2023-01-01", "lte": "2023-12-31"}}}], "filter": [{"term": {"status": "published"}}]}}}',
+        labels: {},
+        search_type: 'query_then_fetch',
+        indices: ['index1'],
+        phase_latency_map: {},
+        task_resource_usages: [],
+        id: 'query1',
+        group_by: 'similarity',
+      };
+
+      const result = formatQueryDisplay(query);
+
+      const expected = [
+        '{',
+        '  "query": {',
+        '    "bool": {',
+        '      "must": [',
+        '        {',
+        '          "match": {',
+        '            "title": "opensearch"',
+        '          }',
+        '        },',
+        '        {',
+        '          "range": {',
+        '            "timestamp": {',
+        '              "gte": "2023-01-01",',
+        '              "lte": "2023-12-31"',
+        '            }',
+        '          }',
+        '        }',
+        '      ],',
+        '      "filter": [',
+        '        {',
+        '          "term": {',
+        '            "status": "published"',
+        '          }',
+        '        }',
+        '      ]',
+        '    }',
+        '  }',
+        '}',
+      ].join('\n');
+
+      expect(result).toBe(expected);
+    });
+
+    it('handles source as incomplete JSON string', () => {
+      const query: SearchQueryRecord = {
+        timestamp: 1234567890,
+        measurements: {},
+        total_shards: 1,
+        node_id: 'node1',
+        source:
+          '{"query": {"bool": {"must": [{"match": {"title": "opensearch"}}, {"range": {"timestamp": {"gte": "2023-01-01"',
+        labels: {},
+        search_type: 'query_then_fetch',
+        indices: ['index1'],
+        phase_latency_map: {},
+        task_resource_usages: [],
+        id: 'query1',
+        group_by: 'similarity',
+      };
+
+      const result = formatQueryDisplay(query);
+
+      const expected =
+        '"{\\"query\\": {\\"bool\\": {\\"must\\": [{\\"match\\": {\\"title\\": \\"opensearch\\"}}, {\\"range\\": {\\"timestamp\\": {\\"gte\\": \\"2023-01-01\\""\n...';
+
+      expect(result).toBe(expected);
+    });
   });
 });
