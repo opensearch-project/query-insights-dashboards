@@ -3,12 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import semver from 'semver';
 import { getDataSourceVersion } from './datasource-utils';
-
-const VERSION_3_1 = { major: 3, minor: 1 };
-const VERSION_3_3 = { major: 3, minor: 3 };
-const VERSION_2_19 = { major: 2, minor: 19 };
+import { VERSION_3_1, VERSION_3_3, VERSION_2_19 } from '../../common/constants';
 
 let cachedVersion: string | undefined;
 let cachedDataSourceId: string | undefined;
@@ -23,7 +19,12 @@ export const getVersionOnce = async (dataSourceId: string): Promise<string | und
   return cachedVersion;
 };
 
-const compareVersion = (version: string | undefined, targetMajor: number, targetMinor: number, operator: 'gte' | 'eq'): boolean => {
+const compareVersion = (
+  version: string | undefined,
+  targetMajor: number,
+  targetMinor: number,
+  operator: 'gte' | 'eq'
+): boolean => {
   if (!version) return false;
   const [major, minor] = version.split('.');
   const majorNum = parseInt(major, 10);

@@ -116,3 +116,8 @@ const DEFAULT_CONFIG: ConfigSchema = {
 };
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
+
+// Version constants
+export const VERSION_3_1 = { major: 3, minor: 1 };
+export const VERSION_3_3 = { major: 3, minor: 3 };
+export const VERSION_2_19 = { major: 2, minor: 19 };
