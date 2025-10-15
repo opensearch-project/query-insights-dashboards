@@ -519,7 +519,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         const esClient = context.core.opensearch.client.asCurrentUser;
         const res = await esClient.info();
         const version = res.body?.version?.number;
-        
+
         return response.ok({
           body: {
             ok: true,

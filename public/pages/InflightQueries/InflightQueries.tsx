@@ -33,7 +33,6 @@ import {
 import 'react-vis/dist/style.css';
 import { Duration } from 'luxon';
 import { filesize } from 'filesize';
-import semver from 'semver';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useLocation } from 'react-router-dom';

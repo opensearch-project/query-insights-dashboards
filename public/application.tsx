@@ -38,15 +38,15 @@ export const renderApp = (
   setUISettings(core.uiSettings);
   setApplication(core.application);
   setHeaderActionMenu(params.setHeaderActionMenu);
-  
+
   if (dataSourceManagement) {
     setDataSourceManagementPlugin(dataSourceManagement);
   }
-  
+
   if (depsStart.navigation) {
     setNavigationUI(depsStart.navigation.ui);
   }
-  
+
   setDataSourceEnabled({ enabled: !!dataSourceManagement });
 
   ReactDOM.render(
