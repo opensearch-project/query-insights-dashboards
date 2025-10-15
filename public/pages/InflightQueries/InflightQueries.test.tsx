@@ -311,11 +311,11 @@ describe('InflightQueries', () => {
 
   it('handles WLM group selection when WLM plugin is present', async () => {
     const core = makeCore();
-    
+
     // Mock version functions to enable WLM
     (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-    
+
     // Mock WLM detection
     (core.http.get as jest.Mock).mockImplementation((url) => {
       if (url === '/api/cat_plugins') {
@@ -340,9 +340,12 @@ describe('InflightQueries', () => {
     );
 
     // Wait for WLM components to render
-    await waitFor(() => {
-      expect(screen.getByText('Workload group')).toBeInTheDocument();
-    }, { timeout: 10000 });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Workload group')).toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
   });
 
   it('toggles auto-refresh', async () => {
@@ -367,11 +370,11 @@ describe('InflightQueries', () => {
 
   it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
     const core = makeCore();
-    
+
     // Mock version functions to enable WLM
     (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-    
+
     (core.http.get as jest.Mock).mockResolvedValue({ hasWlm: true });
 
     mockLiveQueries(mockStubLiveQueries);
@@ -393,10 +396,13 @@ describe('InflightQueries', () => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
     });
 
-    await waitFor(() => {
-      expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
-    }, { timeout: 10000 });
+    await waitFor(
+      () => {
+        expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+      },
+      { timeout: 10000 }
+    );
   });
 
   it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
@@ -462,7 +468,7 @@ describe('InflightQueries', () => {
   it('handles WLM stats API error gracefully', async () => {
     const core = makeCore();
     const consoleSpy = jest.spyOn(console, 'warn');
-    
+
     // Mock version functions to disable WLM for older version
     (getVersionOnce as jest.Mock).mockResolvedValue('2.0.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(false);
@@ -498,11 +504,11 @@ describe('InflightQueries', () => {
 
   it('shows 8 zeros when WLM is supported (version 3.3+)', async () => {
     const core = makeCore();
-    
+
     // Mock version functions to enable WLM
     (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-    
+
     (core.http.get as jest.Mock).mockResolvedValue({ hasWlm: true });
 
     mockLiveQueries({ ok: true, response: { live_queries: [] } });
@@ -523,19 +529,22 @@ describe('InflightQueries', () => {
     await waitFor(() => {
       expect(screen.getByText('Active queries')).toBeInTheDocument();
     });
-    
-    await waitFor(() => {
-      expect(screen.getAllByText('0')).toHaveLength(8); // 5 base + 3 WLM panels
-    }, { timeout: 10000 });
+
+    await waitFor(
+      () => {
+        expect(screen.getAllByText('0')).toHaveLength(8); // 5 base + 3 WLM panels
+      },
+      { timeout: 10000 }
+    );
   });
 
   it('hides WLM features for versions below 3.3.0', async () => {
     const core = makeCore();
-    
+
     // Mock version functions to disable WLM for older version
     (getVersionOnce as jest.Mock).mockResolvedValue('3.0.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(false);
-    
+
     mockLiveQueries(mockStubLiveQueries);
 
     render(
