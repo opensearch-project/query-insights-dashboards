@@ -85,12 +85,7 @@ interface WorkloadGroup {
 }
 
 interface WorkloadGroupByNameResponse {
-  body: {
-    workload_groups: WorkloadGroup[];
-  };
-  statusCode: number;
-  headers: Record<string, string>;
-  meta: any;
+  workload_groups: WorkloadGroup[];
 }
 
 interface NodeStats {
@@ -253,7 +248,7 @@ export const WLMDetails = ({
       const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`, {
         query: { dataSourceId: dataSource.id },
       });
-      const workload = response?.body?.workload_groups?.[0];
+      const workload = response?.workload_groups?.[0];
       if (workload) {
         setGroupDetails({
           name: workload.name,
@@ -288,8 +283,7 @@ export const WLMDetails = ({
             query: { dataSourceId: dataSource.id },
           }
         );
-        const matchedGroup = response.body?.workload_groups?.[0];
-
+        const matchedGroup = response?.workload_groups?.[0];
         if (!matchedGroup?._id) {
           throw new Error('Group ID not found');
         }
@@ -309,7 +303,7 @@ export const WLMDetails = ({
         const rulesRes = await core.http.get('/api/_rules/workload_group', {
           query: { dataSourceId: dataSource.id },
         });
-        const allRules = rulesRes?.body?.rules ?? [];
+        const allRules = rulesRes?.rules ?? [];
 
         const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
 
@@ -340,8 +334,7 @@ export const WLMDetails = ({
       const statsRes = await core.http.get(`/api/_wlm/stats/${groupId}`, {
         query: { dataSourceId: dataSource.id },
       });
-      const stats: StatsResponse = statsRes.body ?? statsRes;
-
+      const stats: StatsResponse = statsRes;
       const nodeStatsList: NodeUsageData[] = [];
 
       for (const [nodeId, data] of Object.entries(stats)) {

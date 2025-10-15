@@ -20,7 +20,7 @@ export function defineWlmRoutes(router: IRouter) {
           method: 'GET',
           path: '/_wlm/stats',
         });
-        return response.ok({ body: stats });
+        return response.ok({ body: stats.body });
       } catch (error: any) {
         context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
           error,
@@ -53,7 +53,7 @@ export function defineWlmRoutes(router: IRouter) {
           method: 'GET',
           path: `/_wlm/${nodeId}/stats`,
         });
-        return response.ok({ body: stats });
+        return response.ok({ body: stats.body });
       } catch (error: any) {
         console.error(`Failed to fetch stats for node ${request.params.nodeId}:`, error);
         return response.custom({
@@ -79,7 +79,7 @@ export function defineWlmRoutes(router: IRouter) {
           method: 'GET',
           path: '/_wlm/workload_group',
         });
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (error: any) {
         return response.customError({
           statusCode: error.statusCode || 500,
@@ -107,7 +107,7 @@ export function defineWlmRoutes(router: IRouter) {
           method: 'GET',
           path: `/_wlm/workload_group/${name}`,
         });
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (error: any) {
         return response.custom({
           statusCode: error.statusCode || 500,
@@ -143,7 +143,7 @@ export function defineWlmRoutes(router: IRouter) {
           body,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (e: any) {
         console.error('Failed to create workload group:', e);
         return response.internalError({
@@ -182,7 +182,7 @@ export function defineWlmRoutes(router: IRouter) {
           body,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (e: any) {
         console.error('Failed to update workload group:', e);
         return response.internalError({
@@ -212,7 +212,7 @@ export function defineWlmRoutes(router: IRouter) {
           path: `/_wlm/workload_group/${name}`,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (e: any) {
         console.error(`Failed to delete workload group '${request.params.name}':`, e);
         return response.internalError({
@@ -244,7 +244,7 @@ export function defineWlmRoutes(router: IRouter) {
           path: `/_wlm/stats/${workloadGroupId}`,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (error: any) {
         console.error(
           `Failed to fetch WLM stats for group ${request.params.workloadGroupId}:`,
@@ -255,26 +255,6 @@ export function defineWlmRoutes(router: IRouter) {
           body: {
             message: `Failed to fetch WLM stats for group ${request.params.workloadGroupId}: ${error.message}`,
           },
-        });
-      }
-    }
-  );
-
-  // Get all node IDs (used for node selection dropdown)
-  router.get(
-    {
-      path: '/api/_wlm_proxy/_nodes',
-      validate: false,
-    },
-    async (context, request, response) => {
-      const esClient = context.core.opensearch.client.asCurrentUser;
-      try {
-        const result = await esClient.nodes.info();
-        return response.ok({ body: result });
-      } catch (e) {
-        return response.customError({
-          statusCode: e.statusCode || 500,
-          body: e.message,
         });
       }
     }
@@ -309,7 +289,7 @@ export function defineWlmRoutes(router: IRouter) {
           },
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (error: any) {
         console.error(`Failed to create index rule:`, error);
         return response.custom({
@@ -335,7 +315,7 @@ export function defineWlmRoutes(router: IRouter) {
           path: '/_rules/workload_group',
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (e: any) {
         console.error('Failed to fetch index rules:', e);
         return response.internalError({
@@ -365,7 +345,7 @@ export function defineWlmRoutes(router: IRouter) {
           path: `/_rules/workload_group/${ruleId}`,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (e: any) {
         console.error(`Failed to delete index rule ${ruleId}:`, e);
         return response.internalError({
@@ -401,7 +381,7 @@ export function defineWlmRoutes(router: IRouter) {
           body,
         });
 
-        return response.ok({ body: result });
+        return response.ok({ body: result.body });
       } catch (error) {
         console.error('Error updating rule:', error);
         return response.customError({
