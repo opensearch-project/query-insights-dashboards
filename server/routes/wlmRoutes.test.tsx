@@ -15,605 +15,723 @@ const expectNoMeta = (body: any) => {
 };
 
 describe.each<[boolean]>([[true], [false]])(
-    'defineWlmRoutes (dataSourceEnabled=%s)',
-    (dataSourceEnabled) => {
-      let REG: Record<string, Handler>;
-      let router: any;
+  'defineWlmRoutes (dataSourceEnabled=%s)',
+  (dataSourceEnabled) => {
+    let REG: Record<string, Handler>;
+    let router: any;
 
-      const makeRouter = () => {
-        const reg: Record<string, Handler> = {};
-        const r = {
-          get: jest.fn((cfg: any, h: Handler) => {
-            reg[`GET ${cfg.path}`] = h;
-          }),
-          put: jest.fn((cfg: any, h: Handler) => {
-            reg[`PUT ${cfg.path}`] = h;
-          }),
-          delete: jest.fn((cfg: any, h: Handler) => {
-            reg[`DELETE ${cfg.path}`] = h;
-          }),
-        } as any;
-        return { reg, r };
-      };
+    const makeRouter = () => {
+      const reg: Record<string, Handler> = {};
+      const r = {
+        get: jest.fn((cfg: any, h: Handler) => {
+          reg[`GET ${cfg.path}`] = h;
+        }),
+        put: jest.fn((cfg: any, h: Handler) => {
+          reg[`PUT ${cfg.path}`] = h;
+        }),
+        delete: jest.fn((cfg: any, h: Handler) => {
+          reg[`DELETE ${cfg.path}`] = h;
+        }),
+      } as any;
+      return { reg, r };
+    };
 
-      const makeCtx = () => {
-        const mockWlmCall = jest.fn();
-        const mockDsCallAPI = jest.fn();
-        const mockDsGetSettings = jest.fn();
-        const mockCoreGetSettings = jest.fn();
+    const makeCtx = () => {
+      const mockWlmCall = jest.fn();
+      const mockDsCallAPI = jest.fn();
+      const mockDsGetSettings = jest.fn();
+      const mockCoreGetSettings = jest.fn();
 
-        const ctx = {
-          // Core/plugin client (your current implementation)
-          wlm_plugin: {
-            wlmClient: {
-              asScoped: jest.fn(() => ({
-                // usage: const client = asScoped(request).callAsCurrentUser; client('wlm.getStats', params?)
-                callAsCurrentUser: mockWlmCall,
+      const ctx = {
+        wlm_plugin: {
+          wlmClient: {
+            asScoped: jest.fn(() => ({ callAsCurrentUser: mockWlmCall })),
+          },
+        },
+        dataSource: {
+          opensearch: {
+            legacy: {
+              getClient: jest.fn(() => ({
+                callAPI: mockDsCallAPI,
+                cluster: { getSettings: mockDsGetSettings },
               })),
             },
           },
-
-          // Data source legacy client
-          dataSource: {
-            opensearch: {
-              legacy: {
-                getClient: jest.fn(() => ({
-                  callAPI: mockDsCallAPI,
-                  cluster: { getSettings: mockDsGetSettings },
-                })),
-              },
+        },
+        core: {
+          opensearch: {
+            client: {
+              asInternalUser: { cluster: { getSettings: mockCoreGetSettings } },
             },
           },
-
-          // Thresholds (core/internal client)
-          core: {
-            opensearch: {
-              client: {
-                asInternalUser: { cluster: { getSettings: mockCoreGetSettings } },
-              },
-            },
-          },
-
-          queryInsights: { logger: { error: jest.fn() } },
-        };
-
-        return {
-          ctx,
-          mockWlmCall,
-          mockDsCallAPI,
-          mockDsGetSettings,
-          mockCoreGetSettings,
-        };
+        },
+        queryInsights: { logger: { error: jest.fn() } },
       };
 
-      const makeRes = () => ({
-        ok: jest.fn(),
-        custom: jest.fn(),
-        customError: jest.fn(),
-        internalError: jest.fn(),
-      });
+      return { ctx, mockWlmCall, mockDsCallAPI, mockDsGetSettings, mockCoreGetSettings };
+    };
 
-      beforeEach(() => {
-        jest.resetAllMocks();
-        const { reg, r } = makeRouter();
-        REG = reg;
-        router = r;
-        defineWlmRoutes(router, dataSourceEnabled);
-      });
+    const makeRes = () => ({
+      ok: jest.fn(),
+      custom: jest.fn(),
+      customError: jest.fn(),
+      internalError: jest.fn(),
+    });
 
-      //
-      // /api/_wlm/stats
-      //
-      test('GET /api/_wlm/stats — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/stats'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+    beforeEach(() => {
+      jest.resetAllMocks();
+      const { reg, r } = makeRouter();
+      REG = reg;
+      router = r;
+      defineWlmRoutes(router, dataSourceEnabled);
+    });
 
-        // Case A: choose branch based on dsEnabled + query.dataSourceId
-        if (dataSourceEnabled) {
-          // DS branch when dataSourceId is present
-          mockDsCallAPI.mockResolvedValue({ nodes: { n2: {} } });
-          await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getStats', {});
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ nodes: { n2: {} } });
-          expectNoMeta(payload);
+    //
+    // 1) GET /api/_wlm/stats
+    //
+    test('GET /api/_wlm/stats (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/stats'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
 
-          // Core/plugin branch when no dataSourceId
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ nodes: { n1: {} } });
-          await handler(ctx, { query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getStats');
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ nodes: { n1: {} } });
-          expectNoMeta(payload);
-        } else {
-          // When dsEnabled=false, always core/plugin branch (ignore dataSourceId if passed)
-          mockWlmCall.mockResolvedValue({ nodes: { n1: {} } });
-          await handler(ctx, { query: { dataSourceId: 'ds-ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getStats');
-          expect(ctx.dataSource.opensearch.legacy.getClient).not.toHaveBeenCalled();
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ nodes: { n1: {} } });
-          expectNoMeta(payload);
-        }
-      });
+      mockDsCallAPI.mockResolvedValue({ nodes: { n2: {} } });
+      mockWlmCall.mockResolvedValue({ nodes: { n1: {} } });
 
-      //
-      // /api/_wlm/{nodeId}/stats
-      //
-      test('GET /api/_wlm/{nodeId}/stats — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/{nodeId}/stats'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
 
-        if (dataSourceEnabled) {
-          // DS branch
-          mockDsCallAPI.mockResolvedValue({ node: 'def', stats: {} });
-          await handler(ctx, { params: { nodeId: 'def' }, query: { dataSourceId: 'ds-x' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-x');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getNodeStats', { nodeId: 'def' });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ node: 'def', stats: {} });
-          expectNoMeta(payload);
+      const expectedDsCalls = dataSourceEnabled ? [['wlm.getStats', {}]] : [];
+      const expectedCoreCalls = dataSourceEnabled ? [] : [['wlm.getStats']];
 
-          // Core/plugin branch
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ node: 'abc', stats: {} });
-          await handler(ctx, { params: { nodeId: 'abc' }, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getNodeStats', { nodeId: 'abc' });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ node: 'abc', stats: {} });
-          expectNoMeta(payload);
-        } else {
-          // Always core/plugin
-          mockWlmCall.mockResolvedValue({ node: 'abc', stats: {} });
-          await handler(ctx, { params: { nodeId: 'abc' }, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getNodeStats', { nodeId: 'abc' });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ node: 'abc', stats: {} });
-          expectNoMeta(payload);
-        }
-      });
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(expectedDsCalls);
+      expect(mockWlmCall.mock.calls).toEqual(expectedCoreCalls);
 
-      //
-      // /api/_wlm/workload_group (list)
-      //
-      test('GET /api/_wlm/workload_group — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/workload_group'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      const expectedPayload = dataSourceEnabled ? { nodes: { n2: {} } } : { nodes: { n1: {} } };
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual(expectedPayload);
+      expectNoMeta(body);
+    });
 
-        if (dataSourceEnabled) {
-          // DS
-          mockDsCallAPI.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getWorkloadGroups', {});
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          expectNoMeta(payload);
+    test('GET /api/_wlm/stats (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/stats'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
 
-          // Core/plugin
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          await handler(ctx, { query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroups');
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          await handler(ctx, { query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroups');
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
-          expectNoMeta(payload);
-        }
-      });
+      mockWlmCall.mockResolvedValue({ nodes: { n1: {} } });
 
-      //
-      // /api/_wlm/workload_group/{name} (get one)
-      //
-      test('GET /api/_wlm/workload_group/{name} — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/workload_group/{name}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      await handler(ctx, { query: {} }, res);
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          await handler(ctx, { params: { name: 'G1' }, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getWorkloadGroup', { name: 'G1' });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          expectNoMeta(payload);
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getStats']]);
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          await handler(ctx, { params: { name: 'G1' }, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroup', { name: 'G1' });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          await handler(ctx, { params: { name: 'G1' }, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroup', { name: 'G1' });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
-          expectNoMeta(payload);
-        }
-      });
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ nodes: { n1: {} } });
+      expectNoMeta(body);
+    });
 
-      //
-      // Create workload group
-      //
-      test('PUT /api/_wlm/workload_group — branch selection and payload', async () => {
-        const handler = REG['PUT /api/_wlm/workload_group'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
-        const body = { name: 'g', resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+    //
+    // 2) GET /api/_wlm/{nodeId}/stats
+    //
+    test('GET /api/_wlm/{nodeId}/stats (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/{nodeId}/stats'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { nodeId: 'node-1' };
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ acknowledged: true, id: 'g' });
-          await handler(ctx, { body, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.createWorkloadGroup', { body });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true, id: 'g' });
-          expectNoMeta(payload);
+      mockDsCallAPI.mockResolvedValue({ node: 'node-1', stats: {} });
+      mockWlmCall.mockResolvedValue({ node: 'node-1', stats: {} });
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ acknowledged: true, id: 'g' });
-          await handler(ctx, { body, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.createWorkloadGroup', { body });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true, id: 'g' });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ acknowledged: true, id: 'g' });
-          await handler(ctx, { body, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.createWorkloadGroup', { body });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true, id: 'g' });
-          expectNoMeta(payload);
-        }
-      });
+      await handler(ctx, { params, query: { dataSourceId: 'ds-x' } }, res);
 
-      //
-      // Update workload group
-      //
-      test('PUT /api/_wlm/workload_group/{name} — branch selection and payload', async () => {
-        const handler = REG['PUT /api/_wlm/workload_group/{name}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
-        const body = { resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-x']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.getNodeStats', params]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.getNodeStats', params]]
+      );
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ updated: true });
-          await handler(ctx, { params: { name: 'g' }, body, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.updateWorkloadGroup', {
-            name: 'g',
-            body,
-          });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ node: 'node-1', stats: {} });
+      expectNoMeta(body);
+    });
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ updated: true });
-          await handler(ctx, { params: { name: 'g' }, body, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.updateWorkloadGroup', { name: 'g', body });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ updated: true });
-          await handler(ctx, { params: { name: 'g' }, body, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.updateWorkloadGroup', { name: 'g', body });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
-        }
-      });
+    test('GET /api/_wlm/{nodeId}/stats (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/{nodeId}/stats'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { nodeId: 'node-2' };
 
-      //
-      // Delete workload group
-      //
-      test('DELETE /api/_wlm/workload_group/{name} — branch selection and payload', async () => {
-        const handler = REG['DELETE /api/_wlm/workload_group/{name}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      mockWlmCall.mockResolvedValue({ node: 'node-2', stats: {} });
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { name: 'g' }, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.deleteWorkloadGroup', { name: 'g' });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
+      await handler(ctx, { params, query: {} }, res);
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { name: 'g' }, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.deleteWorkloadGroup', { name: 'g' });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { name: 'g' }, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.deleteWorkloadGroup', { name: 'g' });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
-        }
-      });
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getNodeStats', params]]);
 
-      //
-      // Workload group stats
-      //
-      test('GET /api/_wlm/stats/{workloadGroupId} — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/stats/{workloadGroupId}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ node: 'node-2', stats: {} });
+      expectNoMeta(body);
+    });
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ id: 'wg-1', stats: {} });
-          await handler(
-              ctx,
-              { params: { workloadGroupId: 'wg-1' }, query: { dataSourceId: 'ds-1' } },
-              res
-          );
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getWorkloadGroupStats', {
-            workloadGroupId: 'wg-1',
-          });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ id: 'wg-1', stats: {} });
-          expectNoMeta(payload);
+    //
+    // 3) GET /api/_wlm/workload_group
+    //
+    test('GET /api/_wlm/workload_group (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ id: 'wg-1', stats: {} });
-          await handler(ctx, { params: { workloadGroupId: 'wg-1' }, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroupStats', {
-            workloadGroupId: 'wg-1',
-          });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ id: 'wg-1', stats: {} });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ id: 'wg-1', stats: {} });
-          await handler(
-              ctx,
-              { params: { workloadGroupId: 'wg-1' }, query: { dataSourceId: 'ignored' } },
-              res
-          );
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getWorkloadGroupStats', {
-            workloadGroupId: 'wg-1',
-          });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ id: 'wg-1', stats: {} });
-          expectNoMeta(payload);
-        }
-      });
+      mockDsCallAPI.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
+      mockWlmCall.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
 
-      //
-      // Create rule
-      //
-      test('PUT /api/_rules/workload_group — branch selection and payload', async () => {
-        const handler = REG['PUT /api/_rules/workload_group'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
-        const body = { description: 'd', index_pattern: ['logs-*'], workload_group: 'g' };
+      await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ created: true, ruleId: 'r1' });
-          await handler(ctx, { body, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.createRule', { body });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ created: true, ruleId: 'r1' });
-          expectNoMeta(payload);
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.getWorkloadGroups', {}]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(dataSourceEnabled ? [] : [['wlm.getWorkloadGroups']]);
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ created: true, ruleId: 'r1' });
-          await handler(ctx, { body, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.createRule', { body });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ created: true, ruleId: 'r1' });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ created: true, ruleId: 'r1' });
-          await handler(ctx, { body, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.createRule', { body });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ created: true, ruleId: 'r1' });
-          expectNoMeta(payload);
-        }
-      });
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
+      expectNoMeta(body);
+    });
 
-      //
-      // Get rules
-      //
-      test('GET /api/_rules/workload_group — branch selection and payload', async () => {
-        const handler = REG['GET /api/_rules/workload_group'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+    test('GET /api/_wlm/workload_group (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ rules: [] });
-          await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.getRules', {});
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ rules: [] });
-          expectNoMeta(payload);
+      mockWlmCall.mockResolvedValue({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ rules: [] });
-          await handler(ctx, { query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getRules');
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ rules: [] });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ rules: [] });
-          await handler(ctx, { query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.getRules');
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ rules: [] });
-          expectNoMeta(payload);
-        }
-      });
+      await handler(ctx, { query: {} }, res);
 
-      //
-      // Delete rule
-      //
-      test('DELETE /api/_rules/workload_group/{ruleId} — branch selection and payload', async () => {
-        const handler = REG['DELETE /api/_rules/workload_group/{ruleId}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getWorkloadGroups']]);
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { ruleId: 'r1' }, query: { dataSourceId: 'ds-1' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.deleteRule', { ruleId: 'r1' });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ workload_groups: [{ name: 'DEFAULT_WORKLOAD_GROUP' }] });
+      expectNoMeta(body);
+    });
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { ruleId: 'r1' }, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.deleteRule', { ruleId: 'r1' });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ acknowledged: true });
-          await handler(ctx, { params: { ruleId: 'r1' }, query: { dataSourceId: 'ignored' } }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.deleteRule', { ruleId: 'r1' });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ acknowledged: true });
-          expectNoMeta(payload);
-        }
-      });
+    //
+    // 4) GET /api/_wlm/workload_group/{name}
+    //
+    test('GET /api/_wlm/workload_group/{name} (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'G1' };
 
-      //
-      // Update rule
-      //
-      test('PUT /api/_rules/workload_group/{ruleId} — branch selection and payload', async () => {
-        const handler = REG['PUT /api/_rules/workload_group/{ruleId}'];
-        const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
-        const res = makeRes();
-        const body = { description: 'd', index_pattern: ['a*'], workload_group: 'g' };
+      mockDsCallAPI.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
+      mockWlmCall.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
 
-        if (dataSourceEnabled) {
-          mockDsCallAPI.mockResolvedValue({ updated: true });
-          await handler(
-              ctx,
-              { params: { ruleId: 'r1' }, body, query: { dataSourceId: 'ds-1' } },
-              res
-          );
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-1');
-          expect(mockDsCallAPI).toHaveBeenCalledWith('wlm.updateRule', { ruleId: 'r1', body });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
+      await handler(ctx, { params, query: { dataSourceId: 'ds-1' } }, res);
 
-          res.ok.mockClear();
-          mockWlmCall.mockResolvedValue({ updated: true });
-          await handler(ctx, { params: { ruleId: 'r1' }, body, query: {} }, res);
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.updateRule', { ruleId: 'r1', body });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
-        } else {
-          mockWlmCall.mockResolvedValue({ updated: true });
-          await handler(
-              ctx,
-              { params: { ruleId: 'r1' }, body, query: { dataSourceId: 'ignored' } },
-              res
-          );
-          expect(mockWlmCall).toHaveBeenCalledWith('wlm.updateRule', { ruleId: 'r1', body });
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ updated: true });
-          expectNoMeta(payload);
-        }
-      });
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.getWorkloadGroup', params]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.getWorkloadGroup', params]]
+      );
 
-      //
-      // Thresholds
-      //
-      test('GET /api/_wlm/thresholds — branch selection and payload', async () => {
-        const handler = REG['GET /api/_wlm/thresholds'];
-        const { ctx, mockCoreGetSettings, mockDsGetSettings } = makeCtx();
-        const res = makeRes();
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
+      expectNoMeta(body);
+    });
 
-        if (dataSourceEnabled) {
-          // DS when dataSourceId present
-          mockDsGetSettings.mockResolvedValue({
-            body: {
-              persistent: {
-                wlm: {
-                  workload_group: {
-                    node: { cpu_rejection_threshold: '0.7', memory_rejection_threshold: '0.5' },
-                  },
-                },
+    test('GET /api/_wlm/workload_group/{name} (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'G1' };
+
+      mockWlmCall.mockResolvedValue({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
+
+      await handler(ctx, { params, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getWorkloadGroup', params]]);
+
+      const body = res.ok.mock.calls[0][0].body;
+      expect(body).toEqual({ name: 'G1', resource_limits: { cpu: 0, memory: 0 } });
+      expectNoMeta(body);
+    });
+
+    //
+    // 5) PUT /api/_wlm/workload_group
+    //
+    test('PUT /api/_wlm/workload_group (with dataSourceId)', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const bodyIn = { name: 'g', resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+
+      mockDsCallAPI.mockResolvedValue({ acknowledged: true, id: 'g' });
+      mockWlmCall.mockResolvedValue({ acknowledged: true, id: 'g' });
+
+      await handler(ctx, { body: bodyIn, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.createWorkloadGroup', { body: bodyIn }]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.createWorkloadGroup', { body: bodyIn }]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true, id: 'g' });
+      expectNoMeta(payload);
+    });
+
+    test('PUT /api/_wlm/workload_group (no dataSourceId)', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const bodyIn = { name: 'g', resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+
+      mockWlmCall.mockResolvedValue({ acknowledged: true, id: 'g' });
+
+      await handler(ctx, { body: bodyIn, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.createWorkloadGroup', { body: bodyIn }]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true, id: 'g' });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 6) PUT /api/_wlm/workload_group/{name}
+    //
+    test('PUT /api/_wlm/workload_group/{name} (with dataSourceId)', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'g' };
+      const bodyIn = { resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+
+      mockDsCallAPI.mockResolvedValue({ updated: true });
+      mockWlmCall.mockResolvedValue({ updated: true });
+
+      await handler(ctx, { params, body: bodyIn, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.updateWorkloadGroup', { name: 'g', body: bodyIn }]] : []
+      );
+
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.updateWorkloadGroup', { name: 'g', body: bodyIn }]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ updated: true });
+      expectNoMeta(payload);
+    });
+
+    test('PUT /api/_wlm/workload_group/{name} (no dataSourceId)', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'g' };
+      const bodyIn = { resiliency_mode: 'soft', resource_limits: { cpu: 0, memory: 0 } };
+
+      mockWlmCall.mockResolvedValue({ updated: true });
+
+      await handler(ctx, { params, body: bodyIn, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([
+        ['wlm.updateWorkloadGroup', { name: 'g', body: bodyIn }],
+      ]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ updated: true });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 7) DELETE /api/_wlm/workload_group/{name}
+    //
+    test('DELETE /api/_wlm/workload_group/{name} (with dataSourceId)', async () => {
+      const handler = REG['DELETE /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'g' };
+
+      mockDsCallAPI.mockResolvedValue({ acknowledged: true });
+      mockWlmCall.mockResolvedValue({ acknowledged: true });
+
+      await handler(ctx, { params, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.deleteWorkloadGroup', params]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.deleteWorkloadGroup', params]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true });
+      expectNoMeta(payload);
+    });
+
+    test('DELETE /api/_wlm/workload_group/{name} (no dataSourceId)', async () => {
+      const handler = REG['DELETE /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'g' };
+
+      mockWlmCall.mockResolvedValue({ acknowledged: true });
+
+      await handler(ctx, { params, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.deleteWorkloadGroup', params]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 8) GET /api/_wlm/stats/{workloadGroupId}
+    //
+    test('GET /api/_wlm/stats/{workloadGroupId} (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/stats/{workloadGroupId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { workloadGroupId: 'wg-1' };
+
+      mockDsCallAPI.mockResolvedValue({ id: 'wg-1', stats: {} });
+      mockWlmCall.mockResolvedValue({ id: 'wg-1', stats: {} });
+
+      await handler(ctx, { params, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.getWorkloadGroupStats', params]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.getWorkloadGroupStats', params]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ id: 'wg-1', stats: {} });
+      expectNoMeta(payload);
+    });
+
+    test('GET /api/_wlm/stats/{workloadGroupId} (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/stats/{workloadGroupId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { workloadGroupId: 'wg-1' };
+
+      mockWlmCall.mockResolvedValue({ id: 'wg-1', stats: {} });
+
+      await handler(ctx, { params, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getWorkloadGroupStats', params]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ id: 'wg-1', stats: {} });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 9) PUT /api/_rules/workload_group
+    //
+    test('PUT /api/_rules/workload_group (with dataSourceId)', async () => {
+      const handler = REG['PUT /api/_rules/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const bodyIn = { description: 'd', index_pattern: ['logs-*'], workload_group: 'g' };
+
+      mockDsCallAPI.mockResolvedValue({ created: true, ruleId: 'r1' });
+      mockWlmCall.mockResolvedValue({ created: true, ruleId: 'r1' });
+
+      await handler(ctx, { body: bodyIn, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.createRule', { body: bodyIn }]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.createRule', { body: bodyIn }]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ created: true, ruleId: 'r1' });
+      expectNoMeta(payload);
+    });
+
+    test('PUT /api/_rules/workload_group (no dataSourceId)', async () => {
+      const handler = REG['PUT /api/_rules/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const bodyIn = { description: 'd', index_pattern: ['logs-*'], workload_group: 'g' };
+
+      mockWlmCall.mockResolvedValue({ created: true, ruleId: 'r1' });
+
+      await handler(ctx, { body: bodyIn, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.createRule', { body: bodyIn }]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ created: true, ruleId: 'r1' });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 10) GET /api/_rules/workload_group
+    //
+    test('GET /api/_rules/workload_group (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_rules/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+
+      mockDsCallAPI.mockResolvedValue({ rules: [] });
+      mockWlmCall.mockResolvedValue({ rules: [] });
+
+      await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(dataSourceEnabled ? [['wlm.getRules', {}]] : []);
+      expect(mockWlmCall.mock.calls).toEqual(dataSourceEnabled ? [] : [['wlm.getRules']]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ rules: [] });
+      expectNoMeta(payload);
+    });
+
+    test('GET /api/_rules/workload_group (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_rules/workload_group'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+
+      mockWlmCall.mockResolvedValue({ rules: [] });
+
+      await handler(ctx, { query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.getRules']]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ rules: [] });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 11) DELETE /api/_rules/workload_group/{ruleId}
+    //
+    test('DELETE /api/_rules/workload_group/{ruleId} (with dataSourceId)', async () => {
+      const handler = REG['DELETE /api/_rules/workload_group/{ruleId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { ruleId: 'r1' };
+
+      mockDsCallAPI.mockResolvedValue({ acknowledged: true });
+      mockWlmCall.mockResolvedValue({ acknowledged: true });
+
+      await handler(ctx, { params, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.deleteRule', params]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(dataSourceEnabled ? [] : [['wlm.deleteRule', params]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true });
+      expectNoMeta(payload);
+    });
+
+    test('DELETE /api/_rules/workload_group/{ruleId} (no dataSourceId)', async () => {
+      const handler = REG['DELETE /api/_rules/workload_group/{ruleId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { ruleId: 'r1' };
+
+      mockWlmCall.mockResolvedValue({ acknowledged: true });
+
+      await handler(ctx, { params, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.deleteRule', params]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ acknowledged: true });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 12) PUT /api/_rules/workload_group/{ruleId}
+    //
+    test('PUT /api/_rules/workload_group/{ruleId} (with dataSourceId)', async () => {
+      const handler = REG['PUT /api/_rules/workload_group/{ruleId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { ruleId: 'r1' };
+      const bodyIn = { description: 'd', index_pattern: ['a*'], workload_group: 'g' };
+
+      mockDsCallAPI.mockResolvedValue({ updated: true });
+      mockWlmCall.mockResolvedValue({ updated: true });
+
+      await handler(ctx, { params, body: bodyIn, query: { dataSourceId: 'ds-1' } }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(
+        dataSourceEnabled ? [['wlm.updateRule', { ruleId: 'r1', body: bodyIn }]] : []
+      );
+      expect(mockWlmCall.mock.calls).toEqual(
+        dataSourceEnabled ? [] : [['wlm.updateRule', { ruleId: 'r1', body: bodyIn }]]
+      );
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ updated: true });
+      expectNoMeta(payload);
+    });
+
+    test('PUT /api/_rules/workload_group/{ruleId} (no dataSourceId)', async () => {
+      const handler = REG['PUT /api/_rules/workload_group/{ruleId}'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+      const params = { ruleId: 'r1' };
+      const bodyIn = { description: 'd', index_pattern: ['a*'], workload_group: 'g' };
+
+      mockWlmCall.mockResolvedValue({ updated: true });
+
+      await handler(ctx, { params, body: bodyIn, query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsCallAPI.mock.calls).toEqual([]);
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.updateRule', { ruleId: 'r1', body: bodyIn }]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ updated: true });
+      expectNoMeta(payload);
+    });
+
+    //
+    // 13) GET /api/_wlm/thresholds
+    //
+    test('GET /api/_wlm/thresholds (with dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/thresholds'];
+      const { ctx, mockCoreGetSettings, mockDsGetSettings } = makeCtx();
+      const res = makeRes();
+
+      mockDsGetSettings.mockResolvedValue({
+        body: {
+          persistent: {
+            wlm: {
+              workload_group: {
+                node: { cpu_rejection_threshold: '0.7', memory_rejection_threshold: '0.5' },
               },
             },
-          });
-          await handler(ctx, { query: { dataSourceId: 'ds-xyz' } }, res);
-          expect(ctx.dataSource.opensearch.legacy.getClient).toHaveBeenCalledWith('ds-xyz');
-          expect(mockDsGetSettings).toHaveBeenCalledWith({ include_defaults: true });
-          let payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ cpuRejectionThreshold: 0.7, memoryRejectionThreshold: 0.5 });
-          expectNoMeta(payload);
-
-          // Core/internal when no DS id
-          res.ok.mockClear();
-          mockCoreGetSettings.mockResolvedValue({
-            body: {
-              defaults: {
-                wlm: {
-                  workload_group: {
-                    node: { cpu_rejection_threshold: '0.9', memory_rejection_threshold: '0.6' },
-                  },
-                },
-              },
-            },
-          });
-          await handler(ctx, { query: {} }, res);
-          expect(mockCoreGetSettings).toHaveBeenCalledWith({ include_defaults: true });
-          payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ cpuRejectionThreshold: 0.9, memoryRejectionThreshold: 0.6 });
-          expectNoMeta(payload);
-        } else {
-          // Always core/internal (ignore DS id)
-          mockCoreGetSettings.mockResolvedValue({
-            body: {
-              defaults: {
-                wlm: {
-                  workload_group: {
-                    node: { cpu_rejection_threshold: '0.8', memory_rejection_threshold: '0.6' },
-                  },
-                },
-              },
-            },
-          });
-          await handler(ctx, { query: { dataSourceId: 'ignored' } }, res);
-          expect(mockCoreGetSettings).toHaveBeenCalledWith({ include_defaults: true });
-          expect(mockDsGetSettings).not.toHaveBeenCalled();
-          const payload = res.ok.mock.calls[0][0].body;
-          expect(payload).toEqual({ cpuRejectionThreshold: 0.8, memoryRejectionThreshold: 0.6 });
-          expectNoMeta(payload);
-        }
+          },
+        },
       });
-    }
+      mockCoreGetSettings.mockResolvedValue({
+        body: {
+          defaults: {
+            wlm: {
+              workload_group: {
+                node: { cpu_rejection_threshold: '0.9', memory_rejection_threshold: '0.6' },
+              },
+            },
+          },
+        },
+      });
+
+      await handler(ctx, { query: { dataSourceId: 'ds-xyz' } }, res);
+
+      // When dsEnabled=false, core is used; when true, DS is used.
+      const expectedGetClientCalls = dataSourceEnabled ? [['ds-xyz']] : [];
+      const expectedDsGetSettingsCalls = dataSourceEnabled ? [[{ include_defaults: true }]] : [];
+      const expectedCoreGetSettingsCalls = dataSourceEnabled ? [] : [[{ include_defaults: true }]];
+      const expectedPayload = dataSourceEnabled
+        ? { cpuRejectionThreshold: 0.7, memoryRejectionThreshold: 0.5 }
+        : { cpuRejectionThreshold: 0.9, memoryRejectionThreshold: 0.6 };
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(expectedGetClientCalls);
+      expect(mockDsGetSettings.mock.calls).toEqual(expectedDsGetSettingsCalls);
+      expect(mockCoreGetSettings.mock.calls).toEqual(expectedCoreGetSettingsCalls);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual(expectedPayload);
+      expectNoMeta(payload);
+    });
+
+    test('GET /api/_wlm/thresholds (no dataSourceId)', async () => {
+      const handler = REG['GET /api/_wlm/thresholds'];
+      const { ctx, mockCoreGetSettings, mockDsGetSettings } = makeCtx();
+      const res = makeRes();
+
+      mockCoreGetSettings.mockResolvedValue({
+        body: {
+          defaults: {
+            wlm: {
+              workload_group: {
+                node: { cpu_rejection_threshold: '0.8', memory_rejection_threshold: '0.6' },
+              },
+            },
+          },
+        },
+      });
+
+      await handler(ctx, { query: {} }, res);
+
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
+      expect(mockDsGetSettings.mock.calls).toEqual([]);
+      expect(mockCoreGetSettings.mock.calls).toEqual([[{ include_defaults: true }]]);
+
+      const payload = res.ok.mock.calls[0][0].body;
+      expect(payload).toEqual({ cpuRejectionThreshold: 0.8, memoryRejectionThreshold: 0.6 });
+      expectNoMeta(payload);
+    });
+  }
 );

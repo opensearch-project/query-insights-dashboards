@@ -1,7 +1,7 @@
 /*
-	  * Copyright OpenSearch Contributors
-	  * SPDX-License-Identifier: Apache-2.0
-	  */
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 export const WlmPlugin = function (Client: any, config: any, components: any) {
   const ca = components.clientAction.factory;

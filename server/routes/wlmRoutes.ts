@@ -87,7 +87,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
         }),
-      }
+      },
     },
     async (context, request, response) => {
       try {
@@ -349,7 +349,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
         }),
-      }
+      },
     },
     async (context, request, response) => {
       try {
@@ -455,7 +455,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
         }),
-      }
+      },
     },
     async (context, request, response) => {
       let body;
@@ -470,16 +470,16 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
       }
 
       const cpuThreshold =
-          body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-          body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-          body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-          '1';
+        body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+        '1';
 
       const memoryThreshold =
-          body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-          body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-          body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-          '1';
+        body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+        '1';
 
       return response.ok({
         body: {
