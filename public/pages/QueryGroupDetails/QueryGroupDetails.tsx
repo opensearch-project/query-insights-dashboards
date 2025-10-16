@@ -10,7 +10,6 @@ import Plotly from 'plotly.js-dist';
 import { useHistory, useLocation } from 'react-router-dom';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  EuiButton,
   EuiCodeBlock,
   EuiFlexGrid,
   EuiFlexGroup,
@@ -203,17 +202,6 @@ export const QueryGroupDetails = ({
                   <EuiTitle size="xs">
                     <h2>Query</h2>
                   </EuiTitle>
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiButton
-                    size="s"
-                    iconSide="right"
-                    iconType="popout"
-                    target="_blank"
-                    href="https://playground.opensearch.org/app/searchRelevance#/"
-                  >
-                    Open in search comparision
-                  </EuiButton>
                 </EuiFlexItem>
               </EuiFlexGroup>
               <EuiHorizontalRule margin="xs" />
