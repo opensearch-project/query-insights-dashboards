@@ -54,6 +54,7 @@ jobs:
       - name: Bootstrap plugin/OpenSearch-Dashboards
         run: |
           cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn cache clean --all
           yarn osd bootstrap
       - name: Run unit tests
         run: |
