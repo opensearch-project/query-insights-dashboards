@@ -50,6 +50,7 @@ import {
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -114,6 +115,7 @@ export const InflightQueries = ({
   );
 
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -136,8 +138,27 @@ export const InflightQueries = ({
   }, [core.http, dataSource?.id]);
 
   useEffect(() => {
-    detectWlm().then(setWlmAvailable);
-  }, [detectWlm]);
+    const checkWlmSupport = async () => {
+      try {
+        const version = await getVersionOnce(dataSource?.id || '');
+        const versionSupported = isVersion33OrHigher(version);
+        setWlmGroupsSupported(versionSupported);
+
+        if (versionSupported) {
+          const hasWlm = await detectWlm();
+          setWlmAvailable(hasWlm);
+        } else {
+          setWlmAvailable(false);
+        }
+      } catch (e) {
+        console.warn('Failed to check version for WLM groups support', e);
+        setWlmGroupsSupported(false);
+        setWlmAvailable(false);
+      }
+    };
+
+    checkWlmSupport();
+  }, [detectWlm, dataSource?.id]);
 
   const [workloadGroupStats, setWorkloadGroupStats] = useState<{
     total_completions: number;
@@ -146,6 +167,12 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
+    if (!wlmGroupsSupported) {
+      setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+      setWlmGroupOptions([]);
+      return {};
+    }
+
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
@@ -347,7 +374,7 @@ export const InflightQueries = ({
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [tableQuery, setTableQuery] = useState('');
-  const [tableFilters, setTableFilters] = useState([]);
+  const [_tableFilters, setTableFilters] = useState([]);
 
   const formatTime = (seconds: number): string => {
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
@@ -484,39 +511,40 @@ export const InflightQueries = ({
       <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="center" gutterSize="m" justifyContent="spaceBetween">
         {/* LEFT: WLM status + optional selector */}
-
-        <EuiFlexGroup gutterSize="none" alignItems="center">
-          <EuiBadge
-            color="default"
-            style={{
-              padding: '6px 12px',
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              fontWeight: 'bold',
-            }}
-          >
-            Workload group
-          </EuiBadge>
-          <EuiFlexItem grow={false}>
-            <EuiSelect
-              id="wlm-group-select"
-              options={[
-                { value: '', text: ALL_WORKLOAD_GROUPS_TEXT },
-                ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
-              ]}
-              value={wlmGroupId ?? ''}
-              onChange={(e) => {
-                const value = e.target.value || undefined;
-                setWlmGroupId(value);
+        {wlmGroupsSupported ? (
+          <EuiFlexGroup gutterSize="none" alignItems="center">
+            <EuiBadge
+              color="default"
+              style={{
+                padding: '6px 12px',
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                fontWeight: 'bold',
               }}
-              aria-label="Workload group selector"
-              compressed
-            />
-          </EuiFlexItem>
-        </EuiFlexGroup>
-
-        {/* </EuiFlexGroup>*/}
+            >
+              Workload group
+            </EuiBadge>
+            <EuiFlexItem grow={false}>
+              <EuiSelect
+                id="wlm-group-select"
+                options={[
+                  { value: '', text: ALL_WORKLOAD_GROUPS_TEXT },
+                  ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
+                ]}
+                value={wlmGroupId ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value || undefined;
+                  setWlmGroupId(value);
+                }}
+                aria-label="Workload group selector"
+                compressed
+              />
+            </EuiFlexItem>
+          </EuiFlexGroup>
+        ) : (
+          <EuiFlexItem />
+        )}
 
         {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>
@@ -787,47 +815,49 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      <EuiFlexGroup>
-        {/* WLM Group Stats Panels */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiTextAlign textAlign="center">
-              <EuiText size="s">
-                <p>Total completions</p>
-              </EuiText>
-              <EuiTitle size="l">
-                <h2>{workloadGroupStats.total_completions}</h2>
-              </EuiTitle>
-            </EuiTextAlign>
-          </EuiPanel>
-        </EuiFlexItem>
+      {wlmGroupsSupported && (
+        <EuiFlexGroup>
+          {/* WLM Group Stats Panels */}
+          <EuiFlexItem>
+            <EuiPanel paddingSize="m">
+              <EuiTextAlign textAlign="center">
+                <EuiText size="s">
+                  <p>Total completions</p>
+                </EuiText>
+                <EuiTitle size="l">
+                  <h2>{workloadGroupStats.total_completions}</h2>
+                </EuiTitle>
+              </EuiTextAlign>
+            </EuiPanel>
+          </EuiFlexItem>
 
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiTextAlign textAlign="center">
-              <EuiText size="s">
-                <p>Total cancellations</p>
-              </EuiText>
-              <EuiTitle size="l">
-                <h2>{workloadGroupStats.total_cancellations}</h2>
-              </EuiTitle>
-            </EuiTextAlign>
-          </EuiPanel>
-        </EuiFlexItem>
+          <EuiFlexItem>
+            <EuiPanel paddingSize="m">
+              <EuiTextAlign textAlign="center">
+                <EuiText size="s">
+                  <p>Total cancellations</p>
+                </EuiText>
+                <EuiTitle size="l">
+                  <h2>{workloadGroupStats.total_cancellations}</h2>
+                </EuiTitle>
+              </EuiTextAlign>
+            </EuiPanel>
+          </EuiFlexItem>
 
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiTextAlign textAlign="center">
-              <EuiText size="s">
-                <p>Total rejections</p>
-              </EuiText>
-              <EuiTitle size="l">
-                <h2>{workloadGroupStats.total_rejections}</h2>
-              </EuiTitle>
-            </EuiTextAlign>
-          </EuiPanel>
-        </EuiFlexItem>
-      </EuiFlexGroup>
+          <EuiFlexItem>
+            <EuiPanel paddingSize="m">
+              <EuiTextAlign textAlign="center">
+                <EuiText size="s">
+                  <p>Total rejections</p>
+                </EuiText>
+                <EuiTitle size="l">
+                  <h2>{workloadGroupStats.total_rejections}</h2>
+                </EuiTitle>
+              </EuiTextAlign>
+            </EuiPanel>
+          </EuiFlexItem>
+        </EuiFlexGroup>
+      )}
 
       <EuiSpacer size="m" />
       <EuiPanel paddingSize="m">
@@ -842,32 +872,35 @@ export const InflightQueries = ({
               placeholder: 'Search queries',
               schema: false,
             },
-            filters: tableFilters,
-            toolsLeft: selectedItems.length > 0 && [
-              <EuiButton
-                key="delete-button"
-                color="danger"
-                iconType="trash"
-                disabled={selectedItems.length === 0}
-                onClick={async () => {
-                  const httpClient = dataSource?.id
-                    ? depsStart.data.dataSources.get(dataSource.id)
-                    : core.http;
+            toolsLeft:
+              selectedItems.length > 0
+                ? [
+                    <EuiButton
+                      key="delete-button"
+                      color="danger"
+                      iconType="trash"
+                      disabled={selectedItems.length === 0}
+                      onClick={async () => {
+                        const httpClient = dataSource?.id
+                          ? depsStart.data.dataSources.get(dataSource.id)
+                          : core.http;
 
-                  await Promise.allSettled(
-                    selectedItems.map((item) =>
-                      httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
-                        () => ({ status: 'fulfilled', id: item.id }),
-                        (err) => ({ status: 'rejected', id: item.id, error: err })
-                      )
-                    )
-                  );
-                  setSelectedItems([]);
-                }}
-              >
-                Cancel {selectedItems.length} {selectedItems.length !== 1 ? 'queries' : 'query'}
-              </EuiButton>,
-            ],
+                        await Promise.allSettled(
+                          selectedItems.map((item) =>
+                            httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
+                              () => ({ status: 'fulfilled', id: item.id }),
+                              (err) => ({ status: 'rejected', id: item.id, error: err })
+                            )
+                          )
+                        );
+                        setSelectedItems([]);
+                      }}
+                    >
+                      Cancel {selectedItems.length}{' '}
+                      {selectedItems.length !== 1 ? 'queries' : 'query'}
+                    </EuiButton>,
+                  ]
+                : undefined,
             toolsRight: [
               <EuiButton
                 key="refresh-button"
@@ -951,34 +984,38 @@ export const InflightQueries = ({
                 ),
             },
 
-            {
-              name: 'WLM Group',
-              render: (item: any) => {
-                if (!item.wlm_group || item.wlm_group === 'N/A') {
-                  return 'N/A';
-                }
+            ...(wlmGroupsSupported
+              ? [
+                  {
+                    name: 'WLM Group',
+                    render: (item: any) => {
+                      if (!item.wlm_group || item.wlm_group === 'N/A') {
+                        return 'N/A';
+                      }
 
-                const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
+                      const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
 
-                if (wlmAvailable) {
-                  return (
-                    <EuiLink
-                      onClick={() => {
-                        core.application.navigateToApp('workloadManagement', {
-                          path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
-                        });
-                      }}
-                      color="primary"
-                    >
-                      {displayName} <EuiIcon type="popout" size="s" />
-                    </EuiLink>
-                  );
-                }
+                      if (wlmAvailable) {
+                        return (
+                          <EuiLink
+                            onClick={() => {
+                              core.application.navigateToApp('workloadManagement', {
+                                path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                              });
+                            }}
+                            color="primary"
+                          >
+                            {displayName} <EuiIcon type="popout" size="s" />
+                          </EuiLink>
+                        );
+                      }
 
-                // Plugin not available → simple text
-                return <span>{displayName}</span>;
-              },
-            },
+                      // Plugin not available → simple text
+                      return <span>{displayName}</span>;
+                    },
+                  },
+                ]
+              : []),
 
             {
               name: 'Actions',

@@ -10,10 +10,12 @@ import { MemoryRouter } from 'react-router-dom';
 import TopNQueries, { QUERY_INSIGHTS, CONFIGURATION } from './TopNQueries';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { getVersionOnce } from '../../utils/version-utils';
 
 jest.mock('../QueryInsights/QueryInsights', () => () => <div>Mocked QueryInsights</div>);
 jest.mock('../Configuration/Configuration', () => () => <div>Mocked Configuration</div>);
 jest.mock('../QueryDetails/QueryDetails', () => () => <div>Mocked QueryDetails</div>);
+jest.mock('../../utils/version-utils');
 
 const mockCore = ({
   http: {
@@ -68,6 +70,7 @@ const renderTopNQueries = (type: string) =>
 describe('TopNQueries Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.1.0');
   });
 
   it('renders and switches tabs correctly', () => {
