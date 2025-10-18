@@ -122,19 +122,6 @@ describe('QueryDetails component', () => {
     });
   });
 
-  it('renders the search comparison button', async () => {
-    renderQueryDetails();
-
-    await waitFor(() => {
-      const button = screen.getByText('Open in search comparison');
-      expect(button).toBeInTheDocument();
-      expect(button.closest('a')).toHaveAttribute(
-        'href',
-        'https://playground.opensearch.org/app/searchRelevance#/'
-      );
-    });
-  });
-
   it('matches snapshot', async () => {
     const { container } = renderQueryDetails();
 

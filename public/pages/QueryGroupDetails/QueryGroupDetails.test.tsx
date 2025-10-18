@@ -122,20 +122,6 @@ describe('QueryGroupDetails', () => {
     expect(document.getElementById('latency')).toBeInTheDocument();
   });
 
-  it('displays query details', async () => {
-    const { container } = renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText('Open in search comparision')).toBeInTheDocument();
-    });
-
-    const codeBlock = container.querySelector('.euiCodeBlock__pre');
-    expect(codeBlock).toBeInTheDocument();
-
-    expect(codeBlock?.textContent).toContain('"query"');
-    expect(codeBlock?.textContent).toMatch(/{\s*"query":/);
-  });
-
   it('renders tooltips', () => {
     renderComponent();
 

@@ -7,7 +7,6 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
-  EuiButton,
   EuiCodeBlock,
   EuiFlexGrid,
   EuiFlexGroup,
@@ -172,17 +171,6 @@ const QueryDetails = ({
                   <EuiTitle size="s">
                     <h2>Query</h2>
                   </EuiTitle>
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiButton
-                    size="s"
-                    iconSide="right"
-                    iconType="popout"
-                    target="_blank"
-                    href="https://playground.opensearch.org/app/searchRelevance#/"
-                  >
-                    Open in search comparison
-                  </EuiButton>
                 </EuiFlexItem>
               </EuiFlexGroup>
               <EuiHorizontalRule margin="xs" />
