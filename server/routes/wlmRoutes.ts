@@ -286,18 +286,6 @@ export function defineWlmRoutes(router: IRouter) {
         const workloadGroup = request.body.workload_group;
         const principal = request.body.principal;
 
-        const hasAny =
-          (indexPattern?.length ?? 0) > 0 ||
-          (principal?.username?.length ?? 0) > 0 ||
-          (principal?.role?.length ?? 0) > 0;
-
-        if (!hasAny) {
-          return response.badRequest({
-            body:
-              'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
-          });
-        }
-
         const result = await client.transport.request({
           method: 'PUT',
           path: '/_rules/workload_group',
@@ -399,22 +387,6 @@ export function defineWlmRoutes(router: IRouter) {
     async (context, request, response) => {
       const { ruleId } = request.params;
       const body = request.body;
-      const { principal, indexPattern } = body as any;
-
-      const hasAny =
-        (indexPattern?.length ?? 0) > 0 ||
-        (principal?.username?.length ?? 0) > 0 ||
-        (principal?.role?.length ?? 0) > 0;
-
-      if (!hasAny) {
-        return response.custom({
-          statusCode: 400,
-          body: {
-            message:
-              'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
-          },
-        });
-      }
 
       try {
         const result = await context.core.opensearch.client.asCurrentUser.transport.request({
