@@ -118,4 +118,12 @@ export const WlmPlugin = function (Client: any, config: any, components: any) {
     method: 'PUT',
     needBody: true,
   });
+
+  // Get node level cpu and memory threshold
+  wlm.getThresholds = ca({
+    url: { fmt: '/_cluster/settings' },
+    method: 'GET',
+    needBody: false,
+    qs: ['include_defaults'],
+  });
 };

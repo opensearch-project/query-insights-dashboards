@@ -458,35 +458,44 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
       },
     },
     async (context, request, response) => {
-      let body;
-      if (!dataSourceEnabled || !request.query?.dataSourceId) {
-        const esClient = context.core.opensearch.client.asInternalUser;
-        const result = await esClient.cluster.getSettings({ include_defaults: true });
-        body = result.body;
-      } else {
-        const esClient = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
-        const result = await esClient.cluster.getSettings({ include_defaults: true });
-        body = result.body;
+      try {
+        let body;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          body = await client('wlm.getThresholds', { include_defaults: true });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          body = await client.callAPI('wlm.getThresholds', { include_defaults: true });
+        }
+
+        const cpuThreshold =
+          body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          '1';
+
+        const memoryThreshold =
+          body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          '1';
+
+        return response.ok({
+          body: {
+            cpuRejectionThreshold: parseFloat(cpuThreshold),
+            memoryRejectionThreshold: parseFloat(memoryThreshold),
+          },
+        });
+      } catch (e: any) {
+        const status = e?.meta?.statusCode ?? e?.statusCode ?? e?.status ?? 500;
+        const message =
+          e?.meta?.body?.error?.reason ??
+          e?.meta?.body?.message ??
+          e?.body?.message ??
+          e?.message ??
+          'Unexpected error';
+        return response.customError({ statusCode: status, body: { message } });
       }
-
-      const cpuThreshold =
-        body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-        body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-        body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
-        '1';
-
-      const memoryThreshold =
-        body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-        body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-        body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
-        '1';
-
-      return response.ok({
-        body: {
-          cpuRejectionThreshold: parseFloat(cpuThreshold),
-          memoryRejectionThreshold: parseFloat(memoryThreshold),
-        },
-      });
     }
   );
 }
