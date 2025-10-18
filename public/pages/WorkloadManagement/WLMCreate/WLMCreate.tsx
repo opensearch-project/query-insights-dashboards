@@ -84,8 +84,15 @@ export const WLMCreate = ({
     };
   }, []);
 
+  const splitCSV = (v?: string | null) =>
+    (v ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
   const handleCreate = async () => {
     setLoading(true);
+    const getRuleId = (res: any) => res?._id ?? res?.id;
     try {
       const resourceLimits: Record<string, number> = {};
 
@@ -116,64 +123,95 @@ export const WLMCreate = ({
         },
       });
 
-      const groupId = res?.body?._id;
-      if (groupId && rules.length > 0) {
-        await Promise.all(
-          rules.map((rule) => {
-            const indexPattern = rule.index
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean);
+      const groupId = res?._id;
+      const currentName = res?.name;
+      if (!groupId) throw new Error('Workload group ID missing from response');
+      const payloads = (rules ?? [])
+        .map((rule) => {
+          const indexPattern = splitCSV(rule.index);
+          const usernames = splitCSV(rule.username);
+          const roles = splitCSV(rule.role);
 
-            const usernames = rule.username
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean);
+          const hasIndexes = indexPattern.length > 0;
+          const hasUsernames = usernames.length > 0;
+          const hasRoles = roles.length > 0;
+          if (!hasIndexes && !hasUsernames && !hasRoles) return null;
 
-            const roles = rule.role
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean);
+          return {
+            description: (description || '-').trim(),
+            ...(hasUsernames || hasRoles
+              ? {
+                  principal: {
+                    ...(hasUsernames ? { username: usernames } : {}),
+                    ...(hasRoles ? { role: roles } : {}),
+                  },
+                }
+              : {}),
+            ...(hasIndexes ? { index_pattern: indexPattern } : {}),
+            workload_group: groupId,
+          };
+        })
+        .filter(Boolean) as Array<Record<string, any>>;
 
-            const hasIndexes = indexPattern.length > 0;
-            const hasUsernames = usernames.length > 0;
-            const hasRoles = roles.length > 0;
-
-            if (!hasIndexes && !hasUsernames && !hasRoles) return null;
-
-            return core.http.put('/api/_rules/workload_group', {
-              body: JSON.stringify({
-                description: (description && description.trim()) || '-',
-                ...(hasUsernames || hasRoles
-                  ? {
-                      principal: {
-                        ...(hasUsernames ? { username: usernames } : {}),
-                        ...(hasRoles ? { role: roles } : {}),
-                      },
-                    }
-                  : {}),
-                ...(hasIndexes ? { index_pattern: indexPattern } : {}),
-                workload_group: groupId,
-              }),
-              headers: { 'Content-Type': 'application/json' },
-            });
-          })
-        );
+      if (payloads.length === 0) {
+        core.notifications.toasts.addSuccess('Workload group created successfully.');
+        history.push('/workloadManagement');
+        return;
       }
+      // 3) Create rules, recording created IDs
+      const createdRuleIds: string[] = [];
+      try {
+        for (const payload of payloads) {
+          const resRule = await core.http.put('/api/_rules/workload_group', {
+            query: { dataSourceId: dataSource.id },
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const ruleId = getRuleId(resRule);
+          if (!ruleId) throw new Error('Rule ID missing from response');
+          createdRuleIds.push(ruleId);
+        }
 
-      core.notifications.toasts.addSuccess(`Workload group created successfully.`);
-      history.push('/workloadManagement');
-      return;
-    } catch (err) {
+        // 4) Success
+        core.notifications.toasts.addSuccess('Workload group and rules created successfully.');
+        history.push('/workloadManagement');
+        return;
+      } catch (ruleErr: any) {
+        // 5) Cleanup: delete any rules that were already created
+        await Promise.allSettled(
+          createdRuleIds.map((id) =>
+            core.http.delete(`/api/_rules/workload_group/${id}`, {
+              query: { dataSourceId: dataSource.id },
+            })
+          )
+        );
+
+        try {
+          await core.http.delete(`/api/_wlm/workload_group/${currentName}`, {
+            query: { dataSourceId: dataSource.id },
+          });
+        } catch (cleanupErr: any) {
+          core.notifications.toasts.addDanger({
+            title: 'Rule creation failed; group rollback also failed',
+            text: cleanupErr?.body?.message || cleanupErr?.message || 'Check server logs.',
+          });
+        }
+
+        core.notifications.toasts.addDanger({
+          title: 'Rule creation failed',
+          text:
+            ruleErr?.body?.message || ruleErr?.message || 'Rolled back created rules and group.',
+        });
+        return;
+      }
+    } catch (err: any) {
       console.error(err);
       core.notifications.toasts.addDanger({
-        title: 'Failed to create workload group',
-        text: err?.body?.message || 'Something went wrong',
+        title: 'Failed to create workload group and rules',
+        text: err?.body?.message || err?.message || 'Something went wrong',
       });
     } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+      if (isMounted.current) setLoading(false);
     }
   };
 

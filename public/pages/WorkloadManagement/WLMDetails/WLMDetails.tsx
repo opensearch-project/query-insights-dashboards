@@ -381,6 +381,49 @@ export const WLMDetails = ({
   };
 
   // === Actions ===
+  const splitCSV = (v?: string | null) =>
+    (v ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  interface RulePayload {
+    description: string;
+    workload_group: string;
+    index_pattern?: string[];
+    principal?: { username?: string[]; role?: string[] };
+  }
+
+  const buildRulePayload = (
+    currentGroupId: string,
+    rule: { index?: string | null; username?: string | null; role?: string | null },
+    currentDescription?: string | null
+  ): RulePayload | null => {
+    const indexPattern = splitCSV(rule.index);
+    const usernames = splitCSV(rule.username);
+    const roles = splitCSV(rule.role);
+
+    const hasIndexes = indexPattern.length > 0;
+    const hasUsernames = usernames.length > 0;
+    const hasRoles = roles.length > 0;
+
+    if (!hasIndexes && !hasUsernames && !hasRoles) return null; // skip blank rule
+
+    return {
+      description: (currentDescription || '-').trim(),
+      ...(hasUsernames || hasRoles
+        ? {
+            principal: {
+              ...(hasUsernames ? { username: usernames } : {}),
+              ...(hasRoles ? { role: roles } : {}),
+            },
+          }
+        : {}),
+      ...(hasIndexes ? { index_pattern: indexPattern } : {}),
+      workload_group: currentGroupId,
+    };
+  };
+
   const saveChanges = async () => {
     const validCpu = cpuLimit === undefined || (cpuLimit > 0 && cpuLimit <= 100);
     const validMem = memoryLimit === undefined || (memoryLimit > 0 && memoryLimit <= 100);
@@ -432,38 +475,8 @@ export const WLMDetails = ({
       }
 
       for (const rule of rulesToCreate) {
-        const indexPattern = rule.index
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const usernames = rule.username
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const roles = rule.role
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const hasIndexes = indexPattern.length > 0;
-        const hasUsernames = usernames.length > 0;
-        const hasRoles = roles.length > 0;
-
-        const response = {
-          description: description || '-',
-          ...(hasUsernames || hasRoles
-            ? {
-                principal: {
-                  ...(hasUsernames ? { username: usernames } : {}),
-                  ...(hasRoles ? { role: roles } : {}),
-                },
-              }
-            : {}),
-          ...(hasIndexes ? { index_pattern: indexPattern } : {}),
-          workload_group: currentId,
-        };
+        const response = buildRulePayload(currentId!, rule, description);
+        if (!response) continue;
 
         await core.http.put(`/api/_rules/workload_group`, {
           query: { dataSourceId: dataSource.id },
@@ -473,38 +486,9 @@ export const WLMDetails = ({
       }
 
       for (const rule of rulesToUpdate) {
-        const indexPattern = rule.index
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const usernames = rule.username
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const roles = rule.role
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        const hasIndexes = indexPattern.length > 0;
-        const hasUsernames = usernames.length > 0;
-        const hasRoles = roles.length > 0;
-
-        const response = {
-          description: description || '-',
-          ...(hasUsernames || hasRoles
-            ? {
-                principal: {
-                  ...(hasUsernames ? { username: usernames } : {}),
-                  ...(hasRoles ? { role: roles } : {}),
-                },
-              }
-            : {}),
-          ...(hasIndexes ? { index_pattern: indexPattern } : {}),
-          workload_group: currentId,
-        };
+        const response = buildRulePayload(currentId!, rule, description);
+        console.log(currentId, response);
+        if (!response) continue;
 
         await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
           query: { dataSourceId: dataSource.id },
@@ -891,6 +875,50 @@ export const WLMDetails = ({
                     Define your rule using any combination of username, role, or index.
                   </EuiText>
                   <div style={{ marginTop: 16 }}>
+                    <div>
+                      <EuiText size="m" style={{ fontWeight: 600 }}>
+                        Username
+                      </EuiText>
+                      <EuiTextArea
+                        placeholder="Enter username"
+                        value={rule.username}
+                        onChange={(e) => {
+                          const updated = [...rules];
+                          updated[idx].username = e.target.value;
+                          setRules(updated);
+                          setIsSaved(false);
+                        }}
+                        onBlur={(e) => {
+                          const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
+                          const nowEmpty =
+                            (e.target.value ?? '')
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter(Boolean).length === 0;
+
+                          if (originallyNonEmpty && nowEmpty) {
+                            // revert to original and warn
+                            setRules((prev) => {
+                              const next = [...prev];
+                              next[idx] = {
+                                ...next[idx],
+                                username: existingRules[idx]?.username ?? '',
+                              };
+                              return next;
+                            });
+                            core.notifications.toasts.addWarning(
+                              'Username cannot be cleared once set.'
+                            );
+                          }
+                        }}
+                      />
+                      <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
+                        You can use (,) to add multiple usernames.
+                      </EuiText>
+                    </div>
+
+                    <EuiSpacer size="s" />
+
                     <EuiText size="m" style={{ fontWeight: 600 }}>
                       Role
                     </EuiText>
@@ -924,50 +952,6 @@ export const WLMDetails = ({
                     />
                     <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
                       You can use (,) to add multiple roles.
-                    </EuiText>
-                  </div>
-
-                  <EuiSpacer size="s" />
-
-                  <div>
-                    <EuiText size="m" style={{ fontWeight: 600 }}>
-                      Username
-                    </EuiText>
-                    <EuiTextArea
-                      placeholder="Enter username"
-                      value={rule.username}
-                      onChange={(e) => {
-                        const updated = [...rules];
-                        updated[idx].username = e.target.value;
-                        setRules(updated);
-                        setIsSaved(false);
-                      }}
-                      onBlur={(e) => {
-                        const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
-                        const nowEmpty =
-                          (e.target.value ?? '')
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean).length === 0;
-
-                        if (originallyNonEmpty && nowEmpty) {
-                          // revert to original and warn
-                          setRules((prev) => {
-                            const next = [...prev];
-                            next[idx] = {
-                              ...next[idx],
-                              username: existingRules[idx]?.username ?? '',
-                            };
-                            return next;
-                          });
-                          core.notifications.toasts.addWarning(
-                            'Username cannot be cleared once set.'
-                          );
-                        }
-                      }}
-                    />
-                    <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                      You can use (,) to add multiple usernames.
                     </EuiText>
                   </div>
 

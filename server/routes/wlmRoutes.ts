@@ -439,22 +439,6 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
     async (context, request, response) => {
       const { ruleId } = request.params;
       const body = request.body;
-      const { principal, indexPattern } = body as any;
-
-      const hasAny =
-        (indexPattern?.length ?? 0) > 0 ||
-        (principal?.username?.length ?? 0) > 0 ||
-        (principal?.role?.length ?? 0) > 0;
-
-      if (!hasAny) {
-        return response.custom({
-          statusCode: 400,
-          body: {
-            message:
-              'Empty rule found. Add at least one of index_pattern, principal.username, or principal.role; otherwise remove this rule.',
-          },
-        });
-      }
 
       try {
         let result;
