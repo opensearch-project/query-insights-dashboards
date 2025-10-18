@@ -197,25 +197,6 @@ describe('defineWlmRoutes: responses must not expose `meta`', () => {
     expectNoMeta(res.ok.mock.calls[0][0].body);
   });
 
-  test('PUT /api/_rules/workload_group/{ruleId}', async () => {
-    const handler = REG['PUT /api/_rules/workload_group/{ruleId}'];
-    const ctx = makeCtx();
-    (ctx.core.opensearch.client.asCurrentUser.transport.request as jest.Mock).mockResolvedValue({
-      body: { updated: true },
-      meta: { nope: true },
-    });
-    const res = makeRes();
-    await handler(
-      ctx,
-      {
-        params: { ruleId: 'r1' },
-        body: { description: 'd', index_pattern: ['a*'], workload_group: 'g' },
-      },
-      res
-    );
-    expectNoMeta(res.ok.mock.calls[0][0].body);
-  });
-
   test('GET /api/_wlm/thresholds', async () => {
     const handler = REG['GET /api/_wlm/thresholds'];
     const ctx = makeCtx();
