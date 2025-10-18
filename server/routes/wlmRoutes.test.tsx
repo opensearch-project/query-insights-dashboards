@@ -58,13 +58,6 @@ describe.each<[boolean]>([[true], [false]])(
             },
           },
         },
-        core: {
-          opensearch: {
-            client: {
-              asInternalUser: { cluster: { getSettings: mockCoreGetSettings } },
-            },
-          },
-        },
         queryInsights: { logger: { error: jest.fn() } },
       };
 
@@ -661,63 +654,67 @@ describe.each<[boolean]>([[true], [false]])(
     //
     test('GET /api/_wlm/thresholds (with dataSourceId)', async () => {
       const handler = REG['GET /api/_wlm/thresholds'];
-      const { ctx, mockCoreGetSettings, mockDsGetSettings } = makeCtx();
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
       const res = makeRes();
 
-      mockDsGetSettings.mockResolvedValue({
-        body: {
-          persistent: {
-            wlm: {
-              workload_group: {
-                node: { cpu_rejection_threshold: '0.7', memory_rejection_threshold: '0.5' },
-              },
+      // DS returns only defaults; values are strings that should be parsed to numbers
+      mockDsCallAPI.mockResolvedValue({
+        defaults: {
+          wlm: {
+            workload_group: {
+              node: { cpu_rejection_threshold: '0.8', memory_rejection_threshold: '0.6' },
             },
           },
         },
       });
-      mockCoreGetSettings.mockResolvedValue({
-        body: {
-          defaults: {
-            wlm: {
-              workload_group: {
-                node: { cpu_rejection_threshold: '0.9', memory_rejection_threshold: '0.6' },
-              },
+      // Core would return something different
+      mockWlmCall.mockResolvedValue({
+        defaults: {
+          wlm: {
+            workload_group: {
+              node: { cpu_rejection_threshold: '0.1', memory_rejection_threshold: '0.2' },
             },
           },
         },
       });
 
-      await handler(ctx, { query: { dataSourceId: 'ds-xyz' } }, res);
+      await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
 
-      // When dsEnabled=false, core is used; when true, DS is used.
-      const expectedGetClientCalls = dataSourceEnabled ? [['ds-xyz']] : [];
-      const expectedDsGetSettingsCalls = dataSourceEnabled ? [[{ include_defaults: true }]] : [];
-      const expectedCoreGetSettingsCalls = dataSourceEnabled ? [] : [[{ include_defaults: true }]];
-      const expectedPayload = dataSourceEnabled
-        ? { cpuRejectionThreshold: 0.7, memoryRejectionThreshold: 0.5 }
-        : { cpuRejectionThreshold: 0.9, memoryRejectionThreshold: 0.6 };
+      // When dataSourceEnabled is true, DS client is used; otherwise core client is used
+      const expectedDsCalls = dataSourceEnabled
+        ? [['wlm.getThresholds', { include_defaults: true }]]
+        : [];
+      const expectedCoreCalls = dataSourceEnabled
+        ? []
+        : [['wlm.getThresholds', { include_defaults: true }]]; // note: our handler uses callAsCurrentUser('wlm.getThresholds', { include_defaults: true })
 
-      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(expectedGetClientCalls);
-      expect(mockDsGetSettings.mock.calls).toEqual(expectedDsGetSettingsCalls);
-      expect(mockCoreGetSettings.mock.calls).toEqual(expectedCoreGetSettingsCalls);
+      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual(
+        dataSourceEnabled ? [['ds-1']] : []
+      );
+      expect(mockDsCallAPI.mock.calls).toEqual(expectedDsCalls);
+      expect(mockWlmCall.mock.calls).toEqual(expectedCoreCalls);
 
-      const payload = res.ok.mock.calls[0][0].body;
-      expect(payload).toEqual(expectedPayload);
-      expectNoMeta(payload);
+      const { body } = res.ok.mock.calls[0][0];
+      // If DS path used → 0.8/0.6; if core path used → 0.1/0.2
+      const expected = dataSourceEnabled
+        ? { cpuRejectionThreshold: 0.8, memoryRejectionThreshold: 0.6 }
+        : { cpuRejectionThreshold: 0.1, memoryRejectionThreshold: 0.2 };
+      expect(body).toEqual(expected);
+      expectNoMeta(body);
     });
 
-    test('GET /api/_wlm/thresholds (no dataSourceId)', async () => {
+    test('GET /api/_wlm/thresholds (no dataSourceId) uses core and respects fallback: transient → persistent → defaults', async () => {
       const handler = REG['GET /api/_wlm/thresholds'];
-      const { ctx, mockCoreGetSettings, mockDsGetSettings } = makeCtx();
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
       const res = makeRes();
 
-      mockCoreGetSettings.mockResolvedValue({
-        body: {
-          defaults: {
-            wlm: {
-              workload_group: {
-                node: { cpu_rejection_threshold: '0.8', memory_rejection_threshold: '0.6' },
-              },
+      mockWlmCall.mockResolvedValue({
+        transient: { wlm: { workload_group: { node: { cpu_rejection_threshold: '0.75' } } } },
+        persistent: { wlm: { workload_group: { node: { memory_rejection_threshold: '0.55' } } } },
+        defaults: {
+          wlm: {
+            workload_group: {
+              node: { cpu_rejection_threshold: '0.33', memory_rejection_threshold: '0.22' },
             },
           },
         },
@@ -725,13 +722,53 @@ describe.each<[boolean]>([[true], [false]])(
 
       await handler(ctx, { query: {} }, res);
 
-      expect(ctx.dataSource.opensearch.legacy.getClient.mock.calls).toEqual([]);
-      expect(mockDsGetSettings.mock.calls).toEqual([]);
-      expect(mockCoreGetSettings.mock.calls).toEqual([[{ include_defaults: true }]]);
+      // No DS path when no dataSourceId
+      expect(ctx.dataSource.opensearch.legacy.getClient).not.toHaveBeenCalled();
+      expect(mockDsCallAPI).not.toHaveBeenCalled();
+      // Called with include_defaults true
+      expect(mockWlmCall).toHaveBeenCalledWith('wlm.getThresholds', { include_defaults: true });
 
-      const payload = res.ok.mock.calls[0][0].body;
-      expect(payload).toEqual({ cpuRejectionThreshold: 0.8, memoryRejectionThreshold: 0.6 });
-      expectNoMeta(payload);
+      const { body } = res.ok.mock.calls[0][0];
+      // cpu from transient (0.75), memory from persistent (0.55)
+      expect(body).toEqual({ cpuRejectionThreshold: 0.75, memoryRejectionThreshold: 0.55 });
+      expectNoMeta(body);
+    });
+
+    test('GET /api/_wlm/thresholds falls back to 1.0 when nothing provided', async () => {
+      const handler = REG['GET /api/_wlm/thresholds'];
+      const { ctx, mockWlmCall } = makeCtx();
+      const res = makeRes();
+
+      mockWlmCall.mockResolvedValue({}); // no transient/persistent/defaults
+
+      await handler(ctx, { query: {} }, res);
+
+      const { body } = res.ok.mock.calls[0][0];
+      expect(body).toEqual({ cpuRejectionThreshold: 1, memoryRejectionThreshold: 1 });
+      expectNoMeta(body);
+    });
+
+    test('GET /api/_wlm/thresholds bubbles OpenSearch error via customError', async () => {
+      const handler = REG['GET /api/_wlm/thresholds'];
+      const { ctx, mockWlmCall, mockDsCallAPI } = makeCtx();
+      const res = makeRes();
+
+      const err = Object.assign(new Error('Boom'), {
+        meta: { statusCode: 503, body: { error: { reason: 'service unavailable' } } },
+      });
+
+      if (dataSourceEnabled) {
+        mockDsCallAPI.mockRejectedValue(err);
+        await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res);
+      } else {
+        mockWlmCall.mockRejectedValue(err);
+        await handler(ctx, { query: { dataSourceId: 'ds-1' } }, res); // since dataSourceEnabled is false, still goes core path
+      }
+
+      expect(res.customError).toHaveBeenCalledWith({
+        statusCode: 503,
+        body: { message: 'service unavailable' },
+      });
     });
   }
 );
