@@ -667,7 +667,6 @@ describe.each<[boolean]>([[true], [false]])(
           },
         },
       });
-      // Core would return something different
       mockWlmCall.mockResolvedValue({
         defaults: {
           wlm: {
