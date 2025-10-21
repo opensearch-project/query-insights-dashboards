@@ -25,7 +25,6 @@ import { WLM_CREATE, WLM_MAIN } from '../WorkloadManagement';
 import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { DataSourceContext } from '../WorkloadManagement';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
-import { PageHeader } from '../../../components/PageHeader';
 
 interface Rule {
   index: string;
@@ -156,24 +155,18 @@ export const WLMCreate = ({
 
   return (
     <div>
-      <PageHeader
+      <WLMDataSourceMenu
         coreStart={core}
         depsStart={depsStart}
-        fallBackComponent={
-          <WLMDataSourceMenu
-            coreStart={core}
-            depsStart={depsStart}
-            params={params}
-            dataSourceManagement={dataSourceManagement}
-            setDataSource={setDataSource}
-            selectedDataSource={dataSource}
-            onManageDataSource={() => {}}
-            onSelectedDataSource={() => {
-              window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
-            }}
-            dataSourcePickerReadOnly={true}
-          />
-        }
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+        }}
+        dataSourcePickerReadOnly={true}
       />
 
       <EuiTitle size="l">
