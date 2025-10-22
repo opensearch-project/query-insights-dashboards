@@ -3,9 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WLM_AUTH } from '../support/constants';
+
 describe('WLM Main Page', () => {
+  before(() => {
+    cy.enableWlmMode(WLM_AUTH);
+  });
+
   beforeEach(() => {
-    cy.visit('/app/workload-management#/workloadManagement');
+    cy.visit('/app/workload-management#/workloadManagement', {
+      auth: WLM_AUTH,
+    });
     cy.get('.euiBasicTable .euiTableRow').should('have.length.greaterThan', 0);
   });
 

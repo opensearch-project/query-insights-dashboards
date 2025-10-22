@@ -279,3 +279,50 @@ Cypress.Commands.add('waitForQueryInsightsPlugin', () => {
 
   cy.log(`=== PLUGIN LOADING COMPLETE ===`);
 });
+
+Cypress.Commands.add('enableWlmMode', (auth) => {
+  const host = (Cypress.env('openSearchUrl') || 'http://localhost:9200').replace(
+    /^https?:\/\//,
+    ''
+  );
+
+  // Probe HTTPS first (ignore certs). If it returns an HTTP code, use https; otherwise fallback to http.
+  return cy
+    .exec(
+      `curl -ks -o /dev/null -w "%{http_code}" https://${host}/_cluster/health -u ${auth.username}:${auth.password}`,
+      { failOnNonZeroExit: false, timeout: 15000 }
+    )
+    .then(({ stdout }) => {
+      const httpsWorks = /^\d{3}$/.test((stdout || '').trim());
+      const base = `${httpsWorks ? 'https' : 'http'}://${host}`;
+      const url = `${base}/_cluster/settings`;
+
+      return (
+        cy
+          .request({
+            method: 'PUT',
+            url,
+            auth,
+            headers: { 'Content-Type': 'application/json' },
+            body: { persistent: { 'wlm.workload_group.mode': 'enabled' } },
+          })
+          // Verify
+          .then(() =>
+            cy.request({
+              method: 'GET',
+              url,
+              auth,
+              qs: { include_defaults: true, flat_settings: true },
+            })
+          )
+          .then((res) => {
+            const b = res.body || {};
+            const mode =
+              b?.persistent?.['wlm.workload_group.mode'] ??
+              b?.transient?.['wlm.workload_group.mode'] ??
+              b?.defaults?.['wlm.workload_group.mode'];
+            cy.wrap(mode, { log: false }).should('eq', 'enabled');
+          })
+      );
+    });
+});

@@ -274,7 +274,7 @@ export const WLMDetails = ({
       console.error('Failed to fetch workload group details:', err);
       setGroupDetails(null);
       history.push(WLM_MAIN);
-      core.notifications.toasts.addDanger(`Workload group "${groupName}" not found.`);
+      core.notifications.toasts.addDanger(`Workload group "${groupName}" not found.`, err);
     }
   };
 
@@ -299,7 +299,7 @@ export const WLMDetails = ({
         groupId = matchedGroup._id;
       } catch (err) {
         console.error('Failed to get group ID by name:', err);
-        core.notifications.toasts.addDanger(`Failed to find workload group "${groupName}"`);
+        core.notifications.toasts.addDanger(`Failed to find workload group "${groupName}".`, err);
         return;
       }
     }
@@ -335,7 +335,7 @@ export const WLMDetails = ({
         extractDescriptionFromRules(rulesRes, groupId);
       } catch (err) {
         console.error('Failed to fetch group stats', err);
-        core.notifications.toasts.addDanger('Could not load rules.');
+        core.notifications.toasts.addDanger('Could not load rules.', err);
       }
     } else {
       setDescription('System default workload group');
@@ -369,7 +369,7 @@ export const WLMDetails = ({
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Failed to fetch group stats', err);
-      core.notifications.toasts.addDanger('Could not load workload group stats.');
+      core.notifications.toasts.addDanger('Could not load workload group stats.', err);
     }
   };
 
