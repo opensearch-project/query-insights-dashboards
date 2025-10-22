@@ -1,0 +1,292 @@
+name: Cypress e2e integration tests workflow
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+
+env:
+  OPENSEARCH_DASHBOARDS_VERSION: 'main'
+  QUERY_INSIGHTS_BRANCH: 'main'
+  GRADLE_VERSION: '7.6.1'
+  CYPRESS_VIDEO: true
+  CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
+
+jobs:
+  tests:
+    name: Run Cypress E2E tests
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            cypress_cache_folder: ~/.cache/Cypress
+    runs-on: ${{ matrix.os }}
+    env:
+      CI: 1
+      TERM: xterm
+    steps:
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Checkout Query Insights
+        uses: actions/checkout@v4
+        with:
+          path: query-insights
+          repository: opensearch-project/query-insights
+          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
+
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OPENSEARCH_BRANCH }}
+
+      - name: Check working directory and list files
+        run: |
+          echo "Current Directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
+
+      - name: Fetch OpenSearch version from build.gradle
+        run: |
+          cd query-insights
+          if [ ! -f "build.gradle" ]; then
+            echo "build.gradle not found!" && exit 1
+          fi
+          echo "Printing build.gradle content:"
+          cat build.gradle
+          opensearch_version=$(node -e "
+            const fs = require('fs');
+            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
+            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
+            console.log(match ? match[1] : 'No version found');
+          ")
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "Using OpenSearch version: $opensearch_version"
+        shell: bash
+
+      - name: Verify OpenSearch version
+        run: |
+          echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
+          echo "Using Plugin version: ${{ env.PLUGIN_VERSION }}"
+
+      - name: Build Required Plugins
+        run: |
+          cd OpenSearch
+          ./gradlew :modules:autotagging-commons:assemble
+          ./gradlew :plugins:workload-management:assemble
+          echo "Checking autotagging-commons build directory:"
+          ls -la modules/autotagging-commons/build/distributions/
+          echo "Checking WLM build directory:"
+          ls -la plugins/workload-management/build/distributions/
+
+      - name: Copy Plugins to Query Insights
+        run: |
+          mkdir -p query-insights/plugins
+          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          echo "Contents of plugins directory:"
+          ls -la query-insights/plugins/
+
+      # ⬇️ Download OpenSearch Security plugin zip (placed alongside others)
+      - name: Download OpenSearch Security plugin
+        run: |
+          mkdir -p query-insights/plugins
+          SEC_VER="${{ env.OPENSEARCH_VERSION }}"
+          SEC_URL="https://artifacts.opensearch.org/releases/plugins/opensearch-security/${SEC_VER}/opensearch-security-${SEC_VER}.zip"
+          echo "Downloading OpenSearch Security plugin: $SEC_URL"
+          curl -fSL "$SEC_URL" -o "query-insights/plugins/opensearch-security-${SEC_VER}.zip"
+          echo "Plugins now present:"
+          ls -la query-insights/plugins/
+        shell: bash
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Run OpenSearch with Query Insights plugin
+        run: |
+          cd query-insights
+          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
+          echo "Waiting for OpenSearch to start..."
+          for i in {1..60}; do
+            if curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health > /dev/null 2>&1; then
+              echo "OpenSearch is ready!"
+              break
+            fi
+            echo "Attempt $i/60: OpenSearch not ready yet, waiting 10 seconds..."
+            sleep 10
+          done
+          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
+
+          echo -e "\nInstalled Plugins:"
+          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cat/plugins | sort || true
+
+          echo -e "\nEnabling WLM mode:"
+          curl -kXu PUT -u admin:myStrongPassword123! "https://localhost:9200/_cluster/settings" \
+            -H 'Content-Type: application/json' \
+            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
+
+          echo -e "\nTesting WLM stats endpoint:"
+          curl -ksu admin:myStrongPassword123! https://localhost:9200/_wlm/workload_group | jq '.' || true
+
+          set -e
+          echo -e "\nTesting if wlm mode is enabled:"
+          MODE=$(curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode')
+          if [ "$MODE" != "enabled" ]; then
+            echo "WLM mode is not enabled (found: $MODE)" && exit 1
+          fi
+          echo "WLM mode is enabled."
+        shell: bash
+
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          path: OpenSearch-Dashboards
+          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+
+      - name: Checkout Query Insights Dashboards plugin
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        shell: bash
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          echo "Installing yarn@$YARN_VERSION"
+          npm i -g yarn@$YARN_VERSION
+      - run: node -v
+      - run: yarn -v
+
+      - name: Bootstrap plugin/OpenSearch-Dashboards
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
+
+      - name: Run OpenSearch-Dashboards server
+        run: |
+          cd OpenSearch-Dashboards
+          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
+          echo "Starting Dashboards..."
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+          echo "Initial Dashboards log output:"
+          head -n 100 dashboards.log || true
+        shell: bash
+
+      - name: Wait for OpenSearch-Dashboards to be ready
+        run: |
+          echo "Waiting for OpenSearch-Dashboards to start..."
+          max_attempts=150
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -ksf -u admin:myStrongPassword123! https://localhost:5601/api/status > /dev/null 2>&1; then
+              echo "OpenSearch-Dashboards is ready!"
+              echo "=== OpenSearch-Dashboards Status Debug Info ==="
+              curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status | jq '.' || curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status
+              sleep 45
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
+            if [ $((attempt % 10)) -eq 0 ]; then
+              echo "Debug: Attempting to connect to https://localhost:5601/api/status"
+              curl -ks -v -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "Connection failed"
+            fi
+            sleep 10
+          done
+          if [ $attempt -eq $max_attempts ]; then
+            echo "OpenSearch-Dashboards failed to start within timeout"
+            curl -ks -v -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "Final connection attempt failed"
+            exit 1
+          fi
+          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
+          echo "Waiting additional time for plugin initialization..."
+          sleep 15
+        shell: bash
+
+      - name: Verify services are running
+        run: |
+          echo "Checking OpenSearch status..."
+          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
+
+          echo "Checking OpenSearch-Dashboards status..."
+          echo "=== Full OpenSearch-Dashboards Status ==="
+          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
+          echo "========================================"
+
+          echo "Checking OpenSearch-Dashboards overall state..."
+          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
+
+          echo "Checking plugin endpoint..."
+          curl -ks -u admin:myStrongPassword123! https://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
+        shell: bash
+        continue-on-error: true
+
+      - name: Install Cypress
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          npx cypress install
+        shell: bash
+
+      - name: Get Cypress version
+        id: cypress_version
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          echo "::set-output name=cypress_version::$(cat ./package.json | jq '.dependencies.cypress' | tr -d '"')"
+
+      - name: Cache Cypress
+        id: cache-cypress
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.cypress_cache_folder }}
+          key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
+
+      # ⬇️ Only run WLM specs
+      - name: Cypress tests
+        uses: cypress-io/github-action@v5
+        with:
+          working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
+          command: >
+            yarn run cypress run
+            --spec "cypress/e2e/wlm/**/*.cy.{js,jsx,ts,tsx}"
+            --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
+          wait-on: 'https://localhost:5601'
+          wait-on-timeout: 1200
+          browser: chrome
+        env:
+          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CI: true
+        timeout-minutes: 120
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ matrix.os }}
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos-${{ matrix.os }}
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos

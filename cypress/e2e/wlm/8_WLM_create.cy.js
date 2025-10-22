@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { WLM_AUTH } from '../support/constants';
+import { WLM_AUTH } from '../../support/constants';
 
 const auth = WLM_AUTH;
 
