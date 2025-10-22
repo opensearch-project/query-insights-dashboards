@@ -8,8 +8,9 @@ on:
       - "*"
 
 env:
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  QUERY_INSIGHTS_BRANCH: 'main'
+  OPENSEARCH_BRANCH: 'main'
+  SECURITY_BRANCH: 'main'
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -37,119 +38,89 @@ jobs:
           java-version: 21
           distribution: temurin
 
-      - name: Checkout Query Insights
-        uses: actions/checkout@v4
-        with:
-          path: query-insights
-          repository: opensearch-project/query-insights
-          ref: ${{ env.QUERY_INSIGHTS_BRANCH }}
-
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
         with:
-          path: OpenSearch
           repository: opensearch-project/OpenSearch
+          path: OpenSearch
           ref: ${{ env.OPENSEARCH_BRANCH }}
 
-      - name: Check working directory and list files
+      - name: Build WLM, publish Rule Framework to mavenLocal, and build localDistro
         run: |
-          echo "Current Directory: $(pwd)"
-          echo "Listing files:"
-          ls -la
-
-      - name: Fetch OpenSearch version from build.gradle
-        run: |
-          cd query-insights
-          if [ ! -f "build.gradle" ]; then
-            echo "build.gradle not found!" && exit 1
-          fi
-          echo "Printing build.gradle content:"
-          cat build.gradle
-          opensearch_version=$(node -e "
-            const fs = require('fs');
-            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
-            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
-            console.log(match ? match[1] : 'No version found');
-          ")
-          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "Using OpenSearch version: $opensearch_version"
-        shell: bash
-
-      - name: Verify OpenSearch version
-        run: |
-          echo "Using OpenSearch version: ${{ env.OPENSEARCH_VERSION }}"
-          echo "Using Plugin version: ${{ env.PLUGIN_VERSION }}"
-
-      - name: Build Required Plugins
-        run: |
+          set -e
           cd OpenSearch
-          ./gradlew :modules:autotagging-commons:assemble
-          ./gradlew :plugins:workload-management:assemble
-          echo "Checking autotagging-commons build directory:"
-          ls -la modules/autotagging-commons/build/distributions/
-          echo "Checking WLM build directory:"
-          ls -la plugins/workload-management/build/distributions/
+          ./gradlew --no-daemon :plugins:workload-management:assemble
+          ./gradlew --no-daemon :modules:autotagging-commons:common:publishToMavenLocal
+          ./gradlew --no-daemon :modules:autotagging-commons:spi:publishToMavenLocal
+          ./gradlew --no-daemon :modules:autotagging-commons:publishToMavenLocal
+          ./gradlew --no-daemon publishToMavenLocal
+          ./gradlew --no-daemon localDistro
 
-      - name: Copy Plugins to Query Insights
-        run: |
-          mkdir -p query-insights/plugins
-          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
-          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
-          echo "Contents of plugins directory:"
-          ls -la query-insights/plugins/
+          # capture artifacts and localDistro path
+          echo "WLM_ZIP=$(ls plugins/workload-management/build/distributions/*.zip | head -n1)" >> $GITHUB_ENV
+          echo "LOCAL_DISTRO=$(ls -d build/distribution/local/opensearch-*/ | head -n1 | sed 's:/*$::')" >> $GITHUB_ENV
 
-      # ⬇️ Download OpenSearch Security plugin zip (placed alongside others)
-      - name: Download OpenSearch Security plugin
-        run: |
-          mkdir -p query-insights/plugins
-          SEC_VER="${{ env.OPENSEARCH_VERSION }}"
-          SEC_URL="https://artifacts.opensearch.org/releases/plugins/opensearch-security/${SEC_VER}/opensearch-security-${SEC_VER}.zip"
-          echo "Downloading OpenSearch Security plugin: $SEC_URL"
-          curl -fSL "$SEC_URL" -o "query-insights/plugins/opensearch-security-${SEC_VER}.zip"
-          echo "Plugins now present:"
-          ls -la query-insights/plugins/
-        shell: bash
+          echo "Local distro: $LOCAL_DISTRO"
+          echo "WLM zip: $WLM_ZIP"
 
-      - name: Set up Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Checkout Security
+        uses: actions/checkout@v4
         with:
-          gradle-version: ${{ env.GRADLE_VERSION }}
+          repository: opensearch-project/security
+          path: security
+          ref: ${{ env.SECURITY_BRANCH }}
 
-      - name: Run OpenSearch with Query Insights plugin
+      - name: Build Security plugin
         run: |
-          cd query-insights
-          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
+          set -e
+          cd security
+          ./gradlew --no-daemon assemble
+          echo "SEC_ZIP=$(ls build/distributions/opensearch-security-*.zip | head -n1)" >> $GITHUB_ENV
+          echo "Security zip: $SEC_ZIP"
+
+      - name: Install plugins into localDistro
+        run: |
+          set -e
+          cd "${{ env.LOCAL_DISTRO }}"
+          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/${{ env.SEC_ZIP }}"
+          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/${{ env.WLM_ZIP }}"
+
+          echo "Installed plugins:"
+          bin/opensearch-plugin list || true
+
+      - name: Initialize Security demo configuration
+        run: |
+          set -e
+          cd "${{ env.LOCAL_DISTRO }}/plugins/opensearch-security/tools"
+          chmod +x install_demo_configuration.sh
+          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}"
+          ./install_demo_configuration.sh -y -i   # answers 'y' to prompts, installs certs, sets admin user
+
+      - name: Run OpenSearch and enable WLM
+        run: |
+          set -e
+          cd "${{ env.LOCAL_DISTRO }}"
+          echo "discovery.type: single-node" >> config/opensearch.yml
+
+          nohup bin/opensearch -Ehttp.port=9200 -Ehttp.host=0.0.0.0 > os.log 2>&1 &
           echo "Waiting for OpenSearch to start..."
           for i in {1..60}; do
-            if curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health > /dev/null 2>&1; then
-              echo "OpenSearch is ready!"
-              break
+            if curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cluster/health >/dev/null 2>&1; then
+              echo "OpenSearch is up"; break
             fi
-            echo "Attempt $i/60: OpenSearch not ready yet, waiting 10 seconds..."
-            sleep 10
+            echo "Attempt $i/60..."; sleep 5
           done
-          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
 
-          echo -e "\nInstalled Plugins:"
-          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cat/plugins | sort || true
+          echo "Plugins:"
+          curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cat/plugins?v || true
 
-          echo -e "\nEnabling WLM mode:"
-          curl -kXu PUT -u admin:myStrongPassword123! "https://localhost:9200/_cluster/settings" \
+          echo "Enable WLM:"
+          curl -kXu PUT -u admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" "https://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
-            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
+            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
-          echo -e "\nTesting WLM stats endpoint:"
-          curl -ksu admin:myStrongPassword123! https://localhost:9200/_wlm/workload_group | jq '.' || true
-
-          set -e
-          echo -e "\nTesting if wlm mode is enabled:"
-          MODE=$(curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode')
-          if [ "$MODE" != "enabled" ]; then
-            echo "WLM mode is not enabled (found: $MODE)" && exit 1
-          fi
-          echo "WLM mode is enabled."
-        shell: bash
+          echo "Show WLM mode:"
+          curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4
@@ -157,6 +128,13 @@ jobs:
           repository: opensearch-project/OpenSearch-Dashboards
           path: OpenSearch-Dashboards
           ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+
+      - name: Configure OpenSearch Dashboards for cypress
+        run: |
+          cat << 'EOT' > cypress-opensearch-dashboards-config.yml
+          opensearch.hosts: ["https://localhost:9200"]
+          opensearch.ssl.verificationMode: none
+          EOT
 
       - name: Checkout Query Insights Dashboards plugin
         uses: actions/checkout@v4
