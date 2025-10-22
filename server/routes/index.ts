@@ -434,16 +434,22 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           wlmGroupId?: string;
         };
 
-        const client =
-          !dataSourceEnabled || !dataSourceId
-            ? context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser
-            : context.dataSource.opensearch.legacy.getClient(dataSourceId);
-
         // Call the appropriate API based on whether wlm_group is provided
         const hasGroup = typeof wlmGroup === 'string' && wlmGroup.trim().length > 0;
-        const res = hasGroup
-          ? await client('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
-          : await client('queryInsights.getLiveQueries');
+        let res;
+
+        if (!dataSourceEnabled || !dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          res = hasGroup
+            ? await client('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
+            : await client('queryInsights.getLiveQueries');
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          res = hasGroup
+            ? await client.callAPI('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
+            : await client.callAPI('queryInsights.getLiveQueries', {});
+        }
 
         if (!res || res.ok === false) {
           throw new Error(res?.error || 'Query Insights service returned an error');
