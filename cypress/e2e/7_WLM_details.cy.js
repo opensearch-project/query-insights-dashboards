@@ -17,39 +17,54 @@ describe('WLM Details Page', () => {
   const groupName = `wlm-e2e-${Date.now()}`;
 
   before(() => {
-    // 1) Ensure WLM enabled
-    return (
-      cy
-        .enableWlmMode(WLM_AUTH)
-        // 2) Delete all non-default groups
-        .then(() => api({ method: 'GET', url: '/api/_wlm/workload_group' }))
-        .then((res) => {
-          const groups = res.body?.workload_groups || [];
-          groups
-            .filter((g) => g.name !== 'DEFAULT_WORKLOAD_GROUP')
-            .forEach((g) => {
-              api({
-                method: 'DELETE',
-                url: '/api/_wlm/workload_group/' + encodeURIComponent(g.name),
-              });
-            });
-        })
-        // 3) Create the test group
-        .then(() =>
-          api({
-            method: 'PUT',
-            url: '/api/_wlm/workload_group',
-            body: {
-              name: groupName,
-              resiliency_mode: 'soft',
-              resource_limits: { cpu: 0.01, memory: 0.01 },
-            },
-          })
-        )
-        .its('status')
-        .should('be.oneOf', [200, 201, 204, 409])
-    );
+    // Just create the test group
+    return api({
+      method: 'PUT',
+      url: '/api/_wlm/workload_group',
+      body: {
+        name: groupName,
+        resiliency_mode: 'soft',
+        resource_limits: { cpu: 0.01, memory: 0.01 },
+      },
+    })
+      .its('status')
+      .should('be.oneOf', [200, 201, 204, 409]);
   });
+
+  // before(() => {
+  //   // 1) Ensure WLM enabled
+  //   return (
+  //     cy
+  //       // .enableWlmMode(WLM_AUTH)
+  //       // 2) Delete all non-default groups
+  //       // .then(() => api({ method: 'GET', url: '/api/_wlm/workload_group' }))
+  //       // .then((res) => {
+  //       //   const groups = res.body?.workload_groups || [];
+  //       //   groups
+  //       //     .filter((g) => g.name !== 'DEFAULT_WORKLOAD_GROUP')
+  //       //     .forEach((g) => {
+  //       //       api({
+  //       //         method: 'DELETE',
+  //       //         url: '/api/_wlm/workload_group/' + encodeURIComponent(g.name),
+  //       //       });
+  //       //     });
+  //       // })
+  //       // 3) Create the test group
+  //       .then(() =>
+  //         api({
+  //           method: 'PUT',
+  //           url: '/api/_wlm/workload_group',
+  //           body: {
+  //             name: groupName,
+  //             resiliency_mode: 'soft',
+  //             resource_limits: { cpu: 0.01, memory: 0.01 },
+  //           },
+  //         })
+  //       )
+  //       .its('status')
+  //       .should('be.oneOf', [200, 201, 204, 409])
+  //   );
+  // });
 
   beforeEach(() => {
     cy.visit(`/app/workload-management#/wlm-details?name=${groupName}`, { auth: WLM_AUTH });

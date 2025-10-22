@@ -8,9 +8,9 @@ import { WLM_AUTH } from '../support/constants';
 const auth = WLM_AUTH;
 
 describe('WLM Create Page', () => {
-  before(() => {
-    cy.enableWlmMode(auth);
-  });
+  // before(() => {
+  //   cy.enableWlmMode(auth);
+  // });
 
   beforeEach(() => {
     cy.visit('/app/workload-management#/wlm-create', { auth });
