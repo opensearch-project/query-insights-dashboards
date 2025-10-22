@@ -1,12 +1,23 @@
 name: Cypress e2e integration tests workflow
+
 on:
   pull_request:
-    branches:
-      - "*"
+    branches: ["*"]
   push:
-    branches:
-      - "*"
+    branches: ["*"]
+
+concurrency:
+  group: cypress-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 env:
+  OPENSEARCH_BRANCH: '3.3'
+  OPENSEARCH_DASHBOARDS_BRANCH: '3.3'
+  OPENSEARCH_VERSION: '3.3.1-SNAPSHOT'
+  QUERY_INSIGHTS_BRANCH: '3.3'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -24,40 +35,10 @@ jobs:
             cypress_cache_folder: ~/.cache/Cypress
     runs-on: ${{ matrix.os }}
     env:
-      # prevents extra Cypress installation progress messages
       CI: 1
-      # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
+
     steps:
-
-      - uses: actions/checkout@v4
-
-      - name: Set env
-        run: |
-          opensearch_version=$(node -p "require('./package.json').opensearchDashboards.version")
-          plugin_version=$(node -p "require('./package.json').version")
-          major_version=$(echo $opensearch_version | cut -d. -f1)
-          minor_version=$(echo $opensearch_version | cut -d. -f2)
-          opensearch_version=${opensearch_version}-SNAPSHOT
-          plugin_version=${plugin_version}-SNAPSHOT
-          branch_version=${major_version}.${minor_version}
-          opensearch_branch=$branch_version
-          opensearch_dashboards_branch=$branch_version
-          query_insights_branch=$branch_version
-          base_branch=${{ github.base_ref }}
-          echo "base_branch $base_branch"
-          if [ "$base_branch" = "main" ]; then
-            opensearch_branch=main
-            opensearch_dashboards_branch=main
-            query_insights_branch=main
-          fi
-          echo "QUERY_INSIGHTS_BRANCH=$query_insights_branch" >> $GITHUB_ENV
-          echo "OPENSEARCH_BRANCH=$opensearch_branch" >> $GITHUB_ENV
-          echo "OPENSEARCH_DASHBOARDS_BRANCH=$opensearch_dashboards_branch" >> $GITHUB_ENV
-          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
-        shell: bash
-
       - name: Checkout Query Insights
         uses: actions/checkout@v4
         with:
@@ -214,7 +195,22 @@ jobs:
           echo "Waiting for OpenSearch-Dashboards to start..."
           max_attempts=150
           attempt=0
+
+          # Check if the process is running
+          echo "Checking if OpenSearch-Dashboards process is running..."
+          ps aux | grep "node.*dashboards" | grep -v grep || echo "No dashboards process found!"
+
           while [ $attempt -lt $max_attempts ]; do
+            # Check every 5 attempts if process is still alive
+            if [ $((attempt % 5)) -eq 0 ]; then
+              if ! ps aux | grep "node.*dashboards" | grep -v grep > /dev/null; then
+                echo "ERROR: OpenSearch-Dashboards process has died!"
+                echo "=== Last 100 lines of dashboards.log ==="
+                tail -n 100 OpenSearch-Dashboards/dashboards.log || echo "Could not read dashboards.log"
+                exit 1
+              fi
+            fi
+
             if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
               echo "OpenSearch-Dashboards is ready!"
               echo "=== OpenSearch-Dashboards Status Debug Info ==="
@@ -225,18 +221,30 @@ jobs:
             fi
             attempt=$((attempt + 1))
             echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
+
+            # Show logs every 10 attempts
             if [ $((attempt % 10)) -eq 0 ]; then
+              echo "=== Recent dashboards.log output (last 50 lines) ==="
+              tail -n 50 OpenSearch-Dashboards/dashboards.log || echo "Could not read dashboards.log"
+              echo "==================================================="
               echo "Debug: Attempting to connect to http://localhost:5601/api/status"
               curl -s -v http://localhost:5601/api/status || echo "Connection failed"
+              echo "Checking listening ports..."
+              netstat -an | grep 5601 || echo "Port 5601 not found in netstat"
             fi
             sleep 10
           done
+
           if [ $attempt -eq $max_attempts ]; then
             echo "OpenSearch-Dashboards failed to start within timeout"
+            echo "=== Full dashboards.log ==="
+            cat OpenSearch-Dashboards/dashboards.log || echo "Could not read dashboards.log"
+            echo "=========================="
             echo "Final debug attempt:"
             curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
             exit 1
           fi
+
           curl -s http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
           echo "Waiting additional time for plugin initialization..."
           sleep 15
