@@ -30,10 +30,24 @@ const mockCore = ({
       addDanger: jest.fn(),
     },
   },
+  savedObjects: {
+    client: {},
+  },
 } as unknown) as CoreStart;
 
-const mockDepsStart = {} as any;
-const mockDataSourceManagement = {} as any;
+const mockDepsStart = {
+  dataSource: {
+    dataSourceEnabled: true,
+  },
+} as any;
+
+const MockDataSourceMenu = (_props: any) => <div>Mocked Data Source Menu</div>;
+
+const mockDataSourceManagement = {
+  ui: {
+    getDataSourceMenu: jest.fn(() => MockDataSourceMenu),
+  },
+} as any;
 
 const capturedOptions: any[] = [];
 jest.mock('echarts-for-react', () => ({
@@ -48,6 +62,9 @@ jest.mock('echarts-for-react', () => ({
 beforeEach(() => {
   jest.clearAllMocks();
   capturedOptions.length = 0;
+
+  // Restore the data source menu mock after reset
+  mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
 
   (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
     if (url === '/api/_wlm/workload_group') {
@@ -107,6 +124,10 @@ const mockDataSource = {
   name: 'default',
 } as any;
 
+const mockParams = {
+  setHeaderActionMenu: jest.fn(),
+} as any;
+
 const renderComponent = () =>
   render(
     <MemoryRouter>
@@ -114,7 +135,7 @@ const renderComponent = () =>
         <WorkloadManagementMain
           core={mockCore}
           depsStart={mockDepsStart}
-          params={{} as any}
+          params={mockParams}
           dataSourceManagement={mockDataSourceManagement}
         />
       </DataSourceContext.Provider>

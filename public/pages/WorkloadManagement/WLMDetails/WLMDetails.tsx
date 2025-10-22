@@ -29,7 +29,6 @@ import {
 import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_MAIN, DataSourceContext } from '../WorkloadManagement';
 import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
@@ -552,26 +551,18 @@ export const WLMDetails = ({
         </EuiConfirmModal>
       )}
 
-      <PageHeader
+      <WLMDataSourceMenu
         coreStart={core}
         depsStart={depsStart}
-        fallBackComponent={
-          <>
-            <WLMDataSourceMenu
-              coreStart={core}
-              depsStart={depsStart}
-              params={params}
-              dataSourceManagement={dataSourceManagement}
-              setDataSource={setDataSource}
-              selectedDataSource={dataSource}
-              onManageDataSource={() => {}}
-              onSelectedDataSource={() => {
-                window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
-              }}
-              dataSourcePickerReadOnly={true}
-            />
-          </>
-        }
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+        }}
+        dataSourcePickerReadOnly={true}
       />
 
       <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
