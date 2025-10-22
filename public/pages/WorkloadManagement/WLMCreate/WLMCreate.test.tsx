@@ -28,17 +28,32 @@ const coreMock = {
   chrome: {
     setBreadcrumbs: jest.fn(),
   },
+  savedObjects: {
+    client: {},
+  },
 };
 
-const depsMock = {}; // Not used in this component
+const depsMock = {
+  dataSource: {
+    dataSourceEnabled: true,
+  },
+};
+
+const MockDataSourceMenu = (_props: any) => <div>Mocked Data Source Menu</div>;
+
 const mockDataSourceManagement = {
-  get: () => ({ id: 'default', name: 'default' }),
-  getDataSourceMenu: jest.fn(() => <div>Mocked Data Source Menu</div>),
+  ui: {
+    getDataSourceMenu: jest.fn(() => MockDataSourceMenu),
+  },
 } as any;
 
 const mockDataSource = {
   id: 'default',
   name: 'default',
+} as any;
+
+const mockParams = {
+  setHeaderActionMenu: jest.fn(),
 } as any;
 
 jest.mock('react-router-dom', () => ({
@@ -55,6 +70,9 @@ jest.mock('../../../components/PageHeader', () => ({
 describe('WLMCreate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Restore the data source menu mock after reset
+    mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
   });
 
   const renderComponent = () =>
@@ -66,7 +84,7 @@ describe('WLMCreate', () => {
           <WLMCreate
             core={coreMock as any}
             depsStart={depsMock as any}
-            params={{} as any}
+            params={mockParams}
             dataSourceManagement={mockDataSourceManagement}
           />
         </DataSourceContext.Provider>
