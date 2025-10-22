@@ -17,7 +17,7 @@ describe('WLM Details Page', () => {
   const groupName = `wlm-e2e-${Date.now()}`;
 
   before(() => {
-    // 1) Ensure WLM is enabled
+    // 1) Ensure WLM enabled
     return (
       cy
         .enableWlmMode(WLM_AUTH)
