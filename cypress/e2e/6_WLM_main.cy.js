@@ -6,9 +6,9 @@
 import { WLM_AUTH } from '../support/constants';
 
 describe('WLM Main Page', () => {
-  before(() => {
-    cy.enableWlmMode(WLM_AUTH);
-  });
+  // before(() => {
+  //   cy.enableWlmMode(WLM_AUTH);
+  // });
 
   beforeEach(() => {
     cy.visit('/app/workload-management#/workloadManagement', {

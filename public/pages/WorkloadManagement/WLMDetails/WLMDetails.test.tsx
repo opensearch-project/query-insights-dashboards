@@ -222,8 +222,12 @@ describe('WLMDetails Component', () => {
     renderComponent('non-existent-group');
 
     await waitFor(() => {
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to find workload group')
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalled();
+
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('Failed to find workload group'),
+        expect.any(Error)
       );
       expect(mockPush).toHaveBeenCalledWith(WLM_MAIN);
     });
@@ -318,8 +322,11 @@ describe('WLMDetails Component', () => {
     renderComponent('test-group');
 
     await waitFor(() => {
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.stringContaining('Could not load workload group stats')
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledTimes(2);
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('Could not load workload group stats.'),
+        expect.any(Error)
       );
     });
   });
@@ -409,8 +416,11 @@ describe('WLMDetails Component', () => {
     renderComponent('test-group');
 
     await waitFor(() => {
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to find workload group')
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledTimes(1);
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('Failed to find workload group'),
+        expect.any(Error)
       );
     });
   });
