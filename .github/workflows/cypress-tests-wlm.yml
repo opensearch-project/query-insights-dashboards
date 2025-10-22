@@ -1,4 +1,4 @@
-name: Cypress e2e integration tests workflow
+name: Cypress e2e integration tests workflow with security
 on:
   pull_request:
     branches:
@@ -10,7 +10,8 @@ on:
 env:
   OPENSEARCH_BRANCH: 'main'
   SECURITY_BRANCH: 'main'
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!
+  OPENSEARCH_DASHBOARDS_VERSION: 'main'
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
