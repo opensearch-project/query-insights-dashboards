@@ -12,6 +12,7 @@ import {
   ILegacyCustomClusterClient,
 } from '../../../src/core/server';
 import { QueryInsightsPlugin } from './clusters/queryInsightsPlugin';
+import { WlmPlugin } from './clusters/wlmPlugin';
 
 import { QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart } from './types';
 import { defineRoutes } from './routes';
@@ -50,10 +51,28 @@ export class QueryInsightsDashboardsPlugin
         queryInsightsClient,
       };
     });
+    // Register WLM custom client
+    const wlmClient: ILegacyCustomClusterClient = core.opensearch.legacy.createClient(
+      'opensearch_wlm',
+      {
+        plugins: [WlmPlugin],
+      }
+    );
+    if (dataSourceEnabled) {
+      dataSource.registerCustomApiSchema(WlmPlugin);
+    }
+
+    // @ts-ignore - Register WLM context
+    core.http.registerRouteHandlerContext('wlm_plugin', (_context, _request) => {
+      return {
+        logger: this.logger,
+        wlmClient,
+      };
+    });
 
     // Register server side APIs
     defineRoutes(router, dataSourceEnabled);
-    defineWlmRoutes(router);
+    defineWlmRoutes(router, dataSourceEnabled);
 
     return {};
   }
