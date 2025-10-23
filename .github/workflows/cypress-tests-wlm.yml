@@ -171,12 +171,13 @@ jobs:
           path: OpenSearch-Dashboards
           ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
 
-      - name: Configure OpenSearch Dashboards for cypress
+      - name: Configure OpenSearch Dashboards to talk HTTPS to OpenSearch
         run: |
-          cat << 'EOT' > cypress-opensearch-dashboards-config.yml
-          opensearch.hosts: ["https://localhost:9200"]
-          opensearch.ssl.verificationMode: none
-          EOT
+           cat >> OpenSearch-Dashboards/config/opensearch_dashboards.yml << 'EOT'
+           opensearch.hosts: [ "https://localhost:9200" ]
+           opensearch.ssl.verificationMode: none
+           server.host: "0.0.0.0"
+           EOT
 
       - name: Checkout Query Insights Dashboards plugin
         uses: actions/checkout@v4
@@ -220,27 +221,30 @@ jobs:
           max_attempts=150
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            if curl -ksf -u admin:myStrongPassword123! http://localhost:5601/api/status > /dev/null 2>&1; then
-              echo "OpenSearch-Dashboards is ready!"
-              echo "=== OpenSearch-Dashboards Status Debug Info ==="
-              curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status | jq '.' || curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status
-              sleep 45
-              break
+            if curl -sf http://localhost:5601/api/status > /dev/null 2>&1; then
+              # optionally ensure overall state is 'available'
+              state=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state // .status.overall.level // "unknown"')
+              if [ "$state" = "available" ] || [ "$state" = "green" ]; then
+                echo "OpenSearch-Dashboards is ready! state=$state"
+                echo "=== OpenSearch-Dashboards Status Debug Info ==="
+                curl -s http://localhost:5601/api/status | jq '.' || curl -s http://localhost:5601/api/status
+                break
+              fi
             fi
             attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: OpenSearch-Dashboards not ready yet, waiting 10 seconds..."
+            echo "Attempt $attempt/$max_attempts: waiting 10s..."
             if [ $((attempt % 10)) -eq 0 ]; then
-              echo "Debug: Attempting to connect to https://localhost:5601/api/status"
-              curl -ks -v -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "Connection failed"
+              echo "Debug: /api/status"
+              curl -s -v http://localhost:5601/api/status || echo "Connection failed"
             fi
             sleep 10
           done
           if [ $attempt -eq $max_attempts ]; then
             echo "OpenSearch-Dashboards failed to start within timeout"
-            curl -ks -v -u admin:myStrongPassword123! http://localhost:5601/api/status || echo "Final connection attempt failed"
+            curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
             exit 1
           fi
-          curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
+
           echo "Waiting additional time for plugin initialization..."
           sleep 15
         shell: bash
@@ -252,14 +256,14 @@ jobs:
 
           echo "Checking OpenSearch-Dashboards status..."
           echo "=== Full OpenSearch-Dashboards Status ==="
-          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
+          curl -s http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
           echo "========================================"
 
           echo "Checking OpenSearch-Dashboards overall state..."
-          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
+          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
 
           echo "Checking plugin endpoint..."
-          curl -ks -u admin:myStrongPassword123! https://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
+          curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
         shell: bash
         continue-on-error: true
 
@@ -282,7 +286,6 @@ jobs:
           path: ${{ matrix.cypress_cache_folder }}
           key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
 
-      # ⬇️ Only run WLM specs
       - name: Cypress tests
         uses: cypress-io/github-action@v5
         with:
@@ -291,7 +294,7 @@ jobs:
             yarn run cypress run
             --spec "cypress/e2e/wlm/**/*.cy.{js,jsx,ts,tsx}"
             --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
-          wait-on: 'https://localhost:5601'
+          wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome
         env:
