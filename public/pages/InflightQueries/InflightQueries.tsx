@@ -169,8 +169,6 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-
-
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
@@ -226,8 +224,6 @@ export const InflightQueries = ({
         }
       }
     }
-
-
 
     setWorkloadGroupStats({
       total_completions: completions,
