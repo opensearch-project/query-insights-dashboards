@@ -24,6 +24,7 @@ import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
 import { getSavedObjectsClient, getRouteService } from '../service';
+import type { CoreStart } from 'opensearch-dashboards/public';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
@@ -99,3 +100,35 @@ export const isWLMDataSourceCompatible = (dataSource: SavedObject<DataSourceAttr
   }
   return true;
 };
+
+export async function resolveDataSourceVersion(
+  core: CoreStart,
+  selected?: DataSourceOption | { id?: string; dataSourceVersion?: string }
+): Promise<string | undefined> {
+  // 1) If the picker option already carries version, use it.
+  if ((selected as any)?.dataSourceVersion) {
+    return (selected as any).dataSourceVersion as string;
+  }
+
+  // 2) Otherwise, fetch the saved object to read attributes.dataSourceVersion.
+  const id = (selected as any)?.id;
+  if (id) {
+    try {
+      const so = await core.savedObjects.client.get<SavedObject<DataSourceAttributes>>(
+        'data-source',
+        id
+      );
+      return (so as any)?.attributes?.dataSourceVersion;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
+/** Whether Security rule attributes (username/role) are supported (>= 3.3.0). */
+export function isSecurityAttributesSupported(version?: string): boolean {
+  // defend against undefined or loose versions
+  const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
+  return !!v && semver.gte(v, '3.3.0');
+}

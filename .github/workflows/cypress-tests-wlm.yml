@@ -95,7 +95,7 @@ jobs:
       - name: Install plugins into localDistro
         run: |
           set -e
-          cd "$LOCAL_DISTRO"
+          cd "OpenSearch/$LOCAL_DISTRO"
           bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/security/$SEC_ZIP"
           bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/OpenSearch/$WLM_ZIP"
 
