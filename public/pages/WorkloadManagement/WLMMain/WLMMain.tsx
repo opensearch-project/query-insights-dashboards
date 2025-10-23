@@ -28,6 +28,7 @@ import { WLM_CREATE } from '../WorkloadManagement';
 import { DataSourceContext } from '../WorkloadManagement';
 import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
+import { getVersionOnce, isVersion33OrHigher } from '../../../utils/version-utils';
 
 export const WLM = '/workloadManagement';
 
@@ -160,9 +161,14 @@ export const WorkloadManagementMain = ({
     }
   };
 
-  // === API Calls ===
   const checkQueryInsightsAvailability = async () => {
     try {
+      const version = await getVersionOnce(dataSource?.id || '');
+      if (!isVersion33OrHigher(version)) {
+        setIsQueryInsightsAvailable(false);
+        return;
+      }
+
       const res = await core.http.get('/api/live_queries', {
         query: { dataSourceId: dataSource.id },
       });
