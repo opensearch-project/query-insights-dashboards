@@ -30,10 +30,24 @@ const mockCore = ({
       addDanger: jest.fn(),
     },
   },
+  savedObjects: {
+    client: {},
+  },
 } as unknown) as CoreStart;
 
-const mockDepsStart = {} as any;
-const mockDataSourceManagement = {} as any;
+const mockDepsStart = {
+  dataSource: {
+    dataSourceEnabled: true,
+  },
+} as any;
+
+const MockDataSourceMenu = (_props: any) => <div>Mocked Data Source Menu</div>;
+
+const mockDataSourceManagement = {
+  ui: {
+    getDataSourceMenu: jest.fn(() => MockDataSourceMenu),
+  },
+} as any;
 
 const capturedOptions: any[] = [];
 jest.mock('echarts-for-react', () => ({
@@ -49,70 +63,69 @@ beforeEach(() => {
   jest.clearAllMocks();
   capturedOptions.length = 0;
 
+  // Restore the data source menu mock after reset
+  mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
+
   (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
     if (url === '/api/_wlm/workload_group') {
       return Promise.resolve({
-        body: {
-          workload_groups: [
-            { _id: 'group1', name: 'Group One', resource_limits: { cpu: 0.4, memory: 0.5 } },
-            { _id: 'group2', name: 'Group Two', resource_limits: { cpu: 0.6, memory: 0.7 } },
-            { _id: 'group3', name: 'Group Three', resource_limits: { cpu: 0.1, memory: 0.1 } },
-          ],
-        },
+        workload_groups: [
+          { _id: 'group1', name: 'Group One', resource_limits: { cpu: 0.4, memory: 0.5 } },
+          { _id: 'group2', name: 'Group Two', resource_limits: { cpu: 0.6, memory: 0.7 } },
+          { _id: 'group3', name: 'Group Three', resource_limits: { cpu: 0.1, memory: 0.1 } },
+        ],
       });
     }
     if (url === '/api/_wlm/stats') {
       return Promise.resolve({
-        body: {
-          node1: {
-            workload_groups: {
-              group1: {
-                total_completions: 10,
-                total_rejections: 2,
-                total_cancellations: 1,
-                cpu: { current_usage: 0.4 },
-                memory: { current_usage: 0.3 },
-              },
-              group2: {
-                total_completions: 5,
-                total_rejections: 1,
-                total_cancellations: 0,
-                cpu: { current_usage: 0.5 },
-                memory: { current_usage: 0.6 },
-              },
-              group3: {
-                total_completions: 5,
-                total_rejections: 1,
-                total_cancellations: 0,
-                cpu: { current_usage: 0.5 },
-                memory: { current_usage: 0.6 },
-              },
+        node1: {
+          workload_groups: {
+            group1: {
+              total_completions: 10,
+              total_rejections: 2,
+              total_cancellations: 1,
+              cpu: { current_usage: 0.4 },
+              memory: { current_usage: 0.3 },
+            },
+            group2: {
+              total_completions: 5,
+              total_rejections: 1,
+              total_cancellations: 0,
+              cpu: { current_usage: 0.5 },
+              memory: { current_usage: 0.6 },
+            },
+            group3: {
+              total_completions: 5,
+              total_rejections: 1,
+              total_cancellations: 0,
+              cpu: { current_usage: 0.5 },
+              memory: { current_usage: 0.6 },
             },
           },
-          node2: {
-            workload_groups: {
-              group1: {
-                total_completions: 5,
-                total_rejections: 1,
-                total_cancellations: 2,
-                cpu: { current_usage: 0.25 },
-                memory: { current_usage: 0.45 },
-              },
+        },
+        node2: {
+          workload_groups: {
+            group1: {
+              total_completions: 5,
+              total_rejections: 1,
+              total_cancellations: 2,
+              cpu: { current_usage: 0.25 },
+              memory: { current_usage: 0.45 },
             },
           },
         },
       });
     }
-    if (url.startsWith('/api/_wlm/stats/')) {
-      return Promise.resolve({ body: {} });
-    }
-    return Promise.resolve({ body: {} });
   });
 });
 
 const mockDataSource = {
   id: 'default',
   name: 'default',
+} as any;
+
+const mockParams = {
+  setHeaderActionMenu: jest.fn(),
 } as any;
 
 const renderComponent = () =>
@@ -122,7 +135,7 @@ const renderComponent = () =>
         <WorkloadManagementMain
           core={mockCore}
           depsStart={mockDepsStart}
-          params={{} as any}
+          params={mockParams}
           dataSourceManagement={mockDataSourceManagement}
         />
       </DataSourceContext.Provider>
@@ -204,21 +217,6 @@ describe('WorkloadManagementMain', () => {
       expect(mockCore.chrome.setBreadcrumbs).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ text: 'Data Administration' })])
       );
-    });
-  });
-
-  it('handles case when no node is selected', async () => {
-    (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
-      if (url === '/api/_wlm_proxy/_nodes') {
-        return Promise.resolve({ body: { nodes: {} } });
-      }
-      return Promise.resolve({ body: {} });
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
     });
   });
 

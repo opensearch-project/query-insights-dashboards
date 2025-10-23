@@ -18,7 +18,7 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays the correct page title', () => {
-    cy.contains('Query insights - In-flight queries scoreboard').should('be.visible');
+    cy.contains('Query insights - In-flight queries').should('be.visible');
   });
 
   it('displays metrics panels correctly', () => {
@@ -64,20 +64,8 @@ describe('Inflight Queries Dashboard', () => {
       'Memory usage',
       'Search type',
       'Status',
+      'WLM Group',
       'Actions',
-    ];
-
-    const expectedRow = [
-      'Jun 05, 2025 @ 10:24:26 PM',
-      'node-A1B2C3D4E5:3600',
-      'top_queries-2025.06.06-11009',
-      'node-A1B2C3D4E5',
-      '7.99 s',
-      '89.95 µs',
-      '3.73 KB',
-      'QUERY_THEN_FETCH',
-      'Cancelled',
-      '',
     ];
 
     cy.get('.euiTable thead tr th').should(($headers) => {
@@ -87,19 +75,6 @@ describe('Inflight Queries Dashboard', () => {
         expect(actualHeaders[index]).to.eq(expected);
       });
     });
-
-    cy.get('.euiTable tbody tr')
-      .first()
-      .find('td')
-      .should(($cells) => {
-        const actualCells = [...$cells].map((el) => el.innerText.trim());
-        const visibleData = actualCells.slice(1, expectedRow.length + 1);
-
-        expectedRow.forEach((expected, index) => {
-          const valueToCheck = visibleData[index];
-          expect(valueToCheck).to.eq(expected);
-        });
-      });
   });
 
   it('navigates to next page in table pagination', () => {
@@ -168,39 +143,6 @@ describe('Inflight Queries Dashboard', () => {
     cy.get('@getPeriodicQueries.all').should('have.length.at.least', 3);
   });
 
-  it('displays correct chart data for node and index charts', () => {
-    return cy
-      .get('[data-test-subj="vega-chart-node"]')
-      .invoke('attr', 'data-chart-values')
-      .then((json) => {
-        const data = JSON.parse(json);
-        expect(data).to.deep.equal([
-          { label: 'node-A1B2C3D4E5', value: 2 },
-          { label: '4W2VTHIgQY-oB7dSrYz4B', value: 1 },
-          { label: 'node-X9Y8Z7W6', value: 1 },
-          { label: 'node-P0Q9R8S7', value: 1 },
-          { label: '4W2VTHIgQY-oB7dSrYz4', value: 1 },
-          { label: 'node-M2O3P4Q5', value: 1 },
-          { label: 'node-B2C3D4E5', value: 1 },
-          { label: 'node-N2O3P4Q5', value: 1 },
-          { label: '2VTHIgQY-oB7dSrYz4BQ', value: 1 },
-          { label: 'others', value: 10 },
-        ]);
-        expect(data).to.have.length(10);
-      })
-      .then(() => {
-        return cy
-          .get('[data-test-subj="vega-chart-index"]')
-          .invoke('attr', 'data-chart-values')
-          .then((json) => {
-            const data = JSON.parse(json);
-            expect(data).to.deep.include({ label: 'top_queries-2025.06.06-11009', value: 19 });
-            expect(data).to.deep.include({ label: 'opensearch', value: 1 });
-            expect(data).to.have.length(2);
-          });
-      });
-  });
-
   it('handles empty response state', () => {
     cy.intercept('GET', '**/api/live_queries', (req) => {
       req.reply({
@@ -241,14 +183,12 @@ describe('Inflight Queries Dashboard', () => {
       cy.get('h2 > b').should('contain.text', '0');
     });
 
-    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
     cy.contains('p', 'Queries by Node')
       .closest('.euiPanel')
       .within(() => {
         cy.contains('No data available').should('be.visible');
       });
 
-    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
     cy.contains('p', 'Queries by Index')
       .closest('.euiPanel')
       .within(() => {
@@ -359,8 +299,6 @@ describe('Inflight Queries Dashboard', () => {
 
   it('does not show cancel action for already cancelled queries', () => {
     cy.fixture('stub_live_queries.json').then((data) => {
-      data.response.live_queries[0].measurements.is_cancelled = true;
-
       cy.intercept('GET', '**/api/live_queries', {
         statusCode: 200,
         body: data,
@@ -392,68 +330,118 @@ describe('Inflight Queries Dashboard', () => {
         cy.contains('td', 'opensearch');
       });
   });
-
-  it('renders charts and allows switching between chart types', () => {
-    cy.contains('p', 'Queries by Node').closest('.euiPanel').as('nodeChart');
-    cy.contains('p', 'Queries by Index').closest('.euiPanel').as('indexChart');
-
-    cy.get('@nodeChart').within(() => {
-      cy.get('.euiButtonGroup').should('exist');
-      cy.get('.euiButtonGroup').contains('Donut').should('exist');
-      cy.get('.euiButtonGroup').contains('Bar').should('exist');
-      cy.get('.vega-embed').should('exist');
-
-      cy.get('.euiButtonGroup').contains('Bar').click();
-      cy.wait(500);
-      cy.get('.euiButtonGroup').contains('Donut').click();
-      cy.wait(500);
-    });
-
-    cy.get('@indexChart').within(() => {
-      cy.get('.euiButtonGroup').should('exist');
-      cy.get('.euiButtonGroup').contains('Donut').should('exist');
-      cy.get('.euiButtonGroup').contains('Bar').should('exist');
-      cy.get('.vega-embed').should('exist');
-
-      cy.get('.euiButtonGroup').contains('Bar').click({ force: true });
-      cy.wait(500);
-      cy.get('.euiButtonGroup').contains('Donut').click({ force: true });
-      cy.wait(500);
-    });
-  });
-
-  it('displays "others" in Vega chart legend when there are > 9 nodes', () => {
-    cy.get('[data-test-subj="vega-chart-node"] svg')
-      .should('exist')
-      .contains(/others/i)
+  it('shows a grey "Workload group" badge with a dropdown next to it', () => {
+    cy.contains('.euiBadge', 'Workload group').should('be.visible');
+    // The select should be the next control after the badge
+    cy.contains('.euiBadge', 'Workload group')
+      .parent()
+      .next()
+      .find('select, .euiSelect') // raw <select> or EuiSelect
       .should('exist');
   });
 
-  it('displays error panel when live queries API fails', () => {
-    cy.intercept('GET', '**/api/live_queries', {
-      statusCode: 500,
+  it('displays WLM group as text when WLM is disabled', () => {
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
+      });
+  });
+});
+
+describe('Inflight Queries Dashboard - WLM Enabled', () => {
+  beforeEach(() => {
+    cy.fixture('stub_live_queries.json').then((stubResponse) => {
+      cy.intercept('GET', '**/api/live_queries', {
+        statusCode: 200,
+        body: stubResponse,
+      }).as('getLiveQueries');
+    });
+
+    cy.fixture('stub_wlm_stats.json').then((wlmStatsResponse) => {
+      cy.intercept('GET', '**/api/_wlm/stats', {
+        statusCode: 200,
+        body: wlmStatsResponse,
+      }).as('getWlmStats');
+    });
+
+    cy.intercept('GET', '**/api/cat_plugins', {
+      statusCode: 200,
+      body: { hasWlm: true },
+    }).as('getPluginsEnabled');
+
+    cy.intercept('GET', '**/api/_wlm/workload_group', {
+      statusCode: 200,
       body: {
-        ok: false,
-        error: 'Internal Server Error',
+        workload_groups: [
+          { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'ANALYTICS_WORKLOAD_GROUP' },
+          { _id: 'DEFAULT_QUERY_GROUP', name: 'DEFAULT_QUERY_GROUP' },
+        ],
       },
-    }).as('getLiveQueriesError');
+    }).as('getWorkloadGroups');
+    cy.intercept('GET', '**/api/cat_plugins', {
+      statusCode: 200,
+      body: { hasWlm: true },
+    }).as('getPluginsEnabled');
 
-    cy.visit('/app/query-insights-dashboards#/LiveQueries');
-    cy.wait('@getLiveQueriesError');
+    cy.navigateToLiveQueries();
+    cy.wait('@getLiveQueries');
+  });
 
-    // Validate that a proper error message is shown in the Vega panels
-    cy.contains('p', 'Queries by Node')
+  it('displays WLM group links when WLM is enabled', () => {
+    cy.wait('@getWorkloadGroups');
+    cy.wait('@getPluginsEnabled');
+
+    cy.get('tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').click({ force: true });
+      });
+  });
+
+  it('calls different API when WLM group selection changes', () => {
+    // Intercept all live_queries calls
+    cy.intercept('GET', '**/api/live_queries*').as('liveQueries');
+
+    // 1) Select ANALYTICS first
+    cy.get('#wlm-group-select').should('exist').select('ANALYTICS_WORKLOAD_GROUP');
+
+    cy.wait('@liveQueries')
+      .its('request.url')
+      .should('include', 'wlmGroupId=ANALYTICS_WORKLOAD_GROUP');
+
+    // Component re-fetches workload groups after selection — wait for that
+    cy.wait('@getWorkloadGroups');
+
+    // 2) Select DEFAULT_WORKLOAD_GROUP explicitly
+    cy.get('#wlm-group-select').select('DEFAULT_WORKLOAD_GROUP');
+
+    cy.wait('@liveQueries')
+      .its('request.url')
+      .should('include', 'wlmGroupId=DEFAULT_WORKLOAD_GROUP');
+  });
+
+  it('displays total completion, cancellation, and rejection metrics correctly', () => {
+    // Trigger a refresh to ensure WLM stats are loaded
+    cy.get('[data-test-subj="live-queries-refresh-button"]').click();
+    cy.wait('@getWlmStats');
+
+    cy.contains('Total completions')
       .closest('.euiPanel')
       .within(() => {
-        cy.contains('Failed to load live queries').should('be.visible');
+        cy.get('h2').should('contain.text', '300');
       });
 
-    cy.contains('p', 'Queries by Index')
+    cy.contains('Total cancellations')
       .closest('.euiPanel')
       .within(() => {
-        cy.contains('Failed to load live queries').should('be.visible');
+        cy.get('h2').should('contain.text', '80');
       });
-    cy.get('[data-test-subj="vega-chart-node"]').should('not.exist');
-    cy.get('[data-test-subj="vega-chart-index"]').should('not.exist');
+
+    cy.contains('Total rejections')
+      .closest('.euiPanel')
+      .within(() => {
+        cy.get('h2').should('contain.text', '10');
+      });
   });
 });

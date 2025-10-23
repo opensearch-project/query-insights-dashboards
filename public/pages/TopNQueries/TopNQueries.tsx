@@ -214,9 +214,9 @@ const TopNQueries = ({
           ...respCpu.response.top_queries,
           ...respMemory.response.top_queries,
         ];
-        const noDuplicates: SearchQueryRecord[] = Array.from(
-          new Set(newQueries.map((item) => JSON.stringify(item)))
-        ).map((item) => JSON.parse(item));
+        const noDuplicates: SearchQueryRecord[] = newQueries.filter(
+          (query, index, self) => index === self.findIndex((q) => q.id === query.id)
+        );
         setQueries(noDuplicates);
       } catch (error) {
         console.error('Error retrieving queries:', error);
@@ -288,8 +288,8 @@ const TopNQueries = ({
             }
           });
           const groupBy = getMergedStringSettings(
-            persistentSettings?.group_by,
-            transientSettings?.group_by,
+            persistentSettings?.grouping.group_by,
+            transientSettings?.grouping.group_by,
             DEFAULT_GROUP_BY
           );
           setGroupBySettings({ groupBy });
@@ -408,7 +408,7 @@ const TopNQueries = ({
               fallBackComponent={
                 <>
                   <EuiTitle size="l">
-                    <h1>Query insights - In-flight queries scoreboard</h1>
+                    <h1>Query insights - In-flight queries</h1>
                   </EuiTitle>
                   <EuiSpacer size="l" />
                 </>

@@ -6,20 +6,27 @@
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
 
-export function defineWlmRoutes(router: IRouter) {
+export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
   // Get WLM stats across all nodes in the cluster
   router.get(
     {
       path: '/api/_wlm/stats',
-      validate: false,
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const stats = await client.transport.request({
-          method: 'GET',
-          path: '/_wlm/stats',
-        });
+        let stats;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          stats = await client('wlm.getStats');
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          stats = await client.callAPI('wlm.getStats', {});
+        }
         return response.ok({ body: stats });
       } catch (error: any) {
         context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
@@ -43,16 +50,22 @@ export function defineWlmRoutes(router: IRouter) {
         params: schema.object({
           nodeId: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
         const { nodeId } = request.params;
-        const stats = await client.transport.request({
-          method: 'GET',
-          path: `/_wlm/${nodeId}/stats`,
-        });
+        let stats;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          stats = await client('wlm.getNodeStats', { nodeId });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          stats = await client.callAPI('wlm.getNodeStats', { nodeId });
+        }
         return response.ok({ body: stats });
       } catch (error: any) {
         console.error(`Failed to fetch stats for node ${request.params.nodeId}:`, error);
@@ -70,15 +83,22 @@ export function defineWlmRoutes(router: IRouter) {
   router.get(
     {
       path: '/api/_wlm/workload_group',
-      validate: false,
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const result = await client.transport.request({
-          method: 'GET',
-          path: '/_wlm/workload_group',
-        });
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.getWorkloadGroups');
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.getWorkloadGroups', {});
+        }
         return response.ok({ body: result });
       } catch (error: any) {
         return response.customError({
@@ -97,16 +117,22 @@ export function defineWlmRoutes(router: IRouter) {
         params: schema.object({
           name: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       const { name } = request.params;
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const result = await client.transport.request({
-          method: 'GET',
-          path: `/_wlm/workload_group/${name}`,
-        });
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.getWorkloadGroup', { name });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.getWorkloadGroup', { name });
+        }
         return response.ok({ body: result });
       } catch (error: any) {
         return response.custom({
@@ -130,19 +156,22 @@ export function defineWlmRoutes(router: IRouter) {
             memory: schema.maybe(schema.number()),
           }),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
         const body = request.body;
-
-        const result = await client.transport.request({
-          method: 'PUT',
-          path: '/_wlm/workload_group',
-          body,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.createWorkloadGroup', { body });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.createWorkloadGroup', { body });
+        }
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to create workload group:', e);
@@ -168,20 +197,23 @@ export function defineWlmRoutes(router: IRouter) {
             memory: schema.maybe(schema.number()),
           }),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
         const { name } = request.params;
         const body = request.body;
-
-        const result = await client.transport.request({
-          method: 'PUT',
-          path: `/_wlm/workload_group/${name}`,
-          body,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.updateWorkloadGroup', { name, body });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.updateWorkloadGroup', { name, body });
+        }
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to update workload group:', e);
@@ -200,18 +232,22 @@ export function defineWlmRoutes(router: IRouter) {
         params: schema.object({
           name: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
         const { name } = request.params;
-
-        const result = await client.transport.request({
-          method: 'DELETE',
-          path: `/_wlm/workload_group/${name}`,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.deleteWorkloadGroup', { name });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.deleteWorkloadGroup', { name });
+        }
         return response.ok({ body: result });
       } catch (e: any) {
         console.error(`Failed to delete workload group '${request.params.name}':`, e);
@@ -232,18 +268,22 @@ export function defineWlmRoutes(router: IRouter) {
         params: schema.object({
           workloadGroupId: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
         const { workloadGroupId } = request.params;
-
-        const result = await client.transport.request({
-          method: 'GET',
-          path: `/_wlm/stats/${workloadGroupId}`,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.getWorkloadGroupStats', { workloadGroupId });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.getWorkloadGroupStats', { workloadGroupId });
+        }
         return response.ok({ body: result });
       } catch (error: any) {
         console.error(
@@ -260,26 +300,6 @@ export function defineWlmRoutes(router: IRouter) {
     }
   );
 
-  // Get all node IDs (used for node selection dropdown)
-  router.get(
-    {
-      path: '/api/_wlm_proxy/_nodes',
-      validate: false,
-    },
-    async (context, request, response) => {
-      const esClient = context.core.opensearch.client.asCurrentUser;
-      try {
-        const result = await esClient.nodes.info();
-        return response.ok({ body: result });
-      } catch (e) {
-        return response.customError({
-          statusCode: e.statusCode || 500,
-          body: e.message,
-        });
-      }
-    }
-  );
-
   // Create index rule
   router.put(
     {
@@ -290,25 +310,26 @@ export function defineWlmRoutes(router: IRouter) {
           index_pattern: schema.arrayOf(schema.string()),
           workload_group: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-        const description = request.body.description;
-        const indexPattern = request.body.index_pattern;
-        const workloadGroup = request.body.workload_group;
-
-        const result = await client.transport.request({
-          method: 'PUT',
-          path: '/_rules/workload_group',
-          body: {
-            description,
-            index_pattern: indexPattern,
-            workload_group: workloadGroup,
-          },
-        });
-
+        const body = {
+          description: request.body.description,
+          index_pattern: request.body.index_pattern,
+          workload_group: request.body.workload_group,
+        };
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.createRule', { body });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.createRule', { body });
+        }
         return response.ok({ body: result });
       } catch (error: any) {
         console.error(`Failed to create index rule:`, error);
@@ -324,17 +345,22 @@ export function defineWlmRoutes(router: IRouter) {
   router.get(
     {
       path: '/api/_rules/workload_group',
-      validate: false,
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-
-        const result = await client.transport.request({
-          method: 'GET',
-          path: '/_rules/workload_group',
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.getRules');
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.getRules', {});
+        }
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to fetch index rules:', e);
@@ -353,18 +379,22 @@ export function defineWlmRoutes(router: IRouter) {
         params: schema.object({
           ruleId: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
       const { ruleId } = request.params;
       try {
-        const client = context.core.opensearch.client.asCurrentUser;
-
-        const result = await client.transport.request({
-          method: 'DELETE',
-          path: `/_rules/workload_group/${ruleId}`,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.deleteRule', { ruleId });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.deleteRule', { ruleId });
+        }
         return response.ok({ body: result });
       } catch (e: any) {
         console.error(`Failed to delete index rule ${ruleId}:`, e);
@@ -388,6 +418,9 @@ export function defineWlmRoutes(router: IRouter) {
           index_pattern: schema.arrayOf(schema.string()),
           workload_group: schema.string(),
         }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
       },
     },
     async (context, request, response) => {
@@ -395,12 +428,14 @@ export function defineWlmRoutes(router: IRouter) {
       const body = request.body;
 
       try {
-        const result = await context.core.opensearch.client.asCurrentUser.transport.request({
-          method: 'PUT',
-          path: `/_rules/workload_group/${ruleId}`,
-          body,
-        });
-
+        let result;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          result = await client('wlm.updateRule', { ruleId, body });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          result = await client.callAPI('wlm.updateRule', { ruleId, body });
+        }
         return response.ok({ body: result });
       } catch (error) {
         console.error('Error updating rule:', error);
@@ -408,6 +443,58 @@ export function defineWlmRoutes(router: IRouter) {
           body: error.message || error,
           statusCode: error.statusCode || 500,
         });
+      }
+    }
+  );
+
+  // Get node level cpu and memory threshold
+  router.get(
+    {
+      path: '/api/_wlm/thresholds',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        let body;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
+          body = await client('wlm.getThresholds', { include_defaults: true });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(request.query.dataSourceId);
+          body = await client.callAPI('wlm.getThresholds', { include_defaults: true });
+        }
+
+        const cpuThreshold =
+          body.transient?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          body.persistent?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          body.defaults?.wlm?.workload_group?.node?.cpu_rejection_threshold ??
+          '1';
+
+        const memoryThreshold =
+          body.transient?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          body.persistent?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          body.defaults?.wlm?.workload_group?.node?.memory_rejection_threshold ??
+          '1';
+
+        return response.ok({
+          body: {
+            cpuRejectionThreshold: parseFloat(cpuThreshold),
+            memoryRejectionThreshold: parseFloat(memoryThreshold),
+          },
+        });
+      } catch (e: any) {
+        const status = e?.meta?.statusCode ?? e?.statusCode ?? e?.status ?? 500;
+        const message =
+          e?.meta?.body?.error?.reason ??
+          e?.meta?.body?.message ??
+          e?.body?.message ??
+          e?.message ??
+          'Unexpected error';
+        return response.customError({ statusCode: status, body: { message } });
       }
     }
   );
