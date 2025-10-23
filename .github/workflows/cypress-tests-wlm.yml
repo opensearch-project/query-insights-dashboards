@@ -113,32 +113,37 @@ jobs:
           # -y answers yes to prompts, -i writes demo TLS settings and files into config/
           ./install_demo_configuration.sh -y -i
 
-          echo "=== Snippet of generated TLS config in opensearch.yml ==="
-          grep -E '^plugins\.security\.ssl\.' -n ../../../../config/opensearch.yml || true
-          echo "========================================================="
-
       # 2) Start OpenSearch and wait for the HTTPS endpoint to respond (no auth yet)
       - name: Start OpenSearch (with Security) and wait
         run: |
           set -e
           cd "OpenSearch/$LOCAL_DISTRO"
           echo "discovery.type: single-node" >> config/opensearch.yml
-
           nohup bin/opensearch > os.log 2>&1 &
 
-          echo "Waiting for OpenSearch TCP/HTTP to be up (no auth check)..."
+          echo "Waiting for HTTPS port..."
           for i in {1..60}; do
             if curl -sk https://localhost:9200 >/dev/null 2>&1; then
-              echo "OpenSearch port is up"; break
+              echo "Port is up"; break
             fi
-            echo "Attempt $i/60..."; sleep 5
+            echo "Attempt $i/60..."; sleep 3
           done
-          curl -sk https://localhost:9200 >/dev/null 2>&1 || {
-            echo "OpenSearch never came up"
-            echo "=== Last 300 lines of os.log ==="
-            tail -n 300 os.log || true
+          curl -sk https://localhost:9200 >/dev/null 2>&1 || { echo "OpenSearch never came up"; tail -n 200 os.log || true; exit 1; }
+
+          echo "Waiting for Security to initialize..."
+          for i in {1..60}; do
+            code=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost:9200/_plugins/_security/health)
+            # Health endpoint returns 200 once Security is initialized
+            if [ "$code" -eq 200 ]; then
+              echo "Security is initialized"; break
+            fi
+            echo "Attempt $i/60 (security not ready, http $code)..."; sleep 3
+          done
+          if [ "$code" -ne 200 ]; then
+            echo "Security never initialized (last http code: $code)"
+            echo "=== Tail os.log ==="; tail -n 200 os.log || true
             exit 1
-          }
+          fi
 
           echo "Plugins:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
