@@ -151,26 +151,30 @@ jobs:
           echo -e "\nTesting WLM stats endpoint:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
-      - name: Unblock index creation on the cluster
+      - name: Ensure create-index is unblocked (guard loop)
         run: |
           set -e
-          # Show current settings (for debugging)
-          curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            "https://localhost:9200/_cluster/settings?include_defaults=true" | jq '.transient.cluster.blocks, .persistent.cluster.blocks, .defaults.cluster.blocks // {}'
+          for i in {1..20}; do
+            cur=$(curl -sk --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+              "https://localhost:9200/_cluster/settings?include_defaults=false" \
+              | jq -r '.transient.cluster.blocks.create_index // .persistent.cluster.blocks.create_index // "false"')
+            echo "current cluster.blocks.create_index = $cur"
+            if [ "$cur" != "true" ]; then
+              echo "Block is not enabled. Proceeding."
+              break
+            fi
+            echo "Block is enabled. Forcing it off..."
+            curl -sS -k --http1.1 --fail-with-body \
+              -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+              -X PUT "https://localhost:9200/_cluster/settings" \
+              -H 'Content-Type: application/json' \
+              -d '{"transient":{"cluster.blocks.create_index": false},"persistent":{"cluster.blocks.create_index": false}}'
+            sleep 3
+          done
 
-          echo "Disabling cluster.blocks.create_index (transient + persistent)..."
-          curl -sS -k --http1.1 --fail-with-body \
-            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            -X PUT "https://localhost:9200/_cluster/settings" \
-            -H 'Content-Type: application/json' \
-            -d '{"transient":{"cluster.blocks.create_index": false},"persistent":{"cluster.blocks.create_index": false}}'
-
-          # Also clear any read-only blocks just in case
-          echo "Clearing read-only/allow deletes (if set)..."
-
-          echo "Cluster health (post-unblock):"
-          curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            "https://localhost:9200/_cluster/health?pretty"
+          echo "Final settings (no defaults):"
+          curl -sk --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            "https://localhost:9200/_cluster/settings?include_defaults=false" | jq .
 
       # 3) Enable WLM (now that Security + TLS are active)
       - name: Enable WLM and verify
