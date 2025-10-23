@@ -109,23 +109,28 @@ jobs:
           echo "discovery.type: single-node" >> config/opensearch.yml
 
           nohup bin/opensearch -Ehttp.port=9200 -Ehttp.host=0.0.0.0 > os.log 2>&1 &
-          echo "Waiting for OpenSearch to start..."
+
+          echo "Waiting for OpenSearch TCP/HTTP to be up (no auth yet)..."
+          # just check that the HTTPS endpoint responds at all (ignore status/auth)
           for i in {1..60}; do
-            if curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cluster/health >/dev/null 2>&1; then
-              echo "OpenSearch is up"; break
+            if curl -sk https://localhost:9200 >/dev/null 2>&1; then
+              echo "OpenSearch port is up"; break
             fi
             echo "Attempt $i/60..."; sleep 5
           done
-
-          echo "Plugins:"
-          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
+          # fail if still not up
+          curl -sk https://localhost:9200 >/dev/null 2>&1 || { echo "OpenSearch never came up"; tail -n 300 os.log || true; exit 1; }
 
           echo "Initialize Security demo configuration..."
           pushd plugins/opensearch-security/tools >/dev/null
           chmod +x install_demo_configuration.sh
-          # pass password explicitly; keep non-interactive flags
-          ./install_demo_configuration.sh -y -i -p "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          # IMPORTANT: no -p flag; the script reads OPENSEARCH_INITIAL_ADMIN_PASSWORD
+          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          ./install_demo_configuration.sh -y -i
           popd >/dev/null
+
+          echo "Verify plugins:"
+          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
 
           echo "Enable WLM:"
           curl -sS -k --http1.1 --fail-with-body \
@@ -135,11 +140,11 @@ jobs:
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
           echo "Show WLM mode:"
-          RESP=$(curl -sS -k --http1.1 \
+          SETTINGS=$(curl -sS -k --http1.1 \
             -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
             "https://localhost:9200/_cluster/settings")
-          echo "Raw settings response: $RESP"
-          echo "$RESP" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
+          echo "Raw settings response: $SETTINGS"
+          echo "$SETTINGS" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4
