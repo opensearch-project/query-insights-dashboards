@@ -12,6 +12,8 @@ env:
   SECURITY_BRANCH: 'main'
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
   OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
+  OPENSEARCH_VERSION: '3.4.0-SNAPSHOT'
+  SECURITY_VERSION: '3.4.0.0-SNAPSHOT'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -57,12 +59,18 @@ jobs:
           ./gradlew --no-daemon publishToMavenLocal
           ./gradlew --no-daemon localDistro
 
-          # capture artifacts and localDistro path
-          echo "WLM_ZIP=$(ls plugins/workload-management/build/distributions/*.zip | head -n1)" >> $GITHUB_ENV
-          echo "LOCAL_DISTRO=$(ls -d build/distribution/local/opensearch-*/ | head -n1 | sed 's:/*$::')" >> $GITHUB_ENV
+          # --- HARD-CODED PATHS PARAMETERIZED BY OPENSEARCH_VERSION ---
+          # Local distro produced by :localDistro (uses -SNAPSHOT folder)
+          echo "LOCAL_DISTRO=build/distribution/local/opensearch-${OPENSEARCH_VERSION}-SNAPSHOT" >> $GITHUB_ENV
+
+          # WLM plugin zip produced by :plugins:workload-management:assemble
+          # Use ONE of the following depending on your artifact naming:
+          echo "WLM_ZIP=plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip" >> $GITHUB_ENV
+          # echo "WLM_ZIP=plugins/workload-management/build/distributions/opensearch-workload-management-${OPENSEARCH_VERSION}.zip" >> $GITHUB_ENV
 
           echo "Local distro: $LOCAL_DISTRO"
           echo "WLM zip: $WLM_ZIP"
+
 
       - name: Checkout Security
         uses: actions/checkout@v4
@@ -76,7 +84,7 @@ jobs:
           set -e
           cd security
           ./gradlew --no-daemon assemble
-          echo "SEC_ZIP=$(ls build/distributions/opensearch-security-*.zip | head -n1)" >> $GITHUB_ENV
+          echo "SEC_ZIP=build/distributions/opensearch-security-${SECURITY_VERSION}.zip" >> $GITHUB_ENV
           echo "Security zip: $SEC_ZIP"
 
       - name: Install plugins into localDistro
@@ -179,10 +187,10 @@ jobs:
           max_attempts=150
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            if curl -ksf -u admin:myStrongPassword123! https://localhost:5601/api/status > /dev/null 2>&1; then
+            if curl -ksf -u admin:myStrongPassword123! http://localhost:5601/api/status > /dev/null 2>&1; then
               echo "OpenSearch-Dashboards is ready!"
               echo "=== OpenSearch-Dashboards Status Debug Info ==="
-              curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status | jq '.' || curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status
+              curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status | jq '.' || curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status
               sleep 45
               break
             fi
@@ -196,10 +204,10 @@ jobs:
           done
           if [ $attempt -eq $max_attempts ]; then
             echo "OpenSearch-Dashboards failed to start within timeout"
-            curl -ks -v -u admin:myStrongPassword123! https://localhost:5601/api/status || echo "Final connection attempt failed"
+            curl -ks -v -u admin:myStrongPassword123! http://localhost:5601/api/status || echo "Final connection attempt failed"
             exit 1
           fi
-          curl -ks -u admin:myStrongPassword123! https://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
+          curl -ks -u admin:myStrongPassword123! http://localhost:5601/api/status || (echo "OpenSearch-Dashboards health check failed" && exit 1)
           echo "Waiting additional time for plugin initialization..."
           sleep 15
         shell: bash
