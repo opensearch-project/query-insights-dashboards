@@ -61,7 +61,8 @@ export const WLMCreate = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const isMounted = useRef(true);
   const [dsVersion, setDsVersion] = useState<string | undefined>();
-  const showSecurity = isSecurityAttributesSupported(dsVersion);
+  const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
+  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
 
   const isFormValid =
     name.trim() !== '' &&
@@ -147,6 +148,7 @@ export const WLMCreate = ({
         .map((rule) => {
           const indexPattern = splitCSV(rule.index);
           const usernames = splitCSV(rule.username);
+          console.log(usernames, 'ise');
           const roles = splitCSV(rule.role);
 
           const hasIndexes = indexPattern.length > 0;

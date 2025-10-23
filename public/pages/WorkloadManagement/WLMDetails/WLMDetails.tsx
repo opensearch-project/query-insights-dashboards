@@ -173,7 +173,8 @@ export const WLMDetails = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [dsVersion, setDsVersion] = useState<string | undefined>();
-  const showSecurity = isSecurityAttributesSupported(dsVersion);
+  const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
+  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
 
   // === Helpers ===
   const resiliencyOptions = [

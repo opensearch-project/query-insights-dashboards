@@ -323,11 +323,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        const body = {
-          description: request.body.description,
-          index_pattern: request.body.index_pattern,
-          workload_group: request.body.workload_group,
-        };
+        const body = request.body;
         let result;
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
