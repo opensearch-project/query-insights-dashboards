@@ -105,13 +105,7 @@ export async function resolveDataSourceVersion(
   core: CoreStart,
   selected?: DataSourceOption | { id?: string; dataSourceVersion?: string }
 ): Promise<string | undefined> {
-  // 1) If it's local cluster then always show security
-  console.log("test",selected);
-  if (selected?.label === 'Local cluster') {
-    return "3.3.0";
-  }
-
-  // 2) Otherwise, fetch the saved object to read attributes.dataSourceVersion.
+  // 1) fetch the saved object to read attributes.dataSourceVersion.
   const id = (selected as any)?.id;
   if (id) {
     try {
@@ -123,6 +117,11 @@ export async function resolveDataSourceVersion(
     } catch {
       return undefined;
     }
+  }
+
+  // 2) If it's local cluster then always show security
+  if (selected?.label === 'Local cluster') {
+    return '3.3.0';
   }
   return undefined;
 }
