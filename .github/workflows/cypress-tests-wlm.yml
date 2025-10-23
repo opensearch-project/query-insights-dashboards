@@ -147,6 +147,9 @@ jobs:
 
           echo "Plugins:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
+          # Test WLM stats endpoint
+          echo -e "\nTesting WLM stats endpoint:"
+          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
       # 3) Enable WLM (now that Security + TLS are active)
       - name: Enable WLM and verify
@@ -173,11 +176,13 @@ jobs:
 
       - name: Configure OpenSearch Dashboards to talk HTTPS to OpenSearch
         run: |
-           cat >> OpenSearch-Dashboards/config/opensearch_dashboards.yml << 'EOT'
-           opensearch.hosts: [ "https://localhost:9200" ]
-           opensearch.ssl.verificationMode: none
-           server.host: "0.0.0.0"
-           EOT
+          cat >> OpenSearch-Dashboards/config/opensearch_dashboards.yml << 'EOT'
+          opensearch.hosts: [ "https://localhost:9200" ]
+          opensearch.ssl.verificationMode: none
+          opensearch.username: "admin"
+          opensearch.password: "myStrongPassword123!"
+          server.host: "0.0.0.0"
+          EOT
 
       - name: Checkout Query Insights Dashboards plugin
         uses: actions/checkout@v4
@@ -218,36 +223,25 @@ jobs:
       - name: Wait for OpenSearch-Dashboards to be ready
         run: |
           echo "Waiting for OpenSearch-Dashboards to start..."
-          max_attempts=150
+          max_attempts=180
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            if curl -sf http://localhost:5601/api/status > /dev/null 2>&1; then
-              # optionally ensure overall state is 'available'
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || true)
+            if [ "$code" = "200" ]; then
               state=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state // .status.overall.level // "unknown"')
-              if [ "$state" = "available" ] || [ "$state" = "green" ]; then
-                echo "OpenSearch-Dashboards is ready! state=$state"
-                echo "=== OpenSearch-Dashboards Status Debug Info ==="
-                curl -s http://localhost:5601/api/status | jq '.' || curl -s http://localhost:5601/api/status
-                break
-              fi
+              echo "OpenSearch-Dashboards is ready (state=$state)"
+              break
             fi
             attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: waiting 10s..."
+            echo "Attempt $attempt/$max_attempts: /api/status -> $code; waiting 10s..."
             if [ $((attempt % 10)) -eq 0 ]; then
-              echo "Debug: /api/status"
-              curl -s -v http://localhost:5601/api/status || echo "Connection failed"
+              echo "=== tail dashboards.log ==="
+              tail -n 120 OpenSearch-Dashboards/dashboards.log || true
+              echo "==========================="
             fi
             sleep 10
           done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "OpenSearch-Dashboards failed to start within timeout"
-            curl -s -v http://localhost:5601/api/status || echo "Final connection attempt failed"
-            exit 1
-          fi
-
-          echo "Waiting additional time for plugin initialization..."
-          sleep 15
-        shell: bash
+          [ $attempt -lt $max_attempts ] || { echo "Timeout waiting for Dashboards"; tail -n 200 OpenSearch-Dashboards/dashboards.log || true; exit 1; }
 
       - name: Verify services are running
         run: |
