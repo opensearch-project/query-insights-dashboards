@@ -11,7 +11,6 @@ import { WorkloadManagementMain } from './WLMMain';
 import { CoreStart } from 'opensearch-dashboards/public';
 import userEvent from '@testing-library/user-event';
 import { DataSourceContext } from '../WorkloadManagement';
-import * as versionUtils from '../../../utils/version-utils';
 
 jest.mock('echarts-for-react', () => () => <div data-testid="MockedChart">Mocked Chart</div>);
 jest.mock('../../../components/PageHeader', () => ({
@@ -64,10 +63,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   capturedOptions.length = 0;
 
-  // Mock version utils
-  jest.spyOn(versionUtils, 'getVersionOnce').mockResolvedValue('3.3.0');
-  jest.spyOn(versionUtils, 'isVersion33OrHigher').mockReturnValue(true);
-
   // Restore the data source menu mock after reset
   mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
 
@@ -79,11 +74,6 @@ beforeEach(() => {
           { _id: 'group2', name: 'Group Two', resource_limits: { cpu: 0.6, memory: 0.7 } },
           { _id: 'group3', name: 'Group Three', resource_limits: { cpu: 0.1, memory: 0.1 } },
         ],
-      });
-    }
-    if (url === '/api/live_queries') {
-      return Promise.resolve({
-        response: { live_queries: [] }
       });
     }
     if (url === '/api/_wlm/stats') {
@@ -124,12 +114,6 @@ beforeEach(() => {
             },
           },
         },
-      });
-    }
-    if (url === '/api/_wlm/thresholds') {
-      return Promise.resolve({
-        cpuRejectionThreshold: 0.8,
-        memoryRejectionThreshold: 0.8
       });
     }
   });
@@ -516,28 +500,6 @@ describe('WorkloadManagementMain', () => {
     renderComponent();
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
-    });
-  });
-
-  it('does not call Query Insights API when version < 3.3', async () => {
-    jest.spyOn(versionUtils, 'isVersion33OrHigher').mockReturnValue(false);
-    
-    renderComponent();
-    
-    await waitFor(() => {
-      expect(mockCore.http.get).not.toHaveBeenCalledWith('/api/live_queries', expect.any(Object));
-    });
-  });
-
-  it('calls Query Insights API when version >= 3.3', async () => {
-    jest.spyOn(versionUtils, 'isVersion33OrHigher').mockReturnValue(true);
-    
-    renderComponent();
-    
-    await waitFor(() => {
-      expect(mockCore.http.get).toHaveBeenCalledWith('/api/live_queries', expect.objectContaining({
-        query: { dataSourceId: 'default' }
-      }));
     });
   });
 });

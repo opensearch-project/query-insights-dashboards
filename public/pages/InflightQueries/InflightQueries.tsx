@@ -142,14 +142,12 @@ export const InflightQueries = ({
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
-        console.log('[DEBUG] OpenSearch version detected:', version);
         const versionSupported = isVersion33OrHigher(version);
-        console.log('[DEBUG] Version 3.3+ supported:', versionSupported);
         setWlmGroupsSupported(versionSupported);
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
-          console.log('[DEBUG] WLM available:', hasWlm);
+
           setWlmAvailable(hasWlm);
         } else {
           setWlmAvailable(false);
@@ -171,14 +169,12 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    console.log('[DEBUG] fetchActiveWlmGroups called, wlmGroupsSupported:', wlmGroupsSupported);
+
 
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
-      console.log('[DEBUG] Making WLM stats API call to:', API_ENDPOINTS.WLM_STATS);
       const statsRes = await core.http.get(API_ENDPOINTS.WLM_STATS, { query: httpQuery });
-      console.log('[DEBUG] WLM stats response:', statsRes);
       statsBody = statsRes as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
@@ -231,14 +227,7 @@ export const InflightQueries = ({
       }
     }
 
-    console.log(
-      '[DEBUG] Parsed stats - completions:',
-      completions,
-      'cancellations:',
-      cancellations,
-      'rejections:',
-      rejections
-    );
+
 
     setWorkloadGroupStats({
       total_completions: completions,
