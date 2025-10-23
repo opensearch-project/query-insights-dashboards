@@ -102,47 +102,60 @@ jobs:
           echo "Installed plugins:"
           bin/opensearch-plugin list || true
 
-      - name: Run OpenSearch, init Security, and enable WLM
+      # 1) Install Security demo TLS/config BEFORE starting the node
+      - name: Install Security demo TLS/config (pre-start)
+        run: |
+          set -e
+          cd "OpenSearch/$LOCAL_DISTRO/plugins/opensearch-security/tools"
+          chmod +x install_demo_configuration.sh
+          # The script reads OPENSEARCH_INITIAL_ADMIN_PASSWORD from env
+          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          # -y answers yes to prompts, -i writes demo TLS settings and files into config/
+          ./install_demo_configuration.sh -y -i
+
+          echo "=== Snippet of generated TLS config in opensearch.yml ==="
+          grep -E '^plugins\.security\.ssl\.' -n ../../../../config/opensearch.yml || true
+          echo "========================================================="
+
+      # 2) Start OpenSearch and wait for the HTTPS endpoint to respond (no auth yet)
+      - name: Start OpenSearch (with Security) and wait
         run: |
           set -e
           cd "OpenSearch/$LOCAL_DISTRO"
           echo "discovery.type: single-node" >> config/opensearch.yml
 
-          nohup bin/opensearch -Ehttp.port=9200 -Ehttp.host=0.0.0.0 > os.log 2>&1 &
+          nohup bin/opensearch > os.log 2>&1 &
 
-          echo "Waiting for OpenSearch TCP/HTTP to be up (no auth yet)..."
-          # just check that the HTTPS endpoint responds at all (ignore status/auth)
+          echo "Waiting for OpenSearch TCP/HTTP to be up (no auth check)..."
           for i in {1..60}; do
             if curl -sk https://localhost:9200 >/dev/null 2>&1; then
               echo "OpenSearch port is up"; break
             fi
             echo "Attempt $i/60..."; sleep 5
           done
-          # fail if still not up
-          curl -sk https://localhost:9200 >/dev/null 2>&1 || { echo "OpenSearch never came up"; tail -n 300 os.log || true; exit 1; }
+          curl -sk https://localhost:9200 >/dev/null 2>&1 || {
+            echo "OpenSearch never came up"
+            echo "=== Last 300 lines of os.log ==="
+            tail -n 300 os.log || true
+            exit 1
+          }
 
-          echo "Initialize Security demo configuration..."
-          pushd plugins/opensearch-security/tools >/dev/null
-          chmod +x install_demo_configuration.sh
-          # IMPORTANT: no -p flag; the script reads OPENSEARCH_INITIAL_ADMIN_PASSWORD
-          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
-          ./install_demo_configuration.sh -y -i
-          popd >/dev/null
-
-          echo "Verify plugins:"
+          echo "Plugins:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
 
-          echo "Enable WLM:"
+      # 3) Enable WLM (now that Security + TLS are active)
+      - name: Enable WLM and verify
+        run: |
+          set -e
+          # Enable WLM
           curl -sS -k --http1.1 --fail-with-body \
             -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
             -X PUT "https://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
-          echo "Show WLM mode:"
-          SETTINGS=$(curl -sS -k --http1.1 \
-            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            "https://localhost:9200/_cluster/settings")
+          # Show WLM mode
+          SETTINGS=$(curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" "https://localhost:9200/_cluster/settings")
           echo "Raw settings response: $SETTINGS"
           echo "$SETTINGS" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
