@@ -148,7 +148,6 @@ export const WLMCreate = ({
         .map((rule) => {
           const indexPattern = splitCSV(rule.index);
           const usernames = splitCSV(rule.username);
-          console.log(usernames, 'ise');
           const roles = splitCSV(rule.role);
 
           const hasIndexes = indexPattern.length > 0;

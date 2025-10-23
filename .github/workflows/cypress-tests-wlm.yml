@@ -167,11 +167,6 @@ jobs:
 
           # Also clear any read-only blocks just in case
           echo "Clearing read-only/allow deletes (if set)..."
-          curl -sS -k --http1.1 --fail-with-body \
-            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            -X PUT "https://localhost:9200/_all/_settings" \
-            -H 'Content-Type: application/json' \
-            -d '{"index.blocks.read_only_allow_delete": null, "index.blocks.read_only": null}'
 
           echo "Cluster health (post-unblock):"
           curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
