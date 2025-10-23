@@ -105,36 +105,36 @@ jobs:
       - name: Initialize Security demo configuration
         run: |
           set -e
-          cd "${{ env.LOCAL_DISTRO }}/plugins/opensearch-security/tools"
+          cd "OpenSearch/$LOCAL_DISTRO/plugins/opensearch-security/tools"
           chmod +x install_demo_configuration.sh
-          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}"
-          ./install_demo_configuration.sh -y -i   # answers 'y' to prompts, installs certs, sets admin user
+          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          ./install_demo_configuration.sh -y -i
 
       - name: Run OpenSearch and enable WLM
         run: |
           set -e
-          cd "${{ env.LOCAL_DISTRO }}"
+          cd "OpenSearch/$LOCAL_DISTRO"
           echo "discovery.type: single-node" >> config/opensearch.yml
 
           nohup bin/opensearch -Ehttp.port=9200 -Ehttp.host=0.0.0.0 > os.log 2>&1 &
           echo "Waiting for OpenSearch to start..."
           for i in {1..60}; do
-            if curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cluster/health >/dev/null 2>&1; then
+            if curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cluster/health >/dev/null 2>&1; then
               echo "OpenSearch is up"; break
             fi
             echo "Attempt $i/60..."; sleep 5
           done
 
           echo "Plugins:"
-          curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cat/plugins?v || true
+          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
 
           echo "Enable WLM:"
-          curl -kXu PUT -u admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" "https://localhost:9200/_cluster/settings" \
+          curl -kXu PUT -u admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" "https://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
           echo "Show WLM mode:"
-          curl -ksu admin:"${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}" https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
+          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4
