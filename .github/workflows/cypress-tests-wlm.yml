@@ -129,12 +129,16 @@ jobs:
           curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
 
           echo "Enable WLM:"
-          curl -kXu PUT -u admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" "https://localhost:9200/_cluster/settings" \
+          curl -k -X PUT -u admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            "https://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
+            --http1.1 \
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
           echo "Show WLM mode:"
-          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cluster/settings | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
+          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            https://localhost:9200/_cluster/settings \
+            --http1.1 | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4
