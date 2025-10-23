@@ -43,7 +43,9 @@ const mockCore = ({
     getUrlForApp: jest.fn(() => '/app/query-insights'),
   },
   savedObjects: {
-    client: {},
+    client: {
+      get: jest.fn().mockResolvedValue({ attributes: { dataSourceVersion: '3.3.0' } }),
+    },
   },
 } as unknown) as CoreStart;
 
@@ -87,6 +89,7 @@ const mockDataSourceManagement = {
 const mockDataSource = {
   id: 'default',
   name: 'default',
+  dataSourceVersion: '3.3.0',
 } as any;
 
 const mockParams = {

@@ -33,6 +33,10 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_MAIN, DataSourceContext } from '../WorkloadManagement';
 import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
+import {
+  resolveDataSourceVersion,
+  isSecurityAttributesSupported,
+} from '../../../utils/datasource-utils';
 
 // === Constants & Types ===
 const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
@@ -168,6 +172,8 @@ export const WLMDetails = ({
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const showSecurity = isSecurityAttributesSupported(dsVersion);
 
   // === Helpers ===
   const resiliencyOptions = [
@@ -207,6 +213,17 @@ export const WLMDetails = ({
   useEffect(() => {
     setSortedData([...nodesData].sort((a, b) => b.cpuUsage - a.cpuUsage));
   }, [nodesData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const v = await resolveDataSourceVersion(core, dataSource);
+      if (!cancelled) setDsVersion(v);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core, dataSource?.id]);
 
   // Do the initial fetch when inputs change
   useEffect(() => {
@@ -400,8 +417,8 @@ export const WLMDetails = ({
     currentDescription?: string | null
   ): RulePayload | null => {
     const indexPattern = splitCSV(rule.index);
-    const usernames = splitCSV(rule.username);
-    const roles = splitCSV(rule.role);
+    const usernames = showSecurity ? splitCSV(rule.username) : [];
+    const roles = showSecurity ? splitCSV(rule.role) : [];
 
     const hasIndexes = indexPattern.length > 0;
     const hasUsernames = usernames.length > 0;
@@ -911,9 +928,12 @@ export const WLMDetails = ({
                             );
                           }
                         }}
+                        disabled={!showSecurity}
                       />
                       <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                        You can use (,) to add multiple usernames.
+                        {!showSecurity
+                          ? 'Username rules require data source ≥ 3.3.'
+                          : 'You can use (,) to add multiple usernames.'}
                       </EuiText>
                     </div>
 
@@ -949,9 +969,12 @@ export const WLMDetails = ({
                           core.notifications.toasts.addWarning('Role cannot be cleared once set.');
                         }
                       }}
+                      disabled={!showSecurity}
                     />
                     <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                      You can use (,) to add multiple roles.
+                      {!showSecurity
+                        ? 'Role rules require data source ≥ 3.3.'
+                        : 'You can use (,) to add multiple roles.'}
                     </EuiText>
                   </div>
 
