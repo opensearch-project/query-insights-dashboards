@@ -59,18 +59,19 @@ jobs:
           ./gradlew --no-daemon publishToMavenLocal
           ./gradlew --no-daemon localDistro
 
-          # --- HARD-CODED PATHS PARAMETERIZED BY OPENSEARCH_VERSION ---
-          # Local distro produced by :localDistro (uses -SNAPSHOT folder)
-          echo "LOCAL_DISTRO=build/distribution/local/opensearch-${OPENSEARCH_VERSION}-SNAPSHOT" >> $GITHUB_ENV
+          # OPENSEARCH_VERSION already includes -SNAPSHOT; don't append another
+          LOCAL_DISTRO="build/distribution/local/opensearch-${OPENSEARCH_VERSION}"
+          WLM_ZIP="plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip"
 
-          # WLM plugin zip produced by :plugins:workload-management:assemble
-          # Use ONE of the following depending on your artifact naming:
-          echo "WLM_ZIP=plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip" >> $GITHUB_ENV
-          # echo "WLM_ZIP=plugins/workload-management/build/distributions/opensearch-workload-management-${OPENSEARCH_VERSION}.zip" >> $GITHUB_ENV
+          # make available to later steps
+          echo "LOCAL_DISTRO=$LOCAL_DISTRO" >> $GITHUB_ENV
+          echo "WLM_ZIP=$WLM_ZIP" >> $GITHUB_ENV
+
+          # also export so we can use them *in this step*
+          export LOCAL_DISTRO WLM_ZIP
 
           echo "Local distro: $LOCAL_DISTRO"
           echo "WLM zip: $WLM_ZIP"
-
 
       - name: Checkout Security
         uses: actions/checkout@v4
@@ -84,15 +85,19 @@ jobs:
           set -e
           cd security
           ./gradlew --no-daemon assemble
-          echo "SEC_ZIP=build/distributions/opensearch-security-${SECURITY_VERSION}.zip" >> $GITHUB_ENV
+
+          SEC_ZIP="build/distributions/opensearch-security-${SECURITY_VERSION}.zip"
+          echo "SEC_ZIP=$SEC_ZIP" >> $GITHUB_ENV
+          export SEC_ZIP
+
           echo "Security zip: $SEC_ZIP"
 
       - name: Install plugins into localDistro
         run: |
           set -e
-          cd "${{ env.LOCAL_DISTRO }}"
-          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/${{ env.SEC_ZIP }}"
-          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/${{ env.WLM_ZIP }}"
+          cd "$LOCAL_DISTRO"
+          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/security/$SEC_ZIP"
+          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/OpenSearch/$WLM_ZIP"
 
           echo "Installed plugins:"
           bin/opensearch-plugin list || true
