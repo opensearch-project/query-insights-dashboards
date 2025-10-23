@@ -163,10 +163,12 @@ export const WorkloadManagementMain = ({
   // === API Calls ===
   const checkQueryInsightsAvailability = async () => {
     try {
-      const response = await core.http.get('/api/cat_plugins', {
+      const res = await core.http.get('/api/live_queries', {
         query: { dataSourceId: dataSource.id },
       });
-      setIsQueryInsightsAvailable(response.hasQueryInsights || false);
+      const hasValidStructure =
+        res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries);
+      setIsQueryInsightsAvailable(hasValidStructure);
     } catch (error) {
       setIsQueryInsightsAvailable(false);
     }

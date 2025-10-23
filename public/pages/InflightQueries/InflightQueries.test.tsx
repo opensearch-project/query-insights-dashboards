@@ -318,8 +318,8 @@ describe('InflightQueries', () => {
 
     // Mock WLM detection
     (core.http.get as jest.Mock).mockImplementation((url) => {
-      if (url === '/api/cat_plugins') {
-        return Promise.resolve({ hasWlm: true });
+      if (url === '/api/_wlm/workload_group') {
+        return Promise.resolve({ workload_groups: [] });
       }
       return Promise.resolve({});
     });
@@ -375,7 +375,12 @@ describe('InflightQueries', () => {
     (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
 
-    (core.http.get as jest.Mock).mockResolvedValue({ hasWlm: true });
+    (core.http.get as jest.Mock).mockImplementation((url) => {
+      if (url === '/api/_wlm/workload_group') {
+        return Promise.resolve({ workload_groups: [] });
+      }
+      return Promise.resolve({ response: { live_queries: [] } });
+    });
 
     mockLiveQueries(mockStubLiveQueries);
 
@@ -509,7 +514,12 @@ describe('InflightQueries', () => {
     (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
     (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
 
-    (core.http.get as jest.Mock).mockResolvedValue({ hasWlm: true });
+    (core.http.get as jest.Mock).mockImplementation((url) => {
+      if (url === '/api/_wlm/workload_group') {
+        return Promise.resolve({ workload_groups: [] });
+      }
+      return Promise.resolve({ response: { live_queries: [] } });
+    });
 
     mockLiveQueries({ ok: true, response: { live_queries: [] } });
 

@@ -126,12 +126,13 @@ export const InflightQueries = ({
 
     try {
       const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
-      const res = await core.http.get('/api/cat_plugins', { query: httpQuery });
-      const has = !!res?.hasWlm;
-      wlmCacheRef.current[cacheKey] = has;
-      return has;
+      const res = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
+      const hasValidStructure =
+        res && typeof res === 'object' && Array.isArray(res.workload_groups);
+      wlmCacheRef.current[cacheKey] = hasValidStructure;
+      return hasValidStructure;
     } catch (e) {
-      console.warn('[LiveQueries] _cat/plugins detection failed; assuming WLM unavailable', e);
+      console.warn('[LiveQueries] WLM workload group API failed; assuming WLM unavailable', e);
       wlmCacheRef.current[cacheKey] = false;
       return false;
     }
@@ -141,11 +142,14 @@ export const InflightQueries = ({
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
+        console.log('[DEBUG] OpenSearch version detected:', version);
         const versionSupported = isVersion33OrHigher(version);
+        console.log('[DEBUG] Version 3.3+ supported:', versionSupported);
         setWlmGroupsSupported(versionSupported);
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
+          console.log('[DEBUG] WLM available:', hasWlm);
           setWlmAvailable(hasWlm);
         } else {
           setWlmAvailable(false);
@@ -167,17 +171,15 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    if (!wlmGroupsSupported) {
-      setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
-      setWlmGroupOptions([]);
-      return {};
-    }
+    console.log('[DEBUG] fetchActiveWlmGroups called, wlmGroupsSupported:', wlmGroupsSupported);
 
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
+      console.log('[DEBUG] Making WLM stats API call to:', API_ENDPOINTS.WLM_STATS);
       const statsRes = await core.http.get(API_ENDPOINTS.WLM_STATS, { query: httpQuery });
-      statsBody = (statsRes as { body?: unknown }).body as WlmStatsBody;
+      console.log('[DEBUG] WLM stats response:', statsRes);
+      statsBody = statsRes as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
       setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
@@ -229,16 +231,25 @@ export const InflightQueries = ({
       }
     }
 
+    console.log(
+      '[DEBUG] Parsed stats - completions:',
+      completions,
+      'cancellations:',
+      cancellations,
+      'rejections:',
+      rejections
+    );
+
     setWorkloadGroupStats({
       total_completions: completions,
       total_cancellations: cancellations,
       total_rejections: rejections,
     });
 
-    // fetch group NAMES only if plugin exists (but do not block the stats)
+    // fetch group NAMES only if plugin exists and version supported
     const idToNameMap: Record<string, string> = {};
     try {
-      if (wlmAvailable) {
+      if (wlmAvailable && wlmGroupsSupported) {
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
         });
@@ -253,10 +264,12 @@ export const InflightQueries = ({
       console.warn('[LiveQueries] Failed to fetch workload groups', e);
     }
 
-    const options = Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }));
+    const options = wlmGroupsSupported
+      ? Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }))
+      : [];
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroupId, wlmAvailable]);
+  }, [core.http, dataSource?.id, wlmGroupId, wlmGroupsSupported]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -353,13 +366,22 @@ export const InflightQueries = ({
     if (isFetching.current) return;
     isFetching.current = true;
     try {
-      const budget = Math.max(2000, refreshInterval - 500);
-      const map = await withTimeout(fetchActiveWlmGroups(), budget).catch(() => undefined);
-      await fetchLiveQueries(map);
+      if (wlmGroupsSupported) {
+        try {
+          await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
+        } catch (e) {
+          console.warn('[LiveQueries] fetchActiveWlmGroups timed out or failed', e);
+        }
+      }
+      try {
+        await withTimeout(fetchLiveQueries(), refreshInterval - 500);
+      } catch (e) {
+        console.warn('[LiveQueries] fetchLiveQueries timed out or failed', e);
+      }
     } finally {
       isFetching.current = false;
     }
-  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries]);
+  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries, wlmGroupsSupported]);
 
   useEffect(() => {
     void fetchLiveQueriesSafe();
@@ -370,7 +392,7 @@ export const InflightQueries = ({
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe]);
+  }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe, wlmGroupsSupported]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [tableQuery, setTableQuery] = useState('');
@@ -574,7 +596,7 @@ export const InflightQueries = ({
               <EuiButton
                 iconType="refresh"
                 onClick={async () => {
-                  await fetchLiveQueries();
+                  await fetchLiveQueriesSafe();
                 }}
                 data-test-subj="live-queries-refresh-button"
               >
@@ -906,7 +928,7 @@ export const InflightQueries = ({
                 key="refresh-button"
                 iconType="refresh"
                 onClick={async () => {
-                  await fetchLiveQueries();
+                  await fetchLiveQueriesSafe();
                 }}
               >
                 Refresh

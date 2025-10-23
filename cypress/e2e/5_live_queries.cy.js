@@ -368,10 +368,15 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     });
 
     // WLM enabled + workload groups
-    cy.intercept('GET', '**/api/cat_plugins', {
+    cy.intercept('GET', '**/api/_wlm/workload_group', {
       statusCode: 200,
-      body: { hasWlm: true },
-    }).as('getPluginsEnabled');
+      body: { workload_groups: [] },
+    }).as('getWlmEnabled');
+
+    cy.intercept('GET', '**/api/live_queries', {
+      statusCode: 200,
+      body: { response: { live_queries: [] } },
+    }).as('getQueryInsightsEnabled');
 
     cy.intercept('GET', '**/api/_wlm/workload_group', {
       statusCode: 200,
@@ -390,7 +395,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
 
   it('displays WLM group links when WLM is enabled', () => {
     cy.wait('@getWorkloadGroups');
-    cy.wait('@getPluginsEnabled');
+    cy.wait('@getWlmEnabled');
 
     cy.get('tbody tr')
       .first()
