@@ -96,7 +96,9 @@ export const WLMCreate = ({
       const v = await resolveDataSourceVersion(core, dataSource);
       if (!cancelled) setDsVersion(v);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [core, dataSource?.id]);
 
   const splitCSV = (v?: string | null) =>

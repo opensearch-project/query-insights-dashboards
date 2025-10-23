@@ -102,15 +102,7 @@ jobs:
           echo "Installed plugins:"
           bin/opensearch-plugin list || true
 
-      - name: Initialize Security demo configuration
-        run: |
-          set -e
-          cd "OpenSearch/$LOCAL_DISTRO/plugins/opensearch-security/tools"
-          chmod +x install_demo_configuration.sh
-          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
-          ./install_demo_configuration.sh -y -i
-
-      - name: Run OpenSearch and enable WLM
+      - name: Run OpenSearch, init Security, and enable WLM
         run: |
           set -e
           cd "OpenSearch/$LOCAL_DISTRO"
@@ -128,17 +120,26 @@ jobs:
           echo "Plugins:"
           curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
 
+          echo "Initialize Security demo configuration..."
+          pushd plugins/opensearch-security/tools >/dev/null
+          chmod +x install_demo_configuration.sh
+          # pass password explicitly; keep non-interactive flags
+          ./install_demo_configuration.sh -y -i -p "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          popd >/dev/null
+
           echo "Enable WLM:"
-          curl -k -X PUT -u admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            "https://localhost:9200/_cluster/settings" \
+          curl -sS -k --http1.1 --fail-with-body \
+            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            -X PUT "https://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
-            --http1.1 \
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
           echo "Show WLM mode:"
-          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            https://localhost:9200/_cluster/settings \
-            --http1.1 | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
+          RESP=$(curl -sS -k --http1.1 \
+            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            "https://localhost:9200/_cluster/settings")
+          echo "Raw settings response: $RESP"
+          echo "$RESP" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@v4

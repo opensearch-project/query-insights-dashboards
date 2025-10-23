@@ -30,7 +30,9 @@ const coreMock = {
     setBreadcrumbs: jest.fn(),
   },
   savedObjects: {
-    client: {},
+    client: {
+      get: jest.fn().mockResolvedValue({ attributes: { dataSourceVersion: '3.3.0' } }),
+    },
   },
 };
 
@@ -51,6 +53,7 @@ const mockDataSourceManagement = {
 const mockDataSource = {
   id: 'default',
   name: 'default',
+  dataSourceVersion: '3.3.0',
 } as any;
 
 const mockParams = {

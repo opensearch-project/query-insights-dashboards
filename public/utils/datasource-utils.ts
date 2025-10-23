@@ -20,10 +20,10 @@
 
 import semver from 'semver';
 import { DataSourceOption } from 'src/plugins/data_source_management/public';
+import type { CoreStart } from 'opensearch-dashboards/public';
 import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
-import type { CoreStart } from 'opensearch-dashboards/public';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
