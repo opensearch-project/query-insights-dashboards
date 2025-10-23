@@ -105,9 +105,10 @@ export async function resolveDataSourceVersion(
   core: CoreStart,
   selected?: DataSourceOption | { id?: string; dataSourceVersion?: string }
 ): Promise<string | undefined> {
-  // 1) If the picker option already carries version, use it.
-  if ((selected as any)?.dataSourceVersion) {
-    return (selected as any).dataSourceVersion as string;
+  // 1) If it's local cluster then always show security
+  console.log("test",selected);
+  if (selected?.label === 'Local cluster') {
+    return "3.3.0";
   }
 
   // 2) Otherwise, fetch the saved object to read attributes.dataSourceVersion.

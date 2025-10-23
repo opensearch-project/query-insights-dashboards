@@ -151,6 +151,32 @@ jobs:
           echo -e "\nTesting WLM stats endpoint:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
+      - name: Unblock index creation on the cluster
+        run: |
+          set -e
+          # Show current settings (for debugging)
+          curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            "https://localhost:9200/_cluster/settings?include_defaults=true" | jq '.transient.cluster.blocks, .persistent.cluster.blocks, .defaults.cluster.blocks // {}'
+
+          echo "Disabling cluster.blocks.create_index (transient + persistent)..."
+          curl -sS -k --http1.1 --fail-with-body \
+            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            -X PUT "https://localhost:9200/_cluster/settings" \
+            -H 'Content-Type: application/json' \
+            -d '{"transient":{"cluster.blocks.create_index": false},"persistent":{"cluster.blocks.create_index": false}}'
+
+          # Also clear any read-only blocks just in case
+          echo "Clearing read-only/allow deletes (if set)..."
+          curl -sS -k --http1.1 --fail-with-body \
+            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            -X PUT "https://localhost:9200/_all/_settings" \
+            -H 'Content-Type: application/json' \
+            -d '{"index.blocks.read_only_allow_delete": null, "index.blocks.read_only": null}'
+
+          echo "Cluster health (post-unblock):"
+          curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            "https://localhost:9200/_cluster/health?pretty"
+
       # 3) Enable WLM (now that Security + TLS are active)
       - name: Enable WLM and verify
         run: |
@@ -237,6 +263,8 @@ jobs:
             if [ $((attempt % 10)) -eq 0 ]; then
               echo "=== tail dashboards.log ==="
               tail -n 120 OpenSearch-Dashboards/dashboards.log || true
+              echo "=== tail $LOCAL_DISTRO/os.log ==="
+              tail -n 200 OpenSearch/$LOCAL_DISTRO/os.log || true
               echo "==========================="
             fi
             sleep 10
