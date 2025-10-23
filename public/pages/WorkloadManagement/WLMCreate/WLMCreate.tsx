@@ -25,6 +25,10 @@ import { WLM_CREATE, WLM_MAIN } from '../WorkloadManagement';
 import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
 import { DataSourceContext } from '../WorkloadManagement';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
+import {
+  resolveDataSourceVersion,
+  isSecurityAttributesSupported,
+} from '../../../utils/datasource-utils';
 
 interface Rule {
   index: string;
@@ -56,6 +60,8 @@ export const WLMCreate = ({
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const isMounted = useRef(true);
+  const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const showSecurity = isSecurityAttributesSupported(dsVersion);
 
   const isFormValid =
     name.trim() !== '' &&
@@ -83,6 +89,15 @@ export const WLMCreate = ({
       isMounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const v = await resolveDataSourceVersion(core, dataSource);
+      if (!cancelled) setDsVersion(v);
+    })();
+    return () => { cancelled = true; };
+  }, [core, dataSource?.id]);
 
   const splitCSV = (v?: string | null) =>
     (v ?? '')
@@ -327,6 +342,7 @@ export const WLMCreate = ({
 
             <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
               <>
+                {/* ---- Username / Role (gated by showSecurity) ---- */}
                 <div>
                   <EuiText size="m" style={{ fontWeight: 600 }}>
                     Username
@@ -339,9 +355,13 @@ export const WLMCreate = ({
                       updated[idx].username = e.target.value;
                       setRules(updated);
                     }}
+                    disabled={!showSecurity}
+                    data-testid={`username-input-${idx}`}
                   />
                   <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    You can use (,) to add multiple usernames.
+                    {!showSecurity
+                      ? 'Username rules require data source ≥ 3.3.'
+                      : 'You can use (,) to add multiple usernames.'}
                   </EuiText>
                 </div>
 
@@ -357,12 +377,17 @@ export const WLMCreate = ({
                       updated[idx].role = e.target.value;
                       setRules(updated);
                     }}
+                    disabled={!showSecurity}
+                    data-testid={`role-input-${idx}`}
                   />
                   <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    You can use (,) to add multiple roles.
+                    {!showSecurity
+                      ? 'Role rules require data source ≥ 3.3.'
+                      : 'You can use (,) to add multiple roles.'}
                   </EuiText>
                 </div>
 
+                {/* ---- Index (always available) ---- */}
                 <div style={{ marginTop: 16 }}>
                   <EuiText size="m" style={{ fontWeight: 600 }}>
                     Index wildcard
