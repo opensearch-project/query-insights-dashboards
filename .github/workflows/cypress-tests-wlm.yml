@@ -54,7 +54,7 @@ jobs:
           repository: opensearch-project/OpenSearch
           ref: ${{ env.OS_BRANCH }}
 
-      - name: Build WLM plugin from OpenSearch monorepo
+      - name: Build WLM plugin from OpenSearch
         run: |
           set -e
           echo "Using OpenSearch branch: $OS_BRANCH"
@@ -67,14 +67,15 @@ jobs:
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
           # Expose the built ZIP path
-          echo "PLUGIN_ZIP=$(ls plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)" >> $GITHUB_ENV
-          echo "Built zip: $ZIP_ABS"
+          ZIP_ABS="$(ls -1d "$GITHUB_WORKSPACE"/OpenSearch/plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)"
+          echo "PLUGIN_ZIP=$ZIP_ABS" >> "$GITHUB_ENV"
+          echo "Built zip: $PLUGIN_ZIP"
 
       - name: Install WLM plugin (from ZIP)
         run: |
           set -e
           cd opensearch-${{ env.VERSION }}
-          ./bin/opensearch-plugin install --batch "file://OpenSearch/${PLUGIN_ZIP}"
+          ./bin/opensearch-plugin install --batch "${PLUGIN_ZIP}"
 
       - name: Run OpenSearch (now with WLM installed)
         run: |
