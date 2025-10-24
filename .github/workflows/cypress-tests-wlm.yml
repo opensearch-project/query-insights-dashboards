@@ -42,10 +42,6 @@ jobs:
           else
               echo "SECURITY_ENABLED=false" >> $GITHUB_ENV
           fi
-      - name: Get OpenSearch tarball
-        run: |
-          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch/opensearch-${{ env.VERSION }}-linux-x64.tar.gz
-          tar -xzf opensearch-${{ env.VERSION }}-linux-x64.tar.gz
 
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
@@ -67,20 +63,12 @@ jobs:
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
 
-      - name: Install WLM plugin (from ZIP)
-        run: |
-          set -e
-          ZIP_ABS="$(ls -1t "$GITHUB_WORKSPACE"/OpenSearch/plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)"
-          [ -f "$ZIP_ABS" ] || { echo "WLM zip not found at $ZIP_ABS"; exit 1; }
-          echo "Installing WLM from: $ZIP_ABS"
-          cd "opensearch-${VERSION}"
-          cd opensearch-${{ env.VERSION }}
-          ./bin/opensearch-plugin install "file:/OpenSearch/plugins/workload-management/build/distributions/workload-management-3.3.2-SNAPSHOT.zip"
-
       - name: Run OpenSearch (now with WLM installed)
         run: |
-          set -e
+          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch/opensearch-${{ env.VERSION }}-linux-x64.tar.gz
+          tar -xzf opensearch-${{ env.VERSION }}-linux-x64.tar.gz
           cd opensearch-${{ env.VERSION }}/
+          ./bin/opensearch-plugin install "file:/OpenSearch/plugins/workload-management/build/distributions/workload-management-3.3.2-SNAPSHOT.zip"
           if [ "$SECURITY_ENABLED" = 'false' ]; then
             echo "Remove OpenSearch Security"
             [ -d "plugins/opensearch-security" ] && echo "plugins.security.disabled: true" >> config/opensearch.yml
