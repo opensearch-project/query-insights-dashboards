@@ -9,6 +9,7 @@ on:
 env:
   OS_BRANCH: "3.3"
   SECURITY_ENABLED: "true"
+  VERSION: "3.3.0"
 jobs:
   tests:
     name: Run Cypress E2E tests for WLM
