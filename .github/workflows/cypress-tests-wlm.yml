@@ -66,16 +66,16 @@ jobs:
 
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
-          # Expose the built ZIP path
-          ZIP_ABS="$(ls -1d "$GITHUB_WORKSPACE"/OpenSearch/plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)"
-          echo "PLUGIN_ZIP=$ZIP_ABS" >> "$GITHUB_ENV"
-          echo "Built zip: $PLUGIN_ZIP"
 
       - name: Install WLM plugin (from ZIP)
         run: |
           set -e
+          ZIP_ABS="$(ls -1t "$GITHUB_WORKSPACE"/OpenSearch/plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)"
+          [ -f "$ZIP_ABS" ] || { echo "WLM zip not found at $ZIP_ABS"; exit 1; }
+          echo "Installing WLM from: $ZIP_ABS"
+          cd "opensearch-${VERSION}"
           cd opensearch-${{ env.VERSION }}
-          ./bin/opensearch-plugin install --batch "${PLUGIN_ZIP}"
+          ./bin/opensearch-plugin install --batch "file://$ZIP_ABS"
 
       - name: Run OpenSearch (now with WLM installed)
         run: |
