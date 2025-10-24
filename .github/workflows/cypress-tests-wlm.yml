@@ -35,10 +35,6 @@ jobs:
         with:
           repository: ${{github.repository}}
           path: cypress-test
-      - name: Get package version
-        working-directory: cypress-test
-        run: |
-          echo "VERSION=$(yarn --silent pkg-version)" >> $GITHUB_ENV
       - name: Get security setups
         run: |
           if [ "$SECURITY_ENABLED" != 'false' ]; then
