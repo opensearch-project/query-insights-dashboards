@@ -32,6 +32,7 @@ const mockCore = ({
     toasts: {
       addSuccess: jest.fn(),
       addDanger: jest.fn(),
+      addWarning: jest.fn(),
     },
   },
   chrome: {
@@ -41,11 +42,23 @@ const mockCore = ({
     navigateToApp: jest.fn(),
     getUrlForApp: jest.fn(() => '/app/query-insights'),
   },
+  savedObjects: {
+    client: {},
+  },
 } as unknown) as CoreStart;
 
-const mockDeps = {};
+const mockDeps = {
+  dataSource: {
+    dataSourceEnabled: true,
+  },
+} as any;
+
+const MockDataSourceMenu = (_props: any) => <div>Mocked Data Source Menu</div>;
+
 const mockDataSourceManagement = {
-  getDataSourceMenu: jest.fn(() => <div>Mocked Data Source Menu</div>),
+  ui: {
+    getDataSourceMenu: jest.fn(() => MockDataSourceMenu),
+  },
 } as any;
 
 (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
@@ -76,6 +89,10 @@ const mockDataSource = {
   name: 'default',
 } as any;
 
+const mockParams = {
+  setHeaderActionMenu: jest.fn(),
+} as any;
+
 const renderComponent = (name = 'test-group') => {
   render(
     <MemoryRouter initialEntries={[`/wlm-details?name=${name}`]}>
@@ -83,7 +100,7 @@ const renderComponent = (name = 'test-group') => {
         <WLMDetails
           core={mockCore}
           depsStart={mockDeps as any}
-          params={{} as any}
+          params={mockParams}
           dataSourceManagement={mockDataSourceManagement}
         />
       </DataSourceContext.Provider>
@@ -108,6 +125,10 @@ jest.mock('../../../components/PageHeader', () => ({
 describe('WLMDetails Component', () => {
   beforeEach(() => {
     jest.resetAllMocks(); // Reset mock function calls
+
+    // Restore the data source menu mock after reset
+    mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
+
     (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
       if (path.startsWith('/api/_wlm/workload_group/test-group')) {
         return Promise.resolve({
@@ -421,7 +442,7 @@ describe('WLMDetails Component', () => {
           <WLMDetails
             core={mockCore as CoreStart}
             depsStart={mockDeps as any}
-            params={{} as any}
+            params={mockParams}
             dataSourceManagement={mockDataSourceManagement}
           />
         </DataSourceContext.Provider>
@@ -444,7 +465,7 @@ describe('WLMDetails Component', () => {
               core={mockCore as CoreStart}
               depsStart={mockDeps as any}
               dataSourceManagement={mockDataSourceManagement}
-              params={{} as any}
+              params={mockParams}
             />
           </Route>
         </DataSourceContext.Provider>
@@ -525,7 +546,7 @@ describe('WLMDetails Component', () => {
           <WLMDetails
             core={mockCore as CoreStart}
             depsStart={mockDeps as any}
-            params={{} as any}
+            params={mockParams}
             dataSourceManagement={mockDataSourceManagement}
           />
         </DataSourceContext.Provider>
