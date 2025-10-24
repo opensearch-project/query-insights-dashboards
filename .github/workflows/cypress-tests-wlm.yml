@@ -75,7 +75,7 @@ jobs:
           echo "Installing WLM from: $ZIP_ABS"
           cd "opensearch-${VERSION}"
           cd opensearch-${{ env.VERSION }}
-          ./bin/opensearch-plugin install --batch "file://$ZIP_ABS"
+          ./bin/opensearch-plugin install "file:/OpenSearch/plugins/workload-management/build/distributions/workload-management-3.3.2-SNAPSHOT.zip"
 
       - name: Run OpenSearch (now with WLM installed)
         run: |
