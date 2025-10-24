@@ -1,189 +1,135 @@
 name: Cypress e2e integration tests workflow with security
 on:
-  pull_request:
-    branches:
-      - "*"
-  push:
-    branches:
-      - "*"
-
+  workflow_call:
+    inputs:
+      test-name:
+        required: true
+        type: string
+      test-command:
+        required: true
+        type: string
+      osd-serve-args:
+        required: false
+        type: string
+      security-enabled:
+        required: false
+        type: string
+      artifact-name-suffix:
+        required: false
+        type: string
+      multi-opensearch-enabled:
+        required: false
+        type: boolean
+        default: true
 env:
-  OPENSEARCH_BRANCH: 'main'
-  SECURITY_BRANCH: 'main'
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
-  OPENSEARCH_VERSION: '3.4.0-SNAPSHOT'
-  SECURITY_VERSION: '3.4.0.0-SNAPSHOT'
-  GRADLE_VERSION: '7.6.1'
-  CYPRESS_VIDEO: true
-  CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
-
+  OS_BRANCH: "3.3"
 jobs:
   tests:
-    name: Run Cypress E2E tests
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        include:
-          - os: ubuntu-latest
-            cypress_cache_folder: ~/.cache/Cypress
-    runs-on: ${{ matrix.os }}
+    name: Run Cypress E2E tests for ${{ inputs.test-name }}
+    runs-on: ubuntu-latest
     env:
+      # prevents extra Cypress installation progress messages
       CI: 1
+      # avoid warnings like "tput: No value for $TERM and no -T specified"
       TERM: xterm
+      # make Node run in ipv4 first so that cypress can detect 5601 port in CI environment
+      NODE_OPTIONS: '--max-old-space-size=6144 --dns-result-order=ipv4first'
+      # 2.12 onwards security demo configuration require a custom admin password
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
     steps:
-
+      - name: Checkout Branch
+        uses: actions/checkout@v3
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v1
         with:
           java-version: 21
-          distribution: temurin
+      - name: Checkout cypress-test
+        uses: actions/checkout@v2
+        with:
+          repository: ${{github.repository}}
+          path: cypress-test
+      - name: Get package version
+        working-directory: cypress-test
+        run: |
+          echo "VERSION=$(yarn --silent pkg-version)" >> $GITHUB_ENV
+      - name: Get security setups
+        run: |
+          SECURITY_ENABLED=${{ inputs.security-enabled }}
+          if [ "$SECURITY_ENABLED" != 'false' ]; then
+              echo "SECURITY_ENABLED=true" >> $GITHUB_ENV
+          else
+              echo "SECURITY_ENABLED=false" >> $GITHUB_ENV
+          fi
+      - name: Get OpenSearch tarball
+        run: |
+          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch/opensearch-${{ env.VERSION }}-linux-x64.tar.gz
+          tar -xzf opensearch-${{ env.VERSION }}-linux-x64.tar.gz
 
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
         with:
-          repository: opensearch-project/OpenSearch
           path: OpenSearch
-          ref: ${{ env.OPENSEARCH_BRANCH }}
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OS_BRANCH }}
 
-      - name: Build WLM, publish Rule Framework to mavenLocal, and build localDistro
+      - name: Build WLM plugin from OpenSearch monorepo
         run: |
           set -e
+          echo "Using OpenSearch branch: $OS_BRANCH"
           cd OpenSearch
-          ./gradlew --no-daemon :plugins:workload-management:assemble
-          ./gradlew --no-daemon :modules:autotagging-commons:common:publishToMavenLocal
-          ./gradlew --no-daemon :modules:autotagging-commons:spi:publishToMavenLocal
-          ./gradlew --no-daemon :modules:autotagging-commons:publishToMavenLocal
-          ./gradlew --no-daemon publishToMavenLocal
-          ./gradlew --no-daemon localDistro
 
-          # OPENSEARCH_VERSION already includes -SNAPSHOT; don't append another
-          LOCAL_DISTRO="build/distribution/local/opensearch-${OPENSEARCH_VERSION}"
-          WLM_ZIP="plugins/workload-management/build/distributions/workload-management-${OPENSEARCH_VERSION}.zip"
+          # Build ONLY the workload-management plugin
+          ./gradlew :plugins:workload-management:clean :plugins:workload-management:assemble \
+            -Dopensearch.version=${{ env.VERSION }} --no-daemon
 
-          # make available to later steps
-          echo "LOCAL_DISTRO=$LOCAL_DISTRO" >> $GITHUB_ENV
-          echo "WLM_ZIP=$WLM_ZIP" >> $GITHUB_ENV
+          # Expose the built ZIP path
+          echo "PLUGIN_ZIP=$(ls plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)" >> $GITHUB_ENV
 
-          # also export so we can use them *in this step*
-          export LOCAL_DISTRO WLM_ZIP
-
-          echo "Local distro: $LOCAL_DISTRO"
-          echo "WLM zip: $WLM_ZIP"
-
-      - name: Checkout Security
-        uses: actions/checkout@v4
-        with:
-          repository: opensearch-project/security
-          path: security
-          ref: ${{ env.SECURITY_BRANCH }}
-
-      - name: Build Security plugin
+      - name: Install WLM plugin (from ZIP)
         run: |
           set -e
-          cd security
-          ./gradlew --no-daemon assemble
+          cd opensearch-${{ env.VERSION }}
+          ./bin/opensearch-plugin install --batch "file:${PLUGIN_ZIP}"
 
-          SEC_ZIP="build/distributions/opensearch-security-${SECURITY_VERSION}.zip"
-          echo "SEC_ZIP=$SEC_ZIP" >> $GITHUB_ENV
-          export SEC_ZIP
-
-          echo "Security zip: $SEC_ZIP"
-
-      - name: Install plugins into localDistro
+      - name: Run OpenSearch (now with WLM installed)
         run: |
           set -e
-          cd "OpenSearch/$LOCAL_DISTRO"
-          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/security/$SEC_ZIP"
-          bin/opensearch-plugin install --batch "file://$GITHUB_WORKSPACE/OpenSearch/$WLM_ZIP"
-
-          echo "Installed plugins:"
-          bin/opensearch-plugin list || true
-
-      # 1) Install Security demo TLS/config BEFORE starting the node
-      - name: Install Security demo TLS/config (pre-start)
-        run: |
-          set -e
-          cd "OpenSearch/$LOCAL_DISTRO/plugins/opensearch-security/tools"
-          chmod +x install_demo_configuration.sh
-          # The script reads OPENSEARCH_INITIAL_ADMIN_PASSWORD from env
-          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
-          # -y answers yes to prompts, -i writes demo TLS settings and files into config/
-          ./install_demo_configuration.sh -y -i
-
-      # 2) Start OpenSearch and wait for the HTTPS endpoint to respond (no auth yet)
-      - name: Start OpenSearch (with Security) and wait
-        run: |
-          set -e
-          cd "OpenSearch/$LOCAL_DISTRO"
-          echo "discovery.type: single-node" >> config/opensearch.yml
-          nohup bin/opensearch > os.log 2>&1 &
-
-          echo "Waiting for HTTPS port..."
-          for i in {1..60}; do
-            if curl -sk https://localhost:9200 >/dev/null 2>&1; then
-              echo "Port is up"; break
-            fi
-            echo "Attempt $i/60..."; sleep 3
-          done
-          curl -sk https://localhost:9200 >/dev/null 2>&1 || { echo "OpenSearch never came up"; tail -n 200 os.log || true; exit 1; }
-
-          echo "Waiting for Security to initialize..."
-          for i in {1..60}; do
-            code=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost:9200/_plugins/_security/health)
-            # Health endpoint returns 200 once Security is initialized
-            if [ "$code" -eq 200 ]; then
-              echo "Security is initialized"; break
-            fi
-            echo "Attempt $i/60 (security not ready, http $code)..."; sleep 3
-          done
-          if [ "$code" -ne 200 ]; then
-            echo "Security never initialized (last http code: $code)"
-            echo "=== Tail os.log ==="; tail -n 200 os.log || true
-            exit 1
+          cd opensearch-${{ env.VERSION }}/
+          if [ "$SECURITY_ENABLED" = 'false' ]; then
+            echo "Remove OpenSearch Security"
+            [ -d "plugins/opensearch-security" ] && echo "plugins.security.disabled: true" >> config/opensearch.yml
+            ./opensearch-tar-install.sh &
+            timeout 900 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9200)" != "200" ]]; do sleep 5; done'
+            curl -s http://localhost:9200
+          else
+            echo "Keep OpenSearch Security"
+            ./opensearch-tar-install.sh &
+            timeout 900 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k https://localhost:9200)" != "200" ]]; do sleep 5; done'
+            curl -sk -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} https://localhost:9200
           fi
 
-          echo "Plugins:"
-          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
-          # Test WLM stats endpoint
-          echo -e "Testing WLM stats endpoint:"
-          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
-      - name: Ensure create-index is unblocked (guard loop)
+      - name: Enable WLM (with or without Security) and verify
         run: |
           set -e
-          for i in {1..20}; do
-            cur=$(curl -sk --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-              "https://localhost:9200/_cluster/settings?include_defaults=false" \
-              | jq -r '.transient.cluster.blocks.create_index // .persistent.cluster.blocks.create_index // "false"')
-            echo "current cluster.blocks.create_index = $cur"
-            if [ "$cur" != "true" ]; then
-              echo "Block is not enabled. Proceeding."
-              break
-            fi
-            echo "Block is enabled. Forcing it off..."
-            curl -sS -k --http1.1 --fail-with-body \
-              -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-              -X PUT "https://localhost:9200/_cluster/settings" \
-              -H 'Content-Type: application/json' \
-              -d '{"transient":{"cluster.blocks.create_index": false},"persistent":{"cluster.blocks.create_index": false}}'
-            sleep 3
-          done
+          echo "Enabling Workload Management (WLM)..."
 
-          echo "Final settings (no defaults):"
-          curl -sk --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            "https://localhost:9200/_cluster/settings?include_defaults=false" | jq .
+          # Detect whether security is enabled
+          if [ "$SECURITY_ENABLED" = 'true' ]; then
+            echo "Security detected — using HTTPS with credentials"
+            PROTOCOL=https
+            AUTH="-u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+            CURL_FLAGS="--insecure --fail-with-body"
+          else
+            echo "No security detected — using HTTP without credentials"
+            PROTOCOL=http
+            AUTH=""
+            CURL_FLAGS="--fail-with-body"
+          fi
 
-      # 3) Enable WLM (now that Security + TLS are active)
-      - name: Enable WLM and verify
-        run: |
-          set -e
           # Enable WLM
-          curl -sS -k --http1.1 --fail-with-body \
-            -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
-            -X PUT "https://localhost:9200/_cluster/settings" \
+          curl -sS -k --http1.1 $CURL_FLAGS $AUTH \
+            -X PUT "${PROTOCOL}://localhost:9200/_cluster/settings" \
             -H 'Content-Type: application/json' \
             -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
 
@@ -192,58 +138,42 @@ jobs:
           echo "Raw settings response: $SETTINGS"
           echo "$SETTINGS" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
 
-      - name: Checkout OpenSearch-Dashboards
-        uses: actions/checkout@v4
-        with:
-          repository: opensearch-project/OpenSearch-Dashboards
-          path: OpenSearch-Dashboards
-          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+          # Test WLM stats endpoint
+          echo -e "Testing WLM stats endpoint:"
+          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
-      - name: Configure OpenSearch Dashboards to talk HTTPS to OpenSearch
+      - name: Get OpenSearch-Dashboards
         run: |
-          cat >> OpenSearch-Dashboards/config/opensearch_dashboards.yml << 'EOT'
-          opensearch.hosts: [ "https://localhost:9200" ]
-          opensearch.ssl.verificationMode: none
-          opensearch.username: "admin"
-          opensearch.password: "myStrongPassword123!"
-          server.host: "0.0.0.0"
-          EOT
-
-      - name: Checkout Query Insights Dashboards plugin
-        uses: actions/checkout@v4
+          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch-dashboards/opensearch-dashboards-${{ env.VERSION }}-linux-x64.tar.gz
+          tar -xzf opensearch-dashboards-${{ env.VERSION }}-linux-x64.tar.gz
+      - name: Get node and yarn versions
+        id: versions
+        run: |
+          node_version_temp=$(node -p "(require('./opensearch-dashboards-${{ env.VERSION }}/package.json').engines.node).match(/[.0-9]+/)[0]")
+          echo "node_version=$node_version_temp" >> $GITHUB_ENV
+      - name: Setup node
+        uses: actions/setup-node@v1
         with:
-          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          node-version: ${{ steps.versions.outputs.node_version }}
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Install Yarn
-        shell: bash
-        run: |
-          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
-          echo "Installing yarn@$YARN_VERSION"
-          npm i -g yarn@$YARN_VERSION
-      - run: node -v
-      - run: yarn -v
-
-      - name: Bootstrap plugin/OpenSearch-Dashboards
-        run: |
-          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
-          yarn osd bootstrap --single-version=loose
 
       - name: Run OpenSearch-Dashboards server
         run: |
-          cd OpenSearch-Dashboards
-          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
-          echo "Starting Dashboards..."
-          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
-          sleep 10
-          echo "Initial Dashboards log output:"
-          head -n 100 dashboards.log || true
-        shell: bash
+          cd opensearch-dashboards-${{ env.VERSION }}
+          if [ "$SECURITY_ENABLED" = 'false' ]; then
+              echo "Remove Dashboards Security"
+              ./bin/opensearch-dashboards-plugin remove securityDashboards
+              sed -i /^opensearch_security/d config/opensearch_dashboards.yml
+              sed -i 's/https/http/' config/opensearch_dashboards.yml
+              bin/opensearch-dashboards serve ${{ inputs.osd-serve-args }} &
+              timeout 300 bash -c 'while [[ "$(curl http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
+              curl http://localhost:5601/api/status
+          else
+              echo "Keep Dashboards Security"
+              bin/opensearch-dashboards serve ${{ inputs.osd-serve-args }} &
+              timeout 300 bash -c 'while [[ "$(curl -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
+              curl http://localhost:5601/api/status -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} --insecure
+          fi
 
       - name: Wait for OpenSearch-Dashboards to be ready
         run: |
