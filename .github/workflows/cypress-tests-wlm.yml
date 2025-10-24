@@ -148,7 +148,7 @@ jobs:
           echo "Plugins:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_cat/plugins?v || true
           # Test WLM stats endpoint
-          echo -e "\nTesting WLM stats endpoint:"
+          echo -e "Testing WLM stats endpoint:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
       - name: Ensure create-index is unblocked (guard loop)
