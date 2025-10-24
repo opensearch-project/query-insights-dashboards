@@ -64,18 +64,17 @@ jobs:
           ./gradlew :plugins:workload-management:clean :plugins:workload-management:assemble \
             -Dopensearch.version=${{ env.VERSION }} --no-daemon
 
+          echo "Checking WLM build directory:"
+          ls -la plugins/workload-management/build/distributions/
           # Expose the built ZIP path
-          echo "PLUGIN_ZIP=$(ls plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)" >> $GITHUB_ENVZIP_REL="plugins/workload-management/build/distributions/workload-management-*.zip"
-          ZIP_ABS="$(realpath $ZIP_REL)"
-          echo "PLUGIN_ZIP=$ZIP_ABS" >> $GITHUB_ENV
+          echo "PLUGIN_ZIP=$(ls plugins/workload-management/build/distributions/workload-management-*.zip | head -n1)" >> $GITHUB_ENV
           echo "Built zip: $ZIP_ABS"
-          ls -lh "$ZIP_ABS"
 
       - name: Install WLM plugin (from ZIP)
         run: |
           set -e
           cd opensearch-${{ env.VERSION }}
-          ./bin/opensearch-plugin install --batch "file:/${PLUGIN_ZIP}"
+          ./bin/opensearch-plugin install --batch "file://OpenSearch/${PLUGIN_ZIP}"
 
       - name: Run OpenSearch (now with WLM installed)
         run: |
