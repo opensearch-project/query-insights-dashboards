@@ -505,7 +505,6 @@ export const WLMDetails = ({
 
       for (const rule of rulesToUpdate) {
         const response = buildRulePayload(currentId!, rule, description);
-        console.log(currentId, response);
         if (!response) continue;
 
         await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
