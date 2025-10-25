@@ -115,5 +115,3 @@ const DEFAULT_CONFIG: ConfigSchema = {
 };
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
-
-

@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isVersion219, isVersion31OrHigher, isVersion33OrHigher, isVersion34OrHigher } from './version-utils';
+import {
+  isVersion219,
+  isVersion31OrHigher,
+  isVersion33OrHigher,
+  isVersion34OrHigher,
+} from './version-utils';
 
 describe('version-utils', () => {
   describe('isVersion219', () => {

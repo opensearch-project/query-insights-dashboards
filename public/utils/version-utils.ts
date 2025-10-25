@@ -43,7 +43,9 @@ export const isVersion34OrHigher = (version: string | undefined): boolean => {
 
 export const isVersion219 = (version: string | undefined): boolean => {
   const cleanedVersion = cleanVersion(version);
-  return cleanedVersion ? semver.gte(cleanedVersion, '2.19.0') && semver.lt(cleanedVersion, '2.20.0') : false;
+  return cleanedVersion
+    ? semver.gte(cleanedVersion, '2.19.0') && semver.lt(cleanedVersion, '2.20.0')
+    : false;
 };
 
 export const getGroupBySettingsPath = (version: string | undefined, settings: any) => {
