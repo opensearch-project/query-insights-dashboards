@@ -123,14 +123,14 @@ jobs:
           FILE="OpenSearch-Dashboards/config/opensearch_dashboards.yml"
           test -f "$FILE" || { echo "Missing $FILE"; exit 1; }
 
-          cat >> "$FILE" <<'YML'
-          server.host: "0.0.0.0"
-          opensearch.hosts: ["https://localhost:9200"]
-          opensearch.ssl.verificationMode: none
-          YML
+          {
+          printf '%s\n' 'server.host: "0.0.0.0"'
+          printf '%s\n' 'opensearch.hosts: ["https://localhost:9200"]'
+          printf '%s\n' 'opensearch.ssl.verificationMode: none'
+          } >> "$FILE"
 
-          echo "Updated $FILE:"
-          sed -n '1,200p' "$FILE"
+          echo "=== Last 60 lines of $FILE (show appended settings) ==="
+          tail -n 60 "$FILE" || true
 
       - name: Checkout Query Insights Dashboards plugin
         uses: actions/checkout@v4
