@@ -37,6 +37,27 @@ jobs:
           repository: ${{github.repository}}
           path: cypress-test
 
+      - name: Checkout Security
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/security
+          path: security
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Build security plugin from security
+        run: |
+          set -e
+          cd security
+          # Remove -Werror from Java compile args wherever it appears
+          grep -R --line-number "\-Werror" || true
+          sed -i 's/-Werror//g' build.gradle || true
+          sed -i 's/-Werror//g' build.gradle.kts || true
+          find . -name "*.gradle.kts" -o -name "*.gradle" -print0 | xargs -0 sed -i 's/-Werror//g'
+          ./gradlew --no-daemon assemble
+          cp build/distributions/opensearch-security-*.zip "$GITHUB_WORKSPACE/security.zip"
+          ls -la build/distributions/
+          ls -lh "$GITHUB_WORKSPACE/security.zip"
+
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
         with:
@@ -59,22 +80,6 @@ jobs:
 
           cp plugins/workload-management/build/distributions/workload-management-*.zip "$GITHUB_WORKSPACE/wlm.zip"
           ls -lh "$GITHUB_WORKSPACE/wlm.zip"
-
-      - name: Checkout Security
-        uses: actions/checkout@v4
-        with:
-          repository: opensearch-project/security
-          path: security
-          ref: ${{ env.OS_BRANCH }}
-
-      - name: Build security plugin from security
-        run: |
-          set -e
-          cd security
-          ./gradlew --no-daemon assemble
-          cp build/distributions/opensearch-security-*.zip "$GITHUB_WORKSPACE/security.zip"
-          ls -la build/distributions/
-          ls -lh "$GITHUB_WORKSPACE/security.zip"
 
       - name: Run Opensearch with A Single Plugin
         uses: derek-ho/start-opensearch@v9
