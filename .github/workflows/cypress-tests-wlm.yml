@@ -123,7 +123,7 @@ jobs:
         with:
           repository: opensearch-project/OpenSearch-Dashboards
           path: OpenSearch-Dashboards
-          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+          ref: ${{ env.OS_BRANCH }}
 
       - name: Configure OpenSearch Dashboards for Cypress (patch existing YAML)
         run: |
