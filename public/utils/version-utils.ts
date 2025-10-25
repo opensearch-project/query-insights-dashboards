@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import semver from 'semver';
 import { getDataSourceVersion } from './datasource-utils';
-import { VERSION_3_1, VERSION_3_3, VERSION_2_19 } from '../../common/constants';
 
 let cachedVersion: string | undefined;
 let cachedDataSourceId: string | undefined;
@@ -19,34 +19,31 @@ export const getVersionOnce = async (dataSourceId: string): Promise<string | und
   return cachedVersion;
 };
 
-const compareVersion = (
-  version: string | undefined,
-  targetMajor: number,
-  targetMinor: number,
-  operator: 'gte' | 'eq'
-): boolean => {
-  if (!version) return false;
-  const [major, minor] = version.split('.');
-  const majorNum = parseInt(major, 10);
-  const minorNum = parseInt(minor, 10);
-
-  if (operator === 'eq') {
-    return majorNum === targetMajor && minorNum === targetMinor;
-  }
-
-  return majorNum > targetMajor || (majorNum === targetMajor && minorNum >= targetMinor);
+const cleanVersion = (version: string | undefined): string | null => {
+  if (!version) return null;
+  // Remove snapshot suffix and clean the version
+  const cleaned = version.replace(/-SNAPSHOT$/, '').trim();
+  return semver.valid(semver.coerce(cleaned));
 };
 
 export const isVersion31OrHigher = (version: string | undefined): boolean => {
-  return compareVersion(version, VERSION_3_1.major, VERSION_3_1.minor, 'gte');
+  const cleanedVersion = cleanVersion(version);
+  return cleanedVersion ? semver.gte(cleanedVersion, '3.1.0') : false;
 };
 
 export const isVersion33OrHigher = (version: string | undefined): boolean => {
-  return compareVersion(version, VERSION_3_3.major, VERSION_3_3.minor, 'gte');
+  const cleanedVersion = cleanVersion(version);
+  return cleanedVersion ? semver.gte(cleanedVersion, '3.3.0') : false;
+};
+
+export const isVersion34OrHigher = (version: string | undefined): boolean => {
+  const cleanedVersion = cleanVersion(version);
+  return cleanedVersion ? semver.gte(cleanedVersion, '3.4.0') : false;
 };
 
 export const isVersion219 = (version: string | undefined): boolean => {
-  return compareVersion(version, VERSION_2_19.major, VERSION_2_19.minor, 'eq');
+  const cleanedVersion = cleanVersion(version);
+  return cleanedVersion ? semver.gte(cleanedVersion, '2.19.0') && semver.lt(cleanedVersion, '2.20.0') : false;
 };
 
 export const getGroupBySettingsPath = (version: string | undefined, settings: any) => {

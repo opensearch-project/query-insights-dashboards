@@ -29,6 +29,7 @@ import {
   DEFAULT_EXPORTER_TYPE,
   DEFAULT_GROUP_BY,
   DEFAULT_METRIC_ENABLED,
+  DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
   DEFAULT_WINDOW_SIZE,
@@ -159,7 +160,7 @@ const TopNQueries = ({
       } catch (error) {
         console.error('Failed to fetch data source version:', error);
         if (!isComponentUnmounted) {
-          setShowLiveQueries(true);
+          setShowLiveQueries(DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR);
         }
       }
     })();

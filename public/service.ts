@@ -20,7 +20,7 @@ export interface DataSourceEnabled {
 
 export const [getCore, setCore] = createGetterSetter<CoreStart>('Core');
 
-export const [getRouteService, setRouteService] = createGetterSetter<RouteService>('');
+export const [getRouteService, setRouteService] = createGetterSetter<RouteService>('RouteService');
 
 export const [getSavedObjectsClient, setSavedObjectsClient] = createGetterSetter<
   CoreStart['savedObjects']['client']

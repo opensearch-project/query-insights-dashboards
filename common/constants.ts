@@ -68,6 +68,7 @@ export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
 export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
 export const TOP_N_DISPLAY_LIMIT = 9;
+export const DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR = false;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
 export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
 export const CHART_COLORS = [
@@ -115,7 +116,4 @@ const DEFAULT_CONFIG: ConfigSchema = {
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
 
-// Version constants
-export const VERSION_3_1 = { major: 3, minor: 1 };
-export const VERSION_3_3 = { major: 3, minor: 3 };
-export const VERSION_2_19 = { major: 2, minor: 19 };
+
