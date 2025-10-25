@@ -242,8 +242,6 @@ jobs:
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
           command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern="**/[1-5]*.cy.{js,jsx,ts,tsx}"
-          wait-on: 'http://localhost:5601'
-          wait-on-timeout: 1200
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
