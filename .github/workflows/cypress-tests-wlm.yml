@@ -7,9 +7,10 @@ on:
     branches:
       - "*"
 env:
-  OS_BRANCH: "3.3"
+  OS_BRANCH: "main"
   SECURITY_ENABLED: "true"
-  VERSION: "3.3.0"
+  VERSION: "3.4.0"
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: "myStrongPassword123!"
 jobs:
   tests:
     name: Run Cypress E2E tests for WLM
@@ -35,13 +36,6 @@ jobs:
         with:
           repository: ${{github.repository}}
           path: cypress-test
-      - name: Get security setups
-        run: |
-          if [ "$SECURITY_ENABLED" != 'false' ]; then
-              echo "SECURITY_ENABLED=true" >> $GITHUB_ENV
-          else
-              echo "SECURITY_ENABLED=false" >> $GITHUB_ENV
-          fi
 
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
@@ -63,25 +57,32 @@ jobs:
           echo "Checking WLM build directory:"
           ls -la plugins/workload-management/build/distributions/
 
-      - name: Run OpenSearch (now with WLM installed)
-        run: |
-          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch/opensearch-${{ env.VERSION }}-linux-x64.tar.gz
-          tar -xzf opensearch-${{ env.VERSION }}-linux-x64.tar.gz
-          cd opensearch-${{ env.VERSION }}/
-          ./bin/opensearch-plugin install "file:/OpenSearch/plugins/workload-management/build/distributions/workload-management-3.3.2-SNAPSHOT.zip"
-          if [ "$SECURITY_ENABLED" = 'false' ]; then
-            echo "Remove OpenSearch Security"
-            [ -d "plugins/opensearch-security" ] && echo "plugins.security.disabled: true" >> config/opensearch.yml
-            ./opensearch-tar-install.sh &
-            timeout 900 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9200)" != "200" ]]; do sleep 5; done'
-            curl -s http://localhost:9200
-          else
-            echo "Keep OpenSearch Security"
-            ./opensearch-tar-install.sh &
-            timeout 900 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k https://localhost:9200)" != "200" ]]; do sleep 5; done'
-            curl -sk -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} https://localhost:9200
-          fi
+          cp plugins/workload-management/build/distributions/workload-management-*.zip "$GITHUB_WORKSPACE/wlm.zip"
+          ls -lh "$GITHUB_WORKSPACE/wlm.zip"
 
+      - name: Checkout Security
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/security
+          path: security
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Build security plugin from security
+        run: |
+          set -e
+          cd security
+          ./gradlew --no-daemon assemble
+          cp build/distributions/opensearch-security-*.zip "$GITHUB_WORKSPACE/security.zip"
+          ls -lh "$GITHUB_WORKSPACE/security.zip"
+
+      - name: Run Opensearch with A Single Plugin
+        uses: derek-ho/start-opensearch@v9
+        with:
+          opensearch-version: ${{ env.OPENSEARCH_VERSION }}
+          plugins: "file:$GITHUB_WORKSPACE/security.zip, file:$GITHUB_WORKSPACE/wlm.zip"
+          security-enabled: true
+          admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          jdk-version: 2
 
       - name: Enable WLM (with or without Security) and verify
         run: |
@@ -116,38 +117,48 @@ jobs:
           echo -e "Testing WLM stats endpoint:"
           curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
 
-      - name: Get OpenSearch-Dashboards
-        run: |
-          wget https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{ env.VERSION }}/latest/linux/x64/tar/dist/opensearch-dashboards/opensearch-dashboards-${{ env.VERSION }}-linux-x64.tar.gz
-          tar -xzf opensearch-dashboards-${{ env.VERSION }}-linux-x64.tar.gz
-      - name: Get node and yarn versions
-        id: versions
-        run: |
-          node_version_temp=$(node -p "(require('./opensearch-dashboards-${{ env.VERSION }}/package.json').engines.node).match(/[.0-9]+/)[0]")
-          echo "node_version=$node_version_temp" >> $GITHUB_ENV
-      - name: Setup node
-        uses: actions/setup-node@v1
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@v4
         with:
-          node-version: ${{ steps.versions.outputs.node_version }}
+          repository: opensearch-project/OpenSearch-Dashboards
+          path: OpenSearch-Dashboards
+          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+
+      - name: Checkout Query Insights Dashboards plugin
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        shell: bash
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          echo "Installing yarn@$YARN_VERSION"
+          npm i -g yarn@$YARN_VERSION
+      - run: node -v
+      - run: yarn -v
+
+      - name: Bootstrap plugin/OpenSearch-Dashboards
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
 
       - name: Run OpenSearch-Dashboards server
         run: |
-          cd opensearch-dashboards-${{ env.VERSION }}
-          if [ "$SECURITY_ENABLED" = 'false' ]; then
-              echo "Remove Dashboards Security"
-              ./bin/opensearch-dashboards-plugin remove securityDashboards
-              sed -i /^opensearch_security/d config/opensearch_dashboards.yml
-              sed -i 's/https/http/' config/opensearch_dashboards.yml
-              bin/opensearch-dashboards serve &
-              timeout 300 bash -c 'while [[ "$(curl http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
-              curl http://localhost:5601/api/status
-          else
-              echo "Keep Dashboards Security"
-              bin/opensearch-dashboards serve &
-              timeout 300 bash -c 'while [[ "$(curl -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
-              curl http://localhost:5601/api/status -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} --insecure
-          fi
+          cd OpenSearch-Dashboards
+          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
+          echo "Starting Dashboards..."
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+          echo "Initial Dashboards log output:"
+          head -n 100 dashboards.log || true
+        shell: bash
 
       - name: Wait for OpenSearch-Dashboards to be ready
         run: |
