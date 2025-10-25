@@ -207,7 +207,14 @@ jobs:
           curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
 
           echo "Checking plugin endpoint..."
-          curl -s http://localhost:5601/app/query-insights-dashboards || echo "Plugin endpoint not accessible"
+          # 1) login and store session cookie
+          curl -s -c cookies.txt -X POST 'http://localhost:5601/auth/login' \
+          -H 'osd-xsrf: true' -H 'Content-Type: application/json' \
+            --data "{\"username\":\"admin\",\"password\":\"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\"}" >/dev/null
+
+          # 2) hit the app route using the cookie
+          curl -s -b cookies.txt -o /dev/null -w "HTTP:%{http_code}\n" \
+          'http://localhost:5601/app/query-insights-dashboards' || echo "Plugin endpoint not accessible"
         shell: bash
         continue-on-error: true
 
@@ -238,11 +245,14 @@ jobs:
             yarn run cypress run
             --spec "cypress/e2e/wlm/**/*.cy.{js,jsx,ts,tsx}"
             --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
-          wait-on: 'http://localhost:5601'
+          wait-on: 'http-get://localhost:5601/api/status'
           wait-on-timeout: 1200
           browser: chrome
         env:
-          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CYPRESS_baseUrl: http://localhost:5601
+          CYPRESS_USERNAME: admin
+          CYPRESS_PASSWORD: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
           CI: true
         timeout-minutes: 120
 
