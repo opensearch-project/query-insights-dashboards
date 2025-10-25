@@ -241,18 +241,12 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: >
-            yarn run cypress run
-            --spec "cypress/e2e/wlm/**/*.cy.{js,jsx,ts,tsx}"
-            --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
-          wait-on: 'http-get://localhost:5601/api/status'
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern="**/[1-5]*.cy.{js,jsx,ts,tsx}"
+          wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome
         env:
-          CYPRESS_baseUrl: http://localhost:5601
-          CYPRESS_USERNAME: admin
-          CYPRESS_PASSWORD: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
-          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
           CI: true
         timeout-minutes: 120
 
