@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { METRICS } from '../support/constants';
+import { METRICS } from '../../support/constants';
 
 const clearAll = () => {
   cy.disableTopQueries(METRICS.LATENCY);
