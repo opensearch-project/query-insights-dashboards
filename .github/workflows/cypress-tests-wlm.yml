@@ -244,25 +244,6 @@ jobs:
             -X PUT 'https://localhost:9200/_wlm/workload_group' \
             -d '{"name":"test_group","resiliency_mode":"soft","resource_limits":{"cpu":0.1,"memory":0.1}}'
 
-      - name: Wait for WLM group to exist
-        run: |
-          set -e
-          AUTH="-u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} -k"
-          URL="https://localhost:9200/_wlm/workload_group"
-
-          echo "Waiting for default Workload Group..."
-          for i in {1..60}; do
-            RESP="$(curl -sS $AUTH "$URL" || true)"
-            if echo "$RESP" | jq -e '. | ((type=="array" and length>0) or (.workload_groups and (.workload_groups|length>0)))' >/dev/null 2>&1; then
-              echo "Default WG detected:"
-              echo "$RESP" | jq '.[0] // .workload_groups[0]'
-              exit 0
-            fi
-            echo "No WG yet (attempt $i/60). Sleeping 5s..."
-            sleep 5
-          done
-          echo "Default WG NOT found."; echo "$RESP" | jq '.' || true; exit 1
-
       - name: Cypress tests
         uses: cypress-io/github-action@v5
         with:
