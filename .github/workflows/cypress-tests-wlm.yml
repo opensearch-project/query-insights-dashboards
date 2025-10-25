@@ -7,9 +7,9 @@ on:
     branches:
       - "*"
 env:
-  OS_BRANCH: "main"
+  OS_BRANCH: "3.3"
   SECURITY_ENABLED: "true"
-  VERSION: "3.4.0"
+  VERSION: "3.3.2"
   OPENSEARCH_INITIAL_ADMIN_PASSWORD: "myStrongPassword123!"
 jobs:
   tests:
