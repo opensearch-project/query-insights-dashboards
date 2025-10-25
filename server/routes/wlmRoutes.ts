@@ -307,7 +307,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
       validate: {
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
         query: schema.object({
@@ -317,11 +323,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
     },
     async (context, request, response) => {
       try {
-        const body = {
-          description: request.body.description,
-          index_pattern: request.body.index_pattern,
-          workload_group: request.body.workload_group,
-        };
+        const body = request.body;
         let result;
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.wlm_plugin.wlmClient.asScoped(request).callAsCurrentUser;
@@ -332,10 +334,10 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: result });
       } catch (error: any) {
-        console.error(`Failed to create index rule:`, error);
+        console.error(`Failed to create rule:`, error);
         return response.custom({
           statusCode: error.statusCode || 500,
-          body: { message: `Failed to create index rule: ${error.message}` },
+          body: { message: `Failed to create rule: ${error.message}` },
         });
       }
     }
@@ -363,9 +365,9 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: result });
       } catch (e: any) {
-        console.error('Failed to fetch index rules:', e);
+        console.error('Failed to fetch rules:', e);
         return response.internalError({
-          body: { message: `Failed to fetch index rules: ${e.message}` },
+          body: { message: `Failed to fetch rules: ${e.message}` },
         });
       }
     }
@@ -415,7 +417,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }),
         body: schema.object({
           description: schema.string(),
-          index_pattern: schema.arrayOf(schema.string()),
+          principal: schema.maybe(
+            schema.object({
+              username: schema.maybe(schema.arrayOf(schema.string())),
+              role: schema.maybe(schema.arrayOf(schema.string())),
+            })
+          ),
+          index_pattern: schema.maybe(schema.arrayOf(schema.string())),
           workload_group: schema.string(),
         }),
         query: schema.object({
