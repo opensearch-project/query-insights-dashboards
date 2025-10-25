@@ -237,7 +237,14 @@ jobs:
           path: ${{ matrix.cypress_cache_folder }}
           key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
 
-      - name: Wait for default WLM group to exist
+      - name: Create WLM workload group
+        run: |
+          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            -H 'Content-Type: application/json' \
+            -X PUT 'https://localhost:9200/_wlm/workload_group' \
+            -d '{"name":"test_group","resiliency_mode":"soft","resource_limits":{"cpu":0.1,"memory":0.1}}'
+
+      - name: Wait for WLM group to exist
         run: |
           set -e
           AUTH="-u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} -k"
