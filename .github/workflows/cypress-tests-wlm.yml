@@ -109,26 +109,17 @@ jobs:
           path: OpenSearch-Dashboards
           ref: ${{ env.OS_BRANCH }}
 
-      - name: Configure OpenSearch Dashboards for Cypress (patch existing YAML)
+      - name: Configure OpenSearch Dashboards for Cypress (heredoc)
         run: |
           set -euo pipefail
           FILE="OpenSearch-Dashboards/config/opensearch_dashboards.yml"
           test -f "$FILE" || { echo "Missing $FILE"; exit 1; }
 
-          # helper: replace line 'key: ...' or append if missing
-          set_yaml() {
-            local key="$1" val="$2"
-            if grep -qE "^[[:space:]]*${key}:" "$FILE"; then
-              sed -i -E "s|^([[:space:]]*${key}:).*|\1 ${val}|" "$FILE"
-            else
-              printf "%s: %s\n" "$key" "$val" >> "$FILE"
-            fi
-          }
-
-          # desired settings
-          set_yaml 'server.host' '"0.0.0.0"'
-          set_yaml 'opensearch.hosts' '["https://localhost:9200"]'
-          set_yaml 'opensearch.ssl.verificationMode' 'none'
+          cat >> "$FILE" <<'YML'
+          server.host: "0.0.0.0"
+          opensearch.hosts: ["https://localhost:9200"]
+          opensearch.ssl.verificationMode: none
+          YML
 
           echo "Updated $FILE:"
           sed -n '1,200p' "$FILE"
