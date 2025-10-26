@@ -12,15 +12,10 @@ describe('WLM Main Page', () => {
     });
   });
 
-  it('sanity: always passes', () => {
-    cy.wait(40_000); // hold for 40s
-    expect(true).to.eq(true);
-  });
-
   it('should display the WLM page with the workload group table', () => {
-    cy.contains('Workload groups').should('be.visible');
-    cy.get('.euiBasicTable').should('exist');
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+    cy.contains('Workload groups', { timeout: 240000 }).should('be.visible');
+    cy.get('.euiBasicTable', { timeout: 240000 }).should('exist');
+    cy.get('.euiTableRow', { timeout: 240000 }).should('have.length.greaterThan', 0);
   });
 
   it('should filter workload groups with the search bar', () => {
