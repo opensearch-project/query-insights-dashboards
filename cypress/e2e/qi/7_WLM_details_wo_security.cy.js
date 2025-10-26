@@ -62,13 +62,8 @@ describe('WLM Details Page', () => {
     cy.get('.euiModalFooter button').contains('Cancel').click();
   });
 
-  it('should create, update, and delete a username + role + index rule on the details page', () => {
-    const u1 = `user_${Date.now()}`;
-    const r1 = `role_${Date.now()}`;
+  it('should create, update, and delete an index rule on the details page', () => {
     const i1 = `logs-${Date.now()}-*`;
-
-    const u2 = `user_updated`;
-    const r2 = `role_updated`;
     const i2 = `metrics-${Date.now()}-*`;
 
     cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveGroup');
@@ -77,8 +72,6 @@ describe('WLM Details Page', () => {
     cy.get('[data-testid="wlm-tab-settings"]').click();
     cy.contains('+ Add another rule').click();
 
-    cy.get('textarea[placeholder="Enter username"]').last().type(u1);
-    cy.get('textarea[placeholder="Enter role"]').last().type(r1);
     cy.get('textarea[data-testid="indexInput"]').last().type(i1);
 
     cy.contains('button', /^Apply Changes$/)
@@ -90,20 +83,8 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(u1, { timeout: 20000 }).should('exist');
-    cy.contains(r1, { timeout: 20000 }).should('exist');
     cy.contains(i1, { timeout: 20000 }).should('exist');
 
-    cy.get('textarea[placeholder="Enter username"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(u2)
-      .blur();
-    cy.get('textarea[placeholder="Enter role"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(r2)
-      .blur();
     cy.get('textarea[data-testid="indexInput"]')
       .last()
       .type('{selectAll}{backspace}')
@@ -119,11 +100,7 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(u2, { timeout: 20000 }).should('exist');
-    cy.contains(r2, { timeout: 20000 }).should('exist');
     cy.contains(i2, { timeout: 20000 }).should('exist');
-    cy.contains(u1).should('not.exist');
-    cy.contains(r1).should('not.exist');
     cy.contains(i1).should('not.exist');
 
     cy.get('button[aria-label="Delete rule"]', { timeout: 20000 }).last().click({ force: true });
@@ -137,14 +114,6 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.get('textarea[placeholder="Enter username"]').should(($areas) => {
-      const values = Array.from($areas, (el) => (el.value || '').trim());
-      expect(values).to.not.include(u2);
-    });
-    cy.get('textarea[placeholder="Enter role"]').should(($areas) => {
-      const values = Array.from($areas, (el) => (el.value || '').trim());
-      expect(values).to.not.include(r2);
-    });
     cy.get('textarea[data-testid="indexInput"]').should(($areas) => {
       const values = Array.from($areas, (el) => (el.value || '').trim());
       expect(values).to.not.include(i2);
