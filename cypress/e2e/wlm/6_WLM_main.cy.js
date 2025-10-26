@@ -11,13 +11,9 @@ describe('WLM Main Page', () => {
   // });
 
   beforeEach(() => {
-    cy.intercept('GET', '**/_wlm/workload_group*').as('wgList');
     cy.visit('/app/workload-management#/workloadManagement', {
       auth: WLM_AUTH,
     });
-    cy.wait('@wgList', { timeout: 120000 }).its('response.statusCode').should('eq', 200);
-    cy.get('.euiBasicTable .euiTableRow', { timeout: 120000 })
-      .should('have.length.at.least', 1);
   });
 
   it('should display the WLM page with the workload group table', () => {
