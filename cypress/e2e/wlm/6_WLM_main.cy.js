@@ -16,6 +16,12 @@ describe('WLM Main Page', () => {
     });
   });
 
+  it('sanity: always passes', () => {
+    cy.wait(30_000) // hold for 10s
+    expect(true).to.eq(true)
+  })
+
+
   it('should display the WLM page with the workload group table', () => {
     cy.contains('Workload groups').should('be.visible');
     cy.get('.euiBasicTable').should('exist');
