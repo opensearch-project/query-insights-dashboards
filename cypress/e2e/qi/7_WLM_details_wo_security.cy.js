@@ -130,10 +130,6 @@ describe('WLM Details Page', () => {
 });
 
 describe('WLM Details – DEFAULT_WORKLOAD_GROUP', () => {
-  before(() => {
-    cy.enableWlmMode(WLM_AUTH);
-  });
-
   it('should disable settings tab for DEFAULT_WORKLOAD_GROUP', () => {
     cy.visit('/app/workload-management#/wlm-details?name=DEFAULT_WORKLOAD_GROUP', {
       auth: WLM_AUTH,
