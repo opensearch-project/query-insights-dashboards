@@ -56,6 +56,8 @@ export const WLMCreate = ({
   const [memThreshold, setMemThreshold] = useState<number | undefined>();
   const [rules, setRules] = useState<Rule[]>([{ index: '', username: '', role: '' }]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
+  const [usernameErrors, setUsernameErrors] = useState<Array<string | null>>([]);
+  const [roleErrors, setRoleErrors] = useState<Array<string | null>>([]);
   const [loading, setLoading] = useState(false);
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
@@ -350,17 +352,32 @@ export const WLMCreate = ({
                   <EuiText size="m" style={{ fontWeight: 600 }}>
                     Username
                   </EuiText>
-                  <EuiTextArea
-                    placeholder="Enter username"
-                    value={rule.username}
-                    onChange={(e) => {
-                      const updated = [...rules];
-                      updated[idx].username = e.target.value;
-                      setRules(updated);
-                    }}
-                    disabled={!showSecurity}
-                    data-testid={`username-input-${idx}`}
-                  />
+                  <EuiFormRow
+                    fullWidth
+                    isInvalid={Boolean(usernameErrors[idx])}
+                    error={usernameErrors[idx] || undefined}
+                  >
+                    <EuiTextArea
+                      data-testid={`username-input-${idx}`}
+                      placeholder="Enter username"
+                      value={rule.username}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        const updatedRules = [...rules];
+                        const updatedErrors = [...usernameErrors];
+
+                        updatedRules[idx].username = value;
+                        updatedErrors[idx] =
+                          value.length > 100 ? 'Maximum total length is 100 characters.' : null;
+
+                        setRules(updatedRules);
+                        setUsernameErrors(updatedErrors);
+                      }}
+                      disabled={!showSecurity}
+                      isInvalid={Boolean(usernameErrors[idx])}
+                    />
+                  </EuiFormRow>
                   <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
                     {!showSecurity
                       ? 'Username rules require data source ≥ 3.3.'
@@ -372,17 +389,32 @@ export const WLMCreate = ({
                   <EuiText size="m" style={{ fontWeight: 600 }}>
                     Role
                   </EuiText>
-                  <EuiTextArea
-                    placeholder="Enter role"
-                    value={rule.role}
-                    onChange={(e) => {
-                      const updated = [...rules];
-                      updated[idx].role = e.target.value;
-                      setRules(updated);
-                    }}
-                    disabled={!showSecurity}
-                    data-testid={`role-input-${idx}`}
-                  />
+                  <EuiFormRow
+                    fullWidth
+                    isInvalid={Boolean(roleErrors[idx])}
+                    error={roleErrors[idx] || undefined}
+                  >
+                    <EuiTextArea
+                      data-testid={`role-input-${idx}`}
+                      placeholder="Enter role"
+                      value={rule.role}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        const updatedRules = [...rules];
+                        const updatedErrors = [...roleErrors];
+
+                        updatedRules[idx].role = value;
+                        updatedErrors[idx] =
+                          value.length > 100 ? 'Maximum total length is 100 characters.' : null;
+
+                        setRules(updatedRules);
+                        setRoleErrors(updatedErrors);
+                      }}
+                      disabled={!showSecurity}
+                      isInvalid={Boolean(roleErrors[idx])}
+                    />
+                  </EuiFormRow>
                   <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
                     {!showSecurity
                       ? 'Role rules require data source ≥ 3.3.'
