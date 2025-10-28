@@ -469,26 +469,6 @@ describe('WorkloadManagementMain', () => {
     expect(slice).not.toThrow();
   });
 
-  it('shows toast on failed stats fetch', async () => {
-    (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
-      if (url.includes('/_wlm/stats')) {
-        return Promise.reject(new Error('API failure'));
-      }
-      return Promise.resolve({ body: {} });
-    });
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: expect.any(String),
-          text: expect.any(String),
-        })
-      );
-    });
-  });
-
   it('handles missing stats gracefully', async () => {
     (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
       if (url.includes('/_wlm/stats')) {

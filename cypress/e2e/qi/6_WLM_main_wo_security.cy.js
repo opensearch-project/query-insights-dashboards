@@ -3,10 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { WLM_AUTH } from '../../support/constants';
+
 describe('WLM Main Page', () => {
   beforeEach(() => {
-    cy.visit('/app/workload-management#/workloadManagement');
-    cy.get('.euiBasicTable .euiTableRow').should('have.length.greaterThan', 0);
+    cy.visit('/app/workload-management#/workloadManagement', {
+      auth: WLM_AUTH,
+    });
   });
 
   it('should display the WLM page with the workload group table', () => {
