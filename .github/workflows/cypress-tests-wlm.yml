@@ -45,24 +45,18 @@ jobs:
           repository: ${{github.repository}}
           path: cypress-test
 
-      - name: Checkout security
+      - name: Checkout Security
         uses: actions/checkout@v4
         with:
           repository: opensearch-project/security
-          ref: ${{ env.OS_BRANCH }}
           path: security
-          fetch-depth: 0
+          ref: ${{ env.OS_BRANCH }}
 
-      - name: Build security plugin
-        working-directory: security
+      - name: Build Security plugin
         run: |
-          set -euo pipefail
-          echo "Using security branch: $OS_BRANCH"
+          set -e
           cd security
-
-          # Build ONLY the security plugin
-          chmod +x gradlew
-          ./gradlew assemble -x test
+          ./gradlew --no-daemon assemble
 
           echo "Checking security build directory:"
           ls -la build/distributions/
