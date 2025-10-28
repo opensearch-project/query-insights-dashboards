@@ -68,6 +68,7 @@ export const DEFAULT_EXPORTER_TYPE = EXPORTER_TYPE.localIndex;
 export const DEFAULT_DELETE_AFTER_DAYS = '7';
 export const DEFAULT_REFRESH_INTERVAL = 30000; // default 30s
 export const TOP_N_DISPLAY_LIMIT = 9;
+export const DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR = false;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
 export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
 export const CHART_COLORS = [
