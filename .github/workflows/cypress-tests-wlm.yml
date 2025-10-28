@@ -48,18 +48,21 @@ jobs:
       - name: Checkout security
         uses: actions/checkout@v4
         with:
-          path: OpenSearch
           repository: opensearch-project/security
           ref: ${{ env.OS_BRANCH }}
+          path: security
+          fetch-depth: 0
 
       - name: Build security plugin
+        working-directory: security
         run: |
-          set -e
+          set -euo pipefail
           echo "Using security branch: $OS_BRANCH"
           cd security
 
           # Build ONLY the security plugin
-          ./gradlew assemble
+          chmod +x gradlew
+          ./gradlew assemble -x test
 
           echo "Checking security build directory:"
           ls -la build/distributions/
