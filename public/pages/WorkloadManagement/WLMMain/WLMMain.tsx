@@ -290,7 +290,9 @@ export const WorkloadManagementMain = ({
       const thresholds = await core.http.get<{
         cpuRejectionThreshold: number;
         memoryRejectionThreshold: number;
-      }>('/api/_wlm/thresholds');
+      }>('/api/_wlm/thresholds', {
+        query: { dataSourceId: dataSource.id },
+      });
       const cpuThreshold = thresholds?.cpuRejectionThreshold ?? 1;
       const memoryThreshold = thresholds?.memoryRejectionThreshold ?? 1;
 
