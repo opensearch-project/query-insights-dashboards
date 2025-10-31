@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import sampleDocument from '../fixtures/sample_document.json';
-import { METRICS } from '../support/constants';
+import sampleDocument from '../../fixtures/sample_document.json';
+import { METRICS } from '../../support/constants';
 
 const indexName = 'sample_index';
 

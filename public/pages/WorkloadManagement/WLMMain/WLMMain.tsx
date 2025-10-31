@@ -23,7 +23,6 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import ReactECharts from 'echarts-for-react';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { PageHeader } from '../../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE } from '../WorkloadManagement';
 import { DataSourceContext } from '../WorkloadManagement';
@@ -310,10 +309,6 @@ export const WorkloadManagementMain = ({
       setLastUpdated(new Date());
     } catch (err) {
       console.error(`Failed to fetch node stats:`, err);
-      core.notifications.toasts.addDanger({
-        title: 'Failed to fetch workload stats',
-        text: 'An error occurred while retrieving workload statistics. Please try again.',
-      });
     }
     setLoading(false);
   };
@@ -610,24 +605,18 @@ export const WorkloadManagementMain = ({
 
   return (
     <div>
-      <PageHeader
+      <WLMDataSourceMenu
         coreStart={core}
         depsStart={depsStart}
-        fallBackComponent={
-          <WLMDataSourceMenu
-            coreStart={core}
-            depsStart={depsStart}
-            params={params}
-            dataSourceManagement={dataSourceManagement}
-            setDataSource={setDataSource}
-            selectedDataSource={dataSource}
-            onManageDataSource={() => {}}
-            onSelectedDataSource={() => {
-              window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
-            }}
-            dataSourcePickerReadOnly={false}
-          />
-        }
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {
+          window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSource).toString());
+        }}
+        dataSourcePickerReadOnly={false}
       />
       <EuiSpacer size="l" />
 

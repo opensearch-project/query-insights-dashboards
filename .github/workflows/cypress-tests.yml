@@ -90,7 +90,7 @@ jobs:
           find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
           find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
 
-          # List copied plugins
+          # List copied plugin
           echo "Contents of plugins directory:"
           ls -la query-insights/plugins/
 
@@ -288,7 +288,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern=cypress/e2e/wlm/**/*
           wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome

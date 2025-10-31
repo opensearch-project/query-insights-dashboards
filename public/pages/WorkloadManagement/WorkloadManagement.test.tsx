@@ -29,13 +29,32 @@ const mockCore = ({
       addDanger: jest.fn(),
     },
   },
+  savedObjects: {
+    client: {},
+  },
 } as unknown) as CoreStart;
 
-const mockDepsStart = {} as QueryInsightsDashboardsPluginStartDependencies;
+const mockDepsStart = {
+  dataSource: {
+    dataSourceEnabled: true,
+  },
+} as QueryInsightsDashboardsPluginStartDependencies;
 
 const mockDataSource = {
   id: 'default',
   name: 'default',
+} as any;
+
+const mockParams = {
+  setHeaderActionMenu: jest.fn(),
+} as any;
+
+const MockDataSourceMenu = (_props: any) => <div>Mocked Data Source Menu</div>;
+
+const mockDataSourceManagement = {
+  ui: {
+    getDataSourceMenu: jest.fn(() => MockDataSourceMenu),
+  },
 } as any;
 
 jest.mock('../../components/PageHeader', () => ({
@@ -52,8 +71,8 @@ const renderWithRoute = (initialRoute: string) => {
           <WorkloadManagement
             core={mockCore}
             depsStart={mockDepsStart}
-            params={{} as any}
-            dataSourceManagement={{} as any}
+            params={mockParams}
+            dataSourceManagement={mockDataSourceManagement}
           />
         </DataSourceContext.Provider>
       </Route>
@@ -64,6 +83,9 @@ const renderWithRoute = (initialRoute: string) => {
 describe('WorkloadManagement Routing', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Restore the data source menu mock after reset
+    mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
   });
 
   it('renders WLMMain component at WLM_MAIN route', () => {

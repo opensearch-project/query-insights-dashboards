@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import sampleDocument from '../fixtures/sample_document.json';
+import sampleDocument from '../../fixtures/sample_document.json';
 
 const indexName = 'sample_index';
 
