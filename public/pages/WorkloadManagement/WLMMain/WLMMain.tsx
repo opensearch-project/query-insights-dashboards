@@ -584,6 +584,22 @@ export const WorkloadManagementMain = ({
     ...(isQueryInsightsAvailable
       ? [
           {
+            field: 'topQueriesLink',
+            name: <EuiText size="m">Top N Queries</EuiText>,
+            render: (link: string, item: WorkloadGroupData) => (
+              <EuiLink
+                onClick={() => {
+                  core.application.navigateToApp('query-insights-dashboards', {
+                    path: `#/queryInsights?wlmGroupId=${item.groupId}`,
+                  });
+                }}
+                style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                View <EuiIcon type="popout" size="s" />
+              </EuiLink>
+            ),
+          },
+          {
             field: 'liveQueriesLink',
             name: <EuiText size="m">Live Queries</EuiText>,
             render: (link: string, item: WorkloadGroupData) => (

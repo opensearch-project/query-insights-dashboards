@@ -36,9 +36,9 @@ const mockDataSourceContext = {
 
 const mockRetrieveQueries = jest.fn();
 
-const renderQueryInsights = () =>
+const renderQueryInsights = (initialEntries = ['/']) =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <DataSourceContext.Provider value={mockDataSourceContext}>
         <QueryInsights
           queries={sampleQueries}
@@ -196,6 +196,7 @@ describe('QueryInsights Component', () => {
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
 
@@ -238,6 +239,7 @@ describe('QueryInsights Component', () => {
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
 
@@ -263,6 +265,7 @@ describe('QueryInsights Component', () => {
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
 

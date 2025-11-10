@@ -14,6 +14,7 @@ export const INDICES = 'Indices';
 export const SEARCH_TYPE = 'Search Type';
 export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
+export const WLM_GROUP = 'WLM Group';
 export const GROUP_BY = 'Group by';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';

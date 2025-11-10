@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useContext, useEffect, useState } from 'react';
+import React, { useMemo, useContext, useEffect, useState, useCallback } from 'react';
 import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -22,11 +22,13 @@ import {
   TIMESTAMP,
   TOTAL_SHARDS,
   TYPE,
+  WLM_GROUP,
 } from '../../../common/constants';
 import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -38,6 +40,7 @@ const INDICES_FIELD = 'indices';
 const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
+const WLM_GROUP_FIELD = 'wlm_group_id';
 const METRIC_DEFAULT_MSG = 'Not enabled';
 const GROUP_BY_FIELD = 'group_by';
 
@@ -82,11 +85,48 @@ const QueryInsights = ({
   const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
   const [selectedSearchTypes, setSelectedSearchTypes] = useState<string[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [selectedWlmGroups, setSelectedWlmGroups] = useState<string[]>([]);
+  const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
+  const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+
+  // Get wlmGroupId from URL parameters
+  const urlParams = new URLSearchParams(location.search);
+  const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+
+  // Fetch workload groups to map IDs to names
+  const fetchWorkloadGroups = useCallback(async () => {
+    try {
+      const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+      const res = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, { query: httpQuery });
+      const groups = res?.workload_groups ?? [];
+      const idToName = groups.reduce((acc: Record<string, string>, group: any) => {
+        acc[group._id] = group.name;
+        return acc;
+      }, {});
+      setWlmIdToNameMap(idToName);
+      setWlmAvailable(true);
+    } catch (error) {
+      console.warn('Failed to fetch workload groups:', error);
+      setWlmAvailable(false);
+    }
+  }, [core.http, dataSource?.id]);
+
+  // Set initial WLM group filter from URL
+  useEffect(() => {
+    if (wlmGroupIdFromUrl && !selectedWlmGroups.includes(wlmGroupIdFromUrl)) {
+      setSelectedWlmGroups([wlmGroupIdFromUrl]);
+    }
+  }, [wlmGroupIdFromUrl]);
+
+  // Fetch workload groups on mount and data source change
+  useEffect(() => {
+    fetchWorkloadGroups();
+  }, [fetchWorkloadGroups]);
   const commonlyUsedRanges = [
     { label: 'Today', start: 'now/d', end: 'now' },
     { label: 'This week', start: 'now/w', end: 'now' },
@@ -127,10 +167,11 @@ const QueryInsights = ({
       selectedIndices.length > 0 ||
       selectedSearchTypes.length > 0 ||
       selectedNodeIds.length > 0 ||
+      selectedWlmGroups.length > 0 ||
       !!searchText;
 
     return queries.filter((q: SearchQueryRecord) => {
-      // If the user applied non-group filters (indices, search_type, node_id, or free-text),
+      // If the user applied non-group filters (indices, search_type, node_id, wlm_group, or free-text),
       // but has NOT explicitly chosen "group" (selectedGroupBy is empty or includes both),
       // then hide grouped rows (group_by = SIMILARITY).
       if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
@@ -147,6 +188,8 @@ const QueryInsights = ({
 
       if (selectedNodeIds.length && !selectedNodeIds.includes(q.node_id)) return false;
 
+      if (selectedWlmGroups.length && !selectedWlmGroups.includes(q.wlm_group_id)) return false;
+
       if (searchText) {
         const id = (q.id ?? '').toLowerCase();
         if (!id.includes(searchText.toLowerCase())) return false;
@@ -158,7 +201,7 @@ const QueryInsights = ({
 
       return true;
     });
-  }, [queries, selectedIndices, selectedSearchTypes, selectedNodeIds, searchText, selectedGroupBy]);
+  }, [queries, selectedIndices, selectedSearchTypes, selectedNodeIds, selectedWlmGroups, searchText, selectedGroupBy]);
 
   // if no filtered items, show all queries
   const forView = items.length ? items : queries;
@@ -313,6 +356,32 @@ const QueryInsights = ({
       truncateText: true,
     },
     {
+      field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
+      name: WLM_GROUP,
+      render: (wlmGroupId: string, q: SearchQueryRecord) => {
+        if (q.group_by === 'SIMILARITY') return '-';
+        const groupId = wlmGroupId || 'DEFAULT_WORKLOAD_GROUP';
+        const displayName = wlmIdToNameMap[groupId] || groupId;
+        
+        if (wlmAvailable) {
+          return (
+            <EuiLink
+              onClick={() => {
+                window.open(`/app/workloadManagement#/wlm-details?name=${encodeURIComponent(displayName)}`, '_blank');
+              }}
+              color="primary"
+            >
+              {displayName}
+            </EuiLink>
+          );
+        }
+        
+        return displayName;
+      },
+      sortable: true,
+      truncateText: true,
+    },
+    {
       field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
       name: TOTAL_SHARDS,
       render: (ts: number, q: SearchQueryRecord) => (q.group_by === 'SIMILARITY' ? '-' : ts),
@@ -403,6 +472,7 @@ const QueryInsights = ({
       selectedIndices.length > 0 ||
       selectedSearchTypes.length > 0 ||
       selectedNodeIds.length > 0 ||
+      selectedWlmGroups.length > 0 ||
       !!searchText;
 
     // If the user explicitly picked only "group", show group columns.
@@ -412,7 +482,7 @@ const QueryInsights = ({
     }
 
     // Non-group filters applied but group-by not explicitly chosen
-    // If filters like indices/searchType/nodeId are active,
+    // If filters like indices/searchType/nodeId/wlmGroup are active,
     // and group-by is either empty (no choice) or includes both,
     // force the view into query mode (groups would look wrong here).
     if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
@@ -435,6 +505,7 @@ const QueryInsights = ({
     selectedIndices,
     selectedSearchTypes,
     selectedNodeIds,
+    selectedWlmGroups,
     searchText,
     defaultColumns,
     groupTypeColumns,
@@ -487,6 +558,9 @@ const QueryInsights = ({
 
     const nid = extractField(text, NODE_ID_FIELD);
     if (!arraysEqualAsSets(nid, selectedNodeIds)) setSelectedNodeIds(nid);
+
+    const wlm = extractField(text, WLM_GROUP_FIELD);
+    if (!arraysEqualAsSets(wlm, selectedWlmGroups)) setSelectedWlmGroups(wlm);
   };
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
@@ -525,6 +599,19 @@ const QueryInsights = ({
     }
     return Array.from(set).map((v) => ({ value: v, name: v, view: v.replaceAll('_', ' ') }));
   }, [queries]);
+
+  const wlmGroupOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const q of queries) {
+      const v = (q as any)[WLM_GROUP_FIELD];
+      if (v) set.add(String(v));
+    }
+    return Array.from(set).map((v) => ({ 
+      value: v, 
+      name: wlmIdToNameMap[v] || v, 
+      view: wlmIdToNameMap[v] || v 
+    }));
+  }, [queries, wlmIdToNameMap]);
 
   return (
     <>
@@ -589,6 +676,13 @@ const QueryInsights = ({
               multiSelect: 'or',
               options: filterDuplicates(nodeIdOptions),
             },
+            {
+              type: 'field_value_selection',
+              field: WLM_GROUP_FIELD,
+              name: WLM_GROUP,
+              multiSelect: 'or',
+              options: filterDuplicates(wlmGroupOptions),
+            },
           ],
           onChange: onSearchChange,
           toolsRight: [
@@ -616,6 +710,7 @@ const QueryInsights = ({
             INDICES_FIELD,
             SEARCH_TYPE_FIELD,
             NODE_ID_FIELD,
+            WLM_GROUP_FIELD,
             TOTAL_SHARDS_FIELD,
           ],
         }}
