@@ -20,7 +20,8 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .within(() => {
         cy.get('a')
           .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
-          .should('exist');
+          .should('exist')
+          .and('be.visible');
       });
   });
 
@@ -38,7 +39,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.get('[aria-label="Workload group selector"]').select('DEFAULT_WORKLOAD_GROUP');
 
     // Verify API is called with new parameters
-    cy.wait('@liveQueriesAPI').then((interception) => {
+    return cy.wait('@liveQueriesAPI').then((interception) => {
       expect(interception.request.url).to.include('wlmGroupId=DEFAULT_WORKLOAD_GROUP');
     });
     cy.wait('@wlmStatsAPI');
@@ -54,19 +55,19 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.contains('Total completions')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', /^\d+$/);
+        cy.get('h2').should('contain.text', /^\d+$/).and('be.visible');
       });
 
     cy.contains('Total cancellations')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', /^\d+$/);
+        cy.get('h2').should('contain.text', /^\d+$/).and('be.visible');
       });
 
     cy.contains('Total rejections')
       .parent()
       .within(() => {
-        cy.get('h2').should('contain.text', /^\d+$/);
+        cy.get('h2').should('contain.text', /^\d+$/).and('be.visible');
       });
   });
 
@@ -89,7 +90,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.contains('Total completions')
       .parent()
       .within(() => {
-        cy.get('h2').invoke('text').should('not.equal', '@initialCompletions');
+        cy.get('h2').invoke('text').should('not.equal', '@initialCompletions').and('be.visible');
       });
   });
 
@@ -100,6 +101,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .within(() => {
         cy.get('a')
           .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
+          .should('be.visible')
           .click();
       });
 

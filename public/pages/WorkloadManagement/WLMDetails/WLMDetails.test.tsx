@@ -176,7 +176,7 @@ describe('WLMDetails Component', () => {
                 total_rejections: 5,
                 total_cancellations: 2,
               },
-              'DEFAULT_WORKLOAD_GROUP': {
+              DEFAULT_WORKLOAD_GROUP: {
                 cpu: { current_usage: 0.2 },
                 memory: { current_usage: 0.1 },
                 total_completions: 50,
@@ -342,7 +342,7 @@ describe('WLMDetails Component', () => {
         return Promise.resolve({
           'node-1': {
             workload_groups: {
-              'abc123': {
+              abc123: {
                 cpu: { current_usage: 0.5 },
                 memory: { current_usage: 0.3 },
                 total_completions: 100,
