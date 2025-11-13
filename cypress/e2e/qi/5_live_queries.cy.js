@@ -348,5 +348,3 @@ describe('Inflight Queries Dashboard', () => {
       });
   });
 });
-
-

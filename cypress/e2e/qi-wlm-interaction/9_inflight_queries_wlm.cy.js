@@ -13,26 +13,30 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     // Check if WLM group column exists
     cy.get('table').should('exist');
     cy.contains('WLM Group').should('be.visible');
-    
+
     // Check if WLM group links are clickable
-    cy.get('table tbody tr').first().within(() => {
-      cy.get('a').contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/).should('exist');
-    });
+    cy.get('table tbody tr')
+      .first()
+      .within(() => {
+        cy.get('a')
+          .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
+          .should('exist');
+      });
   });
 
   it('calls different API when WLM group selection changes', () => {
     // Intercept API calls
     cy.intercept('GET', '/api/live_queries*').as('liveQueriesAPI');
     cy.intercept('GET', '/api/_wlm/stats*').as('wlmStatsAPI');
-    
+
     // Initial load
     cy.wait('@liveQueriesAPI');
     cy.wait('@wlmStatsAPI');
-    
+
     // Change WLM group selection
     cy.get('[aria-label="Workload group selector"]').should('exist');
     cy.get('[aria-label="Workload group selector"]').select('DEFAULT_WORKLOAD_GROUP');
-    
+
     // Verify API is called with new parameters
     cy.wait('@liveQueriesAPI').then((interception) => {
       expect(interception.request.url).to.include('wlmGroupId=DEFAULT_WORKLOAD_GROUP');
@@ -45,46 +49,60 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.contains('Total completions').should('be.visible');
     cy.contains('Total cancellations').should('be.visible');
     cy.contains('Total rejections').should('be.visible');
-    
+
     // Verify metrics display numbers
-    cy.contains('Total completions').parent().within(() => {
-      cy.get('h2').should('contain.text', /^\d+$/);
-    });
-    
-    cy.contains('Total cancellations').parent().within(() => {
-      cy.get('h2').should('contain.text', /^\d+$/);
-    });
-    
-    cy.contains('Total rejections').parent().within(() => {
-      cy.get('h2').should('contain.text', /^\d+$/);
-    });
+    cy.contains('Total completions')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', /^\d+$/);
+      });
+
+    cy.contains('Total cancellations')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', /^\d+$/);
+      });
+
+    cy.contains('Total rejections')
+      .parent()
+      .within(() => {
+        cy.get('h2').should('contain.text', /^\d+$/);
+      });
   });
 
   it('updates metrics when WLM group filter changes', () => {
     // Intercept WLM stats API
     cy.intercept('GET', '/api/_wlm/stats*').as('wlmStats');
-    
+
     // Get initial completion count
-    cy.contains('Total completions').parent().within(() => {
-      cy.get('h2').invoke('text').as('initialCompletions');
-    });
-    
+    cy.contains('Total completions')
+      .parent()
+      .within(() => {
+        cy.get('h2').invoke('text').as('initialCompletions');
+      });
+
     // Change WLM group filter
     cy.get('[aria-label="Workload group selector"]').select('All workload groups');
     cy.wait('@wlmStats');
-    
+
     // Verify metrics updated
-    cy.contains('Total completions').parent().within(() => {
-      cy.get('h2').invoke('text').should('not.equal', '@initialCompletions');
-    });
+    cy.contains('Total completions')
+      .parent()
+      .within(() => {
+        cy.get('h2').invoke('text').should('not.equal', '@initialCompletions');
+      });
   });
 
   it('navigates to WLM details when clicking WLM group link', () => {
     // Click on a WLM group link in the table
-    cy.get('table tbody tr').first().within(() => {
-      cy.get('a').contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/).click();
-    });
-    
+    cy.get('table tbody tr')
+      .first()
+      .within(() => {
+        cy.get('a')
+          .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
+          .click();
+      });
+
     // Verify navigation to WLM details page
     cy.url().should('include', '/workloadManagement');
     cy.url().should('include', 'wlm-details');

@@ -201,7 +201,15 @@ const QueryInsights = ({
 
       return true;
     });
-  }, [queries, selectedIndices, selectedSearchTypes, selectedNodeIds, selectedWlmGroups, searchText, selectedGroupBy]);
+  }, [
+    queries,
+    selectedIndices,
+    selectedSearchTypes,
+    selectedNodeIds,
+    selectedWlmGroups,
+    searchText,
+    selectedGroupBy,
+  ]);
 
   // if no filtered items, show all queries
   const forView = items.length ? items : queries;
@@ -362,12 +370,15 @@ const QueryInsights = ({
         if (q.group_by === 'SIMILARITY') return '-';
         const groupId = wlmGroupId || 'DEFAULT_WORKLOAD_GROUP';
         const displayName = wlmIdToNameMap[groupId] || groupId;
-        
+
         if (wlmAvailable) {
           return (
             <EuiLink
               onClick={() => {
-                window.open(`/app/workloadManagement#/wlm-details?name=${encodeURIComponent(displayName)}`, '_blank');
+                window.open(
+                  `/app/workloadManagement#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                  '_blank'
+                );
               }}
               color="primary"
             >
@@ -375,7 +386,7 @@ const QueryInsights = ({
             </EuiLink>
           );
         }
-        
+
         return displayName;
       },
       sortable: true,
@@ -606,10 +617,10 @@ const QueryInsights = ({
       const v = (q as any)[WLM_GROUP_FIELD];
       if (v) set.add(String(v));
     }
-    return Array.from(set).map((v) => ({ 
-      value: v, 
-      name: wlmIdToNameMap[v] || v, 
-      view: wlmIdToNameMap[v] || v 
+    return Array.from(set).map((v) => ({
+      value: v,
+      name: wlmIdToNameMap[v] || v,
+      view: wlmIdToNameMap[v] || v,
     }));
   }, [queries, wlmIdToNameMap]);
 
