@@ -15,7 +15,7 @@ env:
 
 jobs:
   tests:
-    name: Run Cypress E2E tests for Query Insights
+    name: Run Cypress E2E tests
     timeout-minutes: 90
     strategy:
       fail-fast: false
