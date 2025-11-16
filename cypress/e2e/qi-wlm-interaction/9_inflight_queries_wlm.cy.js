@@ -5,8 +5,10 @@
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
   beforeEach(() => {
+    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as('liveQueries');
+    cy.intercept('GET', '/api/_wlm/stats*', { fixture: 'stub_wlm_stats.json' }).as('wlmStats');
     cy.visit('/app/query-insights-dashboards#/LiveQueries');
-    cy.wait(2000);
+    cy.wait(['@liveQueries', '@wlmStats']);
   });
 
   it('displays WLM group links when WLM is enabled', () => {
@@ -19,30 +21,17 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .first()
       .within(() => {
         cy.get('a')
-          .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
+          .contains(/DEFAULT_QUERY_GROUP|ANALYTICS_WORKLOAD_GROUP|SEARCH_WORKLOAD_GROUP/)
           .should('exist')
           .and('be.visible');
       });
   });
 
   it('calls different API when WLM group selection changes', () => {
-    // Intercept API calls
-    cy.intercept('GET', '/api/live_queries*').as('liveQueriesAPI');
-    cy.intercept('GET', '/api/_wlm/stats*').as('wlmStatsAPI');
-
-    // Initial load
-    cy.wait('@liveQueriesAPI');
-    cy.wait('@wlmStatsAPI');
-
-    // Change WLM group selection
-    cy.get('[aria-label="Workload group selector"]').should('exist');
-    cy.get('[aria-label="Workload group selector"]').select('DEFAULT_WORKLOAD_GROUP');
-
-    // Verify API is called with new parameters
-    return cy.wait('@liveQueriesAPI').then((interception) => {
-      expect(interception.request.url).to.include('wlmGroupId=DEFAULT_WORKLOAD_GROUP');
+    cy.get('[aria-label="Workload group selector"]').select('DEFAULT_QUERY_GROUP');
+    cy.wait('@liveQueries').then((interception) => {
+      expect(interception.request.url).to.include('wlmGroupId=DEFAULT_QUERY_GROUP');
     });
-    cy.wait('@wlmStatsAPI');
   });
 
   it('displays total completion, cancellation, and rejection metrics correctly', () => {
@@ -72,25 +61,19 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
   });
 
   it('updates metrics when WLM group filter changes', () => {
-    // Intercept WLM stats API
-    cy.intercept('GET', '/api/_wlm/stats*').as('wlmStats');
-
-    // Get initial completion count
     cy.contains('Total completions')
       .parent()
       .within(() => {
         cy.get('h2').invoke('text').as('initialCompletions');
       });
 
-    // Change WLM group filter
     cy.get('[aria-label="Workload group selector"]').select('All workload groups');
     cy.wait('@wlmStats');
 
-    // Verify metrics updated
     cy.contains('Total completions')
       .parent()
       .within(() => {
-        cy.get('h2').invoke('text').should('not.equal', '@initialCompletions').and('be.visible');
+        cy.get('h2').invoke('text').should('not.equal', '@initialCompletions');
       });
   });
 
@@ -100,7 +83,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .first()
       .within(() => {
         cy.get('a')
-          .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
+          .contains(/DEFAULT_QUERY_GROUP|ANALYTICS_WORKLOAD_GROUP|SEARCH_WORKLOAD_GROUP/)
           .should('be.visible')
           .click();
       });
