@@ -1,0 +1,287 @@
+name: Cypress e2e integration tests workflow with security
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+env:
+  OS_BRANCH: "main"
+  SECURITY_ENABLED: "true"
+  VERSION: "3.4.0"
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: "myStrongPassword123!"
+jobs:
+  tests:
+    name: Run Cypress E2E tests for WLM
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        include:
+          - os: ubuntu-latest
+            cypress_cache_folder: ~/.cache/Cypress
+    runs-on: ${{ matrix.os }}
+    env:
+      # prevents extra Cypress installation progress messages
+      CI: 1
+      # avoid warnings like "tput: No value for $TERM and no -T specified"
+      TERM: xterm
+      # make Node run in ipv4 first so that cypress can detect 5601 port in CI environment
+      NODE_OPTIONS: '--max-old-space-size=6144 --dns-result-order=ipv4first'
+      # 2.12 onwards security demo configuration require a custom admin password
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+      - name: Checkout cypress-test
+        uses: actions/checkout@v2
+        with:
+          repository: ${{github.repository}}
+          path: cypress-test
+
+      - name: Checkout Security
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/security
+          path: security
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Build Security plugin
+        run: |
+          set -e
+          cd security
+          ./gradlew --no-daemon assemble
+
+          echo "Checking security build directory:"
+          ls -la build/distributions/
+
+          cp build/distributions/opensearch-security-*.zip "$GITHUB_WORKSPACE/security.zip"
+          ls -lh "$GITHUB_WORKSPACE/security.zip"
+
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Build WLM plugin from OpenSearch
+        run: |
+          set -e
+          echo "Using OpenSearch branch: $OS_BRANCH"
+          cd OpenSearch
+
+          # Build ONLY the workload-management plugin
+          ./gradlew :plugins:workload-management:clean :plugins:workload-management:assemble \
+            -Dopensearch.version=${{ env.VERSION }} --no-daemon
+
+          echo "Checking WLM build directory:"
+          ls -la plugins/workload-management/build/distributions/
+
+          cp plugins/workload-management/build/distributions/workload-management-*.zip "$GITHUB_WORKSPACE/wlm.zip"
+          ls -lh "$GITHUB_WORKSPACE/wlm.zip"
+
+      - name: Run Opensearch with A Single Plugin
+        uses: derek-ho/start-opensearch@v9
+        with:
+          opensearch-version: ${{ env.VERSION }}
+          plugins: "file:$GITHUB_WORKSPACE/security.zip,file:$GITHUB_WORKSPACE/wlm.zip"
+          security-enabled: true
+          admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          jdk-version: 21
+
+      - name: Enable WLM (with or without Security) and verify
+        run: |
+          set -e
+          echo "Enabling Workload Management (WLM)..."
+
+          # Detect whether security is enabled
+          if [ "$SECURITY_ENABLED" = 'true' ]; then
+            echo "Security detected — using HTTPS with credentials"
+            PROTOCOL=https
+            AUTH="-u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+            CURL_FLAGS="--insecure --fail-with-body"
+          else
+            echo "No security detected — using HTTP without credentials"
+            PROTOCOL=http
+            AUTH=""
+            CURL_FLAGS="--fail-with-body"
+          fi
+
+          # Enable WLM
+          curl -sS -k --http1.1 $CURL_FLAGS $AUTH \
+            -X PUT "${PROTOCOL}://localhost:9200/_cluster/settings" \
+            -H 'Content-Type: application/json' \
+            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
+
+          # Show WLM mode
+          SETTINGS=$(curl -sS -k --http1.1 -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" "https://localhost:9200/_cluster/settings")
+          echo "Raw settings response: $SETTINGS"
+          echo "$SETTINGS" | jq -r '.persistent.wlm.workload_group.mode // "undefined"'
+
+          # Test WLM stats endpoint
+          echo -e "Testing WLM stats endpoint:"
+          curl -ksu "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" https://localhost:9200/_wlm/workload_group | jq '.'
+
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          path: OpenSearch-Dashboards
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Configure OpenSearch Dashboards for Cypress (heredoc)
+        run: |
+          set -euo pipefail
+          FILE="OpenSearch-Dashboards/config/opensearch_dashboards.yml"
+          test -f "$FILE" || { echo "Missing $FILE"; exit 1; }
+
+          {
+          printf '%s\n' 'server.host: "0.0.0.0"'
+          printf '%s\n' 'opensearch.hosts: ["https://localhost:9200"]'
+          printf '%s\n' 'opensearch.ssl.verificationMode: none'
+          } >> "$FILE"
+
+          echo "=== Last 60 lines of $FILE (show appended settings) ==="
+          tail -n 60 "$FILE" || true
+
+      - name: Checkout Query Insights Dashboards plugin
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        shell: bash
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          echo "Installing yarn@$YARN_VERSION"
+          npm i -g yarn@$YARN_VERSION
+      - run: node -v
+      - run: yarn -v
+
+      - name: Bootstrap plugin/OpenSearch-Dashboards
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
+
+      - name: Run OpenSearch-Dashboards server
+        run: |
+          cd OpenSearch-Dashboards
+          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
+          echo "Starting Dashboards..."
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+          echo "Initial Dashboards log output:"
+          head -n 100 dashboards.log || true
+        shell: bash
+
+      - name: Wait for OpenSearch-Dashboards to be ready
+        run: |
+          echo "Waiting for OpenSearch-Dashboards to start..."
+          max_attempts=180
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || true)
+            if [ "$code" = "200" ]; then
+              state=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state // .status.overall.level // "unknown"')
+              echo "OpenSearch-Dashboards is ready (state=$state)"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "Attempt $attempt/$max_attempts: /api/status -> $code; waiting 10s..."
+            if [ $((attempt % 10)) -eq 0 ]; then
+              echo "=== tail dashboards.log ==="
+              tail -n 120 OpenSearch-Dashboards/dashboards.log || true
+              echo "=== tail $LOCAL_DISTRO/os.log ==="
+              tail -n 200 OpenSearch/$LOCAL_DISTRO/os.log || true
+              echo "==========================="
+            fi
+            sleep 10
+          done
+          [ $attempt -lt $max_attempts ] || { echo "Timeout waiting for Dashboards"; tail -n 200 OpenSearch-Dashboards/dashboards.log || true; exit 1; }
+
+      - name: Verify services are running
+        run: |
+          echo "Checking OpenSearch status..."
+          curl -ksu admin:myStrongPassword123! https://localhost:9200/_cluster/health | jq '.' || echo "OpenSearch not responding"
+
+          echo "Checking OpenSearch-Dashboards status..."
+          echo "=== Full OpenSearch-Dashboards Status ==="
+          curl -s http://localhost:5601/api/status || echo "OpenSearch-Dashboards not responding"
+          echo "========================================"
+
+          echo "Checking OpenSearch-Dashboards overall state..."
+          curl -s http://localhost:5601/api/status | jq '.status.overall.state' || echo "Could not extract overall state"
+
+          echo "Checking plugin endpoint..."
+          # 1) login and store session cookie
+          curl -s -c cookies.txt -X POST 'http://localhost:5601/auth/login' \
+          -H 'osd-xsrf: true' -H 'Content-Type: application/json' \
+            --data "{\"username\":\"admin\",\"password\":\"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\"}" >/dev/null
+
+          # 2) hit the app route using the cookie
+          curl -s -b cookies.txt -o /dev/null -w "HTTP:%{http_code}\n" \
+          'http://localhost:5601/app/query-insights-dashboards' || echo "Plugin endpoint not accessible"
+        shell: bash
+        continue-on-error: true
+
+      - name: Install Cypress
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          npx cypress install
+        shell: bash
+
+      - name: Get Cypress version
+        id: cypress_version
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          echo "::set-output name=cypress_version::$(cat ./package.json | jq '.dependencies.cypress' | tr -d '"')"
+
+      - name: Cache Cypress
+        id: cache-cypress
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.cypress_cache_folder }}
+          key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
+
+      - name: Create WLM workload group
+        run: |
+          curl -ksu admin:"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" \
+            -H 'Content-Type: application/json' \
+            -X PUT 'https://localhost:9200/_wlm/workload_group' \
+            -d '{"name":"test_group","resiliency_mode":"soft","resource_limits":{"cpu":0.1,"memory":0.1}}'
+
+      - name: Cypress tests
+        uses: cypress-io/github-action@v5
+        with:
+          working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern=cypress/e2e/qi/**/*
+          browser: chrome
+        env:
+          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CI: true
+        timeout-minutes: 120
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ matrix.os }}
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos-${{ matrix.os }}
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos
