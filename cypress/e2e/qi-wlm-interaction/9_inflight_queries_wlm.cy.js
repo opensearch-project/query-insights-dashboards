@@ -5,7 +5,9 @@
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as('liveQueries');
+    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as(
+      'liveQueries'
+    );
     cy.intercept('GET', '/api/_wlm/stats*', { fixture: 'stub_wlm_stats.json' }).as('wlmStats');
     cy.visit('/app/query-insights-dashboards#/LiveQueries');
     cy.wait(['@liveQueries', '@wlmStats']);
@@ -29,7 +31,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
 
   it('calls different API when WLM group selection changes', () => {
     cy.get('[aria-label="Workload group selector"]').select('DEFAULT_QUERY_GROUP');
-    cy.wait('@liveQueries').then((interception) => {
+    return cy.wait('@liveQueries').then((interception) => {
       expect(interception.request.url).to.include('wlmGroupId=DEFAULT_QUERY_GROUP');
     });
   });

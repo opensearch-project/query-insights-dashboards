@@ -4,7 +4,13 @@
  */
 
 import React, { useMemo, useContext, useEffect, useState, useCallback } from 'react';
-import { EuiBasicTableColumn, EuiInMemoryTable, EuiLink, EuiSuperDatePicker, EuiIcon } from '@elastic/eui';
+import {
+  EuiBasicTableColumn,
+  EuiInMemoryTable,
+  EuiLink,
+  EuiSuperDatePicker,
+  EuiIcon,
+} from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
@@ -88,6 +94,7 @@ const QueryInsights = ({
   const [selectedWlmGroups, setSelectedWlmGroups] = useState<string[]>([]);
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
 
   // Get wlmGroupId from URL parameters
   const urlParams = new URLSearchParams(location.search);
@@ -98,11 +105,21 @@ const QueryInsights = ({
 
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
+  const detectWlm = useCallback(async (): Promise<boolean> => {
+    try {
+      const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+      const res = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, { query: httpQuery });
+      return res && typeof res === 'object' && Array.isArray(res.workload_groups);
+    } catch (e) {
+      return false;
+    }
+  }, [core.http, dataSource?.id]);
+
   // Fetch workload groups to map IDs to names
   const fetchWorkloadGroups = useCallback(async () => {
     const idToNameMap: Record<string, string> = {};
     try {
-      if (wlmAvailable) {
+      if (wlmAvailable && wlmGroupsSupported) {
         const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
@@ -120,7 +137,7 @@ const QueryInsights = ({
 
     setWlmIdToNameMap(idToNameMap);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmAvailable]);
+  }, [core.http, dataSource?.id, wlmAvailable, wlmGroupsSupported]);
 
   // Set initial WLM group filter from URL
   useEffect(() => {
@@ -128,6 +145,29 @@ const QueryInsights = ({
       setSelectedWlmGroups([wlmGroupIdFromUrl]);
     }
   }, [wlmGroupIdFromUrl]);
+
+  useEffect(() => {
+    const checkWlmSupport = async () => {
+      try {
+        const { getVersionOnce, isVersion33OrHigher } = await import('../../utils/version-utils');
+        const version = await getVersionOnce(dataSource?.id || '');
+        const versionSupported = isVersion33OrHigher(version);
+        setWlmGroupsSupported(versionSupported);
+
+        if (versionSupported) {
+          const hasWlm = await detectWlm();
+          setWlmAvailable(hasWlm);
+        } else {
+          setWlmAvailable(false);
+        }
+      } catch (e) {
+        setWlmGroupsSupported(false);
+        setWlmAvailable(false);
+      }
+    };
+
+    checkWlmSupport();
+  }, [detectWlm, dataSource?.id]);
 
   // Fetch workload groups on mount and data source change
   useEffect(() => {
@@ -376,8 +416,10 @@ const QueryInsights = ({
         if (q.group_by === 'SIMILARITY') return '-';
         const groupId = wlmGroupId || 'DEFAULT_WORKLOAD_GROUP';
         const displayName = !wlmAvailable
-          ? (groupId === 'DEFAULT_WORKLOAD_GROUP' ? 'DEFAULT_WORKLOAD_GROUP' : '-')
-          : (wlmIdToNameMap[groupId] || '-');
+          ? groupId === 'DEFAULT_WORKLOAD_GROUP'
+            ? 'DEFAULT_WORKLOAD_GROUP'
+            : '-'
+          : wlmIdToNameMap[groupId] || '-';
 
         if (wlmAvailable) {
           return (
