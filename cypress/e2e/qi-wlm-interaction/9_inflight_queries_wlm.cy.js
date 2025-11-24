@@ -5,16 +5,18 @@
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as('liveQueries');
+    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as(
+      'liveQueries'
+    );
     cy.intercept('GET', '/api/_wlm/stats*', { fixture: 'stub_wlm_stats.json' }).as('wlmStats');
     cy.intercept('GET', '/api/_wlm/workload_group*', {
       statusCode: 200,
       body: {
         workload_groups: [
           { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
-          { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'Analytics Team' }
-        ]
-      }
+          { _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'Analytics Team' },
+        ],
+      },
     }).as('wlmGroups');
     cy.visit('/app/query-insights-dashboards#/LiveQueries');
     cy.wait(['@liveQueries', '@wlmStats', '@wlmGroups']);
@@ -91,8 +93,14 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
 
   it('shows workload group selector with mapped names', () => {
     cy.contains('.euiBadge', 'Workload group').should('be.visible');
-    cy.get('[aria-label="Workload group selector"] option').should('contain', 'ANALYTICS_WORKLOAD_GROUP');
-    cy.get('[aria-label="Workload group selector"] option').should('contain', 'DEFAULT_QUERY_GROUP');
+    cy.get('[aria-label="Workload group selector"] option').should(
+      'contain',
+      'ANALYTICS_WORKLOAD_GROUP'
+    );
+    cy.get('[aria-label="Workload group selector"] option').should(
+      'contain',
+      'DEFAULT_QUERY_GROUP'
+    );
   });
 
   it('displays WLM stats panels when group is selected', () => {

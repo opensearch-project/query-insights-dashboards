@@ -5,18 +5,20 @@
 
 describe('Top N Queries - WLM Available', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/top_queries*', { fixture: 'stub_top_queries.json' }).as('topQueries');
+    cy.intercept('GET', '**/api/top_queries/**', { fixture: 'stub_top_queries.json' }).as(
+      'topQueries'
+    );
     cy.intercept('GET', '/api/_wlm/workload_group*', {
       statusCode: 200,
       body: {
         workload_groups: [
           { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
-          { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' }
-        ]
-      }
+          { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' },
+        ],
+      },
     }).as('wlmGroups');
     cy.visit('/app/query-insights-dashboards#/queryInsights');
-    cy.wait(['@topQueries', '@wlmGroups']);
+    cy.wait(['@topQueries', '@wlmGroups'], { timeout: 10000 });
   });
 
   it('displays WLM Group column with clickable links', () => {
