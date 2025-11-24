@@ -415,13 +415,14 @@ const QueryInsights = ({
       render: (wlmGroupId: string, q: SearchQueryRecord) => {
         if (q.group_by === 'SIMILARITY') return '-';
         const groupId = wlmGroupId || 'DEFAULT_WORKLOAD_GROUP';
-        const displayName = !wlmAvailable
-          ? groupId === 'DEFAULT_WORKLOAD_GROUP'
+        const displayName =
+          groupId === 'DEFAULT_WORKLOAD_GROUP'
             ? 'DEFAULT_WORKLOAD_GROUP'
-            : '-'
-          : wlmIdToNameMap[groupId] || '-';
+            : wlmAvailable
+            ? wlmIdToNameMap[groupId] || '-'
+            : '-';
 
-        if (wlmAvailable) {
+        if (wlmAvailable && displayName !== '-') {
           return (
             <EuiLink
               onClick={() => {
