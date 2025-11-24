@@ -3,171 +3,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// /*
-//  * Copyright OpenSearch Contributors
-//  * SPDX-License-Identifier: Apache-2.0
-//  */
-//
-// describe('Top N Queries - WLM Integration', () => {
-//   beforeEach(() => {
-//     cy.intercept('GET', '/api/top_queries*', { fixture: 'stub_top_queries.json' }).as('topQueries');
-//     cy.intercept('GET', '/api/_wlm/stats*', { fixture: 'stub_wlm_stats.json' }).as('wlmStats');
-//     cy.visit('/app/query-insights-dashboards#/queryInsights');
-//     cy.wait(['@topQueries', '@wlmStats']);
-//   });
-//
-//   it('displays WLM Group column in Top N Queries table', () => {
-//     cy.get('table').should('exist');
-//     cy.contains('WLM Group').should('be.visible');
-//
-//     // Verify WLM Group column shows group names
-//     cy.get('table tbody tr')
-//       .first()
-//       .within(() => {
-//         cy.get('td')
-//           .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP|SEARCH_GROUP/)
-//           .should('exist');
-//       });
-//   });
-//
-//   it('filters queries by WLM group using filter dropdown', () => {
-//     // Open WLM Group filter
-//     cy.contains('button', 'WLM Group').click();
-//     cy.get('[role="option"]').contains('DEFAULT_WORKLOAD_GROUP').click();
-//     cy.get('table tbody tr').should('contain', 'DEFAULT_WORKLOAD_GROUP');
-//   });
-//
-//   it('handles WLM group URL parameter for filtering', () => {
-//     // Visit with WLM group parameter
-//     cy.visit('/app/query-insights-dashboards#/queryInsights?wlmGroupId=ANALYTICS_GROUP');
-//     cy.wait(['@topQueries', '@wlmStats']);
-//     cy.get('table tbody tr').should('contain', 'ANALYTICS_GROUP');
-//   });
-//
-//   it('displays mapped WLM group names instead of IDs', () => {
-//     cy.intercept('GET', '/api/_wlm/workload_group*', {
-//       statusCode: 200,
-//       body: {
-//         workload_groups: [
-//           { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
-//           { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' },
-//           { _id: 'SEARCH_GROUP', name: 'Search Team' },
-//         ],
-//       },
-//     }).as('getWorkloadGroups');
-//
-//     cy.reload();
-//     cy.wait(['@getWorkloadGroups', '@topQueries', '@wlmStats']);
-//
-//     cy.get('table tbody tr')
-//       .first()
-//       .within(() => {
-//         cy.get('td').should('contain.text', /Default Group|Analytics Team|Search Team/);
-//       });
-//   });
-//
-//   it('shows WLM group filter options with mapped names', () => {
-//     cy.intercept('GET', '/api/_wlm/workload_group*', {
-//       statusCode: 200,
-//       body: {
-//         workload_groups: [
-//           { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
-//           { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' },
-//         ],
-//       },
-//     }).as('getWorkloadGroups');
-//
-//     cy.reload();
-//     cy.wait(['@getWorkloadGroups', '@topQueries', '@wlmStats']);
-//
-//     cy.contains('button', 'WLM Group').click();
-//     cy.get('[role="option"]').should('contain', 'Default Group');
-//     cy.get('[role="option"]').should('contain', 'Analytics Team');
-//   });
-//
-//   it('searches queries by WLM group using search box', () => {
-//     // Use search box to filter by WLM group
-//     cy.get('input[placeholder="Search queries"]').type('wlm_group_id:(DEFAULT_WORKLOAD_GROUP)');
-//     cy.wait('@topQueries');
-//     cy.get('table tbody tr').should('contain', 'DEFAULT_WORKLOAD_GROUP');
-//   });
-//
-//   it('clears WLM group filter correctly', () => {
-//     // Apply WLM group filter
-//     cy.contains('button', 'WLM Group').click();
-//     cy.get('[role="option"]').contains('DEFAULT_WORKLOAD_GROUP').click();
-//     cy.get('[data-test-subj="clearFiltersButton"]').click();
-//     cy.get('table tbody tr').should('have.length.greaterThan', 1);
-//   });
-//
-//   it('combines WLM group filter with other filters', () => {
-//     // Apply WLM group filter
-//     cy.contains('button', 'WLM Group').click();
-//     cy.get('[role="option"]').first().click();
-//     cy.contains('button', 'Type').click();
-//     cy.get('[role="option"]').contains('query').click();
-//     cy.get('table tbody tr').should('have.length.greaterThan', 0);
-//   });
-//
-//   it('displays WLM group as clickable link when WLM is installed', () => {
-//     cy.intercept('GET', '/api/_wlm/workload_group*', {
-//       statusCode: 200,
-//       body: {
-//         workload_groups: [
-//           { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
-//           { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' },
-//         ],
-//       },
-//     }).as('getWorkloadGroups');
-//
-//     cy.reload();
-//     cy.wait(['@getWorkloadGroups', '@topQueries', '@wlmStats']);
-//
-//     cy.get('table tbody tr')
-//       .first()
-//       .within(() => {
-//         cy.get('td a')
-//           .contains(/Default Group|Analytics Team/)
-//           .should('exist');
-//         cy.get('td a').should('have.attr', 'href').and('not.be.empty');
-//       });
-//   });
-//
-//   it('navigates to WLM details when clicking WLM group link', () => {
-//     cy.intercept('GET', '/api/_wlm/workload_group*', {
-//       statusCode: 200,
-//       body: {
-//         workload_groups: [{ _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' }],
-//       },
-//     }).as('getWorkloadGroups');
-//
-//     cy.reload();
-//     cy.wait(['@getWorkloadGroups', '@topQueries', '@wlmStats']);
-//
-//     cy.get('table tbody tr')
-//       .first()
-//       .within(() => {
-//         cy.get('td a').contains('Default Group').click();
-//       });
-//
-//     cy.url().should('include', '/workloadManagement');
-//     cy.url().should('include', 'wlm-details');
-//   });
-//
-//   it('displays WLM group as plain text when WLM is not available', () => {
-//     cy.intercept('GET', '/api/_wlm/workload_group*', {
-//       statusCode: 404,
-//     }).as('getWorkloadGroupsError');
-//
-//     cy.reload();
-//     cy.wait(['@getWorkloadGroupsError', '@topQueries', '@wlmStats']);
-//
-//     cy.get('table tbody tr')
-//       .first()
-//       .within(() => {
-//         cy.get('td')
-//           .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP/)
-//           .should('not.have.attr', 'href');
-//       });
-//   });
-// });
+describe('Top N Queries - WLM Available', () => {
+  beforeEach(() => {
+    cy.intercept('GET', '/api/top_queries*', { fixture: 'stub_top_queries.json' }).as('topQueries');
+    cy.intercept('GET', '/api/_wlm/workload_group*', {
+      statusCode: 200,
+      body: {
+        workload_groups: [
+          { _id: 'DEFAULT_WORKLOAD_GROUP', name: 'Default Group' },
+          { _id: 'ANALYTICS_GROUP', name: 'Analytics Team' }
+        ]
+      }
+    }).as('wlmGroups');
+    cy.visit('/app/query-insights-dashboards#/queryInsights');
+    cy.wait(['@topQueries', '@wlmGroups']);
+  });
+
+  it('displays WLM Group column with clickable links', () => {
+    cy.get('table').should('exist');
+    cy.contains('WLM Group').should('be.visible');
+    cy.get('table tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td a')
+          .contains(/DEFAULT_WORKLOAD_GROUP|ANALYTICS_GROUP/)
+          .should('exist');
+      });
+  });
+
+  it('shows mapped WLM group names in filter options', () => {
+    cy.contains('button', 'WLM Group').click();
+    cy.get('[role="option"]').should('contain', 'DEFAULT_WORKLOAD_GROUP');
+    cy.get('[role="option"]').should('contain', 'ANALYTICS_GROUP');
+  });
+
+  it('navigates to WLM details when clicking group link', () => {
+    cy.get('table tbody tr')
+      .first()
+      .within(() => {
+        cy.get('td a').first().click();
+      });
+    cy.url().should('include', '/workloadManagement');
+  });
+});

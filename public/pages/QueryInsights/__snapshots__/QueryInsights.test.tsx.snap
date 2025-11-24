@@ -950,7 +950,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  DEFAULT_WORKLOAD_GROUP
+                  <span
+                    class=""
+                  >
+                    DEFAULT_WORKLOAD_GROUP
+                  </span>
                 </div>
               </td>
               <td
@@ -1348,7 +1352,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  SEARCH_GROUP
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1547,7 +1555,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  DEFAULT_WORKLOAD_GROUP
+                  <span
+                    class=""
+                  >
+                    DEFAULT_WORKLOAD_GROUP
+                  </span>
                 </div>
               </td>
               <td
