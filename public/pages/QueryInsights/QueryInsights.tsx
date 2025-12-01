@@ -722,6 +722,7 @@ const QueryInsights = ({
     return Array.from(set).map((v) => ({ value: v, name: v, view: v.replaceAll('_', ' ') }));
   }, [queries]);
 
+  // Generate filter options for WLM groups with ID-to-name mapping
   const wlmGroupOptions = useMemo(() => {
     const set = new Set<string>();
 
