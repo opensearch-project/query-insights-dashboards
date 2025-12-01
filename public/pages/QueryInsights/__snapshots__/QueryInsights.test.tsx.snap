@@ -803,7 +803,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  .kibana
+                  <span
+                    class=""
+                  >
+                    .kibana
+                  </span>
                 </div>
               </td>
               <td
@@ -817,7 +821,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  query then fetch
+                  <span
+                    class=""
+                  >
+                    query then fetch
+                  </span>
                 </div>
               </td>
               <td
@@ -831,7 +839,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  UYKFun8PSAeJvkkt9cWf0w
+                  <span
+                    class=""
+                  >
+                    UYKFun8PSAeJvkkt9cWf0w
+                  </span>
                 </div>
               </td>
               <td
@@ -845,7 +857,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  1
+                  <span
+                    class=""
+                  >
+                    1
+                  </span>
                 </div>
               </td>
             </tr>
@@ -988,7 +1004,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1002,7 +1022,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1016,7 +1040,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1030,7 +1058,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
             </tr>
@@ -1173,7 +1205,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  my-index
+                  <span
+                    class=""
+                  >
+                    my-index
+                  </span>
                 </div>
               </td>
               <td
@@ -1187,7 +1223,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  query then fetch
+                  <span
+                    class=""
+                  >
+                    query then fetch
+                  </span>
                 </div>
               </td>
               <td
@@ -1201,7 +1241,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  UYKFun8PSAeJvkkt9cWf0w
+                  <span
+                    class=""
+                  >
+                    UYKFun8PSAeJvkkt9cWf0w
+                  </span>
                 </div>
               </td>
               <td
@@ -1215,7 +1259,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  1
+                  <span
+                    class=""
+                  >
+                    1
+                  </span>
                 </div>
               </td>
             </tr>
@@ -1358,7 +1406,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  .kibana
+                  <span
+                    class=""
+                  >
+                    .kibana
+                  </span>
                 </div>
               </td>
               <td
@@ -1372,7 +1424,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  query then fetch
+                  <span
+                    class=""
+                  >
+                    query then fetch
+                  </span>
                 </div>
               </td>
               <td
@@ -1386,7 +1442,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  KINGun8PSAeJvkkt9cWf0w
+                  <span
+                    class=""
+                  >
+                    KINGun8PSAeJvkkt9cWf0w
+                  </span>
                 </div>
               </td>
               <td
@@ -1400,7 +1460,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  1
+                  <span
+                    class=""
+                  >
+                    1
+                  </span>
                 </div>
               </td>
             </tr>
@@ -1543,7 +1607,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1557,7 +1625,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1571,7 +1643,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1585,7 +1661,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
             </tr>
@@ -1728,7 +1808,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1742,7 +1826,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1756,7 +1844,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1770,7 +1862,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
             </tr>
@@ -1913,7 +2009,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1927,7 +2027,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1941,7 +2045,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -1955,7 +2063,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
             </tr>
@@ -2098,7 +2210,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -2112,7 +2228,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -2126,7 +2246,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
               <td
@@ -2140,7 +2264,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <div
                   class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
                 >
-                  -
+                  <span
+                    class=""
+                  >
+                    -
+                  </span>
                 </div>
               </td>
             </tr>
