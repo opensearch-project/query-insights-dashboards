@@ -443,23 +443,27 @@ const QueryInsights = ({
     {
       field: INDICES_FIELD as keyof SearchQueryRecord,
       name: INDICES,
-      render: (indices: string[] = [], q: SearchQueryRecord) =>
-        q.group_by === 'SIMILARITY' ? '-' : Array.from(new Set(indices)).join(', '),
+      render: (indices: string[] = [], q: SearchQueryRecord) => (
+        <span>{q.group_by === 'SIMILARITY' ? '-' : Array.from(new Set(indices)).join(', ')}</span>
+      ),
       sortable: true,
       truncateText: true,
     },
     {
       field: SEARCH_TYPE_FIELD as keyof SearchQueryRecord,
       name: SEARCH_TYPE,
-      render: (st: string, q: SearchQueryRecord) =>
-        q.group_by === 'SIMILARITY' ? '-' : (st || '').replaceAll('_', ' '),
+      render: (st: string, q: SearchQueryRecord) => (
+        <span>{q.group_by === 'SIMILARITY' ? '-' : (st || '').replaceAll('_', ' ')}</span>
+      ),
       sortable: true,
       truncateText: true,
     },
     {
       field: NODE_ID_FIELD as keyof SearchQueryRecord,
       name: NODE_ID,
-      render: (nid: string, q: SearchQueryRecord) => (q.group_by === 'SIMILARITY' ? '-' : nid),
+      render: (nid: string, q: SearchQueryRecord) => (
+        <span>{q.group_by === 'SIMILARITY' ? '-' : nid}</span>
+      ),
       sortable: true,
       truncateText: true,
     },
@@ -503,7 +507,9 @@ const QueryInsights = ({
     {
       field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
       name: TOTAL_SHARDS,
-      render: (ts: number, q: SearchQueryRecord) => (q.group_by === 'SIMILARITY' ? '-' : ts),
+      render: (ts: number, q: SearchQueryRecord) => (
+        <span>{q.group_by === 'SIMILARITY' ? '-' : ts}</span>
+      ),
       sortable: true,
       truncateText: true,
     },
