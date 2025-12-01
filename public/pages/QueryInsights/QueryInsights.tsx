@@ -35,6 +35,8 @@ import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -95,10 +97,32 @@ const QueryInsights = ({
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
-
-  // Get wlmGroupId from URL parameters
+  // Initialize search query based on URL parameters
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
+  const [searchQuery, setSearchQuery] = useState<string>(
+    wlmGroupIdFromUrl ? `${WLM_GROUP_FIELD}:(${wlmGroupIdFromUrl})` : ''
+  );
+  const tableKey = useMemo(() => {
+    const wlmId = new URLSearchParams(location.search).get('wlmGroupId');
+    return wlmId ? `table-${wlmId}` : 'table-default';
+  }, [location.search]);
+
+  // Get wlmGroupId from URL parameters once and clean URL
+  useEffect(() => {
+    const urlSearchParams = new URLSearchParams(location.search);
+    const wlmGroupIdFromSearch = urlSearchParams.get('wlmGroupId');
+    if (wlmGroupIdFromSearch) {
+      console.log('[QueryInsights] Navigation from WLM detected:', {
+        wlmGroupId: wlmGroupIdFromSearch,
+        timestamp: new Date().toISOString(),
+        currentPath: location.pathname,
+        fullUrl: location.pathname + location.search,
+      });
+      setSearchQuery(`${WLM_GROUP_FIELD}:(${wlmGroupIdFromSearch})`);
+      history.replace(location.pathname);
+    }
+  }, [location.search, history, location.pathname]);
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
@@ -111,6 +135,7 @@ const QueryInsights = ({
       const res = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, { query: httpQuery });
       return res && typeof res === 'object' && Array.isArray(res.workload_groups);
     } catch (e) {
+      console.warn('[QueryInsights] Failed to detect WLM availability:', e);
       return false;
     }
   }, [core.http, dataSource?.id]);
@@ -139,17 +164,9 @@ const QueryInsights = ({
     return idToNameMap;
   }, [core.http, dataSource?.id, wlmAvailable, wlmGroupsSupported]);
 
-  // Set initial WLM group filter from URL
-  useEffect(() => {
-    if (wlmGroupIdFromUrl && !selectedWlmGroups.includes(wlmGroupIdFromUrl)) {
-      setSelectedWlmGroups([wlmGroupIdFromUrl]);
-    }
-  }, [wlmGroupIdFromUrl]);
-
   useEffect(() => {
     const checkWlmSupport = async () => {
       try {
-        const { getVersionOnce, isVersion33OrHigher } = await import('../../utils/version-utils');
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
         setWlmGroupsSupported(versionSupported);
@@ -173,6 +190,43 @@ const QueryInsights = ({
   useEffect(() => {
     fetchWorkloadGroups();
   }, [fetchWorkloadGroups]);
+
+  // Log filter selection changes
+  useEffect(() => {
+    if (selectedIndices.length > 0) {
+      console.log('[QueryInsights] Indices filter selected:', selectedIndices);
+    }
+  }, [selectedIndices]);
+
+  useEffect(() => {
+    if (selectedSearchTypes.length > 0) {
+      console.log('[QueryInsights] Search types filter selected:', selectedSearchTypes);
+    }
+  }, [selectedSearchTypes]);
+
+  useEffect(() => {
+    if (selectedNodeIds.length > 0) {
+      console.log('[QueryInsights] Node IDs filter selected:', selectedNodeIds);
+    }
+  }, [selectedNodeIds]);
+
+  useEffect(() => {
+    if (selectedWlmGroups.length > 0) {
+      console.log('[QueryInsights] WLM groups filter selected:', selectedWlmGroups);
+    }
+  }, [selectedWlmGroups]);
+
+  useEffect(() => {
+    if (selectedGroupBy.length > 0) {
+      console.log('[QueryInsights] Group by filter selected:', selectedGroupBy);
+    }
+  }, [selectedGroupBy]);
+
+  useEffect(() => {
+    if (searchText) {
+      console.log('[QueryInsights] Search text filter applied:', searchText);
+    }
+  }, [searchText]);
   const commonlyUsedRanges = [
     { label: 'Today', start: 'now/d', end: 'now' },
     { label: 'This week', start: 'now/w', end: 'now' },
@@ -409,39 +463,43 @@ const QueryInsights = ({
       sortable: true,
       truncateText: true,
     },
-    {
-      field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
-      name: WLM_GROUP,
-      render: (wlmGroupId: string, q: SearchQueryRecord) => {
-        if (q.group_by === 'SIMILARITY') return '-';
-        const groupId = wlmGroupId || 'DEFAULT_WORKLOAD_GROUP';
-        const displayName =
-          groupId === 'DEFAULT_WORKLOAD_GROUP'
-            ? 'DEFAULT_WORKLOAD_GROUP'
-            : wlmAvailable
-            ? wlmIdToNameMap[groupId] || '-'
-            : '-';
+    ...(wlmGroupsSupported
+      ? [
+          {
+            field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
+            name: WLM_GROUP,
+            render: (wlmGroupId: string, q: SearchQueryRecord) => {
+              if (q.group_by === 'SIMILARITY') return '-';
+              const groupId = wlmGroupId || DEFAULT_WORKLOAD_GROUP;
+              const displayName =
+                groupId === DEFAULT_WORKLOAD_GROUP
+                  ? DEFAULT_WORKLOAD_GROUP
+                  : wlmAvailable
+                  ? wlmIdToNameMap[groupId] || '-'
+                  : '-';
 
-        if (wlmAvailable && displayName !== '-') {
-          return (
-            <EuiLink
-              onClick={() => {
-                core.application.navigateToApp('workloadManagement', {
-                  path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
-                });
-              }}
-              color="primary"
-            >
-              {displayName} <EuiIcon type="popout" size="s" />
-            </EuiLink>
-          );
-        }
+              if (wlmAvailable && displayName !== '-') {
+                return (
+                  <EuiLink
+                    onClick={() => {
+                      core.application.navigateToApp('workloadManagement', {
+                        path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                      });
+                    }}
+                    color="primary"
+                  >
+                    {displayName} <EuiIcon type="popout" size="s" />
+                  </EuiLink>
+                );
+              }
 
-        return <span>{displayName}</span>;
-      },
-      sortable: true,
-      truncateText: true,
-    },
+              return <span>{displayName}</span>;
+            },
+            sortable: true,
+            truncateText: true,
+          },
+        ]
+      : []),
     {
       field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
       name: TOTAL_SHARDS,
@@ -594,6 +652,7 @@ const QueryInsights = ({
 
   const onSearchChange = ({ query }: { query: any }) => {
     const text: string = query?.text || '';
+    setSearchQuery(text);
 
     // Find every structured filter chunk like "field:(...)" in the search text and return the full matches.
     // Regex: \b        → word boundary (start of a field name)
@@ -621,7 +680,9 @@ const QueryInsights = ({
     if (!arraysEqualAsSets(nid, selectedNodeIds)) setSelectedNodeIds(nid);
 
     const wlm = extractField(text, WLM_GROUP_FIELD);
-    if (!arraysEqualAsSets(wlm, selectedWlmGroups)) setSelectedWlmGroups(wlm);
+    if (!arraysEqualAsSets(wlm, selectedWlmGroups)) {
+      setSelectedWlmGroups(wlm);
+    }
   };
 
   const onRefresh = async ({ start, end }: { start: string; end: string }) => {
@@ -663,15 +724,20 @@ const QueryInsights = ({
 
   const wlmGroupOptions = useMemo(() => {
     const set = new Set<string>();
+
     for (const q of queries) {
       const v = (q as any)[WLM_GROUP_FIELD];
       if (v) set.add(String(v));
     }
-    return Array.from(set).map((v) => ({
-      value: v,
-      name: wlmIdToNameMap[v] || v,
-      view: wlmIdToNameMap[v] || v,
-    }));
+
+    return Array.from(set).map((v) => {
+      const label = wlmIdToNameMap[v] || v;
+      return {
+        value: v,
+        name: label,
+        view: label,
+      };
+    });
   }, [queries, wlmIdToNameMap]);
 
   return (
@@ -690,94 +756,91 @@ const QueryInsights = ({
         dataSourcePickerReadOnly={false}
       />
 
-      <EuiInMemoryTable<SearchQueryRecord>
-        items={items}
-        columns={columnsToShow}
-        sorting={{
-          sort: {
-            field: TIMESTAMP_FIELD as keyof SearchQueryRecord,
-            direction: 'desc',
-          },
-        }}
-        onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
-        pagination={pagination}
-        loading={loading}
-        search={{
-          box: { placeholder: 'Search queries', schema: false },
-          filters: [
-            {
-              type: 'field_value_selection',
-              field: GROUP_BY_FIELD,
-              name: TYPE,
-              multiSelect: 'or',
-              options: [
-                { value: 'NONE', name: 'query', view: 'query' },
-                { value: 'SIMILARITY', name: 'group', view: 'group' },
-              ],
-              noOptionsMessage: 'No data available for the selected type',
+      {!loading && (
+        <EuiInMemoryTable<SearchQueryRecord>
+          key={tableKey}
+          items={items}
+          columns={columnsToShow}
+          sorting={{
+            sort: {
+              field: TIMESTAMP_FIELD as keyof SearchQueryRecord,
+              direction: 'desc',
             },
-            {
-              type: 'field_value_selection',
-              field: INDICES_FIELD,
-              name: INDICES,
-              multiSelect: 'or',
-              options: filterDuplicates(indexOptions),
-            },
-            {
-              type: 'field_value_selection',
-              field: SEARCH_TYPE_FIELD,
-              name: SEARCH_TYPE,
-              multiSelect: 'or',
-              options: filterDuplicates(searchTypeOptions),
-            },
-            {
-              type: 'field_value_selection',
-              field: NODE_ID_FIELD,
-              name: NODE_ID,
-              multiSelect: 'or',
-              options: filterDuplicates(nodeIdOptions),
-            },
-            {
-              type: 'field_value_selection',
-              field: WLM_GROUP_FIELD,
-              name: WLM_GROUP,
-              multiSelect: 'or',
-              options: filterDuplicates(wlmGroupOptions),
-            },
-          ],
-          onChange: onSearchChange,
-          toolsRight: [
-            <EuiSuperDatePicker
-              key="date-picker"
-              start={currStart}
-              end={currEnd}
-              onTimeChange={onTimeChange}
-              recentlyUsedRanges={recentlyUsedRanges}
-              commonlyUsedRanges={commonlyUsedRanges}
-              onRefresh={onRefresh}
-              updateButtonProps={{ fill: false }}
-            />,
-          ],
-        }}
-        executeQueryOptions={{
-          defaultFields: [
-            'id',
-            GROUP_BY_FIELD,
-            TIMESTAMP_FIELD,
-            MEASUREMENTS_FIELD,
-            LATENCY_FIELD,
-            CPU_FIELD,
-            MEMORY_FIELD,
-            INDICES_FIELD,
-            SEARCH_TYPE_FIELD,
-            NODE_ID_FIELD,
-            WLM_GROUP_FIELD,
-            TOTAL_SHARDS_FIELD,
-          ],
-        }}
-        allowNeutralSort={false}
-        itemId={(q: SearchQueryRecord) => q.id}
-      />
+          }}
+          onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
+          pagination={pagination}
+          loading={loading}
+          search={{
+            box: { placeholder: 'Search queries', schema: false },
+            defaultQuery: searchQuery,
+            filters: [
+              {
+                type: 'field_value_selection',
+                field: INDICES_FIELD,
+                name: INDICES,
+                multiSelect: 'or',
+                options: filterDuplicates(indexOptions),
+              },
+              {
+                type: 'field_value_selection',
+                field: SEARCH_TYPE_FIELD,
+                name: SEARCH_TYPE,
+                multiSelect: 'or',
+                options: filterDuplicates(searchTypeOptions),
+              },
+              {
+                type: 'field_value_selection',
+                field: NODE_ID_FIELD,
+                name: NODE_ID,
+                multiSelect: 'or',
+                options: filterDuplicates(nodeIdOptions),
+              },
+              ...(wlmGroupsSupported
+                ? [
+                    {
+                      type: 'field_value_selection',
+                      field: WLM_GROUP_FIELD,
+                      name: WLM_GROUP,
+                      multiSelect: 'or',
+                      options: filterDuplicates(wlmGroupOptions),
+                    },
+                  ]
+                : []),
+            ],
+            onChange: onSearchChange,
+            toolsRight: [
+              <EuiSuperDatePicker
+                key="date-picker"
+                start={currStart}
+                end={currEnd}
+                onTimeChange={onTimeChange}
+                recentlyUsedRanges={recentlyUsedRanges}
+                commonlyUsedRanges={commonlyUsedRanges}
+                onRefresh={onRefresh}
+                updateButtonProps={{ fill: false }}
+              />,
+            ],
+          }}
+          executeQueryOptions={{
+            defaultFields: [
+              'id',
+              GROUP_BY_FIELD,
+              TIMESTAMP_FIELD,
+              MEASUREMENTS_FIELD,
+              LATENCY_FIELD,
+              CPU_FIELD,
+              MEMORY_FIELD,
+              INDICES_FIELD,
+              SEARCH_TYPE_FIELD,
+              NODE_ID_FIELD,
+              ...(wlmGroupsSupported ? [WLM_GROUP_FIELD] : []),
+              TOTAL_SHARDS_FIELD,
+            ],
+          }}
+          allowNeutralSort={false}
+          itemId={(q: SearchQueryRecord) => q.id}
+        />
+      )}
     </>
   );
 };

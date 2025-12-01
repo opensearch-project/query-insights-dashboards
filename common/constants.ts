@@ -72,6 +72,7 @@ export const TOP_N_DISPLAY_LIMIT = 9;
 export const DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR = false;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
 export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
+export const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
 export const CHART_COLORS = [
   '#1f77b4',
   '#ff7f0e',
