@@ -224,87 +224,14 @@ describe('QueryInsights Component', () => {
   });
 
   it('renders the expected column headers for default (mixed) view', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
     renderQueryInsights();
 
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
 
-    const headers = await waitFor(() => screen.getAllByRole('columnheader', { hidden: false }));
-    const headerTexts = headers.map((h) => h.textContent?.trim());
-    const expectedHeaders = [
-      'Id',
-      'Type',
-      'Query Count',
-      'Timestamp',
-      'Avg Latency / Latency',
-      'Avg CPU Time / CPU Time',
-      'Avg Memory Usage / Memory Usage',
-      'Indices',
-      'Search Type',
-      'Coordinator Node ID',
-      'WLM Group',
-      'Total Shards',
-    ];
-
-    expect(headerTexts).toEqual(expectedHeaders);
-  });
-
-  it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
-    renderQueryInsights();
-
-    // Skip this test if Type filter is not available
-    try {
-      await clickTypeOption('group');
-      const headers = await screen.findAllByRole('columnheader', { hidden: true });
-      const headerTexts = headers.map((h) => h.textContent?.trim());
-      const expectedHeaders = [
-        'Id',
-        'Type',
-        'Query Count',
-        'Average Latency',
-        'Average CPU Time',
-        'Average Memory Usage',
-      ];
-      expect(headerTexts).toEqual(expectedHeaders);
-    } catch (error) {
-      console.log('Skipping filter test - Type filter not available');
-    }
-  });
-
-  it('renders only query-related headers when NONE filter (query-only) is applied', async () => {
-    renderQueryInsights();
-
-    // Skip this test if Type filter is not available
-    try {
-      await clickTypeOption('query');
-      const headers = await screen.findAllByRole('columnheader', { hidden: true });
-      const headerTexts = headers.map((h) => h.textContent?.trim());
-      const expectedHeaders = [
-        'Id',
-        'Type',
-        'Timestamp',
-        'Latency',
-        'CPU Time',
-        'Memory Usage',
-        'Indices',
-        'Search Type',
-        'Coordinator Node ID',
-        'WLM Group',
-        'Total Shards',
-      ];
-      expect(headerTexts).toEqual(expectedHeaders);
-    } catch (error) {
-      console.log('Skipping filter test - Type filter not available');
-    }
-  });
-
-  it('renders mixed headers when both NONE and SIMILARITY filters are applied', async () => {
-    renderQueryInsights();
-
-    // Skip this test if Type filter is not available
-    try {
-      await clickTypeOption('query');
-      await clickTypeOption('group');
-      const headers = await screen.findAllByRole('columnheader', { hidden: true });
+    // Wait for async version check and WLM detection to complete
+    await waitFor(() => {
+      const headers = screen.getAllByRole('columnheader', { hidden: false });
       const headerTexts = headers.map((h) => h.textContent?.trim());
       const expectedHeaders = [
         'Id',
@@ -321,6 +248,91 @@ describe('QueryInsights Component', () => {
         'Total Shards',
       ];
       expect(headerTexts).toEqual(expectedHeaders);
+    });
+  });
+
+  it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    renderQueryInsights();
+
+    // Skip this test if Type filter is not available
+    try {
+      await clickTypeOption('group');
+      await waitFor(() => {
+        const headers = screen.getAllByRole('columnheader', { hidden: true });
+        const headerTexts = headers.map((h) => h.textContent?.trim());
+        const expectedHeaders = [
+          'Id',
+          'Type',
+          'Query Count',
+          'Average Latency',
+          'Average CPU Time',
+          'Average Memory Usage',
+        ];
+        expect(headerTexts).toEqual(expectedHeaders);
+      });
+    } catch (error) {
+      console.log('Skipping filter test - Type filter not available');
+    }
+  });
+
+  it('renders only query-related headers when NONE filter (query-only) is applied', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    renderQueryInsights();
+
+    // Skip this test if Type filter is not available
+    try {
+      await clickTypeOption('query');
+      await waitFor(() => {
+        const headers = screen.getAllByRole('columnheader', { hidden: true });
+        const headerTexts = headers.map((h) => h.textContent?.trim());
+        const expectedHeaders = [
+          'Id',
+          'Type',
+          'Timestamp',
+          'Latency',
+          'CPU Time',
+          'Memory Usage',
+          'Indices',
+          'Search Type',
+          'Coordinator Node ID',
+          'WLM Group',
+          'Total Shards',
+        ];
+        expect(headerTexts).toEqual(expectedHeaders);
+      });
+    } catch (error) {
+      console.log('Skipping filter test - Type filter not available');
+    }
+  });
+
+  it('renders mixed headers when both NONE and SIMILARITY filters are applied', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    renderQueryInsights();
+
+    // Skip this test if Type filter is not available
+    try {
+      await clickTypeOption('query');
+      await clickTypeOption('group');
+      await waitFor(() => {
+        const headers = screen.getAllByRole('columnheader', { hidden: true });
+        const headerTexts = headers.map((h) => h.textContent?.trim());
+        const expectedHeaders = [
+          'Id',
+          'Type',
+          'Query Count',
+          'Timestamp',
+          'Avg Latency / Latency',
+          'Avg CPU Time / CPU Time',
+          'Avg Memory Usage / Memory Usage',
+          'Indices',
+          'Search Type',
+          'Coordinator Node ID',
+          'WLM Group',
+          'Total Shards',
+        ];
+        expect(headerTexts).toEqual(expectedHeaders);
+      });
     } catch (error) {
       console.log('Skipping filter test - Type filter not available');
     }

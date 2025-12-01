@@ -41,6 +41,7 @@ interface WorkloadGroupData {
   totalRejections: number;
   totalCancellations: number;
   topQueriesLink: string;
+  liveQueriesLink: string;
   cpuStats: number[];
   memStats: number[];
   cpuLimit: number;
@@ -130,6 +131,9 @@ export const WorkloadManagementMain = ({
     [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
   const [isQueryInsightsAvailable, setIsQueryInsightsAvailable] = useState(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
+    boolean
+  >(false);
 
   // === Table Sorting / Pagination ===
   const pagination = {
@@ -165,7 +169,10 @@ export const WorkloadManagementMain = ({
   const checkQueryInsightsAvailability = async () => {
     try {
       const version = await getVersionOnce(dataSource?.id || '');
-      if (!isVersion33OrHigher(version)) {
+      const versionSupported = isVersion33OrHigher(version);
+      setQueryInsightWlmNavigationSupported(versionSupported);
+
+      if (!versionSupported) {
         setIsQueryInsightsAvailable(false);
         return;
       }
@@ -177,6 +184,7 @@ export const WorkloadManagementMain = ({
         res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries);
       setIsQueryInsightsAvailable(hasValidStructure);
     } catch (error) {
+      setQueryInsightWlmNavigationSupported(false);
       setIsQueryInsightsAvailable(false);
     }
   };
@@ -272,7 +280,8 @@ export const WorkloadManagementMain = ({
           totalCompletions: groupStats.totalCompletions,
           totalRejections: groupStats.totalRejections,
           totalCancellations: groupStats.totalCancellations,
-          topQueriesLink: '', // not available yet
+          topQueriesLink: '',
+          liveQueriesLink: '',
           cpuStats: computeBoxStats(groupStats.cpuStats),
           memStats: computeBoxStats(groupStats.memStats),
           cpuLimit,
@@ -480,7 +489,7 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     checkQueryInsightsAvailability();
-  }, []);
+  }, [dataSource?.id]);
 
   useEffect(() => {
     fetchClusterLevelStats();
@@ -492,7 +501,7 @@ export const WorkloadManagementMain = ({
 
     // Cleanup
     return () => clearInterval(intervalId);
-  }, [fetchClusterWorkloadGroupStats]);
+  }, [fetchClusterWorkloadGroupStats, dataSource?.id]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -577,7 +586,7 @@ export const WorkloadManagementMain = ({
       sortable: true,
       render: (val: number) => val.toLocaleString(),
     },
-    ...(isQueryInsightsAvailable
+    ...(isQueryInsightsAvailable && queryInsightWlmNavigationSupported
       ? [
           {
             field: 'topQueriesLink',
@@ -587,8 +596,9 @@ export const WorkloadManagementMain = ({
                 <EuiFlexItem grow={false}>
                   <EuiLink
                     onClick={() => {
+                      const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
                       core.application.navigateToApp('query-insights-dashboards', {
-                        path: `#/queryInsights?wlmGroupId=${item.groupId}`,
+                        path: `#/queryInsights?wlmGroupId=${item.groupId}${dsParam}`,
                       });
                     }}
                     color="primary"
@@ -610,8 +620,9 @@ export const WorkloadManagementMain = ({
                 <EuiFlexItem grow={false}>
                   <EuiLink
                     onClick={() => {
+                      const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
                       core.application.navigateToApp('query-insights-dashboards', {
-                        path: `#/LiveQueries?wlmGroupId=${item.groupId}`,
+                        path: `#/LiveQueries?wlmGroupId=${item.groupId}${dsParam}`,
                       });
                     }}
                     color="primary"

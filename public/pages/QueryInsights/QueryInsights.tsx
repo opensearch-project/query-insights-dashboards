@@ -96,7 +96,9 @@ const QueryInsights = ({
   const [selectedWlmGroups, setSelectedWlmGroups] = useState<string[]>([]);
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
-  const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
+    boolean
+  >(false);
   // Initialize search query based on URL parameters
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
@@ -144,7 +146,7 @@ const QueryInsights = ({
   const fetchWorkloadGroups = useCallback(async () => {
     const idToNameMap: Record<string, string> = {};
     try {
-      if (wlmAvailable && wlmGroupsSupported) {
+      if (wlmAvailable && queryInsightWlmNavigationSupported) {
         const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
@@ -162,14 +164,14 @@ const QueryInsights = ({
 
     setWlmIdToNameMap(idToNameMap);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmAvailable, wlmGroupsSupported]);
+  }, [core.http, dataSource?.id, wlmAvailable, queryInsightWlmNavigationSupported]);
 
   useEffect(() => {
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
-        setWlmGroupsSupported(versionSupported);
+        setQueryInsightWlmNavigationSupported(versionSupported);
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -178,7 +180,7 @@ const QueryInsights = ({
           setWlmAvailable(false);
         }
       } catch (e) {
-        setWlmGroupsSupported(false);
+        setQueryInsightWlmNavigationSupported(false);
         setWlmAvailable(false);
       }
     };
@@ -467,7 +469,7 @@ const QueryInsights = ({
       sortable: true,
       truncateText: true,
     },
-    ...(wlmGroupsSupported
+    ...(queryInsightWlmNavigationSupported
       ? [
           {
             field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
@@ -486,8 +488,9 @@ const QueryInsights = ({
                 return (
                   <EuiLink
                     onClick={() => {
+                      const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
                       core.application.navigateToApp('workloadManagement', {
-                        path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                        path: `#/wlm-details?name=${encodeURIComponent(displayName)}${dsParam}`,
                       });
                     }}
                     color="primary"
@@ -802,7 +805,7 @@ const QueryInsights = ({
                 multiSelect: 'or',
                 options: filterDuplicates(nodeIdOptions),
               },
-              ...(wlmGroupsSupported
+              ...(queryInsightWlmNavigationSupported
                 ? [
                     {
                       type: 'field_value_selection',
@@ -840,7 +843,7 @@ const QueryInsights = ({
               INDICES_FIELD,
               SEARCH_TYPE_FIELD,
               NODE_ID_FIELD,
-              ...(wlmGroupsSupported ? [WLM_GROUP_FIELD] : []),
+              ...(queryInsightWlmNavigationSupported ? [WLM_GROUP_FIELD] : []),
               TOTAL_SHARDS_FIELD,
             ],
           }}
