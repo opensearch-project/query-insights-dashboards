@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 export const editor = {
   create: jest.fn(),
   createModel: jest.fn(),
@@ -15,5 +20,3 @@ export const monaco = {
   editor,
   languages,
 };
-
-export default monaco;
