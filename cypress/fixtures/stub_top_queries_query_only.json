@@ -8,6 +8,7 @@
         "search_type": "query_then_fetch",
         "indices": ["my-index"],
         "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "wlm_group_id": "DEFAULT_WORKLOAD_GROUP",
         "group_by": "NONE",
         "total_shards": 1,
         "labels": {
@@ -25,6 +26,7 @@
         "search_type": "query_then_fetch",
         "indices": ["my-index"],
         "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "wlm_group_id": "9mK2pL8QR7Vb4n1xC6dE2F",
         "group_by": "NONE",
         "total_shards": 1,
         "labels": {
@@ -42,6 +44,7 @@
         "search_type": "query_then_fetch",
         "indices": ["my-index"],
         "node_id": "UYKFun8PSAeJvkkt9cWf0w",
+        "wlm_group_id": "3zY5wT9NQ8Hj7m2sA4bG1X",
         "group_by": "NONE",
         "total_shards": 1,
         "labels": {

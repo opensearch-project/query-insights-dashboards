@@ -410,6 +410,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -432,6 +433,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -481,6 +483,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -515,6 +518,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
