@@ -13,7 +13,11 @@ module.exports = {
     '\\.(css|less|scss)$': '<rootDir>/test/mocks/styleMock.ts',
     '^ui/(.*)': '<rootDir>/../../src/legacy/ui/public/$1/',
     '^vega-embed$': '<rootDir>/test/mocks/vega-embed.ts',
+    '^monaco-editor/esm/vs/editor/editor.api$': '<rootDir>/test/mocks/monaco-editor.ts',
+    '^monaco-editor$': '<rootDir>/test/mocks/monaco-editor.ts',
+    '^@osd/monaco$': '<rootDir>/test/mocks/monaco-editor.ts',
   },
+  transformIgnorePatterns: ['node_modules/(?!(monaco-editor)/)'],
   coverageReporters: ['lcov', 'text', 'cobertura'],
   testMatch: ['**/*.test.js', '**/*.test.jsx', '**/*.test.ts', '**/*.test.tsx'],
   collectCoverageFrom: [
