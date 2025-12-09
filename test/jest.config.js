@@ -45,4 +45,10 @@ module.exports = {
   modulePathIgnorePatterns: ['queryInsightsDashboards'],
   testEnvironment: 'jsdom',
   snapshotSerializers: ['enzyme-to-json/serializer'],
+  transform: {
+    '^.+\\.(js|tsx?)$': '<rootDir>/../../src/dev/jest/babel_transform.js',
+  },
+  transformIgnorePatterns: [
+    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor))[/\\\\].+\\.js$',
+  ],
 };
