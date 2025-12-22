@@ -1,4 +1,4 @@
-name: Cypress e2e integration tests workflow with security
+name: Cypress e2e integration tests workflow for WLM with security
 on:
   pull_request:
     branches:
@@ -12,7 +12,7 @@ env:
   OPENSEARCH_INITIAL_ADMIN_PASSWORD: "myStrongPassword123!"
 jobs:
   tests:
-    name: Run Cypress E2E tests for WLM
+    name: Run Cypress E2E tests for WLM with security
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -273,7 +273,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern=cypress/e2e/qi/**/*
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000 --spec cypress/e2e/wlm/**/*
           browser: chrome
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
@@ -283,11 +283,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots-${{ matrix.os }}
+          name: cypress-screenshots-wlm-security-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cypress-videos-${{ matrix.os }}
+          name: cypress-videos-wlm-security-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos
