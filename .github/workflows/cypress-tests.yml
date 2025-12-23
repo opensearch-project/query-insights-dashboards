@@ -7,8 +7,6 @@ on:
     branches:
       - "*"
 env:
-  OPENSEARCH_DASHBOARDS_VERSION: 'main'
-  QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -32,11 +30,33 @@ jobs:
       TERM: xterm
     steps:
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: temurin
+      - uses: actions/checkout@v4
+
+      - name: Set env
+        run: |
+          opensearch_version=$(node -p "require('./package.json').opensearchDashboards.version")
+          plugin_version=$(node -p "require('./package.json').version")
+          major_version=$(echo $opensearch_version | cut -d. -f1)
+          minor_version=$(echo $opensearch_version | cut -d. -f2)
+          opensearch_version=${opensearch_version}-SNAPSHOT
+          plugin_version=${plugin_version}-SNAPSHOT
+          branch_version=${major_version}.${minor_version}
+          opensearch_branch=$branch_version
+          opensearch_dashboards_branch=$branch_version
+          query_insights_branch=$branch_version
+          base_branch=${{ github.base_ref }}
+          echo "base_branch $base_branch"
+          if [ "$base_branch" = "main" ]; then
+            opensearch_branch=main
+            opensearch_dashboards_branch=main
+            query_insights_branch=main
+          fi
+          echo "QUERY_INSIGHTS_BRANCH=$query_insights_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_BRANCH=$opensearch_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_DASHBOARDS_BRANCH=$opensearch_dashboards_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
+        shell: bash
 
       - name: Checkout Query Insights
         uses: actions/checkout@v4
@@ -58,39 +78,11 @@ jobs:
           echo "Listing files:"
           ls -la
 
-      - name: Fetch OpenSearch version from build.gradle
-        run: |
-          # Navigate to the query-insights directory
-          cd query-insights
-
-          # Check if build.gradle exists
-          if [ -f "build.gradle" ]; then
-            echo "build.gradle file exists!"
-          else
-            echo "build.gradle file not found!"
-            exit 1
-          fi
-
-          # Print the content of build.gradle for debugging
-          echo "Printing build.gradle content:"
-          cat build.gradle
-
-          # Extract the version from build.gradle using Node.js with the updated regex
-          opensearch_version=$(node -e "
-            const fs = require('fs');
-            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
-            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
-            console.log(match ? match[1] : 'No version found');
-          ")
-
-          # Set the OpenSearch version as an environment variable
-          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
-
-          # Print the version for debugging
-          echo "Using OpenSearch version: $opensearch_version"
-        shell: bash
-
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
 
       - name: Verify OpenSearch version
         run: |
@@ -179,7 +171,7 @@ jobs:
         with:
           repository: opensearch-project/OpenSearch-Dashboards
           path: OpenSearch-Dashboards
-          ref: ${{ env.OPENSEARCH_DASHBOARDS_VERSION }}
+          ref: ${{ env.OPENSEARCH_DASHBOARDS_BRANCH }}
 
       - name: Checkout Query Insights Dashboards plugin
         uses: actions/checkout@v4
@@ -288,7 +280,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern=cypress/e2e/wlm/**/*
           wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome

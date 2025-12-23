@@ -18,6 +18,11 @@ export const METRICS = {
 };
 
 export const ADMIN_AUTH = {
-  username: Cypress.env('username'),
-  password: Cypress.env('password'),
+  username: Cypress.env('admin'),
+  password: Cypress.env('myStrongPassword123!'),
+};
+
+export const WLM_AUTH = {
+  username: 'admin',
+  password: 'myStrongPassword123!',
 };

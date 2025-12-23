@@ -20,15 +20,42 @@
 
 import semver from 'semver';
 import { DataSourceOption } from 'src/plugins/data_source_management/public';
+import type { CoreStart } from 'opensearch-dashboards/public';
 import pluginManifest from '../../opensearch_dashboards.json';
 import type { SavedObject } from '../../../../src/core/public';
 import type { DataSourceAttributes } from '../../../../src/plugins/data_source/common/data_sources';
+import { getSavedObjectsClient, getRouteService } from '../service';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
   url.searchParams.set('dataSource', JSON.stringify(dataSource));
   return url;
 }
+
+export const getDataSourceVersion = async (
+  dataSourceId: string | undefined
+): Promise<string | undefined> => {
+  try {
+    if (dataSourceId === undefined || dataSourceId === '') {
+      return await getRouteService().getLocalClusterVersion();
+    }
+
+    const savedObjectsClient = getSavedObjectsClient();
+    if (!savedObjectsClient) {
+      console.warn('SavedObjects client not available');
+      return undefined;
+    }
+
+    const dataSource = await savedObjectsClient.get<DataSourceAttributes>(
+      'data-source',
+      dataSourceId
+    );
+    return dataSource?.attributes?.dataSourceVersion;
+  } catch (error) {
+    console.error('Error getting version: ', error);
+    return undefined;
+  }
+};
 
 export function getDataSourceFromUrl(): DataSourceOption {
   const urlParams = new URLSearchParams(window.location.search);
@@ -73,3 +100,35 @@ export const isWLMDataSourceCompatible = (dataSource: SavedObject<DataSourceAttr
   }
   return true;
 };
+
+export async function resolveDataSourceVersion(
+  core: CoreStart,
+  selected?: DataSourceOption | { id?: string; dataSourceVersion?: string }
+): Promise<string | undefined> {
+  // 1) fetch the saved object to read attributes.dataSourceVersion.
+  const id = (selected as any)?.id;
+  if (id) {
+    try {
+      const so = await core.savedObjects.client.get<SavedObject<DataSourceAttributes>>(
+        'data-source',
+        id
+      );
+      return (so as any)?.attributes?.dataSourceVersion;
+    } catch {
+      return undefined;
+    }
+  }
+
+  // 2) If it's local cluster then always show security
+  if (selected?.label === 'Local cluster') {
+    return '3.3.0';
+  }
+  return undefined;
+}
+
+/** Whether Security rule attributes (username/role) are supported (>= 3.3.0). */
+export function isSecurityAttributesSupported(version?: string): boolean {
+  // defend against undefined or loose versions
+  const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
+  return !!v && semver.gte(v, '3.3.0');
+}
