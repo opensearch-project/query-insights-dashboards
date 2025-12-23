@@ -77,12 +77,40 @@ jobs:
           cd OpenSearch
           ./gradlew :modules:autotagging-commons:assemble
           ./gradlew :plugins:workload-management:assemble
+          ./gradlew :plugins:query-insights:assemble
 
-      - name: Copy Plugins to Query Insights
+      - name: Copy Plugins to Query Insights (fail-fast)
         run: |
+          set -euo pipefail
+
           mkdir -p query-insights/plugins
-          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
-          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+
+          echo "OPENSEARCH_VERSION=${OPENSEARCH_VERSION}"
+          echo "PLUGIN_VERSION=${PLUGIN_VERSION}"
+
+          AUTO_ZIP="OpenSearch/modules/autotagging-commons/build/distributions/autotagging-commons-${PLUGIN_VERSION}.zip"
+          WLM_ZIP="OpenSearch/plugins/workload-management/build/distributions/workload-management-${PLUGIN_VERSION}.zip"
+          QI_ZIP="OpenSearch/plugins/query-insights/build/distributions/query-insights-${PLUGIN_VERSION}.zip"
+
+          echo "Looking for:"
+          echo "  $AUTO_ZIP"
+          echo "  $WLM_ZIP"
+          echo "  $QI_ZIP"
+
+          ls -lah OpenSearch/modules/autotagging-commons/build/distributions || true
+          ls -lah OpenSearch/plugins/workload-management/build/distributions || true
+          ls -lah OpenSearch/plugins/query-insights/build/distributions || true
+
+          test -f "$AUTO_ZIP"
+          test -f "$WLM_ZIP"
+          test -f "$QI_ZIP"
+
+          cp "$AUTO_ZIP" query-insights/plugins/
+          cp "$WLM_ZIP" query-insights/plugins/
+          cp "$QI_ZIP" query-insights/plugins/
+
+          echo "Copied into query-insights/plugins:"
+          ls -lah query-insights/plugins
 
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
