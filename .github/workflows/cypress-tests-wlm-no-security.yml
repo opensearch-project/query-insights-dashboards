@@ -77,7 +77,6 @@ jobs:
           cd OpenSearch
           ./gradlew :modules:autotagging-commons:assemble
           ./gradlew :plugins:workload-management:assemble
-          ./gradlew :plugins:query-insights:assemble
 
       - name: Copy Plugins to Query Insights (fail-fast)
         run: |
