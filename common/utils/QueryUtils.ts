@@ -78,7 +78,8 @@ export const retrieveQueryById = async (
 export const retrieveLiveQueries = async (
   core: CustomCore,
   dataSourceId?: string,
-  wlmGroupId?: string
+  wlmGroupId?: string,
+  useNewParams?: boolean
 ): Promise<LiveSearchQueryResponse> => {
   const nullResponse: LiveSearchQueryResponse = {
     ok: true,
@@ -94,15 +95,13 @@ export const retrieveLiveQueries = async (
     const http =
       dataSourceId && core.data?.dataSources ? core.data.dataSources.get(dataSourceId) : core.http;
 
-    const options: { query?: Record<string, string> } | undefined =
-      dataSourceId || wlmGroupId
-        ? {
-            query: {
-              ...(dataSourceId ? { dataSourceId } : {}),
-              ...(wlmGroupId ? { wlmGroupId } : {}),
-            },
-          }
-        : undefined;
+    const queryParams: Record<string, string> = {
+      ...(useNewParams ? { cached: 'true', include_finished: 'true' } : {}),
+      ...(dataSourceId ? { dataSourceId } : {}),
+      ...(wlmGroupId ? { wlmGroupId } : {}),
+    };
+
+    const options = { query: queryParams };
 
     const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES, options);
     const liveQueries = response?.response?.live_queries;

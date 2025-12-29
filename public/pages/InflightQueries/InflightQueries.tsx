@@ -50,7 +50,12 @@ import {
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion35OrHigher,
+} from '../../utils/version-utils';
+import { TaskDetailsFlyout } from './TaskDetailsFlyout';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -117,6 +122,13 @@ export const InflightQueries = ({
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
+
+  // Task flyout state
+  const [isTaskFlyoutOpen, setIsTaskFlyoutOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDetails, setTaskDetails] = useState<any | null>(null);
+  const [taskDetailsLoading, setTaskDetailsLoading] = useState(false);
+  const [taskDetailsError, setTaskDetailsError] = useState<string | null>(null);
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
     const cacheKey = dataSource?.id || 'default';
@@ -266,9 +278,11 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId);
+      const version = await getVersionOnce(dataSource?.id || '');
+      const useNewParams = isVersion35OrHigher(version);
+      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId, useNewParams);
 
-      if (retrieved?.response?.live_queries) {
+      if (retrieved?.response?.live_queries || retrieved?.response?.finished_queries) {
         const mapFromOptions: Record<string, string> = Object.fromEntries(
           wlmGroupOptions.map((g) => [g.id, g.name])
         );
@@ -277,33 +291,81 @@ export const InflightQueries = ({
         const tempNodeCount: Record<string, number> = {};
         const indexCount: Record<string, number> = {};
 
-        const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
-          const indexMatch = q.description?.match(/indices\[(.*?)\]/);
-          const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+        // Combine live_queries and finished_queries with source tracking
+        const allQueries = [
+          ...(retrieved.response.live_queries || []).map((q) => ({ ...q, querySource: 'live' })),
+          ...(retrieved.response.finished_queries || []).map((q) => ({
+            ...q,
+            querySource: 'finished',
+          })),
+        ];
+
+        const parsed: LiveQueryRow[] = allQueries.map((q) => {
+          let index;
+          let searchType;
+
+          if (q.querySource === 'finished') {
+            // For finished queries: use direct fields
+            index = q.indices?.[0] || 'Unknown';
+            searchType = q.search_type || 'Unknown';
+          } else {
+            // For running queries: try multiple approaches
+            const indexMatch = q.description?.match(/indices\[(.*?)\]/);
+            const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+            index = indexMatch ? indexMatch[1] : 'Unknown';
+            searchType = searchTypeMatch ? searchTypeMatch[1] : 'Unknown';
+          }
+
+          // Parse source from description for running queries
+          let parsedSource = q.source;
+          if (!parsedSource && q.description && q.querySource === 'live') {
+            try {
+              const sourceMatch = q.description.match(/source\[(.*)\]$/);
+              if (sourceMatch) {
+                const jsonStr = sourceMatch[1]
+                  .replace(/&quot;/g, '"')
+                  .replace(/&amp;/g, '&')
+                  .replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>');
+                parsedSource = JSON.parse(jsonStr);
+              }
+            } catch {
+              parsedSource = { raw_description: q.description };
+            }
+          }
 
           const wlmDisplay =
             typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
               ? idToName[q.wlm_group_id] ?? q.wlm_group_id
               : 'N/A';
 
+          // For finished queries, use task_id with parent_id suffix
+          const displayId =
+            q.querySource === 'finished' && q.parent_id ? `${q.task_id}_${q.parent_id}` : q.id;
+
           return {
             ...q,
-            index: indexMatch ? indexMatch[1] : 'N/A',
-            search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
+            id: displayId,
+            index,
+            search_type: searchType,
             coordinator_node: q.node_id,
             node_label: q.node_id,
             wlm_group: wlmDisplay,
+            source: parsedSource,
           };
         });
 
         setQuery({ ...retrieved, response: { live_queries: parsed } });
 
         parsed.forEach((liveQuery) => {
-          const nodeId = liveQuery.node_id;
-          tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
-          const index = liveQuery.index;
-          if (index && typeof index === 'string') {
-            indexCount[index] = (indexCount[index] || 0) + 1;
+          // Only count live queries for node and index charts
+          if (liveQuery.querySource === 'live') {
+            const nodeId = liveQuery.node_id;
+            tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
+            const index = liveQuery.index;
+            if (index && typeof index === 'string') {
+              indexCount[index] = (indexCount[index] || 0) + 1;
+            }
           }
         });
 
@@ -371,19 +433,48 @@ export const InflightQueries = ({
   useEffect(() => {
     void fetchLiveQueriesSafe();
 
-    if (!autoRefreshEnabled) return;
+    if (!autoRefreshEnabled || isTaskFlyoutOpen) return;
     const interval = setInterval(() => {
       void fetchLiveQueriesSafe();
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe, wlmGroupsSupported]);
+  }, [
+    autoRefreshEnabled,
+    refreshInterval,
+    fetchLiveQueriesSafe,
+    wlmGroupsSupported,
+    isTaskFlyoutOpen,
+  ]);
+
+  // Fetch task details when flyout opens or when queries update
+  useEffect(() => {
+    const fetchTaskDetails = async () => {
+      if (!isTaskFlyoutOpen || !selectedTaskId) return;
+
+      setTaskDetailsLoading(true);
+      setTaskDetailsError(null);
+
+      try {
+        // Find task details from current query data (check both live and finished)
+        const taskData = liveQueries.find((q) => q.id === selectedTaskId);
+        setTaskDetails(taskData);
+      } catch (e: any) {
+        setTaskDetailsError(e?.message ?? 'Failed to load task details');
+      } finally {
+        setTaskDetailsLoading(false);
+      }
+    };
+
+    void fetchTaskDetails();
+  }, [isTaskFlyoutOpen, selectedTaskId, liveQueries]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [tableQuery, setTableQuery] = useState('');
   const [_tableFilters, setTableFilters] = useState([]);
 
   const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds) || seconds < 0) return '0 ms';
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
 
@@ -426,7 +517,7 @@ export const InflightQueries = ({
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
-    selectable: (item: any) => item.is_cancelled !== true,
+    selectable: (item: any) => item.is_cancelled !== true && item.querySource !== 'finished',
     onSelectionChange: (selected: any[]) => {
       setSelectedItems(selected);
     },
@@ -454,9 +545,9 @@ export const InflightQueries = ({
   );
 
   const metrics = React.useMemo(() => {
-    if (!query || !query.response?.live_queries?.length) return null;
+    if (!liveQueries?.length) return null;
 
-    const queries = query.response.live_queries;
+    const queries = liveQueries.filter((q) => q.querySource === 'live');
 
     const activeQueries = queries.length;
     let totalLatency = 0;
@@ -482,13 +573,13 @@ export const InflightQueries = ({
 
     return {
       activeQueries,
-      avgElapsedSec: totalLatency / activeQueries / 1000000000,
+      avgElapsedSec: activeQueries > 0 ? totalLatency / activeQueries / 1000000000 : 0,
       longestElapsedSec: longestLatency / 1000000000,
       longestQueryId,
       totalCPUSec: totalCPU / 1000000000,
       totalMemoryBytes: totalMemory,
     };
-  }, [query]);
+  }, [liveQueries]);
 
   const getReactVisChartData = (counts: Record<string, number>) => {
     return Object.entries(counts).map(([label, value], index) => ({
@@ -959,8 +1050,55 @@ export const InflightQueries = ({
             },
           }}
           columns={[
-            { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { field: 'id', name: 'Task ID' },
+            {
+              name: 'Task ID',
+              render: (item) => (
+                <EuiLink
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      const httpClient = dataSource?.id
+                        ? depsStart.data.dataSources.get(dataSource.id)
+                        : core.http;
+
+                      console.log('Making API call with task_id:', item.id);
+                      console.log(
+                        'Full URL will be:',
+                        `${API_ENDPOINTS.LIVE_QUERIES}?cached=true&include_finished=true&task_id=${item.id}`
+                      );
+                      // Make API call as requested
+                      const response = await httpClient.get(API_ENDPOINTS.LIVE_QUERIES, {
+                        query: {
+                          cached: 'true',
+                          include_finished: 'true',
+                          task_id: item.id,
+                        },
+                      });
+                      console.log('API response:', response);
+
+                      setSelectedTaskId(item.id);
+                      setIsTaskFlyoutOpen(true);
+                    } catch (err) {
+                      console.error('Failed to fetch task details', err);
+                      // Still open flyout with existing data
+                      setSelectedTaskId(item.id);
+                      setIsTaskFlyoutOpen(true);
+                    }
+                  }}
+                >
+                  {item.id}
+                </EuiLink>
+              ),
+            },
+            {
+              name: 'Start Time',
+              render: (item) => convertTime(item.start_time || item.timestamp),
+            },
+            {
+              name: 'End Time',
+              render: (item) =>
+                item.querySource === 'finished' && item.end_time ? convertTime(item.end_time) : '-',
+            },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
             {
@@ -979,16 +1117,27 @@ export const InflightQueries = ({
 
             {
               name: 'Status',
-              render: (item) =>
-                item.is_cancelled === true ? (
-                  <EuiText color="danger">
-                    <b>Cancelled</b>
-                  </EuiText>
-                ) : (
-                  <EuiText style={{ color: '#0073e6' }}>
-                    <b>Running</b>
-                  </EuiText>
-                ),
+              render: (item) => {
+                if (item.is_cancelled === true) {
+                  return (
+                    <EuiText color="danger">
+                      <b>Cancelled</b>
+                    </EuiText>
+                  );
+                } else if (item.querySource === 'finished') {
+                  return (
+                    <EuiText color="success">
+                      <b>Finished</b>
+                    </EuiText>
+                  );
+                } else {
+                  return (
+                    <EuiText style={{ color: '#0073e6' }}>
+                      <b>Running</b>
+                    </EuiText>
+                  );
+                }
+              },
             },
 
             ...(wlmGroupsSupported
@@ -1033,7 +1182,8 @@ export const InflightQueries = ({
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.is_cancelled !== true,
+                  available: (item) =>
+                    item.is_cancelled !== true && item.querySource !== 'finished',
                   onClick: async (item) => {
                     try {
                       const httpClient = dataSource?.id
@@ -1064,6 +1214,103 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
+
+      <TaskDetailsFlyout
+        isOpen={isTaskFlyoutOpen}
+        onClose={() => {
+          setIsTaskFlyoutOpen(false);
+          setSelectedTaskId(null);
+          setTaskDetails(null);
+          setTaskDetailsError(null);
+        }}
+        taskId={selectedTaskId}
+        taskDetails={taskDetails}
+        loading={taskDetailsLoading}
+        error={taskDetailsError}
+        onRefresh={async (taskId) => {
+          try {
+            const httpClient = dataSource?.id
+              ? depsStart.data.dataSources.get(dataSource.id)
+              : core.http;
+
+            const response = await httpClient.get(API_ENDPOINTS.LIVE_QUERIES, {
+              query: {
+                cached: 'true',
+                include_finished: 'true',
+                task_id: taskId,
+              },
+            });
+
+            // Update task details with fresh data
+            const allQueries = [
+              ...(response.response?.live_queries || []).map((q) => ({
+                ...q,
+                querySource: 'live',
+              })),
+              ...(response.response?.finished_queries || []).map((q) => ({
+                ...q,
+                querySource: 'finished',
+              })),
+            ];
+
+            const updatedTask = allQueries.find((q) => q.id === taskId);
+            if (updatedTask) {
+              // Parse the task the same way as main query processing
+              let index;
+              let searchType;
+
+              if (updatedTask.querySource === 'finished') {
+                index = updatedTask.indices?.[0] || 'Unknown';
+                searchType = updatedTask.search_type || 'Unknown';
+              } else {
+                const indexMatch = updatedTask.description?.match(/indices\[(.*?)\]/);
+                const searchTypeMatch = updatedTask.description?.match(/search_type\[(.*?)\]/);
+                index = indexMatch ? indexMatch[1] : 'Unknown';
+                searchType = searchTypeMatch ? searchTypeMatch[1] : 'Unknown';
+              }
+
+              const wlmDisplay =
+                typeof updatedTask.wlm_group_id === 'string' &&
+                updatedTask.wlm_group_id.trim() !== ''
+                  ? wlmIdToNameMap[updatedTask.wlm_group_id] ?? updatedTask.wlm_group_id
+                  : 'N/A';
+
+              const parsedTask = {
+                ...updatedTask,
+                index,
+                search_type: searchType,
+                coordinator_node: updatedTask.node_id,
+                wlm_group: wlmDisplay,
+                source:
+                  updatedTask.source ||
+                  (updatedTask.description
+                    ? (() => {
+                        try {
+                          const sourceMatch = updatedTask.description.match(/source\[(.*)\]$/);
+                          if (sourceMatch) {
+                            // Decode HTML entities and unescape JSON
+                            const jsonStr = sourceMatch[1]
+                              .replace(/&quot;/g, '"')
+                              .replace(/&amp;/g, '&')
+                              .replace(/&lt;/g, '<')
+                              .replace(/&gt;/g, '>');
+                            return JSON.parse(jsonStr);
+                          }
+                          return null;
+                        } catch {
+                          return { raw_description: updatedTask.description };
+                        }
+                      })()
+                    : null),
+              };
+
+              setTaskDetails(parsedTask);
+            }
+          } catch (err) {
+            console.error('Failed to refresh task details', err);
+          }
+        }}
+      />
     </div>
   );
 };

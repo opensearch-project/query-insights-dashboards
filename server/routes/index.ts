@@ -363,31 +363,49 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
           wlmGroupId: schema.maybe(schema.string()),
+          cached: schema.maybe(schema.string()),
+          include_finished: schema.maybe(schema.string()),
+          task_id: schema.maybe(schema.string()),
         }),
       },
     },
     async (context, request, response) => {
       try {
-        const { dataSourceId, wlmGroupId: wlmGroup } = request.query as {
+        const {
+          dataSourceId,
+          wlmGroupId: wlmGroup,
+          cached,
+          include_finished: includeFinished,
+          task_id: taskId,
+        } = request.query as {
           dataSourceId?: string;
           wlmGroupId?: string;
+          cached?: string;
+          include_finished?: string;
+          task_id?: string;
         };
 
         // Call the appropriate API based on whether wlm_group is provided
         const hasGroup = typeof wlmGroup === 'string' && wlmGroup.trim().length > 0;
+        const params: any = {};
+        if (hasGroup) params.wlmGroupId = wlmGroup;
+        if (cached) params.cached = cached;
+        if (includeFinished) params.include_finished = includeFinished;
+        if (taskId) params.task_id = taskId;
+
         let res;
 
         if (!dataSourceEnabled || !dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           res = hasGroup
-            ? await client('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
-            : await client('queryInsights.getLiveQueries');
+            ? await client('queryInsights.getLiveQueriesWLMGroup', params)
+            : await client('queryInsights.getLiveQueries', params);
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
           res = hasGroup
-            ? await client.callAPI('queryInsights.getLiveQueriesWLMGroup', { wlmGroupId: wlmGroup })
-            : await client.callAPI('queryInsights.getLiveQueries', {});
+            ? await client.callAPI('queryInsights.getLiveQueriesWLMGroup', params)
+            : await client.callAPI('queryInsights.getLiveQueries', params);
         }
 
         if (!res || res.ok === false) {

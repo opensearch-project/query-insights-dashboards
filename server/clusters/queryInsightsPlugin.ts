@@ -177,9 +177,11 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getLiveQueriesWLMGroup = ca({
     url: {
-      fmt: `/_insights/live_queries?wlmGroupId=<%=wlmGroupId%>`,
+      fmt: `/_insights/live_queries?wlmGroupId=<%=wlmGroupId%><% if (cached) { %>&cached=<%=cached%><% } %><% if (include_finished) { %>&include_finished=<%=include_finished%><% } %>`,
       req: {
         wlmGroupId: { type: 'string', required: true },
+        cached: { type: 'string', required: false },
+        include_finished: { type: 'string', required: false },
       },
     },
     method: 'GET',
