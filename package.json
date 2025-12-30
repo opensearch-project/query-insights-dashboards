@@ -28,7 +28,7 @@
     "postbuild": "echo Renaming build artifact to [$npm_package_config_id-$npm_package_version.zip] && mv build/$npm_package_config_id*.zip build/$npm_package_config_id-$npm_package_version.zip"
   },
   "dependencies": {
-    "echarts": "^5.6.0",
+    "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
