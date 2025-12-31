@@ -1,0 +1,77 @@
+.qiChevronSteps {
+  display: flex;
+  width: 1200px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.qiChevronStep {
+  position: relative;
+  flex: 1;
+  padding: 8px 14px;
+  font-weight: 600;
+  text-align: center;
+  background: #e5e7eb;
+  color: #343741;
+  transition: background-color 200ms ease-in-out;
+  font-size: 12px;
+}
+
+.qiChevronStep:not(.qiChevronStep--last)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -14px;
+  width: 0;
+  height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-left: 14px solid #e5e7eb;
+  z-index: 2;
+}
+
+.qiChevronStep:not(.qiChevronStep--first)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-left: 14px solid #ffffff;
+  z-index: 1;
+}
+
+.qiChevronStep--inactive {
+  background: #e5e7eb;
+  color: #343741;
+}
+.qiChevronStep--inactive:not(.qiChevronStep--last)::after {
+  border-left-color: #e5e7eb;
+}
+
+.qiChevronStep--complete {
+  background: #017d73;
+  color: #fff;
+}
+.qiChevronStep--complete:not(.qiChevronStep--last)::after {
+  border-left-color: #017d73;
+}
+
+.qiChevronStep--current {
+  background: #0078d4;
+  color: #fff;
+}
+.qiChevronStep--current:not(.qiChevronStep--last)::after {
+  border-left-color: #0078d4;
+}
+
+.qiChevronStep--failed {
+  background: #bd271e;
+  color: #fff;
+}
+.qiChevronStep--failed:not(.qiChevronStep--last)::after {
+  border-left-color: #bd271e;
+}
