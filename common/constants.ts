@@ -14,6 +14,7 @@ export const INDICES = 'Indices';
 export const SEARCH_TYPE = 'Search Type';
 export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
+export const WLM_GROUP = 'WLM Group';
 export const GROUP_BY = 'Group by';
 export const AVERAGE_LATENCY = 'Average Latency';
 export const AVERAGE_CPU_TIME = 'Average CPU Time';
@@ -71,6 +72,7 @@ export const TOP_N_DISPLAY_LIMIT = 9;
 export const DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR = false;
 export const WLM_GROUP_ID_PARAM = 'wlmGroupId';
 export const ALL_WORKLOAD_GROUPS_TEXT = 'All workload groups';
+export const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
 export const CHART_COLORS = [
   '#1f77b4',
   '#ff7f0e',

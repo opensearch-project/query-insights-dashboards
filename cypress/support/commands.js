@@ -326,3 +326,16 @@ Cypress.Commands.add('enableWlmMode', (auth) => {
       );
     });
 });
+Cypress.Commands.add('setTypeFilter', (type) => {
+  cy.contains('button', 'Type').click();
+  cy.contains('[role="option"]', type).click();
+  cy.get('body').click(0, 0);
+});
+
+Cypress.Commands.add('resetTypeFilterToNone', () => {
+  cy.contains('button', 'Type').click();
+  cy.get('[role="option"][aria-selected="true"]').each(($el) => {
+    cy.wrap($el).click();
+  });
+  cy.get('body').click(0, 0);
+});

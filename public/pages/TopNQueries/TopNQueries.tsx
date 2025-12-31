@@ -44,6 +44,7 @@ import {
   getTimeAndUnitFromString,
 } from '../../../common/utils/MetricUtils';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
+import { sharedDataSourceState } from '../../shared-state';
 
 export const QUERY_INSIGHTS = '/queryInsights';
 export const CONFIGURATION = '/configuration';
@@ -99,6 +100,23 @@ const TopNQueries = ({
   const dataSourceId = dataSourceFromUrl.id;
 
   const [dataSource, setDataSource] = useState<DataSourceOption>(dataSourceFromUrl);
+
+  // Sync with shared state
+  useEffect(() => {
+    const currentSharedState = sharedDataSourceState.getDataSource();
+    if (currentSharedState.id || currentSharedState.label !== 'Local cluster') {
+      setDataSource(currentSharedState);
+    } else if (dataSource?.id || dataSource?.label !== 'Local cluster') {
+      sharedDataSourceState.setDataSource(dataSource);
+    }
+
+    return sharedDataSourceState.subscribe(setDataSource);
+  }, []);
+
+  const wrappedSetDataSource = (newDataSource: DataSourceOption) => {
+    setDataSource(newDataSource);
+    sharedDataSourceState.setDataSource(newDataSource);
+  };
 
   const [recentlyUsedRanges, setRecentlyUsedRanges] = useState([
     { start: currStart, end: currEnd },
@@ -416,7 +434,7 @@ const TopNQueries = ({
   }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
 
   return (
-    <DataSourceContext.Provider value={{ dataSource, setDataSource }}>
+    <DataSourceContext.Provider value={{ dataSource, setDataSource: wrappedSetDataSource }}>
       <div style={{ padding: '35px 35px' }}>
         <Switch>
           <Route exact path="/query-details">

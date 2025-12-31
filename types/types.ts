@@ -22,6 +22,7 @@ export interface SearchQueryRecord {
   task_resource_usages: Task[];
   id: string;
   group_by: string;
+  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
 }
 
 export interface Measurement {
@@ -78,7 +79,7 @@ export interface LiveSearchQueryRecord {
   };
   node_id: string;
   is_cancelled: boolean;
-  wlm_group_id: string;
+  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
 }
 
 export interface LiveSearchQueryResponse {

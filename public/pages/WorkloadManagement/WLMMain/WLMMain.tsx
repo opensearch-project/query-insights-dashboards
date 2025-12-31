@@ -26,9 +26,10 @@ import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_managem
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../../types';
 import { WLM_CREATE } from '../WorkloadManagement';
 import { DataSourceContext } from '../WorkloadManagement';
-import { WLMDataSourceMenu } from '../../../components/DataSourcePicker';
+import { QueryInsightsDataSourceMenu } from '../../../components/DataSourcePicker';
 import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import { getVersionOnce, isVersion33OrHigher } from '../../../utils/version-utils';
+import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 
 export const WLM = '/workloadManagement';
 
@@ -40,6 +41,7 @@ interface WorkloadGroupData {
   totalRejections: number;
   totalCancellations: number;
   topQueriesLink: string;
+  liveQueriesLink: string;
   cpuStats: number[];
   memStats: number[];
   cpuLimit: number;
@@ -129,6 +131,9 @@ export const WorkloadManagementMain = ({
     [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
   const [isQueryInsightsAvailable, setIsQueryInsightsAvailable] = useState(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
+    boolean
+  >(false);
 
   // === Table Sorting / Pagination ===
   const pagination = {
@@ -164,7 +169,10 @@ export const WorkloadManagementMain = ({
   const checkQueryInsightsAvailability = async () => {
     try {
       const version = await getVersionOnce(dataSource?.id || '');
-      if (!isVersion33OrHigher(version)) {
+      const versionSupported = isVersion33OrHigher(version);
+      setQueryInsightWlmNavigationSupported(versionSupported);
+
+      if (!versionSupported) {
         setIsQueryInsightsAvailable(false);
         return;
       }
@@ -176,6 +184,7 @@ export const WorkloadManagementMain = ({
         res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries);
       setIsQueryInsightsAvailable(hasValidStructure);
     } catch (error) {
+      setQueryInsightWlmNavigationSupported(false);
       setIsQueryInsightsAvailable(false);
     }
   };
@@ -259,7 +268,7 @@ export const WorkloadManagementMain = ({
       for (const [groupId, groupStats] of Object.entries(aggregatedGroups) as Array<
         [string, WorkloadGroupData]
       >) {
-        const name = groupId === 'DEFAULT_WORKLOAD_GROUP' ? groupId : idToName[groupId];
+        const name = groupId === DEFAULT_WORKLOAD_GROUP ? groupId : idToName[groupId];
         const cpuUsage = Math.round((groupStats.cpuUsage ?? 0) * 100);
         const memoryUsage = Math.round((groupStats.memoryUsage ?? 0) * 100);
         const { cpuLimit = 100, memLimit = 100 } = groupIdToLimits[groupId] || {};
@@ -271,7 +280,8 @@ export const WorkloadManagementMain = ({
           totalCompletions: groupStats.totalCompletions,
           totalRejections: groupStats.totalRejections,
           totalCancellations: groupStats.totalCancellations,
-          topQueriesLink: '', // not available yet
+          topQueriesLink: '',
+          liveQueriesLink: '',
           cpuStats: computeBoxStats(groupStats.cpuStats),
           memStats: computeBoxStats(groupStats.memStats),
           cpuLimit,
@@ -479,7 +489,7 @@ export const WorkloadManagementMain = ({
   // === Lifecycle ===
   useEffect(() => {
     checkQueryInsightsAvailability();
-  }, []);
+  }, [dataSource?.id]);
 
   useEffect(() => {
     fetchClusterLevelStats();
@@ -491,7 +501,7 @@ export const WorkloadManagementMain = ({
 
     // Cleanup
     return () => clearInterval(intervalId);
-  }, [fetchClusterWorkloadGroupStats]);
+  }, [fetchClusterWorkloadGroupStats, dataSource?.id]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -513,10 +523,7 @@ export const WorkloadManagementMain = ({
       name: <EuiText size="m">Workload group name</EuiText>,
       sortable: true,
       render: (name: string) => (
-        <EuiLink
-          onClick={() => history.push(`/wlm-details?name=${name}`)}
-          style={{ color: '#0073e6' }}
-        >
+        <EuiLink onClick={() => history.push(`/wlm-details?name=${name}`)} color="primary">
           {name}
         </EuiLink>
       ),
@@ -526,20 +533,19 @@ export const WorkloadManagementMain = ({
       name: <EuiText size="m">CPU usage</EuiText>,
       sortable: true,
       render: (cpuUsage: number, item: WorkloadGroupData) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ReactECharts
-            option={getBoxplotOption(item.cpuStats, item.cpuLimit)}
-            style={{ width: 120, height: 50 }}
-          />
-          <EuiText
-            size="s"
-            style={{
-              color: cpuUsage > item.cpuLimit ? '#BD271E' : undefined,
-            }}
-          >
-            {cpuUsage}%
-          </EuiText>
-        </div>
+        <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+          <EuiFlexItem grow={false}>
+            <ReactECharts
+              option={getBoxplotOption(item.cpuStats, item.cpuLimit)}
+              style={{ width: 120, height: 50 }}
+            />
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiText size="s" color={cpuUsage > item.cpuLimit ? 'danger' : undefined}>
+              {cpuUsage}%
+            </EuiText>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       ),
     },
     {
@@ -547,20 +553,19 @@ export const WorkloadManagementMain = ({
       name: <EuiText size="m">Memory usage</EuiText>,
       sortable: true,
       render: (memoryUsage: number, item: WorkloadGroupData) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ReactECharts
-            option={getBoxplotOption(item.memStats, item.memLimit)}
-            style={{ width: 120, height: 50 }}
-          />
-          <EuiText
-            size="s"
-            style={{
-              color: memoryUsage > item.memLimit ? '#BD271E' : undefined,
-            }}
-          >
-            {memoryUsage}%
-          </EuiText>
-        </div>
+        <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+          <EuiFlexItem grow={false}>
+            <ReactECharts
+              option={getBoxplotOption(item.memStats, item.memLimit)}
+              style={{ width: 120, height: 50 }}
+            />
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiText size="s" color={memoryUsage > item.memLimit ? 'danger' : undefined}>
+              {memoryUsage}%
+            </EuiText>
+          </EuiFlexItem>
+        </EuiFlexGroup>
       ),
     },
     {
@@ -581,22 +586,54 @@ export const WorkloadManagementMain = ({
       sortable: true,
       render: (val: number) => val.toLocaleString(),
     },
-    ...(isQueryInsightsAvailable
+    ...(isQueryInsightsAvailable && queryInsightWlmNavigationSupported
       ? [
+          {
+            field: 'topQueriesLink',
+            name: <EuiText size="m">Top N Queries</EuiText>,
+            render: (link: string, item: WorkloadGroupData) => (
+              <EuiFlexGroup alignItems="center" gutterSize="xs" responsive={false}>
+                <EuiFlexItem grow={false}>
+                  <EuiLink
+                    onClick={() => {
+                      const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
+                      core.application.navigateToApp('query-insights-dashboards', {
+                        path: `#/queryInsights?wlmGroupId=${item.groupId}${dsParam}`,
+                      });
+                    }}
+                    color="primary"
+                  >
+                    View
+                  </EuiLink>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiIcon type="popout" size="s" />
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            ),
+          },
           {
             field: 'liveQueriesLink',
             name: <EuiText size="m">Live Queries</EuiText>,
             render: (link: string, item: WorkloadGroupData) => (
-              <EuiLink
-                onClick={() => {
-                  core.application.navigateToApp('query-insights-dashboards', {
-                    path: `#/LiveQueries?wlmGroupId=${item.groupId}`,
-                  });
-                }}
-                style={{ color: '#0073e6', display: 'flex', alignItems: 'center', gap: '5px' }}
-              >
-                View <EuiIcon type="popout" size="s" />
-              </EuiLink>
+              <EuiFlexGroup alignItems="center" gutterSize="xs" responsive={false}>
+                <EuiFlexItem grow={false}>
+                  <EuiLink
+                    onClick={() => {
+                      const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
+                      core.application.navigateToApp('query-insights-dashboards', {
+                        path: `#/LiveQueries?wlmGroupId=${item.groupId}${dsParam}`,
+                      });
+                    }}
+                    color="primary"
+                  >
+                    View
+                  </EuiLink>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiIcon type="popout" size="s" />
+                </EuiFlexItem>
+              </EuiFlexGroup>
             ),
           },
         ]
@@ -605,7 +642,7 @@ export const WorkloadManagementMain = ({
 
   return (
     <div>
-      <WLMDataSourceMenu
+      <QueryInsightsDataSourceMenu
         coreStart={core}
         depsStart={depsStart}
         params={params}
@@ -670,7 +707,7 @@ export const WorkloadManagementMain = ({
         <EuiFlexItem>
           <EuiPanel paddingSize="m">
             {/* Search Bar & Refresh Button */}
-            <EuiFlexGroup gutterSize="m" alignItems="center" style={{ marginBottom: '20px' }}>
+            <EuiFlexGroup gutterSize="m" alignItems="center">
               <EuiFlexItem>
                 <EuiFieldSearch
                   placeholder="Search workload groups"
@@ -697,7 +734,7 @@ export const WorkloadManagementMain = ({
                 </EuiButton>
               </EuiFlexItem>
             </EuiFlexGroup>
-            <EuiSpacer size="xs" />
+            <EuiSpacer size="m" />
             <EuiBasicTable<WorkloadGroupData>
               data-testid="workload-table"
               items={filteredData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
