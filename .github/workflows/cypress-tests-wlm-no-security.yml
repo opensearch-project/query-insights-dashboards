@@ -75,7 +75,7 @@ jobs:
       - name: Build Required Plugins
         run: |
           cd OpenSearch
-          ./gradlew :modules:autotagging-commons:assemble
+          ./gradlew :modules:rule-framework:assemble
           ./gradlew :plugins:workload-management:assemble
 
       - name: Copy Plugins to Query Insights (fail-fast)
@@ -87,20 +87,20 @@ jobs:
           echo "OPENSEARCH_VERSION=${OPENSEARCH_VERSION}"
           echo "PLUGIN_VERSION=${PLUGIN_VERSION}"
 
-          AUTO_ZIP="OpenSearch/modules/autotagging-commons/build/distributions/autotagging-commons-${PLUGIN_VERSION}.zip"
+          RULE_ZIP="OpenSearch/modules/rule-framework/build/distributions/rule-framework-${PLUGIN_VERSION}.zip"
           WLM_ZIP="OpenSearch/plugins/workload-management/build/distributions/workload-management-${PLUGIN_VERSION}.zip"
 
           echo "Looking for:"
-          echo "  $AUTO_ZIP"
+          echo "  $RULE_ZIP"
           echo "  $WLM_ZIP"
 
-          ls -lah OpenSearch/modules/autotagging-commons/build/distributions || true
+          ls -lah OpenSearch/modules/rule-framework/build/distributions || true
           ls -lah OpenSearch/plugins/workload-management/build/distributions || true
 
-          test -f "$AUTO_ZIP"
+          test -f "$RULE_ZIP"
           test -f "$WLM_ZIP"
 
-          cp "$AUTO_ZIP" query-insights/plugins/
+          cp "$RULE_ZIP" query-insights/plugins/
           cp "$WLM_ZIP" query-insights/plugins/
 
           echo "Copied into query-insights/plugins:"
