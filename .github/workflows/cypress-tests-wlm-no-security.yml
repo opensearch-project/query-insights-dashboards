@@ -75,7 +75,6 @@ jobs:
       - name: Build Required Plugins
         run: |
           cd OpenSearch
-          ./gradlew :modules:rule-framework:assemble
           ./gradlew :plugins:workload-management:assemble
 
       - name: Copy Plugins to Query Insights (fail-fast)
@@ -87,20 +86,15 @@ jobs:
           echo "OPENSEARCH_VERSION=${OPENSEARCH_VERSION}"
           echo "PLUGIN_VERSION=${PLUGIN_VERSION}"
 
-          RULE_ZIP="OpenSearch/modules/rule-framework/build/distributions/rule-framework-${PLUGIN_VERSION}.zip"
           WLM_ZIP="OpenSearch/plugins/workload-management/build/distributions/workload-management-${PLUGIN_VERSION}.zip"
 
           echo "Looking for:"
-          echo "  $RULE_ZIP"
           echo "  $WLM_ZIP"
 
-          ls -lah OpenSearch/modules/rule-framework/build/distributions || true
           ls -lah OpenSearch/plugins/workload-management/build/distributions || true
 
-          test -f "$RULE_ZIP"
           test -f "$WLM_ZIP"
 
-          cp "$RULE_ZIP" query-insights/plugins/
           cp "$WLM_ZIP" query-insights/plugins/
 
           echo "Copied into query-insights/plugins:"
