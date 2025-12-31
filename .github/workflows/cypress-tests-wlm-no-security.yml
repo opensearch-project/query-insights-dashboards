@@ -99,7 +99,6 @@ jobs:
 
           test -f "$AUTO_ZIP"
           test -f "$WLM_ZIP"
-          test -f "$QI_ZIP"
 
           cp "$AUTO_ZIP" query-insights/plugins/
           cp "$WLM_ZIP" query-insights/plugins/
