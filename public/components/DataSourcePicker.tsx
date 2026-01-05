@@ -11,11 +11,7 @@ import {
 } from 'src/plugins/data_source_management/public';
 import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
-import {
-  getDataSourceEnabledUrl,
-  isDataSourceCompatible,
-  isWLMDataSourceCompatible,
-} from '../utils/datasource-utils';
+import { getDataSourceEnabledUrl, isDataSourceCompatible } from '../utils/datasource-utils';
 
 export interface DataSourceMenuProps {
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -27,9 +23,10 @@ export interface DataSourceMenuProps {
   onManageDataSource: () => void;
   onSelectedDataSource: () => void;
   dataSourcePickerReadOnly: boolean;
+  dataSourceFilter?: (dataSource: any) => boolean;
 }
 
-export const QueryInsightsDataSourceMenu = React.memo(
+export const DataSourceMenu = React.memo(
   (props: DataSourceMenuProps) => {
     const {
       coreStart,
@@ -41,9 +38,12 @@ export const QueryInsightsDataSourceMenu = React.memo(
       onManageDataSource,
       onSelectedDataSource,
       dataSourcePickerReadOnly,
+      dataSourceFilter = isDataSourceCompatible,
     } = props;
     const { setHeaderActionMenu } = params;
-    const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
+    const DataSourceMenuComponent = dataSourceManagement?.ui.getDataSourceMenu<
+      DataSourceSelectableConfig
+    >();
 
     const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
@@ -54,7 +54,7 @@ export const QueryInsightsDataSourceMenu = React.memo(
     };
 
     return dataSourceEnabled ? (
-      <DataSourceMenu
+      <DataSourceMenuComponent
         onManageDataSource={onManageDataSource}
         setMenuMountPoint={setHeaderActionMenu}
         componentType={dataSourcePickerReadOnly ? 'DataSourceView' : 'DataSourceSelectable'}
@@ -63,10 +63,12 @@ export const QueryInsightsDataSourceMenu = React.memo(
           savedObjects: coreStart.savedObjects.client,
           notifications: coreStart.notifications,
           activeOption:
-            selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
+            selectedDataSource?.id || selectedDataSource?.label
+              ? [selectedDataSource]
+              : [{ id: '', label: 'Local cluster' }],
           onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
           fullWidth: true,
-          dataSourceFilter: isDataSourceCompatible,
+          dataSourceFilter,
         }}
       />
     ) : null;
@@ -76,49 +78,10 @@ export const QueryInsightsDataSourceMenu = React.memo(
     prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
 );
 
-export const WLMDataSourceMenu = React.memo(
-  (props: DataSourceMenuProps) => {
-    const {
-      coreStart,
-      depsStart,
-      dataSourceManagement,
-      params,
-      setDataSource,
-      selectedDataSource,
-      onManageDataSource,
-      onSelectedDataSource,
-      dataSourcePickerReadOnly,
-    } = props;
-    const { setHeaderActionMenu } = params;
-    const DataSourceMenu = dataSourceManagement?.ui.getDataSourceMenu<DataSourceSelectableConfig>();
+// Use the same component for both Query Insights and WLM
+export const QueryInsightsDataSourceMenu = (
+  props: Omit<DataSourceMenuProps, 'dataSourceFilter'>
+) => <DataSourceMenu {...props} dataSourceFilter={isDataSourceCompatible} />;
 
-    const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
-
-    const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
-      window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
-      setDataSource(dataSources[0]);
-      onSelectedDataSource();
-    };
-
-    return dataSourceEnabled ? (
-      <DataSourceMenu
-        onManageDataSource={onManageDataSource}
-        setMenuMountPoint={setHeaderActionMenu}
-        componentType={dataSourcePickerReadOnly ? 'DataSourceView' : 'DataSourceSelectable'}
-        componentConfig={{
-          onManageDataSource,
-          savedObjects: coreStart.savedObjects.client,
-          notifications: coreStart.notifications,
-          activeOption:
-            selectedDataSource.id || selectedDataSource.label ? [selectedDataSource] : undefined,
-          onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
-          fullWidth: true,
-          dataSourceFilter: isWLMDataSourceCompatible,
-        }}
-      />
-    ) : null;
-  },
-  (prevProps, newProps) =>
-    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
-    prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
-);
+// Alias for backward compatibility
+export const WLMDataSourceMenu = QueryInsightsDataSourceMenu;

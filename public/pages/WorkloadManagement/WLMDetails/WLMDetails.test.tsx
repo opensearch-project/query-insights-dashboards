@@ -164,9 +164,28 @@ describe('WLMDetails Component', () => {
           ],
         });
       }
-      // 3) GET stats (ignored here)
+      // 3) GET stats
       if (path.startsWith('/api/_wlm/stats')) {
-        return Promise.resolve({ body: {} });
+        return Promise.resolve({
+          'node-1': {
+            workload_groups: {
+              'wg-123': {
+                cpu: { current_usage: 0.5 },
+                memory: { current_usage: 0.3 },
+                total_completions: 100,
+                total_rejections: 5,
+                total_cancellations: 2,
+              },
+              DEFAULT_WORKLOAD_GROUP: {
+                cpu: { current_usage: 0.2 },
+                memory: { current_usage: 0.1 },
+                total_completions: 50,
+                total_rejections: 1,
+                total_cancellations: 0,
+              },
+            },
+          },
+        });
       }
       return Promise.resolve({ body: {} });
     });
@@ -318,6 +337,21 @@ describe('WLMDetails Component', () => {
       }
       if (path.includes('/_wlm/stats/abc123')) {
         return Promise.reject(new Error('Stats fetch failed'));
+      }
+      if (path.startsWith('/api/_wlm/stats')) {
+        return Promise.resolve({
+          'node-1': {
+            workload_groups: {
+              abc123: {
+                cpu: { current_usage: 0.5 },
+                memory: { current_usage: 0.3 },
+                total_completions: 100,
+                total_rejections: 5,
+                total_cancellations: 2,
+              },
+            },
+          },
+        });
       }
       return Promise.resolve({ body: {} });
     });

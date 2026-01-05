@@ -1,4 +1,4 @@
-name: Cypress e2e integration tests workflow
+name: Cypress e2e integration tests workflow for Query Insights
 on:
   pull_request:
     branches:
@@ -280,7 +280,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000,excludeSpecPattern=cypress/e2e/wlm/**/*
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000 --spec cypress/e2e/qi/**/*
           wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome
@@ -292,11 +292,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: cypress-screenshots-${{ matrix.os }}
+          name: cypress-screenshots-qi-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: cypress-videos-${{ matrix.os }}
+          name: cypress-videos-qi-${{ matrix.os }}
           path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/videos

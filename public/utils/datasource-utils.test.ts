@@ -177,6 +177,7 @@ describe('Tests datasource utils', () => {
       expect(
         isWLMDataSourceCompatible({
           attributes: {
+            installedPlugins: ['query-insights'],
             dataSourceVersion: '3.1.0',
             title: '',
             endpoint: '',
@@ -191,6 +192,7 @@ describe('Tests datasource utils', () => {
       expect(
         isWLMDataSourceCompatible({
           attributes: {
+            installedPlugins: ['query-insights'],
             dataSourceVersion: '3.3.0',
             title: '',
             endpoint: '',

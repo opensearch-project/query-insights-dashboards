@@ -37,9 +37,9 @@ import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
 } from '../../../utils/datasource-utils';
+import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 
 // === Constants & Types ===
-const DEFAULT_WORKLOAD_GROUP = 'DEFAULT_WORKLOAD_GROUP';
 const DEFAULT_RESOURCE_LIMIT = 100;
 
 // --- Pagination Constants ---
