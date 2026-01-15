@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import './TaskDetailsFlyout.scss';
 import {
   EuiFlyout,
   EuiFlyoutHeader,
@@ -84,66 +83,19 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
     return 'running';
   };
 
-  const ChevronStatus: React.FC<{
-    state: TaskState;
-    runningSeconds?: number;
-  }> = ({ state, runningSeconds }) => {
-    const steps: Array<{ key: TaskState; label: string; duration?: string }> = [
-      { key: 'start', label: 'Start' },
-      {
-        key: 'running',
-        label:
-          state === 'running' && runningSeconds != null
-            ? `Running - ${Duration.fromObject({ seconds: runningSeconds }).toFormat('mm:ss')}`
-            : 'Running',
-      },
-      {
-        key: state === 'failed' ? 'failed' : 'completed',
-        label:
-          state === 'failed' ? (taskDetails?.is_cancelled ? 'Cancelled' : 'Failed') : 'Completed',
-      },
-    ];
-
-    const statusOf = (step: 'start' | 'running' | 'completed' | 'failed') => {
-      if (state === 'failed') {
-        if (step === 'failed') return 'failed';
-        return 'inactive';
-      }
-
-      if (state === 'completed') {
-        if (step === 'completed') return 'complete';
-        return 'inactive';
-      }
-
-      if (state === 'running') {
-        if (step === 'running') return 'current';
-        if (step === 'start') return 'inactive';
-        return 'inactive';
-      }
-
-      return 'inactive';
-    };
-
-    return (
-      <div className="qiChevronSteps">
-        {steps.map((s, i) => {
-          const st = statusOf(s.key);
-          return (
-            <div
-              key={`${s.key}-${i}`}
-              className={`qiChevronStep qiChevronStep--${st} ${
-                i === 0 ? 'qiChevronStep--first' : ''
-              } ${i === steps.length - 1 ? 'qiChevronStep--last' : ''}`}
-            >
-              <span className="qiChevronStep__text">
-                {s.label}
-                {s.duration ?? ''}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
+  const getStatusText = (state: TaskState, runningSeconds?: number): string => {
+    if (state === 'failed') {
+      return taskDetails?.is_cancelled ? 'Cancelled' : 'Failed';
+    }
+    if (state === 'completed') {
+      return 'Completed';
+    }
+    if (state === 'running') {
+      return runningSeconds != null
+        ? `Running - ${Duration.fromObject({ seconds: runningSeconds }).toFormat('mm:ss')}`
+        : 'Running';
+    }
+    return 'Start';
   };
 
   const convertTime = (unixTime: number) => {
@@ -212,15 +164,15 @@ export const TaskDetailsFlyout: React.FC<TaskDetailsFlyoutProps> = ({
                   </EuiText>
                 </EuiFlexItem>
                 <EuiFlexItem>
-                  <ChevronStatus
-                    state={getTaskState(taskDetails)}
-                    runningSeconds={
+                  <EuiText>
+                    {getStatusText(
+                      getTaskState(taskDetails),
                       getTaskState(taskDetails) === 'running' &&
                       taskDetails?.measurements?.latency?.number
                         ? taskDetails.measurements.latency.number / 1e9
                         : undefined
-                    }
-                  />
+                    )}
+                  </EuiText>
                 </EuiFlexItem>
               </EuiFlexGroup>
               <EuiSpacer size="m" />
