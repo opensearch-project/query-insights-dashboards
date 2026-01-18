@@ -203,6 +203,7 @@ jobs:
             if [ "$code" = "200" ]; then
               state=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state // .status.overall.level // "unknown"')
               echo "OpenSearch-Dashboards is ready (state=$state)"
+              sleep 45
               break
             fi
             attempt=$((attempt + 1))

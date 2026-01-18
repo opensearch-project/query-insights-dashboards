@@ -8,6 +8,7 @@ on:
       - "*"
 env:
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
+  OPENSEARCH_BRANCH: 'main'
   QUERY_INSIGHTS_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
@@ -178,6 +179,12 @@ jobs:
           curl -s -H 'Content-Type: application/json' \
             -X PUT 'http://localhost:9200/_wlm/workload_group' \
             -d '{"name":"search_group","resiliency_mode":"soft","resource_limits":{"cpu":0.2,"memory":0.2}}'
+          
+          echo "Verifying WLM groups via Dashboards API:"
+          curl -s http://localhost:5601/api/_wlm/workload_group | jq '.' || echo "Failed to fetch WLM groups via Dashboards"
+          
+          echo "Verifying Dashboards plugin is loaded:"
+          curl -s http://localhost:5601/api/status | jq '.status.plugin' || true
 
       - name: Cypress tests
         uses: cypress-io/github-action@v5
@@ -191,6 +198,12 @@ jobs:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
           CI: true
         timeout-minutes: 120
+
+      - name: Print Dashboards logs on failure
+        if: failure()
+        run: |
+          echo "=== Last 500 lines of Dashboards logs ==="
+          tail -n 500 OpenSearch-Dashboards/dashboards.log || true
 
       - uses: actions/upload-artifact@v4
         if: failure()
