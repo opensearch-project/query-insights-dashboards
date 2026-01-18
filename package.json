@@ -1,11 +1,11 @@
 {
   "name": "opensearch_query_insights_dashboards",
-  "version": "3.4.0.0",
+  "version": "3.5.0.0",
   "description": "OpenSearch Dashboards plugin for Query Insights",
   "main": "index.js",
   "opensearchDashboards": {
-    "version": "3.4.0",
-    "templateVersion": "3.4.0"
+    "version": "3.5.0",
+    "templateVersion": "3.5.0"
   },
   "license": "Apache-2.0",
   "homepage": "https://github.com/opensearch-project/query-insights-dashboards",
@@ -28,7 +28,7 @@
     "postbuild": "echo Renaming build artifact to [$npm_package_config_id-$npm_package_version.zip] && mv build/$npm_package_config_id*.zip build/$npm_package_config_id-$npm_package_version.zip"
   },
   "dependencies": {
-    "echarts": "^5.6.0",
+    "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
@@ -61,7 +61,8 @@
     "@babel/runtime-corejs3": "^7.22.9",
     "pbkdf2": "3.1.5",
     "form-data": "4.0.4",
-    "sha.js": "^2.4.12"
+    "sha.js": "^2.4.12",
+    "min-document": "^2.19.1"
   },
   "devDependencies": {
     "@cypress/webpack-preprocessor": "^6.0.1",

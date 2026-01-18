@@ -16,6 +16,21 @@ window.URL = {
   },
 };
 
+// Mock matchMedia for Monaco editor
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
 jest.mock('@elastic/eui/lib/components/form/form_row/make_id', () => () => 'random_id');
 
 jest.mock('@elastic/eui/lib/services/accessibility/html_id_generator', () => ({

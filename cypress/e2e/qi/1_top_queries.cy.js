@@ -260,6 +260,9 @@ describe('Query Insights Dashboard', () => {
     // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.navigateToOverview();
+    // Ensure table has data before attempting to sort
+    cy.get('.euiTableRow', { timeout: 30000 }).should('have.length.greaterThan', 0);
+    cy.get('body').should('not.contain', 'No items found');
     // Click the Timestamp column header to sort
     cy.get('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
@@ -308,7 +311,7 @@ describe('Query Insights Dashboard', () => {
     clearAll();
     cy.wait(10000);
     cy.reload();
-    cy.contains('No items found');
+    cy.contains('No items found').should('be.visible');
   });
 
   it('should paginate the query table', () => {
@@ -324,6 +327,7 @@ describe('Query Insights Dashboard', () => {
   });
 
   it('should get minimal details of the query using verbose=false', () => {
+    cy.wait(15000);
     const to = new Date().toISOString();
     const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
@@ -344,7 +348,10 @@ describe('Query Insights Dashboard', () => {
         const responseData = response.body.response;
         expect(responseData).to.have.property('top_queries');
         expect(responseData.top_queries).to.be.an('array');
-        expect(responseData.top_queries.length).to.be.greaterThan(0);
+        expect(
+          responseData.top_queries.length,
+          'Expected at least one query in top_queries array'
+        ).to.be.greaterThan(0);
 
         const firstQuery = responseData.top_queries[0];
         const requiredFields = [
@@ -379,9 +386,9 @@ describe('Query Insights Dashboard', () => {
           expect(firstQuery.measurements[metric]).to.be.an('object');
         });
       });
-
-    after(() => clearAll());
   });
+
+  after(() => clearAll());
 });
 
 describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED)', () => {
@@ -410,6 +417,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -432,6 +440,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -481,6 +490,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
@@ -515,6 +525,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'Indices',
       'Search Type',
       'Coordinator Node ID',
+      'WLM Group',
       'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);

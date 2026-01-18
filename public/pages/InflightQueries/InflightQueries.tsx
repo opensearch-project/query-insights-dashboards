@@ -115,7 +115,9 @@ export const InflightQueries = ({
   );
 
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
-  const [wlmGroupsSupported, setWlmGroupsSupported] = useState<boolean>(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
+    boolean
+  >(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -143,7 +145,7 @@ export const InflightQueries = ({
       try {
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
-        setWlmGroupsSupported(versionSupported);
+        setQueryInsightWlmNavigationSupported(versionSupported);
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -154,7 +156,7 @@ export const InflightQueries = ({
         }
       } catch (e) {
         console.warn('Failed to check version for WLM groups support', e);
-        setWlmGroupsSupported(false);
+        setQueryInsightWlmNavigationSupported(false);
         setWlmAvailable(false);
       }
     };
@@ -234,7 +236,7 @@ export const InflightQueries = ({
     // fetch group NAMES only if plugin exists and version supported
     const idToNameMap: Record<string, string> = {};
     try {
-      if (wlmAvailable && wlmGroupsSupported) {
+      if (wlmAvailable && queryInsightWlmNavigationSupported) {
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
         });
@@ -249,12 +251,12 @@ export const InflightQueries = ({
       console.warn('[LiveQueries] Failed to fetch workload groups', e);
     }
 
-    const options = wlmGroupsSupported
+    const options = queryInsightWlmNavigationSupported
       ? Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }))
       : [];
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroupId, wlmGroupsSupported]);
+  }, [core.http, dataSource?.id, wlmGroupId, queryInsightWlmNavigationSupported]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
@@ -351,7 +353,7 @@ export const InflightQueries = ({
     if (isFetching.current) return;
     isFetching.current = true;
     try {
-      if (wlmGroupsSupported) {
+      if (queryInsightWlmNavigationSupported) {
         try {
           await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
         } catch (e) {
@@ -366,7 +368,7 @@ export const InflightQueries = ({
     } finally {
       isFetching.current = false;
     }
-  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries, wlmGroupsSupported]);
+  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries, queryInsightWlmNavigationSupported]);
 
   useEffect(() => {
     void fetchLiveQueriesSafe();
@@ -377,7 +379,12 @@ export const InflightQueries = ({
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refreshInterval, fetchLiveQueriesSafe, wlmGroupsSupported]);
+  }, [
+    autoRefreshEnabled,
+    refreshInterval,
+    fetchLiveQueriesSafe,
+    queryInsightWlmNavigationSupported,
+  ]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [tableQuery, setTableQuery] = useState('');
@@ -518,7 +525,7 @@ export const InflightQueries = ({
       <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="center" gutterSize="m" justifyContent="spaceBetween">
         {/* LEFT: WLM status + optional selector */}
-        {wlmGroupsSupported ? (
+        {queryInsightWlmNavigationSupported ? (
           <EuiFlexGroup gutterSize="none" alignItems="center">
             <EuiBadge
               color="default"
@@ -822,7 +829,7 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      {wlmGroupsSupported && (
+      {queryInsightWlmNavigationSupported && (
         <EuiFlexGroup>
           {/* WLM Group Stats Panels */}
           <EuiFlexItem>
@@ -991,7 +998,7 @@ export const InflightQueries = ({
                 ),
             },
 
-            ...(wlmGroupsSupported
+            ...(queryInsightWlmNavigationSupported
               ? [
                   {
                     name: 'WLM Group',
@@ -1006,8 +1013,11 @@ export const InflightQueries = ({
                         return (
                           <EuiLink
                             onClick={() => {
+                              const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
                               core.application.navigateToApp('workloadManagement', {
-                                path: `#/wlm-details?name=${encodeURIComponent(displayName)}`,
+                                path: `#/wlm-details?name=${encodeURIComponent(
+                                  displayName
+                                )}${dsParam}`,
                               });
                             }}
                             color="primary"
