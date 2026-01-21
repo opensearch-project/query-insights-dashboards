@@ -339,3 +339,44 @@ Cypress.Commands.add('resetTypeFilterToNone', () => {
   });
   cy.get('body').click(0, 0);
 });
+
+Cypress.Commands.add('waitForWlmPlugin', (auth) => {
+  const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+  const timeout = isCI ? 360000 : 120000; // 6 minutes in CI, 2 minutes locally
+
+  cy.log(`=== WLM PLUGIN LOADING ===`);
+  cy.log(`Environment: ${isCI ? 'CI' : 'Local'}`);
+  cy.log(`Timeout: ${timeout}ms (${timeout / 1000} seconds)`);
+
+  // Wait for plugin registration in CI
+  const pluginWait = isCI ? 60000 : 5000; // 60 seconds in CI
+  cy.log(`Initial wait ${pluginWait}ms for WLM plugin registration`);
+  cy.wait(pluginWait);
+
+  cy.visit('/app/workload-management#/workloadManagement', {
+    auth: auth,
+    timeout: timeout,
+  });
+
+  cy.get('body', { timeout: timeout }).should('be.visible');
+
+  // Log page content for debugging
+  cy.get('body').then(($body) => {
+    const pageText = $body.text();
+    cy.log(`Page content preview: ${pageText.substring(0, 300)}...`);
+
+    const hasWlmContent = pageText.includes('Workload groups') || pageText.includes('workload');
+    cy.log(`Has WLM content: ${hasWlmContent}`);
+  });
+
+  // Wait for the main WLM page elements
+  cy.contains('Workload groups', { timeout: timeout }).should('be.visible');
+  cy.get('.euiBasicTable', { timeout: timeout }).should('exist');
+
+  // Additional wait for React components to fully render
+  const renderWait = isCI ? 15000 : 2000;
+  cy.log(`Final wait ${renderWait}ms for React rendering`);
+  cy.wait(renderWait);
+
+  cy.log(`=== WLM PLUGIN LOADING COMPLETE ===`);
+});

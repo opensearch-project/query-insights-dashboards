@@ -21,3 +21,30 @@ if (Cypress.env('security_enabled')) {
 } else {
   Cypress.env('opensearch', `http://${Cypress.env('opensearch_url')}`);
 }
+
+// Warmup for WLM plugin - ensure plugin is loaded before tests run
+// This helps prevent the first test from failing due to plugin initialization time
+// NOTE: Only runs for non-security tests since security tests need auth credentials
+before(() => {
+  // Only run warmup for WLM no-security tests
+  const testFile = Cypress.spec.relative;
+  if (testFile.includes('wlm-no-security')) {
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+
+    // Only do warmup in CI where timing is more critical
+    if (isCI) {
+      cy.log('=== WLM Plugin Warmup (CI only) ===');
+
+      // Short warmup visit to trigger plugin initialization
+      cy.visit('/app/workload-management#/workloadManagement', {
+        failOnStatusCode: false,
+        timeout: 120000,
+      });
+
+      // Wait a bit for the plugin to initialize
+      cy.wait(10000);
+
+      cy.log('=== WLM Plugin Warmup Complete ===');
+    }
+  }
+});
