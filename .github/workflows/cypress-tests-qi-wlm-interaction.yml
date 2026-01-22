@@ -140,21 +140,81 @@ jobs:
           sleep 10
         shell: bash
 
-      - name: Wait for OpenSearch-Dashboards to be ready
+      - name: Wait for OpenSearch-Dashboards HTTP server to start
         run: |
-          echo "Waiting for OpenSearch-Dashboards to start..."
+          cd OpenSearch-Dashboards
+          echo "Waiting for OpenSearch-Dashboards HTTP server..."
           max_attempts=150
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
             if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
-              echo "OpenSearch-Dashboards is ready!"
-              sleep 45
+              echo "HTTP server is responding"
               break
             fi
             attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: waiting 10 seconds..."
+            echo "Attempt $attempt/$max_attempts: waiting 10s..."
             sleep 10
           done
+          if [ $attempt -eq $max_attempts ]; then
+            echo "ERROR: HTTP server failed to start"
+            tail -n 100 dashboards.log
+            exit 1
+          fi
+        shell: bash
+
+      - name: Wait for UI bundles to compile and become ready
+        run: |
+          cd OpenSearch-Dashboards
+          echo "=========================================="
+          echo "Waiting for optimizer to compile bundles"
+          echo "This can take 5-10 minutes in CI"
+          echo "=========================================="
+
+          max_wait=600  # 10 minutes
+          elapsed=0
+          ui_ready=false
+
+          while [ $elapsed -lt $max_wait ]; do
+            # Monitor logs for optimizer completion message
+            # Pattern: "X bundle(s) compiled successfully after Y sec, watching for changes"
+            if grep -qE "[0-9]+ bundles? compiled successfully.*watching for changes" dashboards.log 2>/dev/null; then
+              latest_msg=$(grep -E "bundles? compiled successfully.*watching" dashboards.log | tail -1)
+              echo "Optimizer completed! $(echo "$latest_msg" | grep -oE '[0-9]+ bundles? compiled successfully.*watching for changes')"
+              ui_ready=true
+              break
+            fi
+
+            # Progress update every 30 seconds
+            if [ $((elapsed % 30)) -eq 0 ]; then
+              echo "[${elapsed}s/${max_wait}s] Waiting for bundle compilation..."
+
+              # Show recent optimizer activity if available
+              if tail -50 dashboards.log 2>/dev/null | grep -q "@osd/optimizer"; then
+                recent=$(tail -50 dashboards.log | grep "@osd/optimizer" | tail -1 | grep -oE '\[[0-9]+/[0-9]+\].*' || echo "compiling...")
+                echo "  Status: $recent"
+              fi
+            fi
+
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+          if [ "$ui_ready" = false ]; then
+            echo ""
+            echo "WARNING: Bundle compilation not detected within ${max_wait}s"
+            echo "Continuing anyway - Cypress will handle timeouts if UI is not ready"
+            echo ""
+            echo "=== Last 200 lines of dashboards.log ==="
+            tail -n 200 dashboards.log
+            echo "=========================================="
+          else
+            # Extra wait for plugin initialization
+            echo "Waiting 20s for plugin initialization..."
+            sleep 20
+            echo "=========================================="
+            echo "OpenSearch-Dashboards is fully ready!"
+            echo "=========================================="
+          fi
         shell: bash
 
       - name: Install Cypress

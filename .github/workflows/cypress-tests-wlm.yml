@@ -193,30 +193,83 @@ jobs:
           head -n 100 dashboards.log || true
         shell: bash
 
-      - name: Wait for OpenSearch-Dashboards to be ready
+      - name: Wait for OpenSearch-Dashboards HTTP server to start
         run: |
-          echo "Waiting for OpenSearch-Dashboards to start..."
-          max_attempts=180
+          cd OpenSearch-Dashboards
+          echo "Waiting for OpenSearch-Dashboards HTTP server..."
+          max_attempts=150
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || true)
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || echo "000")
             if [ "$code" = "200" ]; then
-              state=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state // .status.overall.level // "unknown"')
-              echo "OpenSearch-Dashboards is ready (state=$state)"
+              echo "HTTP server is responding"
               break
             fi
             attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: /api/status -> $code; waiting 10s..."
-            if [ $((attempt % 10)) -eq 0 ]; then
-              echo "=== tail dashboards.log ==="
-              tail -n 120 OpenSearch-Dashboards/dashboards.log || true
-              echo "=== tail $LOCAL_DISTRO/os.log ==="
-              tail -n 200 OpenSearch/$LOCAL_DISTRO/os.log || true
-              echo "==========================="
-            fi
+            echo "Attempt $attempt/$max_attempts: HTTP $code, waiting 10s..."
             sleep 10
           done
-          [ $attempt -lt $max_attempts ] || { echo "Timeout waiting for Dashboards"; tail -n 200 OpenSearch-Dashboards/dashboards.log || true; exit 1; }
+          if [ $attempt -eq $max_attempts ]; then
+            echo "ERROR: HTTP server failed to start"
+            tail -n 100 dashboards.log
+            exit 1
+          fi
+        shell: bash
+
+      - name: Wait for UI bundles to compile and become ready
+        run: |
+          cd OpenSearch-Dashboards
+          echo "=========================================="
+          echo "Waiting for optimizer to compile bundles"
+          echo "This can take 5-10 minutes in CI"
+          echo "=========================================="
+
+          max_wait=600  # 10 minutes
+          elapsed=0
+          ui_ready=false
+
+          while [ $elapsed -lt $max_wait ]; do
+            # Monitor logs for optimizer completion message
+            # Pattern: "X bundle(s) compiled successfully after Y sec, watching for changes"
+            if grep -qE "[0-9]+ bundles? compiled successfully.*watching for changes" dashboards.log 2>/dev/null; then
+              latest_msg=$(grep -E "bundles? compiled successfully.*watching" dashboards.log | tail -1)
+              echo "Optimizer completed! $(echo "$latest_msg" | grep -oE '[0-9]+ bundles? compiled successfully.*watching for changes')"
+              ui_ready=true
+              break
+            fi
+
+            # Progress update every 30 seconds
+            if [ $((elapsed % 30)) -eq 0 ]; then
+              echo "[${elapsed}s/${max_wait}s] Waiting for bundle compilation..."
+
+              # Show recent optimizer activity if available
+              if tail -50 dashboards.log 2>/dev/null | grep -q "@osd/optimizer"; then
+                recent=$(tail -50 dashboards.log | grep "@osd/optimizer" | tail -1 | grep -oE '\[[0-9]+/[0-9]+\].*' || echo "compiling...")
+                echo "  Status: $recent"
+              fi
+            fi
+
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+          if [ "$ui_ready" = false ]; then
+            echo ""
+            echo "WARNING: Bundle compilation not detected within ${max_wait}s"
+            echo "Continuing anyway - Cypress will handle timeouts if UI is not ready"
+            echo ""
+            echo "=== Last 200 lines of dashboards.log ==="
+            tail -n 200 dashboards.log
+            echo "=========================================="
+          else
+            # Extra wait for plugin initialization
+            echo "Waiting 20s for plugin initialization..."
+            sleep 20
+            echo "=========================================="
+            echo "OpenSearch-Dashboards is fully ready!"
+            echo "=========================================="
+          fi
+        shell: bash
 
       - name: Verify services are running
         run: |

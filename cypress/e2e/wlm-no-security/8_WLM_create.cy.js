@@ -9,7 +9,17 @@ const auth = WLM_AUTH;
 
 describe('WLM Create Page', () => {
   beforeEach(() => {
-    cy.visit('/app/workload-management#/wlm-create', { auth });
+    // Detect CI environment for appropriate timeouts
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+    const pageLoadTimeout = isCI ? 180000 : 60000; // 3 minutes in CI, 1 minute locally
+
+    cy.visit('/app/workload-management#/wlm-create', {
+      auth,
+      timeout: pageLoadTimeout,
+    });
+
+    // Wait for the page to be fully loaded with the main heading
+    cy.contains('h1', 'Create workload group', { timeout: pageLoadTimeout }).should('exist');
   });
 
   it('renders the full create form with required fields', () => {
