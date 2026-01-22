@@ -26,43 +26,9 @@ import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { formatQueryDisplay } from '../../utils/query-formatter-utils';
 
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
-
-export const formatQueryDisplay = (query: SearchQueryRecord | null): string => {
-  if (!query) {
-    console.log('Query formatting: No query provided');
-    return '';
-  }
-
-  let parsedSource;
-  let formatStatus = 'success';
-  let isMalformed = false;
-
-  if (typeof query.source === 'string') {
-    try {
-      parsedSource = JSON.parse(query.source);
-      formatStatus = 'parsed JSON string';
-    } catch {
-      parsedSource = query.source;
-      // Check if it looks like malformed JSON (has brackets but failed to parse)
-      if (query.source.includes('{') || query.source.includes('[')) {
-        isMalformed = true;
-        formatStatus = 'malformed JSON string';
-      } else {
-        formatStatus = 'plain string';
-      }
-    }
-  } else {
-    parsedSource = query.source;
-    formatStatus = 'object source';
-  }
-
-  const result = JSON.stringify(parsedSource, null, 2) + (isMalformed ? '\n...' : '');
-
-  console.log(`Query formatting: ${formatStatus}`);
-  return result;
-};
 
 const QueryDetails = ({
   core,

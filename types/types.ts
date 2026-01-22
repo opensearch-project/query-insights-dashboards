@@ -14,12 +14,8 @@ export interface SearchQueryRecord {
   };
   total_shards: number;
   node_id: string;
-  /**
-   * Query source can be:
-   * - ISearchSource object: Standard query object structure from 3.4
-   * - string: Pre-serialized query string from certain backend responses since 3.4
-   */
-  source: ISearchSource | string;
+  source: ISearchSource | string; // source can be ISearchSource object for versions before 3.5 and string for versions after 3.5
+  source_truncated: boolean; // if source (as a string) is truncated
   labels: Record<string, string>;
   search_type: string;
   indices: string[];

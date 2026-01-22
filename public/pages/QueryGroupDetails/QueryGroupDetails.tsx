@@ -30,7 +30,7 @@ import { SearchQueryRecord } from '../../../types/types';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
-import { formatQueryDisplay } from '../QueryDetails/QueryDetails';
+import { formatQueryDisplay } from '../../utils/query-formatter-utils';
 
 export const QueryGroupDetails = ({
   core,
