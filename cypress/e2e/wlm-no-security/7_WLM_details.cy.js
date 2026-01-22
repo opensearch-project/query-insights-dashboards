@@ -32,8 +32,17 @@ describe('WLM Details Page', () => {
   });
 
   beforeEach(() => {
-    cy.visit(`/app/workload-management#/wlm-details?name=${groupName}`, { auth: WLM_AUTH });
-    cy.contains(groupName).should('exist');
+    // Detect CI environment for appropriate timeouts
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+    const pageLoadTimeout = isCI ? 180000 : 60000; // 3 minutes in CI, 1 minute locally
+
+    cy.visit(`/app/workload-management#/wlm-details?name=${groupName}`, {
+      auth: WLM_AUTH,
+      timeout: pageLoadTimeout,
+    });
+
+    // Wait for the page to be fully loaded with the group name
+    cy.contains(groupName, { timeout: pageLoadTimeout }).should('exist');
   });
 
   it('should display workload group summary panel', () => {
@@ -131,9 +140,18 @@ describe('WLM Details Page', () => {
 
 describe('WLM Details – DEFAULT_WORKLOAD_GROUP', () => {
   it('should disable settings tab for DEFAULT_WORKLOAD_GROUP', () => {
+    // Detect CI environment for appropriate timeouts
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+    const pageLoadTimeout = isCI ? 180000 : 60000; // 3 minutes in CI, 1 minute locally
+
     cy.visit('/app/workload-management#/wlm-details?name=DEFAULT_WORKLOAD_GROUP', {
       auth: WLM_AUTH,
+      timeout: pageLoadTimeout,
     });
+
+    // Wait for the page to be fully loaded
+    cy.contains('DEFAULT_WORKLOAD_GROUP', { timeout: pageLoadTimeout }).should('exist');
+
     cy.get('[data-testid="wlm-tab-settings"]').click();
     cy.contains('Settings are not available for the DEFAULT_WORKLOAD_GROUP').should('exist');
   });
