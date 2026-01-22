@@ -7,9 +7,20 @@ import { WLM_AUTH } from '../../support/constants';
 
 describe('WLM Main Page', () => {
   beforeEach(() => {
+    // Detect CI environment for appropriate timeouts
+    const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
+    const pageLoadTimeout = isCI ? 180000 : 60000; // 3 minutes in CI, 1 minute locally
+
     cy.visit('/app/workload-management#/workloadManagement', {
       auth: WLM_AUTH,
+      timeout: pageLoadTimeout,
     });
+
+    // Wait for the page to be fully loaded with the main heading
+    cy.contains('Workload groups', { timeout: pageLoadTimeout }).should('be.visible');
+
+    // Wait for the table to be rendered
+    cy.get('.euiBasicTable', { timeout: pageLoadTimeout }).should('exist');
   });
 
   it('should display the WLM page with the workload group table', () => {
