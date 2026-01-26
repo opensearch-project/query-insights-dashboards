@@ -26,6 +26,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { formatQueryDisplay } from '../../utils/query-formatter-utils';
 
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 
@@ -130,10 +131,7 @@ const QueryDetails = ({
     }
   }, [query, history, core.chrome, convertTime, initPlotlyChart]);
 
-  const queryString = query
-    ? JSON.stringify(JSON.parse(JSON.stringify(query.source)), null, 2)
-    : '';
-  const queryDisplay = `{\n  "query": ${queryString ? queryString.replace(/\n/g, '\n  ') : ''}\n}`;
+  const queryDisplay = formatQueryDisplay(query);
 
   return (
     <div>

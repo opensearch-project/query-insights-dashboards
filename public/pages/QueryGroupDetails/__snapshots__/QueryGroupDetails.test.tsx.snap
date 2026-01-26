@@ -376,29 +376,6 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                     <span
                       class="token string-property property"
                     >
-                      "query"
-                    </span>
-                    <span
-                      class="token operator"
-                    >
-                      :
-                    </span>
-                     
-                    <span
-                      class="token punctuation"
-                    >
-                      {
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
-                        
-                    <span
-                      class="token string-property property"
-                    >
                       "size"
                     </span>
                     <span
@@ -423,7 +400,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                        
+                      
                     <span
                       class="token string-property property"
                     >
@@ -446,7 +423,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                          
+                        
                     <span
                       class="token string-property property"
                     >
@@ -469,7 +446,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                            
+                          
                     <span
                       class="token string-property property"
                     >
@@ -492,7 +469,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                              
+                            
                     <span
                       class="token string-property property"
                     >
@@ -508,18 +485,6 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
                       class="token string"
                     >
                       "age"
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
-                            
-                    <span
-                      class="token punctuation"
-                    >
-                      }
                     </span>
                     
 

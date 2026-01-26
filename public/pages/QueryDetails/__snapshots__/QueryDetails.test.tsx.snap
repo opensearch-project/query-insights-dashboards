@@ -276,7 +276,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                     <span
                       class="token string-property property"
                     >
-                      "query"
+                      "bool"
                     </span>
                     <span
                       class="token operator"
@@ -299,29 +299,6 @@ exports[`QueryDetails component matches snapshot 1`] = `
                     <span
                       class="token string-property property"
                     >
-                      "bool"
-                    </span>
-                    <span
-                      class="token operator"
-                    >
-                      :
-                    </span>
-                     
-                    <span
-                      class="token punctuation"
-                    >
-                      {
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
-                            
-                    <span
-                      class="token string-property property"
-                    >
                       "must"
                     </span>
                     <span
@@ -341,7 +318,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                              
+                            
                     <span
                       class="token punctuation"
                     >
@@ -353,7 +330,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                
+                              
                     <span
                       class="token string-property property"
                     >
@@ -376,7 +353,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                  
+                                
                     <span
                       class="token string-property property"
                     >
@@ -399,7 +376,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -427,7 +404,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -455,7 +432,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -483,7 +460,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -511,7 +488,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -534,18 +511,6 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                  
-                    <span
-                      class="token punctuation"
-                    >
-                      }
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
                                 
                     <span
                       class="token punctuation"
@@ -574,6 +539,18 @@ exports[`QueryDetails component matches snapshot 1`] = `
                     <span
                       class="token punctuation"
                     >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                          
+                    <span
+                      class="token punctuation"
+                    >
                       ]
                     </span>
                     <span
@@ -587,7 +564,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                            
+                          
                     <span
                       class="token string-property property"
                     >
@@ -610,7 +587,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                              
+                            
                     <span
                       class="token punctuation"
                     >
@@ -622,7 +599,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                
+                              
                     <span
                       class="token string-property property"
                     >
@@ -645,7 +622,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                  
+                                
                     <span
                       class="token string-property property"
                     >
@@ -668,7 +645,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -696,7 +673,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -724,7 +701,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -752,7 +729,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -780,7 +757,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -808,7 +785,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -836,7 +813,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -864,7 +841,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -892,7 +869,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                                    
+                                  
                     <span
                       class="token string-property property"
                     >
@@ -908,18 +885,6 @@ exports[`QueryDetails component matches snapshot 1`] = `
                       class="token number"
                     >
                       1
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
-                                  
-                    <span
-                      class="token punctuation"
-                    >
-                      }
                     </span>
                     
 
@@ -955,6 +920,18 @@ exports[`QueryDetails component matches snapshot 1`] = `
                     <span
                       class="token punctuation"
                     >
+                      }
+                    </span>
+                    
+
+                  </span>
+                  <span
+                    class="euiCodeBlock__line"
+                  >
+                          
+                    <span
+                      class="token punctuation"
+                    >
                       ]
                     </span>
                     <span
@@ -968,7 +945,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                            
+                          
                     <span
                       class="token string-property property"
                     >
@@ -996,7 +973,7 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   <span
                     class="euiCodeBlock__line"
                   >
-                            
+                          
                     <span
                       class="token string-property property"
                     >
@@ -1012,18 +989,6 @@ exports[`QueryDetails component matches snapshot 1`] = `
                       class="token number"
                     >
                       1
-                    </span>
-                    
-
-                  </span>
-                  <span
-                    class="euiCodeBlock__line"
-                  >
-                          
-                    <span
-                      class="token punctuation"
-                    >
-                      }
                     </span>
                     
 
