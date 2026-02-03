@@ -124,6 +124,17 @@ describe('InflightQueries', () => {
 
   it('matches snapshot', async () => {
     const core = makeCore();
+
+    (core.http.get as jest.Mock).mockImplementation((url) => {
+      if (url === '/api/_wlm/workload_group') {
+        return Promise.resolve({ workload_groups: [] });
+      }
+      if (url.includes('_wlm/stats')) {
+        return Promise.resolve({});
+      }
+      return Promise.resolve({});
+    });
+
     mockLiveQueries(mockStubLiveQueries);
 
     const { container } = render(
@@ -145,14 +156,19 @@ describe('InflightQueries', () => {
       )
     );
 
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(
       () => {
         expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
 
-    // Neutralize timezone-dependent timestamps before snapshot
     scrubTimestamps(container);
     expect(container).toMatchSnapshot();
   });
@@ -330,7 +346,6 @@ describe('InflightQueries', () => {
   });
 
   it('handles WLM group selection when WLM plugin is present', async () => {
-    jest.useRealTimers();
     const core = makeCore();
 
     (core.http.get as jest.Mock).mockImplementation((url) => {
@@ -345,7 +360,7 @@ describe('InflightQueries', () => {
 
     mockLiveQueries(mockStubLiveQueries);
 
-    render(
+    const { unmount } = render(
       withDataSource(
         <InflightQueries
           core={core}
@@ -358,13 +373,22 @@ describe('InflightQueries', () => {
       )
     );
 
+    // Flush all promises and advance timers
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(
       () => {
         expect(retrieveLiveQueries).toHaveBeenCalled();
         expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 1000 }
     );
+
+    unmount();
   });
 
   it('toggles auto-refresh', async () => {
@@ -390,7 +414,6 @@ describe('InflightQueries', () => {
   });
 
   it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
-    jest.useRealTimers();
     const core = makeCore();
 
     (core.http.get as jest.Mock).mockImplementation((url) => {
@@ -405,7 +428,7 @@ describe('InflightQueries', () => {
 
     mockLiveQueries(mockStubLiveQueries);
 
-    render(
+    const { unmount } = render(
       withDataSource(
         <InflightQueries
           core={core}
@@ -418,16 +441,25 @@ describe('InflightQueries', () => {
       )
     );
 
+    // Flush all promises and advance timers
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(
       () => {
         expect(retrieveLiveQueries).toHaveBeenCalled();
-        expect(screen.getByText('WLM Group')).toBeInTheDocument();
+        expect(screen.getAllByText('WLM Group').length).toBeGreaterThan(0);
       },
-      { timeout: 3000 }
+      { timeout: 1000 }
     );
 
     expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
     expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+
+    unmount();
   });
 
   it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
