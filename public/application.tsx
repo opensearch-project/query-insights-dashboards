@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { HashRouter as Router } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from '../../../src/core/public';
 import { QueryInsightsDashboardsApp } from './components/app';
@@ -49,7 +49,8 @@ export const renderApp = (
 
   setDataSourceEnabled({ enabled: !!dataSourceManagement });
 
-  ReactDOM.render(
+  const root = createRoot(params.element);
+  root.render(
     <Router>
       <QueryInsightsDashboardsApp
         core={core}
@@ -57,9 +58,8 @@ export const renderApp = (
         params={params}
         dataSourceManagement={dataSourceManagement}
       />
-    </Router>,
-    params.element
+    </Router>
   );
 
-  return () => ReactDOM.unmountComponentAtNode(params.element);
+  return () => root.unmount();
 };

@@ -42,9 +42,9 @@
     "form-data": "4.0.4"
   },
   "resolutions": {
-    "@types/react": "^16.9.8",
+    "@types/react": "^18.2.0",
     "**/@types/jest": "^29.3.1",
-    "**/@types/react-dom": "^16.9.8",
+    "**/@types/react-dom": "^18.2.0",
     "eslint-utils": "^1.4.2",
     "async": "^3.2.3",
     "json5": "^2.2.3",
@@ -74,7 +74,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/luxon": "^3.6.2",
     "@types/object-hash": "^3.0.0",
-    "@types/react-dom": "^16.9.8",
+    "@types/react-dom": "^18.2.0",
     "@types/react-router-dom": "^5.3.2",
     "cypress": "^13.6.0",
     "cypress-real-events": "1.7.6",
