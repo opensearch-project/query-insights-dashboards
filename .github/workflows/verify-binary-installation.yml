@@ -50,6 +50,7 @@ jobs:
           plugin_name: query-insights-dashboards
           built_plugin_name: queryInsightsDashboards
           install_zip: true
+          opensearch-dashboards-ref: main
 
       - name: Start the binary
         run: |
