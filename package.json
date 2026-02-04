@@ -28,20 +28,18 @@
     "postbuild": "echo Renaming build artifact to [$npm_package_config_id-$npm_package_version.zip] && mv build/$npm_package_config_id*.zip build/$npm_package_config_id-$npm_package_version.zip"
   },
   "dependencies": {
-    "echarts": "^6.0.0",
-    "echarts-for-react": "^3.0.2",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
     "@babel/runtime-corejs3": "^7.22.9",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.2",
     "filesize": "^10.1.6",
-    "object-hash": "^3.0.0",
-    "plotly.js-dist": "^2.34.0",
+    "form-data": "4.0.4",
     "luxon": "^3.2.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-vis": "^1.11.7",
+    "object-hash": "^3.0.0",
     "pbkdf2": "3.1.5",
-    "form-data": "4.0.4"
+    "plotly.js-dist": "^2.34.0",
+    "react-vis": "^1.11.7"
   },
   "resolutions": {
     "@types/react": "^18.2.0",
