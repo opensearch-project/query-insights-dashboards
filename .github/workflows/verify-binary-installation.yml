@@ -1,6 +1,8 @@
 name: 'Install Query Insights Dashboards with Plugin via Binary'
 
-on: [push, pull_request]
+# disable this workflow temporarily for #453 fix as we checkout the most recent version but react 16 to 18 upgrade changes have not been applied to 3.5 yet
+on:
+  workflow_dispatch:
 
 env:
   CI: 1
@@ -50,7 +52,6 @@ jobs:
           plugin_name: query-insights-dashboards
           built_plugin_name: queryInsightsDashboards
           install_zip: true
-          opensearch-dashboards-ref: main
 
       - name: Start the binary
         run: |
