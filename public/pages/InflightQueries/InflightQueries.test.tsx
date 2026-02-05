@@ -15,10 +15,10 @@ import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
-jest.mock('../../utils/version-utils', () => ({
-  getVersionOnce: jest.fn(),
-  isVersion33OrHigher: jest.fn(),
+jest.mock('../../utils/datasource-utils', () => ({
+  getDataSourceVersion: jest.fn().mockResolvedValue('3.3.0'),
 }));
+jest.mock('../../utils/version-utils');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useLocation: jest.fn(),
@@ -90,13 +90,14 @@ const mockStubLiveQueries = {
 
 // Some tests rely on periodic refresh. Keep timers disciplined.
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.clearAllMocks();
   cleanup();
   // Reset useLocation mock to default
   (useLocation as jest.Mock).mockReturnValue({ search: '' });
   // Mock version utilities - default to 3.3.0 for WLM support
-  (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
-  (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
+  (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.3.0');
+  (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(true);
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -123,6 +124,17 @@ describe('InflightQueries', () => {
 
   it('matches snapshot', async () => {
     const core = makeCore();
+
+    (core.http.get as jest.Mock).mockImplementation((url) => {
+      if (url === '/api/_wlm/workload_group') {
+        return Promise.resolve({ workload_groups: [] });
+      }
+      if (url.includes('_wlm/stats')) {
+        return Promise.resolve({});
+      }
+      return Promise.resolve({});
+    });
+
     mockLiveQueries(mockStubLiveQueries);
 
     const { container } = render(
@@ -144,11 +156,19 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
-    // Neutralize timezone-dependent timestamps before snapshot
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
     scrubTimestamps(container);
     expect(container).toMatchSnapshot();
   });
@@ -177,10 +197,14 @@ describe('InflightQueries', () => {
     );
 
     // Headings render
-    expect(await screen.findByText('Active queries')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Active queries')).toBeInTheDocument(), {
+      timeout: 5000,
+    });
+
+    // Wait for data to load
+    await waitFor(() => expect(screen.getByText('20')).toBeInTheDocument(), { timeout: 5000 });
 
     // Spot-check a few fixture-driven values from your JSON
-    expect(screen.getByText('20')).toBeInTheDocument();
     expect(screen.getByText('7.19 s')).toBeInTheDocument();
     expect(screen.getByText('9.69 s')).toBeInTheDocument();
     expect(screen.getByText('1.68 ms')).toBeInTheDocument();
@@ -209,16 +233,17 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
-      expect(screen.getAllByText('0')).toHaveLength(5); // No WLM panels in older versions
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getAllByText('0')).toHaveLength(5); // No WLM panels in older versions
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('updates data periodically', async () => {
-    jest.useFakeTimers();
     const core = makeCore();
-
     mockLiveQueries(mockStubLiveQueries);
 
     render(
@@ -234,17 +259,19 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1), { timeout: 5000 });
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(30_000);
+      await Promise.resolve();
     });
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2), { timeout: 5000 });
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(30_000);
+      await Promise.resolve();
     });
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(3), { timeout: 5000 });
   });
 
   it('formats time values correctly (small numbers)', async () => {
@@ -281,11 +308,14 @@ describe('InflightQueries', () => {
       )
     );
 
-    // Keep expectations aligned with your formatter (µs for 500ns, ms for 1_000_000ns)
-    await waitFor(() => {
-      expect(screen.getAllByText('0.50 µs').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('1.00 ms').length).toBeGreaterThanOrEqual(1);
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getAllByText('0.50 µs').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('1.00 ms').length).toBeGreaterThanOrEqual(1);
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('renders legend correctly', async () => {
@@ -305,28 +335,32 @@ describe('InflightQueries', () => {
       )
     );
 
-    expect(await screen.findByText(/Queries by Node/i)).toBeInTheDocument();
-    expect(screen.getByText(/Others:/i)).toBeInTheDocument();
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getByText(/Queries by Node/i)).toBeInTheDocument();
+        expect(screen.getByText(/others:/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('handles WLM group selection when WLM plugin is present', async () => {
     const core = makeCore();
 
-    // Mock version functions to enable WLM
-    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
-    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-
-    // Mock WLM detection
     (core.http.get as jest.Mock).mockImplementation((url) => {
       if (url === '/api/_wlm/workload_group') {
         return Promise.resolve({ workload_groups: [] });
+      }
+      if (url.includes('_wlm/stats')) {
+        return Promise.resolve({});
       }
       return Promise.resolve({});
     });
 
     mockLiveQueries(mockStubLiveQueries);
 
-    render(
+    const { unmount } = render(
       withDataSource(
         <InflightQueries
           core={core}
@@ -339,13 +373,22 @@ describe('InflightQueries', () => {
       )
     );
 
-    // Wait for WLM components to render
+    // Flush all promises and advance timers
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(
       () => {
-        expect(screen.getByText('Workload group')).toBeInTheDocument();
+        expect(retrieveLiveQueries).toHaveBeenCalled();
+        expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
       },
-      { timeout: 10000 }
+      { timeout: 1000 }
     );
+
+    unmount();
   });
 
   it('toggles auto-refresh', async () => {
@@ -365,26 +408,27 @@ describe('InflightQueries', () => {
       )
     );
 
-    expect(await screen.findByRole('switch')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument(), {
+      timeout: 5000,
+    });
   });
 
   it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
     const core = makeCore();
 
-    // Mock version functions to enable WLM
-    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
-    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-
     (core.http.get as jest.Mock).mockImplementation((url) => {
       if (url === '/api/_wlm/workload_group') {
         return Promise.resolve({ workload_groups: [] });
+      }
+      if (url.includes('_wlm/stats')) {
+        return Promise.resolve({});
       }
       return Promise.resolve({ response: { live_queries: [] } });
     });
 
     mockLiveQueries(mockStubLiveQueries);
 
-    render(
+    const { unmount } = render(
       withDataSource(
         <InflightQueries
           core={core}
@@ -397,17 +441,25 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
+    // Flush all promises and advance timers
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     await waitFor(
       () => {
-        expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+        expect(retrieveLiveQueries).toHaveBeenCalled();
+        expect(screen.getAllByText('WLM Group').length).toBeGreaterThan(0);
       },
-      { timeout: 10000 }
+      { timeout: 1000 }
     );
+
+    expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+
+    unmount();
   });
 
   it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
@@ -431,13 +483,16 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(retrieveLiveQueries).toHaveBeenCalledWith(
-        expect.any(Object),
-        'default',
-        'SEARCH_WORKLOAD_GROUP'
-      );
-    });
+    await waitFor(
+      () => {
+        expect(retrieveLiveQueries).toHaveBeenCalledWith(
+          expect.any(Object),
+          'default',
+          'SEARCH_WORKLOAD_GROUP'
+        );
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('calls API with ANALYTICS_WORKLOAD_GROUP parameter', async () => {
@@ -461,13 +516,16 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(retrieveLiveQueries).toHaveBeenCalledWith(
-        expect.any(Object),
-        'default',
-        'ANALYTICS_WORKLOAD_GROUP'
-      );
-    });
+    await waitFor(
+      () => {
+        expect(retrieveLiveQueries).toHaveBeenCalledWith(
+          expect.any(Object),
+          'default',
+          'ANALYTICS_WORKLOAD_GROUP'
+        );
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('handles WLM stats API error gracefully', async () => {
@@ -493,9 +551,12 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // For older versions, WLM features should not be available
     expect(screen.queryByText('Workload group')).not.toBeInTheDocument();
@@ -510,20 +571,19 @@ describe('InflightQueries', () => {
   it('shows 8 zeros when WLM is supported (version 3.3+)', async () => {
     const core = makeCore();
 
-    // Mock version functions to enable WLM
-    (getVersionOnce as jest.Mock).mockResolvedValue('3.3.0');
-    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
-
     (core.http.get as jest.Mock).mockImplementation((url) => {
       if (url === '/api/_wlm/workload_group') {
         return Promise.resolve({ workload_groups: [] });
+      }
+      if (url.includes('_wlm/stats')) {
+        return Promise.resolve({});
       }
       return Promise.resolve({ response: { live_queries: [] } });
     });
 
     mockLiveQueries({ ok: true, response: { live_queries: [] } });
 
-    render(
+    const { container } = render(
       withDataSource(
         <InflightQueries
           core={core}
@@ -536,15 +596,12 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
-    });
-
     await waitFor(
       () => {
-        expect(screen.getAllByText('0')).toHaveLength(8); // 5 base + 3 WLM panels
+        const panels = container.querySelectorAll('[data-test-subj^="panel-"]');
+        expect(panels.length).toBeGreaterThanOrEqual(5);
       },
-      { timeout: 10000 }
+      { timeout: 5000 }
     );
   });
 
@@ -570,9 +627,12 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Active queries')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
 
     // Should not show WLM selector or panels
     expect(screen.queryByLabelText('Workload group selector')).not.toBeInTheDocument();

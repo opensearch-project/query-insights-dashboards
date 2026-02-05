@@ -845,11 +845,16 @@ describe('WLMDetails Component', () => {
     ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
 
     renderComponent('test-group');
-    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
 
-    // First rule's Role textarea
+    // Wait for component to fully load
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => screen.getByText(/Workload group settings/i));
+
+    // First rule's Role textarea - wait for it to have the value
     const roleBox = await screen.findByPlaceholderText('Enter role');
-    expect(roleBox).toHaveValue('admin');
+    await waitFor(() => expect(roleBox).toHaveValue('admin'));
 
     fireEvent.change(roleBox, { target: { value: '' } });
     fireEvent.blur(roleBox);
@@ -897,10 +902,15 @@ describe('WLMDetails Component', () => {
     ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
 
     renderComponent('test-group');
+
+    // Wait for component to fully load
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => screen.getByText(/Workload group settings/i));
 
     const userBox = await screen.findByPlaceholderText('Enter username');
-    expect(userBox).toHaveValue('alice');
+    await waitFor(() => expect(userBox).toHaveValue('alice'));
 
     fireEvent.change(userBox, { target: { value: '' } });
     fireEvent.blur(userBox);
@@ -913,17 +923,29 @@ describe('WLMDetails Component', () => {
 
   it('Add another rule button disables at 5 rules', async () => {
     renderComponent('test-group');
+
+    // Wait for component to fully load
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => screen.getByText(/Workload group settings/i));
 
     const addBtn = await screen.findByRole('button', { name: /\+ add another rule/i });
 
+    // Wait for initial rules to load (should be 2)
+    await waitFor(() => expect(screen.getAllByTestId('indexInput')).toHaveLength(2));
+
     // You start with 2 rules in your mocks; add until 5
     fireEvent.click(addBtn);
+    await waitFor(() => expect(screen.getAllByTestId('indexInput')).toHaveLength(3));
+
     fireEvent.click(addBtn);
+    await waitFor(() => expect(screen.getAllByTestId('indexInput')).toHaveLength(4));
+
     fireEvent.click(addBtn);
+    await waitFor(() => expect(screen.getAllByTestId('indexInput')).toHaveLength(5));
 
     // Now 5 -> disabled
-    expect(addBtn).toBeDisabled();
+    await waitFor(() => expect(addBtn).toBeDisabled());
   });
 
   it('Delete button is disabled for DEFAULT_WORKLOAD_GROUP', async () => {
@@ -1026,20 +1048,37 @@ describe('WLMDetails Component', () => {
     (mockCore.http.delete as jest.Mock).mockResolvedValue({});
 
     renderComponent('test-group');
+
+    // Wait for component to fully load
+    await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
     await waitFor(() => screen.getByText(/Workload group settings/i));
+
+    // Wait for rules to fully load
+    await waitFor(() => {
+      const inputs = screen.getAllByTestId('indexInput');
+      expect(inputs.length).toBe(2);
+    });
 
     // Update existing "keep-me"
     const inputs = screen.getAllByTestId('indexInput');
     fireEvent.change(inputs[0], { target: { value: 'keep-updated-*' } });
 
     // Delete "remove-me" (second panel)
+    await waitFor(() => {
+      const deleteIcons = screen.getAllByLabelText('Delete rule');
+      expect(deleteIcons.length).toBeGreaterThanOrEqual(2);
+    });
     const deleteIcons = screen.getAllByLabelText('Delete rule');
     fireEvent.click(deleteIcons[1]);
 
+    // Wait for deletion to complete
+    await waitFor(() => expect(screen.getAllByTestId('indexInput')).toHaveLength(1));
+
     // Create a new rule (indexId empty)
     fireEvent.click(screen.getByRole('button', { name: /\+ add another rule/i }));
-    const newInputs = screen.getAllByTestId('indexInput');
+    const newInputs = await screen.findAllByTestId('indexInput');
     const newest = newInputs[newInputs.length - 1];
     fireEvent.change(newest, { target: { value: 'new-*' } });
 

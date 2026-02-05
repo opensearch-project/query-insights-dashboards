@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as ReactDOM from 'react-dom';
 import { renderApp } from './application';
 import { coreMock } from '../../../src/core/public/mocks';
 
-jest.mock('react-dom', () => {
-  const actualReactDOM = jest.requireActual('react-dom');
-  return {
-    ...actualReactDOM,
-    render: jest.fn(),
-    unmountComponentAtNode: jest.fn(),
-  };
-});
+const mockUnmount = jest.fn();
+const mockRender = jest.fn();
+
+jest.mock('react-dom/client', () => ({
+  createRoot: jest.fn(() => ({
+    render: mockRender,
+    unmount: mockUnmount,
+  })),
+}));
 
 describe('renderApp', () => {
   const coreMockStart = coreMock.createStart();
@@ -30,6 +30,6 @@ describe('renderApp', () => {
     const unmount = renderApp(coreMockStart, depsStartMock, paramsMock, dataSourceManagementMock);
     unmount();
 
-    expect(ReactDOM.unmountComponentAtNode).toHaveBeenCalledWith(paramsMock.element);
+    expect(mockUnmount).toHaveBeenCalled();
   });
 });
