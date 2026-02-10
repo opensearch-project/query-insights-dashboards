@@ -73,6 +73,8 @@ export class QueryInsightsDashboardsPlugin
     // Register server side APIs
     defineRoutes(router, dataSourceEnabled);
     defineWlmRoutes(router, dataSourceEnabled);
+    
+    console.log('Query Insights routes registered');
 
     return {};
   }

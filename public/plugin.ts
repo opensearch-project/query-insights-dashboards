@@ -114,6 +114,18 @@ export class QueryInsightsDashboardsPlugin
       });
     }
 
+    // Register profiler dev tool
+    deps.devTools.register({
+      id: 'queryProfiler',
+      title: 'Profiler',
+      mount: async (params) => {
+        const { renderProfiler, setCoreStart } = await import('./profiler');
+        const [coreStart] = await core.getStartServices();
+        setCoreStart(coreStart);
+        return renderProfiler(params.element);
+      },
+    });
+
     // Registration for new navigation
     core.chrome.navGroup.addNavLinksToGroup(DEFAULT_NAV_GROUPS.dataAdministration, [
       {

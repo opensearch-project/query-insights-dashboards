@@ -8,6 +8,7 @@ import { IRouter } from '../../../../src/core/server';
 import { EXPORTER_TYPE } from '../../common/constants';
 
 export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
+  console.log('=== REGISTERING PROFILER ROUTE ===');
   router.get(
     {
       path: '/api/top_queries',
@@ -436,30 +437,36 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
     }
   );
 
-  router.get(
+  router.post(
     {
-      path: '/api/cluster/version',
-      validate: {},
+      path: '/api/profiler-proxy',
+      validate: {
+        body: schema.object({
+          method: schema.string({ defaultValue: 'GET' }),
+          path: schema.string({ defaultValue: '_search' }),
+          body: schema.maybe(schema.string()),
+        }),
+      },
     },
     async (context, request, response) => {
+      console.log('=== PROFILER ROUTE HIT ===', request.body);
       try {
-        const esClient = context.core.opensearch.client.asCurrentUser;
-        const res = await esClient.info();
-        const version = res.body?.version?.number;
+        const { method, path, body } = request.body;
+        const client = context.core.opensearch.client.asCurrentUser;
+        
+        const result = await client.transport.request({
+          method,
+          path: `/${path}`,
+          body: body ? JSON.parse(body) : undefined,
+        });
 
         return response.ok({
-          body: {
-            ok: true,
-            version,
-          },
+          body: `${result.statusCode} - ${result.statusCode === 200 ? 'OK' : 'Error'}\n${JSON.stringify(result.body, null, 2)}`,
         });
       } catch (error) {
-        console.error('Unable to get cluster version: ', error);
-        return response.ok({
-          body: {
-            ok: false,
-            error: error.message,
-          },
+        return response.customError({
+          statusCode: error.statusCode || 500,
+          body: `${error.statusCode || 500} - Error\n${error.message}`,
         });
       }
     }

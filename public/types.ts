@@ -6,6 +6,7 @@
 import { DataSourcePluginStart } from '../../../src/plugins/data_source/public';
 import { DataSourceManagementPluginSetup } from '../../../src/plugins/data_source_management/public';
 import { NavigationPublicPluginStart } from '../../../src/plugins/navigation/public';
+import { DevToolsSetup } from '../../../src/plugins/dev_tools/public';
 
 /* eslint-disable @typescript-eslint/no-empty-interface */
 export interface QueryInsightsDashboardsPluginSetup {}
@@ -15,6 +16,7 @@ export interface QueryInsightsDashboardsPluginStartDependencies {
 }
 export interface QueryInsightsDashboardsPluginSetupDependencies {
   dataSourceManagement?: DataSourceManagementPluginSetup;
+  devTools: DevToolsSetup;
 }
 /* eslint-enable @typescript-eslint/no-empty-interface */
 

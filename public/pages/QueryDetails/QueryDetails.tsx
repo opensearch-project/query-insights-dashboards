@@ -7,6 +7,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 // @ts-ignore
 import Plotly from 'plotly.js-dist';
 import {
+  EuiButton,
   EuiCodeBlock,
   EuiFlexGrid,
   EuiFlexGroup,
@@ -169,6 +170,23 @@ const QueryDetails = ({
                   <EuiTitle size="s">
                     <h2>Query</h2>
                   </EuiTitle>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiButton
+                    size="s"
+                    onClick={() => {
+                      const queryBody = JSON.parse(queryDisplay);
+                      queryBody.profile = true;
+                      const indexPath = query?.indices?.join(',') || '_search';
+                      const searchPath = indexPath === '_search' ? '_search' : `${indexPath}/_search`;
+                      const profilerQuery = `GET ${searchPath}\n${JSON.stringify(queryBody, null, 2)}`;
+                      localStorage.setItem('profilerQuery', profilerQuery);
+                      const basePath = core.http.basePath.get();
+                      window.open(`${basePath}/app/dev_tools#/queryProfiler`, '_blank');
+                    }}
+                  >
+                    Rerun in Profiler
+                  </EuiButton>
                 </EuiFlexItem>
               </EuiFlexGroup>
               <EuiHorizontalRule margin="xs" />
