@@ -27,10 +27,11 @@ export class QueryInsightsDashboardsPlugin
       {},
       QueryInsightsDashboardsPluginStartDependencies
     > {
-  public setup(
+  public async setup(
     core: CoreSetup,
     deps: QueryInsightsDashboardsPluginSetupDependencies
-  ): QueryInsightsDashboardsPluginSetup {
+  ): Promise<QueryInsightsDashboardsPluginSetup> {
+
     // Register an application into the side navigation menu
     core.application.register({
       id: PLUGIN_NAME,
@@ -114,10 +115,11 @@ export class QueryInsightsDashboardsPlugin
       });
     }
 
-    // Register profiler dev tool
+    // Register profiler dev tool - visibility will be controlled in start()
     deps.devTools.register({
       id: 'queryProfiler',
       title: 'Profiler',
+      enableRouting: false,
       mount: async (params) => {
         const { renderProfiler, setCoreStart } = await import('./profiler');
         const [coreStart] = await core.getStartServices();
@@ -162,6 +164,29 @@ export class QueryInsightsDashboardsPlugin
   }
 
   public start(core: CoreStart): QueryInsightsDashboardsPluginStart {
+    // Check version and hide profiler for versions < 3.6
+    core.http.get('/api/cluster/version')
+      .then((versionResponse: any) => {
+        const version = versionResponse?.version;
+        if (version) {
+          const [major, minor] = version.split('.').map(Number);
+          const showProfiler = major > 3 || (major === 3 && minor >= 6);
+          core.chrome.navLinks.update('dev_tools:queryProfiler', {
+            hidden: !showProfiler,
+          });
+        } else {
+          core.chrome.navLinks.update('dev_tools:queryProfiler', {
+            hidden: true,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to check version for profiler:', error);
+        core.chrome.navLinks.update('dev_tools:queryProfiler', {
+          hidden: true,
+        });
+      });
+
     // Override navigation behavior to preserve data source
     if (WLM_CONFIG.enabled) {
       core.chrome.navLinks.update('workloadManagement', {

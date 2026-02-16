@@ -30,6 +30,13 @@ export const renderApp = (
   params: AppMountParameters,
   dataSourceManagement?: DataSourceManagementPluginSetup
 ) => {
+  // Suppress legacy context warnings from react-intl
+  const originalError = console.error;
+  console.error = (...args) => {
+    if (typeof args[0] === 'string' && args[0].includes('legacy context')) return;
+    originalError.apply(console, args);
+  };
+
   // Initialize services
   setCore(core);
   setSavedObjectsClient(core.savedObjects.client);

@@ -9,6 +9,29 @@ import { EXPORTER_TYPE } from '../../common/constants';
 
 export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
   console.log('=== REGISTERING PROFILER ROUTE ===');
+  
+  router.get(
+    {
+      path: '/api/cluster/version',
+      validate: false,
+    },
+    async (context, request, response) => {
+      try {
+        const client = context.core.opensearch.client.asCurrentUser;
+        const res = await client.info();
+        return response.ok({
+          body: { version: res.body.version.number },
+        });
+      } catch (error) {
+        console.error('Error getting cluster version:', error);
+        return response.customError({
+          statusCode: 500,
+          body: { message: error.message },
+        });
+      }
+    }
+  );
+
   router.get(
     {
       path: '/api/top_queries',

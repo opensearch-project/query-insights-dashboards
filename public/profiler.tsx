@@ -5,6 +5,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { CoreStart } from '../../../../src/core/public';
 import { monaco } from '@osd/monaco';
 
@@ -143,14 +144,22 @@ export const setCoreStart = (core: CoreStart) => {
   coreStart = core;
 };
 
+let root: any = null;
+
 export const renderProfiler = (element: HTMLElement) => {
   element.style.height = '400px';
   element.style.display = 'flex';
   element.style.flexDirection = 'column';
   
-  ReactDOM.render(<ConsoleProfiler http={coreStart.http} />, element);
+  if (!root) {
+    root = createRoot(element);
+  }
+  root.render(<ConsoleProfiler http={coreStart.http} />);
   
   return () => {
-    ReactDOM.unmountComponentAtNode(element);
+    if (root) {
+      root.unmount();
+      root = null;
+    }
   };
 };
