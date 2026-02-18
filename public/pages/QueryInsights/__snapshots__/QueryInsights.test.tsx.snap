@@ -2,35 +2,74 @@
 
 exports[`QueryInsights Component renders the table with the correct columns and data 1`] = `
 <div>
-  <div>
+  <div
+    class="euiSpacer euiSpacer--m"
+  />
+  <div
+    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive"
+  >
     <div
-      class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive euiFlexGroup--wrap"
+      class="euiFlexItem euiFlexItem--flexGrowZero"
     >
       <div
-        class="euiFlexItem euiSearchBar__searchHolder"
+        class="euiFormControlLayout euiFormControlLayout--compressed"
       >
         <div
-          class="euiFormControlLayout euiFormControlLayout--fullWidth"
+          class="euiFormControlLayout__childrenWrapper"
+        >
+          <input
+            class="euiFieldSearch euiFieldSearch--compressed"
+            placeholder="Search queries"
+            type="search"
+            value=""
+          />
+          <div
+            class="euiFormControlLayoutIcons"
+          >
+            <span
+              class="euiFormControlLayoutCustomIcon"
+            >
+              <svg
+                aria-hidden="true"
+                class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                focusable="false"
+                height="16"
+                role="img"
+                viewBox="0 0 16 16"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m11.271 11.978 3.872 3.873a.502.502 0 0 0 .708 0 .502.502 0 0 0 0-.708l-3.565-3.564c2.38-2.747 2.267-6.923-.342-9.532-2.73-2.73-7.17-2.73-9.898 0-2.728 2.729-2.728 7.17 0 9.9a6.955 6.955 0 0 0 4.949 2.05.5.5 0 0 0 0-1 5.96 5.96 0 0 1-4.242-1.757 6.01 6.01 0 0 1 0-8.486c2.337-2.34 6.143-2.34 8.484 0a6.01 6.01 0 0 1 0 8.486.5.5 0 0 0 .034.738Z"
+                />
+              </svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiFlexItem euiFlexItem--flexGrowZero"
+    >
+      <div
+        class="euiFilterGroup"
+      >
+        <div
+          class="euiPopover euiPopover--anchorDownCenter"
         >
           <div
-            class="euiFormControlLayout__childrenWrapper"
+            class="euiPopover__anchor"
           >
-            <input
-              aria-label="This is a search bar. After typing your query, hit enter to filter the results lower in the page."
-              class="euiFieldSearch euiFieldSearch--fullWidth"
-              placeholder="Search queries"
-              type="search"
-              value=""
-            />
-            <div
-              class="euiFormControlLayoutIcons"
+            <button
+              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+              type="button"
             >
               <span
-                class="euiFormControlLayoutCustomIcon"
+                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
               >
                 <svg
                   aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
                   focusable="false"
                   height="16"
                   role="img"
@@ -39,2305 +78,178 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="m11.271 11.978 3.872 3.873a.502.502 0 0 0 .708 0 .502.502 0 0 0 0-.708l-3.565-3.564c2.38-2.747 2.267-6.923-.342-9.532-2.73-2.73-7.17-2.73-9.898 0-2.728 2.729-2.728 7.17 0 9.9a6.955 6.955 0 0 0 4.949 2.05.5.5 0 0 0 0-1 5.96 5.96 0 0 1-4.242-1.757 6.01 6.01 0 0 1 0-8.486c2.337-2.34 6.143-2.34 8.484 0a6.01 6.01 0 0 1 0 8.486.5.5 0 0 0 .034.738Z"
+                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                    fill-rule="non-zero"
                   />
                 </svg>
+                <span
+                  class="euiButtonEmpty__text"
+                >
+                  <span
+                    class="euiFilterButton__textShift"
+                    data-text="Type"
+                    title="Type"
+                  >
+                    Type
+                  </span>
+                </span>
               </span>
-            </div>
+            </button>
           </div>
         </div>
-      </div>
-      <div
-        class="euiFlexItem euiFlexItem--flexGrowZero euiSearchBar__filtersHolder"
-      >
         <div
-          class="euiFilterGroup"
+          class="euiPopover euiPopover--anchorDownCenter"
         >
           <div
-            class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_0"
+            class="euiPopover__anchor"
           >
-            <div
-              class="euiPopover__anchor"
+            <button
+              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+              type="button"
             >
-              <button
-                class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-                type="button"
+              <span
+                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
               >
-                <span
-                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
+                  <path
+                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                    fill-rule="non-zero"
+                  />
+                </svg>
+                <span
+                  class="euiButtonEmpty__text"
+                >
                   <span
-                    class="euiButtonEmpty__text"
+                    class="euiFilterButton__textShift"
+                    data-text="Indices"
+                    title="Indices"
                   >
-                    <span
-                      class="euiFilterButton__textShift"
-                      data-text="Type"
-                      title="Type"
-                    >
-                      Type
-                    </span>
+                    Indices
                   </span>
                 </span>
-              </button>
-            </div>
-          </div>
-          <div
-            class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_1"
-          >
-            <div
-              class="euiPopover__anchor"
-            >
-              <button
-                class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-                type="button"
-              >
-                <span
-                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
-                  <span
-                    class="euiButtonEmpty__text"
-                  >
-                    <span
-                      class="euiFilterButton__textShift"
-                      data-text="Indices"
-                      title="Indices"
-                    >
-                      Indices
-                    </span>
-                  </span>
-                </span>
-              </button>
-            </div>
-          </div>
-          <div
-            class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_2"
-          >
-            <div
-              class="euiPopover__anchor"
-            >
-              <button
-                class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-                type="button"
-              >
-                <span
-                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
-                  <span
-                    class="euiButtonEmpty__text"
-                  >
-                    <span
-                      class="euiFilterButton__textShift"
-                      data-text="Search Type"
-                      title="Search Type"
-                    >
-                      Search Type
-                    </span>
-                  </span>
-                </span>
-              </button>
-            </div>
-          </div>
-          <div
-            class="euiPopover euiPopover--anchorDownCenter"
-            id="field_value_selection_3"
-          >
-            <div
-              class="euiPopover__anchor"
-            >
-              <button
-                class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-                type="button"
-              >
-                <span
-                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
-                  <span
-                    class="euiButtonEmpty__text"
-                  >
-                    <span
-                      class="euiFilterButton__textShift"
-                      data-text="Coordinator Node ID"
-                      title="Coordinator Node ID"
-                    >
-                      Coordinator Node ID
-                    </span>
-                  </span>
-                </span>
-              </button>
-            </div>
+              </span>
+            </button>
           </div>
         </div>
-      </div>
-      <div
-        class="euiFlexItem euiFlexItem--flexGrowZero"
-      >
         <div
-          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--directionRow euiSuperDatePicker__flexWrapper"
+          class="euiPopover euiPopover--anchorDownCenter"
         >
           <div
-            class="euiFlexItem"
+            class="euiPopover__anchor"
           >
-            <div
-              class="euiFormControlLayout euiFormControlLayout--group euiSuperDatePicker"
+            <button
+              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+              type="button"
             >
-              <div
-                class="euiPopover euiPopover--anchorDownLeft"
+              <span
+                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
               >
-                <div
-                  class="euiPopover__anchor euiQuickSelectPopover__anchor"
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <button
-                    aria-label="Date quick select"
-                    class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiFormControlLayout__prepend"
-                    data-test-subj="superDatePickerToggleQuickMenuButton"
-                    type="button"
-                  >
-                    <span
-                      class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-                    >
-                      <svg
-                        aria-hidden="true"
-                        class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
-                        focusable="false"
-                        height="16"
-                        role="img"
-                        viewBox="0 0 16 16"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                          fill-rule="non-zero"
-                        />
-                      </svg>
-                      <span
-                        class="euiButtonEmpty__text euiQuickSelectPopover__buttonText"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          class="euiIcon euiIcon--medium"
-                          focusable="false"
-                          height="16"
-                          role="img"
-                          viewBox="0 0 16 16"
-                          width="16"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M14 4v-.994C14 2.45 13.55 2 12.994 2H11v1h-1V2H6v1H5V2H3.006C2.45 2 2 2.45 2 3.006v9.988C2 13.55 2.45 14 3.006 14h9.988C13.55 14 14 13.55 14 12.994V5H2V4h12zm-3-3h1.994C14.102 1 15 1.897 15 3.006v9.988A2.005 2.005 0 0 1 12.994 15H3.006A2.005 2.005 0 0 1 1 12.994V3.006C1 1.898 1.897 1 3.006 1H5V0h1v1h4V0h1v1zM4 7h2v1H4V7zm3 0h2v1H7V7zm3 0h2v1h-2V7zM4 9h2v1H4V9zm3 0h2v1H7V9zm3 0h2v1h-2V9zm-6 2h2v1H4v-1zm3 0h2v1H7v-1zm3 0h2v1h-2v-1z"
-                            fill-rule="evenodd"
-                          />
-                        </svg>
-                      </span>
-                    </span>
-                  </button>
-                </div>
-              </div>
-              <div
-                class="euiFormControlLayout__childrenWrapper"
-              >
-                <div
-                  class="euiDatePickerRange euiDatePickerRange--inGroup"
-                >
-                  <button
-                    class="euiSuperDatePicker__prettyFormat"
-                    data-test-subj="superDatePickerShowDatesButton"
-                  >
-                    Last 15 minutes
-                    <span
-                      class="euiSuperDatePicker__prettyFormatLink"
-                    >
-                      Show dates
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="euiFlexItem euiFlexItem--flexGrowZero"
-          >
-            <span
-              class="euiToolTipAnchor"
-            >
-              <button
-                class="euiButton euiButton--primary euiSuperUpdateButton"
-                data-test-subj="superDatePickerApplyTimeButton"
-                type="button"
-              >
+                  <path
+                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                    fill-rule="non-zero"
+                  />
+                </svg>
                 <span
-                  class="euiButtonContent euiButton__content"
+                  class="euiButtonEmpty__text"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M11.228 2.942a.5.5 0 1 1-.538.842A5 5 0 1 0 13 8a.5.5 0 1 1 1 0 6 6 0 1 1-2.772-5.058ZM14 1.5v3A1.5 1.5 0 0 1 12.5 6h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 1 1 1 0Z"
-                    />
-                  </svg>
                   <span
-                    class="euiButton__text euiSuperUpdateButton__text"
+                    class="euiFilterButton__textShift"
+                    data-text="Search Type"
+                    title="Search Type"
                   >
-                    Refresh
+                    Search Type
                   </span>
                 </span>
-              </button>
-            </span>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div
+          class="euiPopover euiPopover--anchorDownCenter"
+        >
+          <div
+            class="euiPopover__anchor"
+          >
+            <button
+              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
+              type="button"
+            >
+              <span
+                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                    fill-rule="non-zero"
+                  />
+                </svg>
+                <span
+                  class="euiButtonEmpty__text"
+                >
+                  <span
+                    class="euiFilterButton__textShift"
+                    data-text="Coordinator Node ID"
+                    title="Coordinator Node ID"
+                  >
+                    Coordinator Node ID
+                  </span>
+                </span>
+              </span>
+            </button>
           </div>
         </div>
       </div>
     </div>
     <div
-      class="euiSpacer euiSpacer--l"
-    />
-    <div
-      class="euiBasicTable"
+      class="euiFlexItem euiFlexItem--flexGrowZero"
     >
-      <div>
+      <div
+        class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--directionRow euiSuperDatePicker__flexWrapper"
+      >
         <div
-          class="euiTableHeaderMobile"
+          class="euiFlexItem"
         >
           <div
-            class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+            class="euiFormControlLayout euiFormControlLayout--group euiSuperDatePicker"
           >
             <div
-              class="euiFlexItem euiFlexItem--flexGrowZero"
-            />
-            <div
-              class="euiFlexItem euiFlexItem--flexGrowZero"
+              class="euiPopover euiPopover--anchorDownLeft"
             >
               <div
-                class="euiTableSortMobile"
-              >
-                <div
-                  class="euiPopover euiPopover--anchorDownRight"
-                >
-                  <div
-                    class="euiPopover__anchor"
-                  >
-                    <button
-                      class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight"
-                      type="button"
-                    >
-                      <span
-                        class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
-                          focusable="false"
-                          height="16"
-                          role="img"
-                          viewBox="0 0 16 16"
-                          width="16"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                            fill-rule="non-zero"
-                          />
-                        </svg>
-                        <span
-                          class="euiButtonEmpty__text"
-                        >
-                          Sorting
-                        </span>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <table
-          class="euiTable euiTable--responsive"
-          id="random_html_id"
-          tabindex="-1"
-        >
-          <caption
-            class="euiScreenReaderOnly euiTableCaption"
-          />
-          <thead>
-            <tr>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Id_0"
-                role="columnheader"
-                scope="col"
+                class="euiPopover__anchor euiQuickSelectPopover__anchor"
               >
                 <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Id"
-                    >
-                      Id
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Type_1"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Type"
-                    >
-                      Type
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Query Count_2"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Query Count"
-                    >
-                      Query Count
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Timestamp_3"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Timestamp"
-                    >
-                      Timestamp
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Avg Latency / Latency_4"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Avg Latency / Latency"
-                    >
-                      Avg Latency / Latency
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Avg CPU Time / CPU Time_5"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Avg CPU Time / CPU Time"
-                    >
-                      Avg CPU Time / CPU Time
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_Avg Memory Usage / Memory Usage_6"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Avg Memory Usage / Memory Usage"
-                    >
-                      Avg Memory Usage / Memory Usage
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_indices_7"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Indices"
-                    >
-                      Indices
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_search_type_8"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Search Type"
-                    >
-                      Search Type
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_node_id_9"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Coordinator Node ID"
-                    >
-                      Coordinator Node ID
-                    </span>
-                  </span>
-                </button>
-              </th>
-              <th
-                aria-live="polite"
-                aria-sort="none"
-                class="euiTableHeaderCell"
-                data-test-subj="tableHeaderCell_total_shards_10"
-                role="columnheader"
-                scope="col"
-              >
-                <button
-                  class="euiTableHeaderButton"
-                  data-test-subj="tableHeaderSortButton"
-                  type="button"
-                >
-                  <span
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                      title="Total Shards"
-                    >
-                      Total Shards
-                    </span>
-                  </span>
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      a2e1c822-3e3c-4d1b-adb2-258e04f96f78
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      query
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      Jan 13, 2025 @ 12:00:00 AM
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  22.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1.34 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  204800.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    .kibana
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    query then fetch
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    UYKFun8PSAeJvkkt9cWf0w
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    1
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      130a5d36-615e-43e8-ad99-e1b90d527f44
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      group
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      -
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  10.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1.78 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  58000.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      a2e1c822-3e3c-4d1b-adb2-9f73af094b43
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      query
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      Jan 13, 2025 @ 12:00:00 AM
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  13.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  2.10 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  170320.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    my-index
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    query then fetch
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    UYKFun8PSAeJvkkt9cWf0w
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    1
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      7cd4c7f1-3803-4c5e-a41c-258e04f96f78
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      query
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      Jan 13, 2025 @ 12:00:00 AM
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  18.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  0.99 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  81200.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    .kibana
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    query then fetch
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    KINGun8PSAeJvkkt9cWf0w
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    1
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      76f5e51f-33f6-480c-8b20-8003abb93d19
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      group
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      -
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  9.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  0.99 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  133600.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      37d633a7-20e6-41a1-96e9-cd4806511dbf
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      group
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      -
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  6.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1.06 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  213440.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      9982b7fc-0339-47d8-b77f-8de1bda76b72
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      group
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  4
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      -
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  0.57 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  203100.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-            </tr>
-            <tr
-              class="euiTableRow"
-            >
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Id
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      d8dccf54-8dcb-4411-9fd6-977844be8fb3
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      group
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Query Count
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Timestamp
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      -
-                    </button>
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Latency / Latency
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  11.00 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg CPU Time / CPU Time
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  1.72 ms
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Avg Memory Usage / Memory Usage
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  59000.00 B
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Indices
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Search Type
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Coordinator Node ID
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-              <td
-                class="euiTableRowCell"
-              >
-                <div
-                  class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                >
-                  Total Shards
-                </div>
-                <div
-                  class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-                >
-                  <span
-                    class=""
-                  >
-                    -
-                  </span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <div
-          class="euiSpacer euiSpacer--m"
-        />
-        <div
-          class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
-        >
-          <div
-            class="euiFlexItem euiFlexItem--flexGrowZero"
-          >
-            <div
-              class="euiPopover euiPopover--anchorUpRight"
-            >
-              <div
-                class="euiPopover__anchor"
-              >
-                <button
-                  class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall"
-                  data-test-subj="tablePaginationPopoverButton"
+                  aria-label="Date quick select"
+                  class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiFormControlLayout__prepend"
+                  data-test-subj="superDatePickerToggleQuickMenuButton"
                   type="button"
                 >
                   <span
@@ -2359,98 +271,2873 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       />
                     </svg>
                     <span
-                      class="euiButtonEmpty__text"
+                      class="euiButtonEmpty__text euiQuickSelectPopover__buttonText"
                     >
-                      Rows per page
-                      : 
-                      10
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M14 4v-.994C14 2.45 13.55 2 12.994 2H11v1h-1V2H6v1H5V2H3.006C2.45 2 2 2.45 2 3.006v9.988C2 13.55 2.45 14 3.006 14h9.988C13.55 14 14 13.55 14 12.994V5H2V4h12zm-3-3h1.994C14.102 1 15 1.897 15 3.006v9.988A2.005 2.005 0 0 1 12.994 15H3.006A2.005 2.005 0 0 1 1 12.994V3.006C1 1.898 1.897 1 3.006 1H5V0h1v1h4V0h1v1zM4 7h2v1H4V7zm3 0h2v1H7V7zm3 0h2v1h-2V7zM4 9h2v1H4V9zm3 0h2v1H7V9zm3 0h2v1h-2V9zm-6 2h2v1H4v-1zm3 0h2v1H7v-1zm3 0h2v1h-2v-1z"
+                          fill-rule="evenodd"
+                        />
+                      </svg>
                     </span>
                   </span>
                 </button>
               </div>
             </div>
+            <div
+              class="euiFormControlLayout__childrenWrapper"
+            >
+              <div
+                class="euiDatePickerRange euiDatePickerRange--inGroup"
+              >
+                <button
+                  class="euiSuperDatePicker__prettyFormat"
+                  data-test-subj="superDatePickerShowDatesButton"
+                >
+                  Last 15 minutes
+                  <span
+                    class="euiSuperDatePicker__prettyFormatLink"
+                  >
+                    Show dates
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <span
+            class="euiToolTipAnchor"
+          >
+            <button
+              class="euiButton euiButton--primary euiSuperUpdateButton"
+              data-test-subj="superDatePickerApplyTimeButton"
+              type="button"
+            >
+              <span
+                class="euiButtonContent euiButton__content"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11.228 2.942a.5.5 0 1 1-.538.842A5 5 0 1 0 13 8a.5.5 0 1 1 1 0 6 6 0 1 1-2.772-5.058ZM14 1.5v3A1.5 1.5 0 0 1 12.5 6h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 1 1 1 0Z"
+                  />
+                </svg>
+                <span
+                  class="euiButton__text euiSuperUpdateButton__text"
+                >
+                  Refresh
+                </span>
+              </span>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="euiSpacer euiSpacer--m"
+  />
+  <div
+    class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+  >
+    <div
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+    >
+      <div
+        class="euiFlexItem euiFlexItem--flexGrowZero"
+      >
+        <h3
+          class="euiTitle euiTitle--small"
+        >
+          Visualizations
+        </h3>
+      </div>
+      <div
+        class="euiFlexItem euiFlexItem--flexGrowZero"
+      >
+        <div
+          class="euiFilterGroup"
+        >
+          <button
+            class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton-hasActiveFilters"
+            type="button"
+          >
+            <span
+              class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+            >
+              <span
+                class="euiButtonEmpty__text"
+              >
+                <span
+                  class="euiFilterButton__textShift"
+                  data-text="Query"
+                  title="Query"
+                >
+                  Query
+                </span>
+              </span>
+            </span>
+          </button>
+          <button
+            class="euiButtonEmpty euiButtonEmpty--text euiFilterButton"
+            type="button"
+          >
+            <span
+              class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+            >
+              <span
+                class="euiButtonEmpty__text"
+              >
+                <span
+                  class="euiFilterButton__textShift"
+                  data-text="Group"
+                  title="Group"
+                >
+                  Group
+                </span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiSpacer euiSpacer--m"
+    />
+    <div
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+    >
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P90 LATENCY
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              22
+               ms
+            </b>
+          </h2>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P90 CPU TIME
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              2.1
+               ms
+            </b>
+          </h2>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P90 MEMORY
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              0.2
+               MB
+            </b>
+          </h2>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P99 LATENCY
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              22
+               ms
+            </b>
+          </h2>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P99 CPU TIME
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              2.1
+               ms
+            </b>
+          </h2>
+        </div>
+      </div>
+      <div
+        class="euiFlexItem"
+      >
+        <div
+          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        >
+          <div
+            class="euiText euiText--small"
+          >
+            <p>
+              P99 MEMORY
+            </p>
+          </div>
+          <div
+            class="euiText euiText--extraSmall"
+          >
+            <div
+              class="euiTextColor euiTextColor--subdued"
+            >
+              <p>
+                Average
+              </p>
+            </div>
+          </div>
+          <h2
+            class="euiTitle euiTitle--large"
+          >
+            <b>
+              0.2
+               MB
+            </b>
+          </h2>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiSpacer euiSpacer--m"
+    />
+    <div
+      class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+    >
+      <div
+        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+      >
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <h3
+            class="euiTitle euiTitle--xsmall"
+          >
+            Queries by Node
+          </h3>
+        </div>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <div
+            class="euiFormControlLayout euiFormControlLayout--compressed"
+          >
+            <div
+              class="euiFormControlLayout__childrenWrapper"
+            >
+              <select
+                class="euiSelect euiSelect--compressed"
+              >
+                <option
+                  value="node"
+                >
+                  Node
+                </option>
+                <option
+                  value="index"
+                >
+                  Index
+                </option>
+                <option
+                  value="user"
+                >
+                  User
+                </option>
+              </select>
+              <div
+                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+              >
+                <span
+                  class="euiFormControlLayoutCustomIcon"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                      fill-rule="non-zero"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--l"
+      />
+      <div
+        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+      >
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        />
+        <div
+          class="euiFlexItem"
+        >
+          <div
+            class="euiBasicTable"
+          >
+            <div>
+              <div
+                class="euiTableHeaderMobile"
+              >
+                <div
+                  class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+                >
+                  <div
+                    class="euiFlexItem euiFlexItem--flexGrowZero"
+                  />
+                  <div
+                    class="euiFlexItem euiFlexItem--flexGrowZero"
+                  />
+                </div>
+              </div>
+              <table
+                class="euiTable euiTable--responsive"
+                id="random_html_id"
+                tabindex="-1"
+              >
+                <caption
+                  class="euiScreenReaderOnly euiTableCaption"
+                />
+                <thead>
+                  <tr>
+                    <th
+                      class="euiTableHeaderCell"
+                      data-test-subj="tableHeaderCell_name_0"
+                      role="columnheader"
+                      scope="col"
+                    >
+                      <span
+                        class="euiTableCellContent"
+                      >
+                        <span
+                          class="euiTableCellContent__text"
+                          title="Node"
+                        >
+                          Node
+                        </span>
+                      </span>
+                    </th>
+                    <th
+                      class="euiTableHeaderCell"
+                      data-test-subj="tableHeaderCell_value_1"
+                      role="columnheader"
+                      scope="col"
+                    >
+                      <span
+                        class="euiTableCellContent euiTableCellContent--alignRight"
+                      >
+                        <span
+                          class="euiTableCellContent__text"
+                          title="Query Count"
+                        >
+                          Query Count
+                        </span>
+                      </span>
+                    </th>
+                    <th
+                      class="euiTableHeaderCell"
+                      data-test-subj="tableHeaderCell_percentage_2"
+                      role="columnheader"
+                      scope="col"
+                    >
+                      <span
+                        class="euiTableCellContent euiTableCellContent--alignRight"
+                      >
+                        <span
+                          class="euiTableCellContent__text"
+                          title="Percentage"
+                        >
+                          Percentage
+                        </span>
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    class="euiTableRow"
+                  >
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Node
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--overflowingContent"
+                      >
+                        <div
+                          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                        >
+                          <div
+                            class="euiFlexItem euiFlexItem--flexGrowZero"
+                          >
+                            <span
+                              style="display: inline-block; width: 16px; height: 16px; background-color: rgb(31, 119, 180);"
+                            />
+                          </div>
+                          <div
+                            class="euiFlexItem"
+                          >
+                            UYKFun8PSAeJvkkt9cWf0w
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Query Count
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--alignRight"
+                      >
+                        <span
+                          class="euiTableCellContent__text"
+                        >
+                          2
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Percentage
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
+                      >
+                        66.7%
+                      </div>
+                    </td>
+                  </tr>
+                  <tr
+                    class="euiTableRow"
+                  >
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Node
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--overflowingContent"
+                      >
+                        <div
+                          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                        >
+                          <div
+                            class="euiFlexItem euiFlexItem--flexGrowZero"
+                          >
+                            <span
+                              style="display: inline-block; width: 16px; height: 16px; background-color: rgb(255, 127, 14);"
+                            />
+                          </div>
+                          <div
+                            class="euiFlexItem"
+                          >
+                            KINGun8PSAeJvkkt9cWf0w
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Query Count
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--alignRight"
+                      >
+                        <span
+                          class="euiTableCellContent__text"
+                        >
+                          1
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      class="euiTableRowCell"
+                    >
+                      <div
+                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                      >
+                        Percentage
+                      </div>
+                      <div
+                        class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
+                      >
+                        33.3%
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiSpacer euiSpacer--m"
+    />
+    <div
+      class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+    >
+      <div
+        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+      >
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <div
+            class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+          >
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <h3
+                class="euiTitle euiTitle--xsmall"
+              >
+                Performance Analysis
+              </h3>
+            </div>
+            <div
+              class="euiFlexItem euiFlexItem--flexGrowZero"
+            >
+              <span
+                class="euiToolTipAnchor"
+              >
+                <svg
+                  aria-label="Info"
+                  class="euiIcon euiIcon--medium"
+                  focusable="true"
+                  height="16"
+                  role="img"
+                  tabindex="0"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12Zm0-1A5 5 0 1 0 8 3a5 5 0 0 0 0 10Zm-.186-1.065A.785.785 0 0 1 7 11.12c0-.48.34-.82.814-.82.475 0 .809.34.809.82 0 .475-.334.815-.809.815ZM5.9 6.317C5.96 5.168 6.755 4.4 8.048 4.4c1.218 0 2.091.759 2.091 1.8 0 .736-.36 1.304-1.03 1.707-.56.33-.717.56-.717 1.022v.305l-.1.1H7.47l-.1-.1v-.431c-.005-.646.302-1.104.987-1.514.527-.322.708-.59.708-1.047 0-.536-.416-.91-1.05-.91-.652 0-1.064.374-1.112.998l-.1.092H6l-.1-.105Z"
+                  />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <div
+            class="euiFormControlLayout euiFormControlLayout--compressed"
+          >
+            <div
+              class="euiFormControlLayout__childrenWrapper"
+            >
+              <select
+                class="euiSelect euiSelect--compressed"
+              >
+                <option
+                  value="latency"
+                >
+                  Latency
+                </option>
+                <option
+                  value="cpu"
+                >
+                  CPU
+                </option>
+                <option
+                  value="memory"
+                >
+                  Memory
+                </option>
+              </select>
+              <div
+                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+              >
+                <span
+                  class="euiFormControlLayoutCustomIcon"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                      fill-rule="non-zero"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--m"
+      />
+    </div>
+  </div>
+  <div
+    class="euiSpacer euiSpacer--m"
+  />
+  <div
+    class="euiBasicTable"
+  >
+    <div>
+      <div
+        class="euiTableHeaderMobile"
+      >
+        <div
+          class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+        >
+          <div
+            class="euiFlexItem euiFlexItem--flexGrowZero"
+          />
           <div
             class="euiFlexItem euiFlexItem--flexGrowZero"
           >
-            <nav
-              class="euiPagination"
+            <div
+              class="euiTableSortMobile"
             >
-              <button
-                aria-label="Previous page"
-                class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
-                data-test-subj="pagination-button-previous"
-                disabled=""
-                type="button"
+              <div
+                class="euiPopover euiPopover--anchorDownRight"
               >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z"
-                    fill-rule="nonzero"
-                  />
-                </svg>
-              </button>
-              <ul
-                class="euiPagination__list"
-              >
-                <li
-                  class="euiPagination__item"
+                <div
+                  class="euiPopover__anchor"
                 >
                   <button
-                    aria-controls="random_html_id"
-                    aria-current="true"
-                    aria-label="Page 1 of 1"
-                    class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile"
-                    data-test-subj="pagination-button-0"
-                    disabled=""
+                    class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight"
                     type="button"
                   >
                     <span
-                      class="euiButtonContent euiButtonEmpty__content"
+                      class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
                     >
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                          fill-rule="non-zero"
+                        />
+                      </svg>
                       <span
                         class="euiButtonEmpty__text"
                       >
-                        1
+                        Sorting
                       </span>
                     </span>
                   </button>
-                </li>
-              </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <table
+        class="euiTable euiTable--responsive"
+        id="random_html_id"
+        tabindex="-1"
+      >
+        <caption
+          class="euiScreenReaderOnly euiTableCaption"
+        />
+        <thead>
+          <tr>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_Id_0"
+              role="columnheader"
+              scope="col"
+            >
               <button
-                aria-label="Next page"
-                class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
-                data-test-subj="pagination-button-next"
-                disabled=""
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
                 type="button"
               >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
+                <span
+                  class="euiTableCellContent"
                 >
-                  <path
-                    d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
-                    fill-rule="nonzero"
-                  />
-                </svg>
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Id"
+                  >
+                    Id
+                  </span>
+                </span>
               </button>
-            </nav>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_Type_1"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Type"
+                  >
+                    Type
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_Query Count_2"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Query Count"
+                  >
+                    Query Count
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_Timestamp_3"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Timestamp"
+                  >
+                    Timestamp
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_measurements.latency_4"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Avg Latency / Latency"
+                  >
+                    Avg Latency / Latency
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_measurements.cpu_5"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Avg CPU Time / CPU Time"
+                  >
+                    Avg CPU Time / CPU Time
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_measurements.memory_6"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Avg Memory Usage / Memory Usage"
+                  >
+                    Avg Memory Usage / Memory Usage
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_indices_7"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Indices"
+                  >
+                    Indices
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_search_type_8"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Search Type"
+                  >
+                    Search Type
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_node_id_9"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Coordinator Node ID"
+                  >
+                    Coordinator Node ID
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_total_shards_10"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Total Shards"
+                  >
+                    Total Shards
+                  </span>
+                </span>
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    a2e1c822-3e3c-4d1b-adb2-258e04f96f78
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    query
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    Jan 13, 2025 @ 12:00:00 AM
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                22.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1.34 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                204800.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  .kibana
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  query then fetch
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  UYKFun8PSAeJvkkt9cWf0w
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  1
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    130a5d36-615e-43e8-ad99-e1b90d527f44
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    group
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    -
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                10.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1.78 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                58000.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    a2e1c822-3e3c-4d1b-adb2-9f73af094b43
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    query
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    Jan 13, 2025 @ 12:00:00 AM
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                13.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                2.10 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                170320.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  my-index
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  query then fetch
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  UYKFun8PSAeJvkkt9cWf0w
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  1
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    7cd4c7f1-3803-4c5e-a41c-258e04f96f78
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    query
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    Jan 13, 2025 @ 12:00:00 AM
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                18.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                0.99 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                81200.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  .kibana
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  query then fetch
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  KINGun8PSAeJvkkt9cWf0w
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  1
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    76f5e51f-33f6-480c-8b20-8003abb93d19
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    group
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    -
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                9.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                0.99 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                133600.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    37d633a7-20e6-41a1-96e9-cd4806511dbf
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    group
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    -
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                6.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1.06 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                213440.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    9982b7fc-0339-47d8-b77f-8de1bda76b72
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    group
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                4
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    -
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                0.57 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                203100.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class="euiTableRow"
+          >
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    d8dccf54-8dcb-4411-9fd6-977844be8fb3
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    group
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Query Count
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Timestamp
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    -
+                  </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Latency / Latency
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                11.00 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg CPU Time / CPU Time
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                1.72 ms
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Avg Memory Usage / Memory Usage
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                59000.00 B
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Indices
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Search Type
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Coordinator Node ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div
+        class="euiSpacer euiSpacer--m"
+      />
+      <div
+        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+      >
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <div
+            class="euiPopover euiPopover--anchorUpRight"
+          >
+            <div
+              class="euiPopover__anchor"
+            >
+              <button
+                class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall"
+                data-test-subj="tablePaginationPopoverButton"
+                type="button"
+              >
+                <span
+                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                    focusable="false"
+                    height="16"
+                    role="img"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                      fill-rule="non-zero"
+                    />
+                  </svg>
+                  <span
+                    class="euiButtonEmpty__text"
+                  >
+                    Rows per page
+                    : 
+                    10
+                  </span>
+                </span>
+              </button>
+            </div>
           </div>
+        </div>
+        <div
+          class="euiFlexItem euiFlexItem--flexGrowZero"
+        >
+          <nav
+            class="euiPagination"
+          >
+            <button
+              aria-label="Previous page"
+              class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+              data-test-subj="pagination-button-previous"
+              disabled=""
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                focusable="false"
+                height="16"
+                role="img"
+                viewBox="0 0 16 16"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z"
+                  fill-rule="nonzero"
+                />
+              </svg>
+            </button>
+            <ul
+              class="euiPagination__list"
+            >
+              <li
+                class="euiPagination__item"
+              >
+                <button
+                  aria-controls="random_html_id"
+                  aria-current="true"
+                  aria-label="Page 1 of 1"
+                  class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile"
+                  data-test-subj="pagination-button-0"
+                  disabled=""
+                  type="button"
+                >
+                  <span
+                    class="euiButtonContent euiButtonEmpty__content"
+                  >
+                    <span
+                      class="euiButtonEmpty__text"
+                    >
+                      1
+                    </span>
+                  </span>
+                </button>
+              </li>
+            </ul>
+            <button
+              aria-label="Next page"
+              class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+              data-test-subj="pagination-button-next"
+              disabled=""
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                focusable="false"
+                height="16"
+                role="img"
+                viewBox="0 0 16 16"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
+                  fill-rule="nonzero"
+                />
+              </svg>
+            </button>
+          </nav>
         </div>
       </div>
     </div>

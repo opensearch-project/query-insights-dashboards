@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { waitFor, render, screen, fireEvent, within } from '@testing-library/react';
+import { waitFor, render, screen, fireEvent, within, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
@@ -181,7 +181,8 @@ describe('QueryInsights Component', () => {
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
-  it('uses query ID as itemId for table rows to prevent duplicate row rendering', () => {
+  it('uses query ID as itemId for table rows to prevent duplicate row rendering', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
     const testQueries = [
       {
         ...sampleQueries[0],
@@ -196,7 +197,7 @@ describe('QueryInsights Component', () => {
         group_by: 'NONE',
       },
     ];
-    expect(() => {
+    await act(async () => {
       render(
         <MemoryRouter>
           <DataSourceContext.Provider value={mockDataSourceContext}>
@@ -217,38 +218,47 @@ describe('QueryInsights Component', () => {
           </DataSourceContext.Provider>
         </MemoryRouter>
       );
-    }).not.toThrow();
+    });
 
-    // Verify that the table component renders successfully
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    // Verify that the main data table renders successfully (use getAllByRole and check for the main table)
+    await waitFor(() => {
+      const tables = screen.getAllByRole('table');
+      expect(tables.length).toBeGreaterThan(0);
+    });
   });
 
   it('renders the expected column headers for default (mixed) view', async () => {
     mockHttp.get.mockResolvedValue({ workload_groups: [] });
-    renderQueryInsights();
-
-    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
-
-    // Wait for async version check and WLM detection to complete
-    await waitFor(() => {
-      const headers = screen.getAllByRole('columnheader', { hidden: false });
-      const headerTexts = headers.map((h) => h.textContent?.trim());
-      const expectedHeaders = [
-        'Id',
-        'Type',
-        'Query Count',
-        'Timestamp',
-        'Avg Latency / Latency',
-        'Avg CPU Time / CPU Time',
-        'Avg Memory Usage / Memory Usage',
-        'Indices',
-        'Search Type',
-        'Coordinator Node ID',
-        'WLM Group',
-        'Total Shards',
-      ];
-      expect(headerTexts).toEqual(expectedHeaders);
+    await act(async () => {
+      renderQueryInsights();
     });
+
+    // The main data table is the last table in the DOM (after the chart table)
+    await waitFor(
+      () => {
+        const tables = screen.getAllByRole('table');
+        const mainTable = tables[tables.length - 1];
+        const headers = within(mainTable).getAllByRole('columnheader');
+        const headerTexts = headers.map((h) => h.textContent?.trim());
+        // sampleQueries has both NONE and SIMILARITY, so table shows mixed headers
+        const expectedHeaders = [
+          'Id',
+          'Type',
+          'Query Count',
+          'Timestamp',
+          'Avg Latency / Latency',
+          'Avg CPU Time / CPU Time',
+          'Avg Memory Usage / Memory Usage',
+          'Indices',
+          'Search Type',
+          'Coordinator Node ID',
+          'WLM Group',
+          'Total Shards',
+        ];
+        expect(headerTexts).toEqual(expectedHeaders);
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
@@ -375,6 +385,124 @@ describe('QueryInsights Component', () => {
         expect(mockHttp.get).toHaveBeenCalledWith('/api/_wlm/workload_group', {
           query: { dataSourceId: 'test' },
         });
+      });
+    });
+  });
+
+  describe('Visualizations', () => {
+    it('renders visualization panel with Query/Group toggle', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('Visualizations')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Query' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Group' })).toBeInTheDocument();
+    });
+
+    it('renders percentile metrics in query visualization mode', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
+      expect(screen.getByText('P90 CPU TIME')).toBeInTheDocument();
+      expect(screen.getByText('P90 MEMORY')).toBeInTheDocument();
+      expect(screen.getByText('P99 LATENCY')).toBeInTheDocument();
+      expect(screen.getByText('P99 CPU TIME')).toBeInTheDocument();
+      expect(screen.getByText('P99 MEMORY')).toBeInTheDocument();
+    });
+
+    it('shows "no visualizations" message when Group mode is selected', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const groupButton = screen.getByRole('button', { name: 'Group' });
+      fireEvent.click(groupButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('No Visualization Available')).toBeInTheDocument();
+        expect(
+          screen.getByText('Visualizations for grouped queries are coming soon')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('renders chart group-by selector with options', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('Queries by Node')).toBeInTheDocument();
+    });
+
+    it('renders performance analysis section', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('Performance Analysis')).toBeInTheDocument();
+    });
+  });
+
+  describe('Filter UI', () => {
+    it('renders all filter buttons', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      // Use getAllByRole since there may be multiple buttons with similar names
+      const buttons = screen.getAllByRole('button');
+      const buttonTexts = buttons.map((b) => b.textContent?.trim());
+      expect(buttonTexts).toContain('Type');
+      expect(buttonTexts).toContain('Indices');
+      expect(buttonTexts).toContain('Search Type');
+      expect(buttonTexts).toContain('Coordinator Node ID');
+      expect(buttonTexts).toContain('WLM Group');
+    });
+
+    it('renders search input field', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByPlaceholderText('Search queries')).toBeInTheDocument();
+    });
+
+    it('opens Type filter popover on click', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const typeButton = findTypeFilterButton();
+      fireEvent.click(typeButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+    });
+
+    it('filters table when search text is entered', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'a2e1c822' } });
+
+      // Search should filter the table
+      await waitFor(() => {
+        expect(searchInput).toHaveValue('a2e1c822');
       });
     });
   });

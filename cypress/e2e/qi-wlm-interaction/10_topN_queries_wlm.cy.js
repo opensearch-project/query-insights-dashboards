@@ -25,39 +25,61 @@ describe('Top N Queries - WLM Available', () => {
     }).as('wlmGroups');
     cy.visit('/app/query-insights-dashboards#/queryInsights');
     cy.wait(['@latency', '@cpu', '@memory', '@wlmGroups']);
-    cy.get('table', { timeout: 30000 }).should('be.visible');
+    cy.get('.euiBasicTable', { timeout: 30000 }).last().should('be.visible');
   });
 
   it('displays correct number of queries from fixture', () => {
-    cy.get('table tbody tr').should('have.length', 3);
+    cy.get('.euiBasicTable').last().find('tbody tr').should('have.length', 3);
   });
 
   it('shows WLM Group column with correct values', () => {
     cy.contains('WLM Group').should('be.visible');
-    cy.get('table tbody tr').eq(0).should('contain', 'DEFAULT_WORKLOAD_GROUP');
-    cy.get('table tbody tr').eq(1).should('contain', 'Analytics Team');
-    cy.get('table tbody tr').eq(2).should('contain', 'Search Team');
+    cy.get('.euiBasicTable')
+      .last()
+      .find('tbody tr')
+      .eq(0)
+      .should('contain', 'DEFAULT_WORKLOAD_GROUP');
+    cy.get('.euiBasicTable').last().find('tbody tr').eq(1).should('contain', 'Analytics Team');
+    cy.get('.euiBasicTable').last().find('tbody tr').eq(2).should('contain', 'Search Team');
   });
 
   it('has WLM group filter button with options', () => {
-    cy.contains('button', 'WLM Group').should('be.visible').click({ force: true });
-    cy.get('.euiPopover__panel').should('be.visible');
-    cy.contains('DEFAULT_WORKLOAD_GROUP').should('be.visible');
-    cy.contains('Analytics Team').should('be.visible');
-    cy.contains('Search Team').should('be.visible');
+    cy.contains('button.euiFilterButton', 'WLM Group').should('be.visible').click({ force: true });
+    cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
+    cy.contains('.euiSelectableListItem', 'DEFAULT_WORKLOAD_GROUP').should('be.visible');
+    cy.contains('.euiSelectableListItem', 'Analytics Team').should('be.visible');
+    cy.contains('.euiSelectableListItem', 'Search Team').should('be.visible');
+    cy.get('body').click(0, 0);
   });
 
   it('filters by DEFAULT_WORKLOAD_GROUP', () => {
-    cy.contains('button', 'WLM Group').should('be.visible').click({ force: true });
-    cy.get('.euiPopover__panel').should('be.visible');
-    cy.contains('DEFAULT_WORKLOAD_GROUP').click({ force: true });
-    cy.get('table tbody tr').should('have.length', 1);
+    cy.contains('button.euiFilterButton', 'WLM Group').should('be.visible').click({ force: true });
+    cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
+    cy.contains('.euiSelectableListItem', 'DEFAULT_WORKLOAD_GROUP').click({ force: true });
+    cy.get('body').click(0, 0);
+    cy.wait(300);
+    cy.get('.euiBasicTable').last().find('tbody tr').should('have.length', 1);
   });
 
   it('shows WLM group links when mapped', () => {
-    cy.get('table tbody tr').eq(0).find('button').should('contain', 'DEFAULT_WORKLOAD_GROUP');
-    cy.get('table tbody tr').eq(1).find('button').should('contain', 'Analytics Team');
-    cy.get('table tbody tr').eq(2).find('button').should('contain', 'Search Team');
+    cy.get('.euiBasicTable')
+      .last()
+      .find('tbody tr')
+      .eq(0)
+      .find('button')
+      .should('contain', 'DEFAULT_WORKLOAD_GROUP');
+    cy.get('.euiBasicTable')
+      .last()
+      .find('tbody tr')
+      .eq(1)
+      .find('button')
+      .should('contain', 'Analytics Team');
+    cy.get('.euiBasicTable')
+      .last()
+      .find('tbody tr')
+      .eq(2)
+      .find('button')
+      .should('contain', 'Search Team');
   });
   it('shows dash for group type records', () => {
     cy.intercept('GET', '/api/top_queries/latency**', {
@@ -81,7 +103,7 @@ describe('Top N Queries - WLM Available', () => {
     }).as('wlmGroups2');
     cy.reload();
     cy.wait(['@groupData', '@wlmGroups2']);
-    cy.get('table tbody tr').eq(0).find('span').should('contain', '-');
+    cy.get('.euiBasicTable').last().find('tbody tr').eq(0).find('span').should('contain', '-');
   });
 
   it('shows dash for unmapped wlm_group_id', () => {
@@ -91,6 +113,6 @@ describe('Top N Queries - WLM Available', () => {
     }).as('wlmGroups3');
     cy.reload();
     cy.wait(['@wlmGroups3']);
-    cy.get('table tbody tr').eq(2).find('span').should('contain', '-');
+    cy.get('.euiBasicTable').last().find('tbody tr').eq(2).find('span').should('contain', '-');
   });
 });
