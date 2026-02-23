@@ -876,7 +876,7 @@ const QueryInsights = ({
     const bucketSize = timeRange / numBuckets;
     const isMultiDay = timeRange > 24 * 60 * 60 * 1000;
 
-    // Create buckets based on time range (including end point)
+    // Create buckets based on time range
     const buckets: Array<{
       time: number;
       max: number;
@@ -884,7 +884,7 @@ const QueryInsights = ({
       sum: number;
       count: number;
     }> = [];
-    for (let i = 0; i <= numBuckets; i++) {
+    for (let i = 0; i < numBuckets; i++) {
       buckets.push({ time: startTime + i * bucketSize, max: 0, min: Infinity, sum: 0, count: 0 });
     }
 
@@ -1318,9 +1318,6 @@ const QueryInsights = ({
                       <EuiText size="s">
                         <p>P90 LATENCY</p>
                       </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
-                      </EuiText>
                       <EuiTitle size="l">
                         <h2>
                           <b>{percentileMetrics.p90Latency} ms</b>
@@ -1332,9 +1329,6 @@ const QueryInsights = ({
                     <EuiPanel paddingSize="m">
                       <EuiText size="s">
                         <p>P90 CPU TIME</p>
-                      </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
                       </EuiText>
                       <EuiTitle size="l">
                         <h2>
@@ -1348,9 +1342,6 @@ const QueryInsights = ({
                       <EuiText size="s">
                         <p>P90 MEMORY</p>
                       </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
-                      </EuiText>
                       <EuiTitle size="l">
                         <h2>
                           <b>{percentileMetrics.p90Memory} MB</b>
@@ -1362,9 +1353,6 @@ const QueryInsights = ({
                     <EuiPanel paddingSize="m">
                       <EuiText size="s">
                         <p>P99 LATENCY</p>
-                      </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
                       </EuiText>
                       <EuiTitle size="l">
                         <h2>
@@ -1378,9 +1366,6 @@ const QueryInsights = ({
                       <EuiText size="s">
                         <p>P99 CPU TIME</p>
                       </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
-                      </EuiText>
                       <EuiTitle size="l">
                         <h2>
                           <b>{percentileMetrics.p99Cpu} ms</b>
@@ -1392,9 +1377,6 @@ const QueryInsights = ({
                     <EuiPanel paddingSize="m">
                       <EuiText size="s">
                         <p>P99 MEMORY</p>
-                      </EuiText>
-                      <EuiText size="xs" color="subdued">
-                        <p>Average</p>
                       </EuiText>
                       <EuiTitle size="l">
                         <h2>
@@ -1543,26 +1525,25 @@ const QueryInsights = ({
                 </EuiPanel>
               </>
             ) : (
-              <EuiFlexGroup
-                direction="column"
-                alignItems="center"
-                justifyContent="center"
-                style={{ padding: '80px 20px', backgroundColor: '#f5f7fa', borderRadius: '8px' }}
-              >
-                <EuiFlexItem grow={false}>
-                  <EuiIcon type="visLine" size="xxl" color="subdued" />
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiTitle size="s">
-                    <h3>No Visualization Available</h3>
-                  </EuiTitle>
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiText color="subdued" size="s">
-                    <p>Visualizations for grouped queries are coming soon</p>
-                  </EuiText>
-                </EuiFlexItem>
-              </EuiFlexGroup>
+              <EuiPanel color="subdued" paddingSize="xl">
+                <EuiSpacer size="xxl" />
+                <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
+                  <EuiFlexItem grow={false}>
+                    <EuiIcon type="visLine" size="xxl" color="subdued" />
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <EuiTitle size="s">
+                      <h3>No Visualization Available</h3>
+                    </EuiTitle>
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <EuiText color="subdued" size="s">
+                      <p>Visualizations for grouped queries are coming soon</p>
+                    </EuiText>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <EuiSpacer size="xxl" />
+              </EuiPanel>
             )}
           </EuiPanel>
           <EuiSpacer size="m" />
