@@ -54,6 +54,7 @@ import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { computePerformanceChartData } from '../../../common/utils/ChartUtils';
 import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
@@ -344,8 +345,23 @@ const QueryInsights = ({
       if (selectedWlmGroups.length && !selectedWlmGroups.includes(q.wlm_group_id)) return false;
 
       if (searchText) {
-        const id = (q.id ?? '').toLowerCase();
-        if (!id.includes(searchText.toLowerCase())) return false;
+        const text = searchText.toLowerCase();
+        const searchableText = Object.values(q)
+          .map((v) => {
+            try {
+              if (v == null) return '';
+              if (typeof v === 'string') return v;
+              if (typeof v === 'number') return String(v);
+              if (Array.isArray(v)) return v.join(' ');
+              if (typeof v === 'object') return JSON.stringify(v);
+              return '';
+            } catch {
+              return '';
+            }
+          })
+          .join(' ')
+          .toLowerCase();
+        if (!searchableText.includes(text)) return false;
       }
 
       if (selectedGroupBy.length === 1) {
@@ -815,25 +831,25 @@ const QueryInsights = ({
       const lat = q.measurements?.latency?.number;
       const cpu = q.measurements?.cpu?.number;
       const mem = q.measurements?.memory?.number;
-      if (lat) latencies.push(lat);
-      if (cpu) cpus.push(cpu / 1000000); // ns to ms
-      if (mem) memories.push(mem / (1024 * 1024)); // bytes to MB
+      if (lat != null) latencies.push(lat);
+      if (cpu != null) cpus.push(calculateMetricNumber(cpu, 1, 1000000));
+      if (mem != null) memories.push(calculateMetricNumber(mem, 1, 1024 * 1024));
     });
 
-    const percentile = (arr: number[], p: number) => {
-      if (arr.length === 0) return 0;
+    const percentile = (arr: number[], p: number, decimals: number = 0) => {
+      if (arr.length === 0) return 'N/A';
       const sorted = [...arr].sort((a, b) => a - b);
       const idx = Math.ceil((p / 100) * sorted.length) - 1;
-      return sorted[idx];
+      return sorted[idx].toFixed(decimals);
     };
 
     return {
-      p90Latency: percentile(latencies, 90).toFixed(0),
-      p90Cpu: percentile(cpus, 90).toFixed(1),
-      p90Memory: percentile(memories, 90).toFixed(1),
-      p99Latency: percentile(latencies, 99).toFixed(0),
-      p99Cpu: percentile(cpus, 99).toFixed(1),
-      p99Memory: percentile(memories, 99).toFixed(1),
+      p90Latency: percentile(latencies, 90),
+      p90Cpu: percentile(cpus, 90, 1),
+      p90Memory: percentile(memories, 90, 1),
+      p99Latency: percentile(latencies, 99),
+      p99Cpu: percentile(cpus, 99, 1),
+      p99Memory: percentile(memories, 99, 1),
     };
   }, [itemsForMetrics]);
 
@@ -868,83 +884,10 @@ const QueryInsights = ({
     }));
   }, [itemsForMetrics, chartGroupBy, wlmIdToNameMap]);
 
-  const performanceChartData = useMemo(() => {
-    const startTime = new Date(from).getTime();
-    const endTime = new Date(to).getTime();
-    const timeRange = endTime - startTime;
-    const numBuckets = 10;
-    const bucketSize = timeRange / numBuckets;
-    const isMultiDay = timeRange > 24 * 60 * 60 * 1000;
-
-    // Create buckets based on time range
-    const buckets: Array<{
-      time: number;
-      max: number;
-      min: number;
-      sum: number;
-      count: number;
-    }> = [];
-    for (let i = 0; i < numBuckets; i++) {
-      buckets.push({ time: startTime + i * bucketSize, max: 0, min: Infinity, sum: 0, count: 0 });
-    }
-
-    // Assign items to buckets
-    itemsForMetrics.forEach((q) => {
-      const bucketIndex = Math.min(
-        Math.floor((q.timestamp - startTime) / bucketSize),
-        numBuckets - 1
-      );
-      if (bucketIndex < 0) return;
-
-      let value = 0;
-      if (performanceMetric === 'latency') {
-        value = q.measurements?.latency?.number || 0;
-      } else if (performanceMetric === 'cpu') {
-        value = (q.measurements?.cpu?.number || 0) / 1000000;
-      } else {
-        value = (q.measurements?.memory?.number || 0) / (1024 * 1024);
-      }
-
-      const bucket = buckets[bucketIndex];
-      if (bucket.count === 0) {
-        bucket.max = value;
-        bucket.min = value;
-      } else {
-        bucket.max = Math.max(bucket.max, value);
-        bucket.min = Math.min(bucket.min, value);
-      }
-      bucket.sum += value;
-      bucket.count += 1;
-    });
-
-    return {
-      times: buckets.map((b) => {
-        const date = new Date(b.time);
-        return isMultiDay
-          ? date.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      }),
-      bucketRanges: buckets.map((b) => {
-        const bucketStart = new Date(b.time);
-        const bucketEnd = new Date(b.time + bucketSize);
-        const formatOpts: Intl.DateTimeFormatOptions = isMultiDay
-          ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-          : { hour: '2-digit', minute: '2-digit' };
-        return `${bucketStart.toLocaleString('en-US', formatOpts)} - ${bucketEnd.toLocaleString(
-          'en-US',
-          formatOpts
-        )}`;
-      }),
-      max: buckets.map((b) => (b.count > 0 ? Number(b.max.toFixed(2)) : null)),
-      avg: buckets.map((b) => (b.count > 0 ? Number((b.sum / b.count).toFixed(2)) : null)),
-      min: buckets.map((b) => (b.count > 0 ? Number(b.min.toFixed(2)) : null)),
-    };
-  }, [itemsForMetrics, performanceMetric, from, to]);
+  const performanceChartData = useMemo(
+    () => computePerformanceChartData(itemsForMetrics, from, to, performanceMetric),
+    [itemsForMetrics, performanceMetric, from, to]
+  );
 
   const performanceChartOptions = useMemo(
     () => ({

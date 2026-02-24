@@ -737,18 +737,18 @@ describe('Query Insights — Visualizations Panel', () => {
   });
 
   it('shows empty state when Group mode is selected', () => {
-    // Click the Group button in the Visualizations panel (not the Type filter)
-    cy.contains('.euiPanel', 'Visualizations').contains('button', 'Group').click();
+    // Click the Group button in the Visualizations panel
+    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Group').click();
     cy.contains('No Visualization Available').should('be.visible');
     cy.contains('Visualizations for grouped queries are coming soon').should('be.visible');
   });
 
   it('switches back to Query mode and shows visualizations', () => {
     // Click the Group button in the Visualizations panel
-    cy.contains('.euiPanel', 'Visualizations').contains('button', 'Group').click();
+    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Group').click();
     cy.contains('No Visualization Available').should('be.visible');
     // Click the Query button in the Visualizations panel
-    cy.contains('.euiPanel', 'Visualizations').contains('button', 'Query').click();
+    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Query').click();
     cy.contains('P90 LATENCY').should('be.visible');
   });
 });
@@ -817,10 +817,8 @@ describe('Query Insights — Search and Filter Sync', () => {
   });
 
   it('updates search box when filter is selected', () => {
-    // First clear any existing filters
     resetTypeFilterToNone();
     cy.get('.euiFieldSearch').should('have.value', '');
-    // Now select query filter
     setTypeFilter('query');
     cy.get('.euiFieldSearch').should('contain.value', 'group_by');
   });
@@ -830,5 +828,38 @@ describe('Query Insights — Search and Filter Sync', () => {
     cy.get('.euiFieldSearch').should('not.have.value', '');
     resetTypeFilterToNone();
     cy.get('.euiFieldSearch').should('have.value', '');
+  });
+
+  it('filters by query ID in free-text search', () => {
+    // a2e1c822 matches 2 queries in fixture
+    cy.get('.euiFieldSearch').clear().type('a2e1c822');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
+  });
+
+  it('filters by index name in free-text search', () => {
+    // my-index only appears in one query (group_by: NONE)
+    cy.get('.euiFieldSearch').clear().type('my-index');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 1);
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('contain', 'my-index');
+  });
+
+  it('filters by node ID in free-text search', () => {
+    // UYKFun8 appears in 2 queries (1 NONE, 1 SIMILARITY) - free-text filters to NONE only
+    cy.get('.euiFieldSearch').clear().type('UYKFun8');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
+  });
+
+  it('shows no results for non-matching free-text search', () => {
+    cy.get('.euiFieldSearch').clear().type('nonexistent_xyz_123');
+    cy.get('.euiBasicTable').last().contains('No items found').should('be.visible');
+  });
+
+  it('combines free-text search with filter selection', () => {
+    setTypeFilter('query');
+    // .kibana appears in all queries
+    cy.get('.euiFieldSearch').type(' kibana');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
+    cy.get('.euiFieldSearch').should('contain.value', 'group_by');
+    cy.get('.euiFieldSearch').should('contain.value', 'kibana');
   });
 });

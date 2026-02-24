@@ -440,17 +440,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               P90 LATENCY
             </p>
           </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
-          </div>
           <h2
             class="euiTitle euiTitle--large"
           >
@@ -473,17 +462,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
             <p>
               P90 CPU TIME
             </p>
-          </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
           </div>
           <h2
             class="euiTitle euiTitle--large"
@@ -508,17 +486,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               P90 MEMORY
             </p>
           </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
-          </div>
           <h2
             class="euiTitle euiTitle--large"
           >
@@ -541,17 +508,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
             <p>
               P99 LATENCY
             </p>
-          </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
           </div>
           <h2
             class="euiTitle euiTitle--large"
@@ -576,17 +532,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               P99 CPU TIME
             </p>
           </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
-          </div>
           <h2
             class="euiTitle euiTitle--large"
           >
@@ -609,17 +554,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
             <p>
               P99 MEMORY
             </p>
-          </div>
-          <div
-            class="euiText euiText--extraSmall"
-          >
-            <div
-              class="euiTextColor euiTextColor--subdued"
-            >
-              <p>
-                Average
-              </p>
-            </div>
           </div>
           <h2
             class="euiTitle euiTitle--large"

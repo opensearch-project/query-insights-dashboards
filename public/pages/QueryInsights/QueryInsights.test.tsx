@@ -505,5 +505,82 @@ describe('QueryInsights Component', () => {
         expect(searchInput).toHaveValue('a2e1c822');
       });
     });
+
+    it('filters by index name in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'my-index' } });
+
+      await waitFor(() => {
+        // Should find the query with indices: ["my-index"]
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-9f73af094b43')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by node_id in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'KINGun8' } });
+
+      await waitFor(() => {
+        // Should find queries with node_id containing "KINGun8"
+        expect(screen.getByText('7cd4c7f1-3803-4c5e-a41c-258e04f96f78')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by wlm_group_id in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'SEARCH_GROUP' } });
+
+      await waitFor(() => {
+        // Should find the query with wlm_group_id: "SEARCH_GROUP"
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-9f73af094b43')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by labels in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      // Search for X-Opaque-Id value from fixture
+      fireEvent.change(searchInput, { target: { value: '90eb5c3b-8448' } });
+
+      await waitFor(() => {
+        // Should find queries with matching label value
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-258e04f96f78')).toBeInTheDocument();
+      });
+    });
+
+    it('searches all fields dynamically', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      // Search for total_shards value
+      fireEvent.change(searchInput, { target: { value: 'query_then_fetch' } });
+
+      await waitFor(() => {
+        // Should find queries with search_type: "query_then_fetch"
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-258e04f96f78')).toBeInTheDocument();
+      });
+    });
   });
 });
