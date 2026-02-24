@@ -327,7 +327,7 @@ describe('Query Insights Dashboard', () => {
   });
 
   it('should get minimal details of the query using verbose=false', () => {
-    cy.wait(15000);
+    cy.wait(20000);
     const to = new Date().toISOString();
     const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 

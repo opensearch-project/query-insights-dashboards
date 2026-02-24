@@ -74,24 +74,27 @@ describe('Query Insights Configurations Page', () => {
    *  Validate enabling/disabling metrics
    */
   it('should allow enabling and disabling metrics', () => {
-    // Validate the switch for enabling/disabling metrics
+    // Wait for the toggle to be fully rendered and interactive
     cy.get('button[data-test-subj="top-n-metric-toggle"]')
       .should('exist')
-      .and('have.attr', 'aria-checked', 'false') // Initially disabled)
-      .trigger('mouseover')
-      .click();
-    cy.wait(1000);
+      .should('be.visible')
+      .and('have.attr', 'aria-checked', 'false');
 
-    cy.get('button[data-test-subj="top-n-metric-toggle"]').should(
+    // Click and wait for React 18 state update
+    cy.get('button[data-test-subj="top-n-metric-toggle"]').click({ force: true });
+    cy.get('button[data-test-subj="top-n-metric-toggle"]', { timeout: 15000 }).should(
       'have.attr',
       'aria-checked',
       'true'
-    ); // After toggling, it should be enabled
-    // Re-enable the switch
-    cy.get('button[data-test-subj="top-n-metric-toggle"]')
-      .trigger('mouseover')
-      .click()
-      .should('have.attr', 'aria-checked', 'false');
+    );
+
+    // Re-disable the switch
+    cy.get('button[data-test-subj="top-n-metric-toggle"]').click({ force: true });
+    cy.get('button[data-test-subj="top-n-metric-toggle"]', { timeout: 15000 }).should(
+      'have.attr',
+      'aria-checked',
+      'false'
+    );
   });
 
   /**

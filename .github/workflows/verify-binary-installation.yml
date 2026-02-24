@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout Branch
         uses: actions/checkout@v3
+        with:
+          path: plugin-source
 
       - name: Check working directory and list files
         run: |
@@ -34,6 +36,7 @@ jobs:
           plugin_version=$(node -p "require('./package.json').version")
           echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
           echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
+        working-directory: plugin-source
         shell: bash
 
       - name: Run OpenSearch
@@ -43,21 +46,74 @@ jobs:
           security-enabled: false
           jdk-version: 21
 
-      - name: Run Dashboard
-        id: setup-dashboards
-        uses: derek-ho/setup-opensearch-dashboards@v1
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@v3
         with:
-          plugin_name: query-insights-dashboards
-          built_plugin_name: queryInsightsDashboards
-          install_zip: true
+          path: OpenSearch-Dashboards
+          repository: opensearch-project/OpenSearch-Dashboards
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Move plugin to OpenSearch-Dashboards plugins directory
+        run: |
+          mv plugin-source OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Get tool versions
+        id: tool-versions
+        run: |
+          echo "node_version=$(cat .node-version)" >> $GITHUB_OUTPUT
+          echo "yarn_version=$(jq -r '.engines.yarn' package.json)" >> $GITHUB_OUTPUT
+        working-directory: OpenSearch-Dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.tool-versions.outputs.node_version }}
+
+      - name: Setup Yarn
+        uses: Wandalen/wretry.action@master
+        with:
+          attempts: 3
+          command: |
+            npm uninstall -g yarn
+            npm i -g yarn@${{ steps.tool-versions.outputs.yarn_version }}
+            yarn cache clean
+            yarn add sha.js
+          current_path: OpenSearch-Dashboards
+
+      - name: Bootstrap OpenSearch Dashboards
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 2
+          command: yarn --cwd OpenSearch-Dashboards osd bootstrap --oss --single-version=loose
+
+      - name: Build plugin
+        run: yarn build
+        working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Download OpenSearch Dashboards binary
+        uses: peternied/download-file@v2
+        with:
+          url: https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{ env.OPENSEARCH_VERSION }}/latest/linux/x64/tar/builds/opensearch-dashboards/dist/opensearch-dashboards-min-${{ env.OPENSEARCH_VERSION }}-linux-x64.tar.gz
+
+      - name: Extract binary
+        run: |
+          tar -xzf opensearch-*.tar.gz
+          rm -f opensearch-*.tar.gz
+
+      - name: Install plugin
+        run: |
+          ./opensearch-dashboards-${{ env.OPENSEARCH_VERSION }}-linux-x64/bin/opensearch-dashboards-plugin install file:${{ github.workspace }}/OpenSearch-Dashboards/plugins/query-insights-dashboards/build/queryInsightsDashboards-${{ env.PLUGIN_VERSION }}.zip
 
       - name: Start the binary
         run: |
           nohup ./bin/opensearch-dashboards &
-        working-directory: ${{ steps.setup-dashboards.outputs.dashboards-binary-directory }}
+        working-directory: opensearch-dashboards-${{ env.OPENSEARCH_VERSION }}-linux-x64
         shell: bash
 
       - name: Health check
         run: |
           timeout 300 bash -c 'while [[ "$(curl -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
+        working-directory: opensearch-dashboards-${{ env.OPENSEARCH_VERSION }}-linux-x64
         shell: bash

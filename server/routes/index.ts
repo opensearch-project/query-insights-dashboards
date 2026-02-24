@@ -23,8 +23,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           const res = await client('queryInsights.getTopNQueries');
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -35,8 +34,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             request.query?.dataSourceId
           );
           const res = await client.callAPI('queryInsights.getTopNQueries', {});
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -79,8 +77,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client('queryInsights.getTopNQueriesLatencyForId', params)
               : await client('queryInsights.getTopNQueriesLatency', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -94,8 +91,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client.callAPI('queryInsights.getTopNQueriesLatencyForId', params)
               : await client.callAPI('queryInsights.getTopNQueriesLatency', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -139,8 +135,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client('queryInsights.getTopNQueriesCpuForId', params)
               : await client('queryInsights.getTopNQueriesCpu', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -154,8 +149,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client.callAPI('queryInsights.getTopNQueriesCpuForId', params)
               : await client.callAPI('queryInsights.getTopNQueriesCpu', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -198,8 +192,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client('queryInsights.getTopNQueriesMemoryForId', params)
               : await client('queryInsights.getTopNQueriesMemory', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -213,8 +206,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             id != null
               ? await client.callAPI('queryInsights.getTopNQueriesMemoryForId', params)
               : await client.callAPI('queryInsights.getTopNQueriesMemory', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -248,8 +240,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           const res = await client('queryInsights.getSettings');
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -260,8 +251,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             request.query?.dataSourceId
           );
           const res = await client.callAPI('queryInsights.getSettings', {});
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -325,8 +315,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
           const res = await client('queryInsights.setSettings', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,
@@ -337,8 +326,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             request.query?.dataSourceId
           );
           const res = await client.callAPI('queryInsights.setSettings', params);
-          return response.custom({
-            statusCode: 200,
+          return response.ok({
             body: {
               ok: true,
               response: res,

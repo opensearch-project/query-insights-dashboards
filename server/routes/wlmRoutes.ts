@@ -32,7 +32,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
           error,
         });
-        return response.custom({
+        return response.customError({
           statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch WLM stats: ${error.message}`,
@@ -69,7 +69,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: stats });
       } catch (error: any) {
         console.error(`Failed to fetch stats for node ${request.params.nodeId}:`, error);
-        return response.custom({
+        return response.customError({
           statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch stats for node ${request.params.nodeId}: ${error.message}`,
@@ -135,7 +135,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: result });
       } catch (error: any) {
-        return response.custom({
+        return response.customError({
           statusCode: error.statusCode || 500,
           body: { message: `Error fetching workload group: ${error.message}` },
         });
@@ -290,7 +290,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
           `Failed to fetch WLM stats for group ${request.params.workloadGroupId}:`,
           error
         );
-        return response.custom({
+        return response.customError({
           statusCode: error.statusCode || 500,
           body: {
             message: `Failed to fetch WLM stats for group ${request.params.workloadGroupId}: ${error.message}`,
@@ -335,7 +335,7 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (error: any) {
         console.error(`Failed to create rule:`, error);
-        return response.custom({
+        return response.customError({
           statusCode: error.statusCode || 500,
           body: { message: `Failed to create rule: ${error.message}` },
         });

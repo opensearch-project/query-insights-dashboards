@@ -16,6 +16,8 @@ module.exports = {
     '^monaco-editor/esm/vs/editor/editor.api$': '<rootDir>/test/mocks/monaco-editor.ts',
     '^monaco-editor$': '<rootDir>/test/mocks/monaco-editor.ts',
     '^@osd/monaco$': '<rootDir>/test/mocks/monaco-editor.ts',
+    '^react$': '<rootDir>/../../node_modules/react',
+    '^react-dom$': '<rootDir>/../../node_modules/react-dom',
   },
   transformIgnorePatterns: ['node_modules/(?!(monaco-editor)/)'],
   coverageReporters: ['lcov', 'text', 'cobertura'],
