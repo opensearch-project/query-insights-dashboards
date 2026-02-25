@@ -38,10 +38,6 @@ import {
 import { createRoot } from 'react-dom/client';
 import ace from 'brace';
 import { OpenSearchDashboardsContextProvider } from '../../../../../src/plugins/opensearch_dashboards_react/public';
-import {
-  Panel,
-  PanelsContainer,
-} from '../../../../../src/plugins/opensearch_dashboards_react/public';
 import { CoreStart } from '../../../../../src/core/public';
 import 'brace/mode/json';
 import 'brace/theme/textmate';
@@ -166,6 +162,7 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [fontSize, setFontSize] = useState(14);
   const [wrapMode, setWrapMode] = useState(false);
+  const [hideInput, setHideInput] = useState(false);
   const inputEditorRef = useRef<HTMLDivElement>(null);
   const outputEditorRef = useRef<HTMLDivElement>(null);
   const inputEditorInstance = useRef<any>(null);
@@ -176,7 +173,8 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
       inputEditorInstance.current = ace.edit(inputEditorRef.current);
       inputEditorInstance.current.setTheme('ace/theme/textmate');
       inputEditorInstance.current.session.setMode('ace/mode/json');
-      inputEditorInstance.current.setValue(input, -1);
+      const initialValue = pendingQueryRef.current || input;
+      inputEditorInstance.current.setValue(initialValue, -1);
       inputEditorInstance.current.setOptions({
         fontSize,
         showPrintMargin: false,
@@ -200,6 +198,11 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
         foldStyle: 'markbegin',
       });
       outputEditorInstance.current.session.setUseWrapMode(wrapMode);
+      if (pendingQueryRef.current) {
+        const q = pendingQueryRef.current;
+        pendingQueryRef.current = null;
+        executeQuery(q);
+      }
     }
     return () => {
       if (inputEditorInstance.current) {
@@ -228,14 +231,11 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
     }
   }, [output]);
 
+  const pendingQueryRef = useRef<string | null>(localStorage.getItem('profilerQuery'));
+
   useEffect(() => {
-    const storedQuery = localStorage.getItem('profilerQuery');
-    if (storedQuery) {
-      setInput(storedQuery);
+    if (pendingQueryRef.current) {
       localStorage.removeItem('profilerQuery');
-      setTimeout(() => {
-        executeQuery(storedQuery);
-      }, 1000);
     }
   }, []);
 
@@ -286,16 +286,20 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'profile.json';
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   const handleImportQuery = (content: string) => {
     if (inputEditorInstance.current) {
       inputEditorInstance.current.setValue(content, -1);
     }
+    setHideInput(false);
   };
 
   const handleImportResult = (content: string) => {
@@ -306,6 +310,7 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
     } catch (err) {
       setOutput(content);
     }
+    setHideInput(true);
   };
 
   return (
@@ -319,76 +324,106 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
         </EuiTabs>
 
         <div style={{ height: '400px', width: '100%', display: 'flex' }}>
-          <PanelsContainer>
-            <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
-              <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-                <EuiFlexGroup
-                  gutterSize="none"
-                  responsive={false}
-                  style={{
-                    position: 'absolute',
-                    zIndex: 1000,
-                    top: 0,
-                    right: '16px',
-                    lineHeight: 1,
-                  }}
-                >
-                  <EuiFlexItem>
-                    <EuiToolTip content="Generate profile">
-                      <button
-                        onClick={() => executeQuery()}
-                        className="conApp__editorActionButton conApp__editorActionButton--success"
-                        style={{
-                          padding: '0 8px',
-                          cursor: 'pointer',
-                          lineHeight: 'inherit',
-                        }}
-                      >
-                        <EuiIcon type="play" />
-                      </button>
-                    </EuiToolTip>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiToolTip content="Reset all">
-                      <button
-                        onClick={() => {
-                          if (inputEditorInstance.current) {
-                            inputEditorInstance.current.setValue(
-                              `GET _search
+          {hideInput && (
+            <div
+              role="button"
+              tabIndex={0}
+              style={{
+                width: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#f5f7fa',
+                borderRight: '1px solid #D4DAE5',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                setHideInput(false);
+                if (inputEditorInstance.current) inputEditorInstance.current.setValue('', -1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setHideInput(false);
+                  if (inputEditorInstance.current) inputEditorInstance.current.setValue('', -1);
+                }
+              }}
+            >
+              <EuiToolTip content="Show query editor">
+                <EuiIcon type="plus" />
+              </EuiToolTip>
+            </div>
+          )}
+          <div
+            style={{
+              display: hideInput ? 'none' : 'flex',
+              flex: 1,
+              position: 'relative',
+              borderRight: '1px solid #D4DAE5',
+            }}
+          >
+            <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+              <EuiFlexGroup
+                gutterSize="none"
+                responsive={false}
+                style={{
+                  position: 'absolute',
+                  zIndex: 1000,
+                  top: 0,
+                  right: '16px',
+                  lineHeight: 1,
+                }}
+              >
+                <EuiFlexItem>
+                  <EuiToolTip content="Generate profile">
+                    <button
+                      onClick={() => executeQuery()}
+                      className="conApp__editorActionButton conApp__editorActionButton--success"
+                      style={{
+                        padding: '0 8px',
+                        cursor: 'pointer',
+                        lineHeight: 'inherit',
+                      }}
+                    >
+                      <EuiIcon type="play" />
+                    </button>
+                  </EuiToolTip>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiToolTip content="Reset all">
+                    <button
+                      onClick={() => {
+                        if (inputEditorInstance.current) {
+                          inputEditorInstance.current.setValue(
+                            `GET _search
 {
   "profile": true,
   "query": {
     "match_all": {}
   }
 }`,
-                              -1
-                            );
-                          }
-                          setOutput('');
-                        }}
-                        className="conApp__editorActionButton conApp__editorActionButton--success"
-                        style={{
-                          padding: '0 8px',
-                          cursor: 'pointer',
-                          lineHeight: 'inherit',
-                        }}
-                      >
-                        <EuiIcon type="refresh" />
-                      </button>
-                    </EuiToolTip>
-                  </EuiFlexItem>
-                </EuiFlexGroup>
-                <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
-              </div>
-            </Panel>
-            <Panel style={{ position: 'relative', flex: 1 }} initialWidth={50}>
-              <div
-                style={{ position: 'relative', height: '100%', width: '100%', background: '#FFF' }}
-              >
-                <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
-              </div>
-            </Panel>
-          </PanelsContainer>
+                            -1
+                          );
+                        }
+                        setOutput('');
+                      }}
+                      className="conApp__editorActionButton conApp__editorActionButton--success"
+                      style={{
+                        padding: '0 8px',
+                        cursor: 'pointer',
+                        lineHeight: 'inherit',
+                      }}
+                    >
+                      <EuiIcon type="refresh" />
+                    </button>
+                  </EuiToolTip>
+                </EuiFlexItem>
+              </EuiFlexGroup>
+              <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
+            </div>
+          </div>
+          <div style={{ flex: 1, position: 'relative', background: '#FFF' }}>
+            <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
+          </div>
         </div>
 
         {isSettingsOpen && (

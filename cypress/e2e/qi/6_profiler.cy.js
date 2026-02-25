@@ -73,6 +73,7 @@ describe('Query Profiler', () => {
     cy.wait('@profilerQuery');
     cy.contains('.euiTab', 'Export JSON').click();
     cy.url().should('include', 'dev_tools');
+    cy.task('deleteFile', 'cypress/downloads/profile.json');
   });
 
   it('imports search query and loads it into editor', () => {

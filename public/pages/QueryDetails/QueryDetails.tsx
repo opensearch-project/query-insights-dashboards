@@ -178,7 +178,9 @@ const QueryDetails = ({
                       onClick={() => {
                         try {
                           const queryBody = JSON.parse(queryDisplay);
-                          queryBody.profile = true;
+                          const { profile: _p, ...rest } = queryBody;
+                          Object.keys(queryBody).forEach((k) => delete queryBody[k]);
+                          Object.assign(queryBody, { profile: true, ...rest });
                           const indexPath = query?.indices?.join(',') || '_search';
                           const searchPath =
                             indexPath === '_search' ? '_search' : `${indexPath}/_search`;
@@ -195,7 +197,7 @@ const QueryDetails = ({
                         }
                       }}
                     >
-                      Rerun in Profiler
+                      Open in Profiler
                     </EuiButton>
                   </EuiFlexItem>
                 )}
