@@ -249,15 +249,15 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
       const path = parts[1] || '_search';
       const bodyText = lines.slice(1).join('\n').trim();
 
-      if (!path.includes('_search')) {
+      if (path.includes('..') || !path.split('?')[0].endsWith('_search')) {
         setOutput(
           'Error: Profiler only supports search queries. Please use Dev Tools Console for other operations.'
         );
         return;
       }
 
-      const bodyObj = bodyText ? JSON.parse(bodyText) : {};
-      bodyObj.profile = true;
+      const { profile: _p, ...rest } = bodyText ? JSON.parse(bodyText) : {};
+      const bodyObj = { profile: true, ...rest };
 
       const urlParams = new URLSearchParams(window.location.search);
       const dataSourceId = urlParams.get('dataSource') || undefined;
@@ -328,6 +328,7 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
             <div
               role="button"
               tabIndex={0}
+              data-test-subj="show-input-toggle"
               style={{
                 width: '24px',
                 display: 'flex',

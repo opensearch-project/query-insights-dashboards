@@ -177,15 +177,13 @@ const QueryDetails = ({
                       size="s"
                       onClick={() => {
                         try {
-                          const queryBody = JSON.parse(queryDisplay);
-                          const { profile: _p, ...rest } = queryBody;
-                          Object.keys(queryBody).forEach((k) => delete queryBody[k]);
-                          Object.assign(queryBody, { profile: true, ...rest });
+                          const { profile: _p, ...rest } = JSON.parse(queryDisplay);
+                          const profilerBody = { profile: true, ...rest };
                           const indexPath = query?.indices?.join(',') || '_search';
                           const searchPath =
                             indexPath === '_search' ? '_search' : `${indexPath}/_search`;
                           const profilerQuery = `GET ${searchPath}\n${JSON.stringify(
-                            queryBody,
+                            profilerBody,
                             null,
                             2
                           )}`;

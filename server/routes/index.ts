@@ -486,7 +486,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         if (!ALLOWED_METHODS.includes(normalizedMethod)) {
           return response.badRequest({ body: 'Invalid HTTP method' });
         }
-        if (!path || !path.includes('_search')) {
+        if (!path || path.includes('..') || !path.split('?')[0].endsWith('_search')) {
           return response.badRequest({ body: 'Only _search paths are allowed' });
         }
 
@@ -499,21 +499,26 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           }
         }
 
-        let client;
+        let result;
 
         if (!dataSourceEnabled || !dataSourceId) {
-          client = context.core.opensearch.client.asCurrentUser;
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          result = await client('queryInsights.search', {
+            method: normalizedMethod,
+            path,
+            body: parsedBody,
+          });
         } else {
-          client = context.dataSource.opensearch.getClient(dataSourceId).asCurrentUser;
+          const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          result = await client.callAPI('queryInsights.search', {
+            method: normalizedMethod,
+            path,
+            body: parsedBody,
+          });
         }
 
-        const result = await client.transport.request({
-          method: normalizedMethod,
-          path: `/${path}`,
-          body: parsedBody,
-        });
-
-        return response.ok({ body: JSON.stringify(result.body, null, 2) });
+        return response.ok({ body: JSON.stringify(result, null, 2) });
       } catch (error) {
         logger.error(`Profiler proxy error: ${error.message}`);
         return response.customError({
