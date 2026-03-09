@@ -6,6 +6,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react';
 import { ProfilerEditor, setCoreStart, renderProfiler } from './Profiler';
+import { CoreStart } from '../../../../../src/core/public';
 
 // @ts-ignore
 window.URL.revokeObjectURL = jest.fn();
@@ -35,7 +36,7 @@ afterEach(() => {
 });
 
 const renderEditor = (props: { dataSourceId?: string; initialQuery?: string } = {}) =>
-  render(<ProfilerEditor http={mockHttp as any} {...props} />);
+  render(<ProfilerEditor http={mockHttp as CoreStart['http']} {...props} />);
 
 describe('ProfilerEditor', () => {
   it('renders all tabs', () => {
@@ -96,7 +97,9 @@ describe('ProfilerEditor', () => {
   it('exports JSON and cleans up after timeout', () => {
     const { getByText } = renderEditor();
     const appendSpy = jest.spyOn(document.body, 'appendChild');
-    const removeSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => ({} as any));
+    const removeSpy = jest
+      .spyOn(document.body, 'removeChild')
+      .mockImplementation(() => ({} as ChildNode));
     act(() => fireEvent.click(getByText('Export JSON')));
     expect(appendSpy).toHaveBeenCalled();
     act(() => jest.runAllTimers());
@@ -108,7 +111,9 @@ describe('ProfilerEditor', () => {
 
   it('executes query when play button is clicked', async () => {
     const { container } = renderEditor();
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     act(() => fireEvent.click(playBtn));
     await waitFor(() =>
@@ -118,7 +123,9 @@ describe('ProfilerEditor', () => {
 
   it('sends correct dataSourceId in request', async () => {
     const { container } = renderEditor({ dataSourceId: 'test-ds-id' });
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     act(() => fireEvent.click(playBtn));
     await waitFor(() => {
@@ -128,10 +135,8 @@ describe('ProfilerEditor', () => {
   });
 
   it('rejects non-_search paths and shows error', async () => {
-    const { container } = renderEditor({ initialQuery: 'GET _cluster/settings\n{}' });
+    renderEditor({ initialQuery: 'GET _cluster/settings\n{}' });
     await waitFor(() => {
-      // executeQuery is called with the initialQuery directly, path validation rejects it
-      // post should not be called since path doesn't end with _search
       expect(mockHttp.post).not.toHaveBeenCalled();
     });
   });
@@ -140,7 +145,9 @@ describe('ProfilerEditor', () => {
     // ace mock getValue returns '' so editor input defaults to _search
     // test the validation logic directly via initialQuery
     const { container } = renderEditor({ initialQuery: 'GET _cluster/settings\n{}' });
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     // clicking play uses editor value (empty -> _search), so post IS called
     // the path validation for initialQuery already ran on mount
@@ -148,9 +155,13 @@ describe('ProfilerEditor', () => {
   });
 
   it('shows error message when request fails with body message', async () => {
-    mockHttp.post.mockRejectedValueOnce({ body: { message: '[illegal_argument_exception] bad param' } });
+    mockHttp.post.mockRejectedValueOnce({
+      body: { message: '[illegal_argument_exception] bad param' },
+    });
     const { container } = renderEditor();
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     act(() => fireEvent.click(playBtn));
     await waitFor(() => expect(mockHttp.post).toHaveBeenCalled());
@@ -159,7 +170,9 @@ describe('ProfilerEditor', () => {
   it('shows error message when request fails with plain error', async () => {
     mockHttp.post.mockRejectedValueOnce(new Error('Network failure'));
     const { container } = renderEditor();
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     act(() => fireEvent.click(playBtn));
     await waitFor(() => expect(mockHttp.post).toHaveBeenCalled());
@@ -167,7 +180,9 @@ describe('ProfilerEditor', () => {
 
   it('resets editors when reset button is clicked', async () => {
     const { container } = renderEditor();
-    const resetBtn = container.querySelectorAll('.conApp__editorActionButton--success')[1] as HTMLElement;
+    const resetBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[1] as HTMLElement;
     await waitFor(() => expect(resetBtn).toBeTruthy());
     act(() => fireEvent.click(resetBtn));
     expect(resetBtn).toBeTruthy();
@@ -182,7 +197,9 @@ describe('ProfilerEditor', () => {
 
   it('injects profile:true into request body', async () => {
     const { container } = renderEditor();
-    const playBtn = container.querySelectorAll('.conApp__editorActionButton--success')[0] as HTMLElement;
+    const playBtn = container.querySelectorAll(
+      '.conApp__editorActionButton--success'
+    )[0] as HTMLElement;
     await waitFor(() => expect(playBtn).toBeTruthy());
     act(() => fireEvent.click(playBtn));
     await waitFor(() => {
@@ -202,7 +219,9 @@ describe('ProfilerEditor', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['{"profile":{}}'], 'result.json', { type: 'application/json' });
     act(() => fireEvent.change(fileInput, { target: { files: [file] } }));
-    const confirmBtn = document.querySelector('[data-test-subj="importQueriesConfirmBtn"]') as HTMLElement;
+    const confirmBtn = document.querySelector(
+      '[data-test-subj="importQueriesConfirmBtn"]'
+    ) as HTMLElement;
     await act(async () => fireEvent.click(confirmBtn));
     await waitFor(() =>
       expect(container.querySelector('[data-test-subj="show-input-toggle"]')).toBeTruthy()
@@ -224,7 +243,9 @@ describe('ProfilerEditor', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['{"profile":{}}'], 'result.json', { type: 'application/json' });
     act(() => fireEvent.change(fileInput, { target: { files: [file] } }));
-    const confirmBtn = document.querySelector('[data-test-subj="importQueriesConfirmBtn"]') as HTMLElement;
+    const confirmBtn = document.querySelector(
+      '[data-test-subj="importQueriesConfirmBtn"]'
+    ) as HTMLElement;
     await act(async () => fireEvent.click(confirmBtn));
     await waitFor(() =>
       expect(container.querySelector('[data-test-subj="show-input-toggle"]')).toBeTruthy()
@@ -243,7 +264,9 @@ describe('ProfilerEditor', () => {
     const file = new File(['GET _search\n{}'], 'query.json', { type: 'application/json' });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     act(() => fireEvent.change(fileInput, { target: { files: [file] } }));
-    const confirmBtn = document.querySelector('[data-test-subj="importQueriesConfirmBtn"]') as HTMLElement;
+    const confirmBtn = document.querySelector(
+      '[data-test-subj="importQueriesConfirmBtn"]'
+    ) as HTMLElement;
     await act(async () => fireEvent.click(confirmBtn));
     await waitFor(() => expect(document.body.textContent).not.toContain('Select a file to import'));
   });
@@ -268,18 +291,24 @@ describe('renderProfiler', () => {
   });
 
   afterEach(() => {
-    act(() => { unmount?.(); });
+    act(() => {
+      unmount?.();
+    });
     document.body.innerHTML = '';
   });
 
   it('renders ProfilerEditor via renderProfiler', () => {
-    act(() => { unmount = renderProfiler(container); });
+    act(() => {
+      unmount = renderProfiler(container);
+    });
     expect(container.textContent).toContain('Settings');
   });
 
   it('reads initialQuery from localStorage', async () => {
     localStorage.setItem('profilerQuery', 'GET _search\n{"query":{"match_all":{}}}');
-    act(() => { unmount = renderProfiler(container); });
+    act(() => {
+      unmount = renderProfiler(container);
+    });
     expect(localStorage.getItem('profilerQuery')).toBeNull();
   });
 
@@ -288,13 +317,17 @@ describe('renderProfiler', () => {
       value: { search: '?dataSource=test-id' },
       writable: true,
     });
-    act(() => { unmount = renderProfiler(container, 'fallback-id'); });
+    act(() => {
+      unmount = renderProfiler(container, 'fallback-id');
+    });
     expect(container.textContent).toContain('Settings');
     Object.defineProperty(window, 'location', { value: { search: '' }, writable: true });
   });
 
   it('unmounts cleanly', () => {
-    act(() => { unmount = renderProfiler(container); });
+    act(() => {
+      unmount = renderProfiler(container);
+    });
     expect(() => act(() => unmount())).not.toThrow();
   });
 });

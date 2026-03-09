@@ -77,6 +77,7 @@ const QueryDetails = ({
     if (id && from && to && verbose != null) {
       fetchQueryDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, from, to, verbose]);
 
   // Initialize the Plotly chart

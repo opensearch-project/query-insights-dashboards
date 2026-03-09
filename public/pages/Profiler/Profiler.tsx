@@ -188,8 +188,8 @@ export const ProfilerEditor: React.FC<{
 
   const inputEditorRef = useRef<HTMLDivElement>(null);
   const outputEditorRef = useRef<HTMLDivElement>(null);
-  const inputEditorInstance = useRef<any>(null);
-  const outputEditorInstance = useRef<any>(null);
+  const inputEditorInstance = useRef<ReturnType<typeof ace.edit> | null>(null);
+  const outputEditorInstance = useRef<ReturnType<typeof ace.edit> | null>(null);
   const dataSourceIdRef = useRef<string | undefined>(dataSourceId);
 
   useEffect(() => {
@@ -211,7 +211,7 @@ export const ProfilerEditor: React.FC<{
       });
       inputEditorInstance.current.session.setUseWrapMode(wrapMode);
       inputEditorInstance.current.on('change', () =>
-        setInput(inputEditorInstance.current.getValue())
+        setInput(inputEditorInstance.current!.getValue())
       );
     }
     if (outputEditorRef.current && !outputEditorInstance.current) {
@@ -235,6 +235,7 @@ export const ProfilerEditor: React.FC<{
       outputEditorInstance.current?.destroy();
       outputEditorInstance.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -274,8 +275,9 @@ export const ProfilerEditor: React.FC<{
         }),
       });
       setOutput(typeof response === 'string' ? response : JSON.stringify(response, null, 2));
-    } catch (error: any) {
-      setOutput(`Error: ${error.body?.message || error.message || JSON.stringify(error, null, 2)}`);
+    } catch (error) {
+      const err = error as { body?: { message?: string }; message?: string };
+      setOutput(`Error: ${err.body?.message || err.message || JSON.stringify(error, null, 2)}`);
     }
   };
 
@@ -505,7 +507,7 @@ export const setCoreStart = (core: CoreStart) => {
   coreStart = core;
 };
 
-let root: any = null;
+let root: ReturnType<typeof createRoot> | null = null;
 export const renderProfiler = (element: HTMLElement, dataSourceId?: string) => {
   const urlDataSourceId =
     new URLSearchParams(window.location.search).get('dataSource') || undefined;

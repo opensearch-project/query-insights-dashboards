@@ -53,6 +53,7 @@ describe('Query Profiler', () => {
     cy.contains('Search query').should('be.visible');
     cy.contains('Profile JSON').should('be.visible');
     cy.contains('button', 'Cancel').click();
+    cy.contains('Search query').should('not.exist');
   });
 
   it('opens help flyout', () => {
@@ -70,7 +71,7 @@ describe('Query Profiler', () => {
   it('sends profile:true in request body', () => {
     cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
     cy.get('.conApp__editorActionButton--success').first().click();
-    cy.wait('@profilerQuery').then(({ request }) => {
+    return cy.wait('@profilerQuery').then(({ request }) => {
       const body = JSON.parse(request.body);
       const queryBody = JSON.parse(body.body);
       expect(queryBody.profile).to.eq(true);
@@ -84,7 +85,7 @@ describe('Query Profiler', () => {
     }).as('profilerError');
     cy.get('.conApp__editorActionButton--success').first().click();
     cy.wait('@profilerError');
-    cy.get('.ace_content').last().should('contain.text', 'Error');
+    cy.get('.ace_content').last().invoke('text').should('include', 'Error');
   });
 
   it('resets editors when reset button clicked', () => {
@@ -95,7 +96,7 @@ describe('Query Profiler', () => {
   it('exports JSON file', () => {
     cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
     cy.get('.conApp__editorActionButton--success').first().click();
-    cy.wait('@profilerQuery');
+    cy.wait('@profilerQuery').its('response.statusCode').should('eq', 200);
     cy.contains('.euiTab', 'Export JSON').click();
     cy.task('deleteFile', 'cypress/downloads/profile.json');
   });
@@ -119,22 +120,24 @@ describe('Query Profiler', () => {
     cy.contains('.euiTab', 'Import').click();
     cy.contains('Profile JSON').click();
     cy.get('input[type="file"]').selectFile(
-      { contents: Cypress.Buffer.from(profile), fileName: 'test_profile.json', mimeType: 'application/json' },
+      {
+        contents: Cypress.Buffer.from(profile),
+        fileName: 'test_profile.json',
+        mimeType: 'application/json',
+      },
       { force: true }
     );
     cy.get('[data-test-subj="importQueriesConfirmBtn"]').should('not.be.disabled').click();
     cy.contains('Profile JSON').should('not.exist');
   });
 
-  it('navigates to profiler from query details with correct datasource', () => {
-    // Simulate "Open in Profiler" by setting localStorage and navigating
+  it('clears profilerQuery from localStorage after mount', () => {
     const profilerQuery = 'GET _search\n{"profile":true,"query":{"match_all":{}}}';
     cy.window().then((win) => {
       win.localStorage.setItem('profilerQuery', profilerQuery);
     });
     cy.visit(PROFILER_PATH);
     cy.contains('Import', { timeout: 30000 }).should('be.visible');
-    // localStorage should be cleared after mount
     cy.window().its('localStorage').invoke('getItem', 'profilerQuery').should('be.null');
   });
 });
