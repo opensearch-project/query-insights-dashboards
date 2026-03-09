@@ -37,15 +37,14 @@ import {
 } from '@elastic/eui';
 import { createRoot } from 'react-dom/client';
 import ace from 'brace';
+import { AppMountParameters, CoreStart } from '../../../../../src/core/public';
+import { DataSourceManagementPluginSetup } from '../../../../../src/plugins/data_source_management/public';
+import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
+import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
+import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 import { OpenSearchDashboardsContextProvider } from '../../../../../src/plugins/opensearch_dashboards_react/public';
-import { CoreStart } from '../../../../../src/core/public';
 import 'brace/mode/json';
 import 'brace/theme/textmate';
-
-interface Props {
-  http: CoreStart['http'];
-  coreStart: CoreStart;
-}
 
 const ImportFlyout: React.FC<{
   onClose: () => void;
@@ -71,11 +70,8 @@ const ImportFlyout: React.FC<{
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        if (importType === 'query') {
-          onImportQuery(content);
-        } else {
-          onImportResult(content);
-        }
+        if (importType === 'query') onImportQuery(content);
+        else onImportResult(content);
         onClose();
       } catch (err) {
         setError('Failed to read file');
@@ -145,17 +141,43 @@ const ImportFlyout: React.FC<{
   );
 };
 
-const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
-  const [input, setInput] = useState(
-    `GET _search
-{
-  "profile": true,
-  "query": {
-    "match_all": {}
-  }
-}`
-  );
+// Page component — used inside the query-insights app router
+export const ConsoleProfiler: React.FC<{
+  core: CoreStart;
+  depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  params: AppMountParameters;
+  dataSourceManagement?: DataSourceManagementPluginSetup;
+}> = ({ core, depsStart, params, dataSourceManagement }) => {
+  const [dataSource, setDataSource] = useState(getDataSourceFromUrl());
+  const initialQuery = localStorage.getItem('profilerQuery') || undefined;
+  localStorage.removeItem('profilerQuery');
 
+  return (
+    <OpenSearchDashboardsContextProvider services={core}>
+      <QueryInsightsDataSourceMenu
+        coreStart={core}
+        depsStart={depsStart}
+        params={params}
+        dataSourceManagement={dataSourceManagement}
+        setDataSource={setDataSource}
+        selectedDataSource={dataSource}
+        onManageDataSource={() => {}}
+        onSelectedDataSource={() => {}}
+        dataSourcePickerReadOnly={false}
+      />
+      <ProfilerEditor http={core.http} dataSourceId={dataSource?.id} initialQuery={initialQuery} />
+    </OpenSearchDashboardsContextProvider>
+  );
+};
+
+// Core editor — used both by the page component and the dev_tools registration
+export const ProfilerEditor: React.FC<{
+  http: CoreStart['http'];
+  dataSourceId?: string;
+  initialQuery?: string;
+}> = ({ http, dataSourceId, initialQuery }) => {
+  const defaultQuery = `GET _search\n{\n  "profile": true,\n  "query": {\n    "match_all": {}\n  }\n}`;
+  const [input, setInput] = useState(defaultQuery);
   const [output, setOutput] = useState('');
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -163,18 +185,24 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
   const [fontSize, setFontSize] = useState(14);
   const [wrapMode, setWrapMode] = useState(false);
   const [hideInput, setHideInput] = useState(false);
+
   const inputEditorRef = useRef<HTMLDivElement>(null);
   const outputEditorRef = useRef<HTMLDivElement>(null);
   const inputEditorInstance = useRef<any>(null);
   const outputEditorInstance = useRef<any>(null);
+  const dataSourceIdRef = useRef<string | undefined>(dataSourceId);
+
+  useEffect(() => {
+    dataSourceIdRef.current = dataSourceId;
+  }, [dataSourceId]);
 
   useEffect(() => {
     if (inputEditorRef.current && !inputEditorInstance.current) {
       inputEditorInstance.current = ace.edit(inputEditorRef.current);
       inputEditorInstance.current.setTheme('ace/theme/textmate');
       inputEditorInstance.current.session.setMode('ace/mode/json');
-      const initialValue = pendingQueryRef.current || input;
-      inputEditorInstance.current.setValue(initialValue, -1);
+      inputEditorInstance.current.session.setUseWorker(false);
+      inputEditorInstance.current.setValue(initialQuery || defaultQuery, -1);
       inputEditorInstance.current.setOptions({
         fontSize,
         showPrintMargin: false,
@@ -182,14 +210,15 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
         foldStyle: 'markbegin',
       });
       inputEditorInstance.current.session.setUseWrapMode(wrapMode);
-      inputEditorInstance.current.on('change', () => {
-        setInput(inputEditorInstance.current.getValue());
-      });
+      inputEditorInstance.current.on('change', () =>
+        setInput(inputEditorInstance.current.getValue())
+      );
     }
     if (outputEditorRef.current && !outputEditorInstance.current) {
       outputEditorInstance.current = ace.edit(outputEditorRef.current);
       outputEditorInstance.current.setTheme('ace/theme/textmate');
       outputEditorInstance.current.session.setMode('ace/mode/json');
+      outputEditorInstance.current.session.setUseWorker(false);
       outputEditorInstance.current.setReadOnly(true);
       outputEditorInstance.current.setOptions({
         fontSize,
@@ -198,53 +227,32 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
         foldStyle: 'markbegin',
       });
       outputEditorInstance.current.session.setUseWrapMode(wrapMode);
-      if (pendingQueryRef.current) {
-        const q = pendingQueryRef.current;
-        pendingQueryRef.current = null;
-        executeQuery(q);
-      }
+      if (initialQuery) executeQuery(initialQuery);
     }
     return () => {
-      if (inputEditorInstance.current) {
-        inputEditorInstance.current.destroy();
-      }
-      if (outputEditorInstance.current) {
-        outputEditorInstance.current.destroy();
-      }
+      inputEditorInstance.current?.destroy();
+      inputEditorInstance.current = null;
+      outputEditorInstance.current?.destroy();
+      outputEditorInstance.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (inputEditorInstance.current) {
-      inputEditorInstance.current.setFontSize(fontSize);
-      inputEditorInstance.current.session.setUseWrapMode(wrapMode);
-    }
-    if (outputEditorInstance.current) {
-      outputEditorInstance.current.setFontSize(fontSize);
-      outputEditorInstance.current.session.setUseWrapMode(wrapMode);
-    }
+    inputEditorInstance.current?.setFontSize(fontSize);
+    inputEditorInstance.current?.session.setUseWrapMode(wrapMode);
+    outputEditorInstance.current?.setFontSize(fontSize);
+    outputEditorInstance.current?.session.setUseWrapMode(wrapMode);
   }, [fontSize, wrapMode]);
 
   useEffect(() => {
-    if (outputEditorInstance.current) {
-      outputEditorInstance.current.setValue(output, -1);
-    }
+    outputEditorInstance.current?.setValue(output, -1);
   }, [output]);
-
-  const pendingQueryRef = useRef<string | null>(localStorage.getItem('profilerQuery'));
-
-  useEffect(() => {
-    if (pendingQueryRef.current) {
-      localStorage.removeItem('profilerQuery');
-    }
-  }, []);
 
   const executeQuery = async (queryInput?: string) => {
     try {
       const queryText = queryInput !== undefined ? queryInput : input;
       const lines = queryText.trim().split('\n');
-      const firstLine = lines[0].trim();
-      const parts = firstLine.split(/\s+/);
+      const parts = lines[0].trim().split(/\s+/);
       const method = parts[0] || 'GET';
       const path = parts[1] || '_search';
       const bodyText = lines.slice(1).join('\n').trim();
@@ -257,26 +265,17 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
       }
 
       const { profile: _p, ...rest } = bodyText ? JSON.parse(bodyText) : {};
-      const bodyObj = { profile: true, ...rest };
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const dataSourceId = urlParams.get('dataSource') || undefined;
-
       const response = await http.post('/api/profiler-proxy', {
         body: JSON.stringify({
           method,
           path,
-          body: JSON.stringify(bodyObj),
-          dataSourceId,
+          body: JSON.stringify({ profile: true, ...rest }),
+          dataSourceId: dataSourceIdRef.current,
         }),
       });
-
-      const formatted = typeof response === 'string' ? response : JSON.stringify(response, null, 2);
-
-      setOutput(formatted);
+      setOutput(typeof response === 'string' ? response : JSON.stringify(response, null, 2));
     } catch (error: any) {
-      const errorMsg = error.body?.message || error.message || JSON.stringify(error, null, 2);
-      setOutput(`Error: ${errorMsg}`);
+      setOutput(`Error: ${error.body?.message || error.message || JSON.stringify(error, null, 2)}`);
     }
   };
 
@@ -295,273 +294,240 @@ const ConsoleProfiler: React.FC<Props> = ({ http, coreStart }) => {
     }, 100);
   };
 
-  const handleImportQuery = (content: string) => {
-    if (inputEditorInstance.current) {
-      inputEditorInstance.current.setValue(content, -1);
-    }
-    setHideInput(false);
-  };
-
-  const handleImportResult = (content: string) => {
-    try {
-      const parsed = JSON.parse(content);
-      const formatted = JSON.stringify(parsed, null, 2);
-      setOutput(formatted);
-    } catch (err) {
-      setOutput(content);
-    }
-    setHideInput(true);
-  };
-
   return (
-    <OpenSearchDashboardsContextProvider services={coreStart}>
-      <div>
-        <EuiTabs size="s">
-          <EuiTab onClick={() => setIsSettingsOpen(true)}>Settings</EuiTab>
-          <EuiTab onClick={() => setIsImportOpen(true)}>Import</EuiTab>
-          <EuiTab onClick={exportJson}>Export JSON</EuiTab>
-          <EuiTab onClick={() => setIsHelpOpen(true)}>Help</EuiTab>
-        </EuiTabs>
+    <div>
+      <EuiTabs size="s">
+        <EuiTab onClick={() => setIsSettingsOpen(true)}>Settings</EuiTab>
+        <EuiTab onClick={() => setIsImportOpen(true)}>Import</EuiTab>
+        <EuiTab onClick={exportJson}>Export JSON</EuiTab>
+        <EuiTab onClick={() => setIsHelpOpen(true)}>Help</EuiTab>
+      </EuiTabs>
 
-        <div style={{ height: '400px', width: '100%', display: 'flex' }}>
-          {hideInput && (
-            <div
-              role="button"
-              tabIndex={0}
-              data-test-subj="show-input-toggle"
-              style={{
-                width: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#f5f7fa',
-                borderRight: '1px solid #D4DAE5',
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                setHideInput(false);
-                if (inputEditorInstance.current) inputEditorInstance.current.setValue('', -1);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  setHideInput(false);
-                  if (inputEditorInstance.current) inputEditorInstance.current.setValue('', -1);
-                }
-              }}
-            >
-              <EuiToolTip content="Show query editor">
-                <EuiIcon type="plus" />
-              </EuiToolTip>
-            </div>
-          )}
+      <div style={{ height: '400px', width: '100%', display: 'flex' }}>
+        {hideInput && (
           <div
+            role="button"
+            tabIndex={0}
+            data-test-subj="show-input-toggle"
             style={{
-              display: hideInput ? 'none' : 'flex',
-              flex: 1,
-              position: 'relative',
+              width: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#f5f7fa',
               borderRight: '1px solid #D4DAE5',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              setHideInput(false);
+              inputEditorInstance.current?.setValue('', -1);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setHideInput(false);
+                inputEditorInstance.current?.setValue('', -1);
+              }
             }}
           >
-            <div style={{ position: 'relative', height: '100%', width: '100%' }}>
-              <EuiFlexGroup
-                gutterSize="none"
-                responsive={false}
-                style={{
-                  position: 'absolute',
-                  zIndex: 1000,
-                  top: 0,
-                  right: '16px',
-                  lineHeight: 1,
-                }}
-              >
-                <EuiFlexItem>
-                  <EuiToolTip content="Generate profile">
-                    <button
-                      onClick={() => executeQuery()}
-                      className="conApp__editorActionButton conApp__editorActionButton--success"
-                      style={{
-                        padding: '0 8px',
-                        cursor: 'pointer',
-                        lineHeight: 'inherit',
-                      }}
-                    >
-                      <EuiIcon type="play" />
-                    </button>
-                  </EuiToolTip>
-                </EuiFlexItem>
-                <EuiFlexItem>
-                  <EuiToolTip content="Reset all">
-                    <button
-                      onClick={() => {
-                        if (inputEditorInstance.current) {
-                          inputEditorInstance.current.setValue(
-                            `GET _search
-{
-  "profile": true,
-  "query": {
-    "match_all": {}
-  }
-}`,
-                            -1
-                          );
-                        }
-                        setOutput('');
-                      }}
-                      className="conApp__editorActionButton conApp__editorActionButton--success"
-                      style={{
-                        padding: '0 8px',
-                        cursor: 'pointer',
-                        lineHeight: 'inherit',
-                      }}
-                    >
-                      <EuiIcon type="refresh" />
-                    </button>
-                  </EuiToolTip>
-                </EuiFlexItem>
-              </EuiFlexGroup>
-              <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
-            </div>
+            <EuiToolTip content="Show query editor">
+              <EuiIcon type="plus" />
+            </EuiToolTip>
           </div>
-          <div style={{ flex: 1, position: 'relative', background: '#FFF' }}>
-            <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
+        )}
+        <div
+          style={{
+            display: hideInput ? 'none' : 'flex',
+            flex: 1,
+            position: 'relative',
+            borderRight: '1px solid #D4DAE5',
+          }}
+        >
+          <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+            <EuiFlexGroup
+              gutterSize="none"
+              responsive={false}
+              style={{ position: 'absolute', zIndex: 1000, top: 0, right: '16px', lineHeight: 1 }}
+            >
+              <EuiFlexItem>
+                <EuiToolTip content="Generate profile">
+                  <button
+                    onClick={() => executeQuery()}
+                    className="conApp__editorActionButton conApp__editorActionButton--success"
+                    style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
+                  >
+                    <EuiIcon type="play" />
+                  </button>
+                </EuiToolTip>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiToolTip content="Reset all">
+                  <button
+                    onClick={() => {
+                      inputEditorInstance.current?.setValue(
+                        `GET _search\n{\n  "profile": true,\n  "query": {\n    "match_all": {}\n  }\n}`,
+                        -1
+                      );
+                      setOutput('');
+                    }}
+                    className="conApp__editorActionButton conApp__editorActionButton--success"
+                    style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
+                  >
+                    <EuiIcon type="refresh" />
+                  </button>
+                </EuiToolTip>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+            <div ref={inputEditorRef} style={{ width: '100%', height: '100%' }} />
           </div>
         </div>
-
-        {isSettingsOpen && (
-          <EuiModal onClose={() => setIsSettingsOpen(false)}>
-            <EuiModalHeader>
-              <EuiModalHeaderTitle>
-                <EuiText size="s">
-                  <h2>Query Profiler Settings</h2>
-                </EuiText>
-              </EuiModalHeaderTitle>
-            </EuiModalHeader>
-            <EuiModalBody>
-              <EuiCompressedFormRow label="Font Size">
-                <EuiCompressedFieldNumber
-                  value={fontSize}
-                  min={6}
-                  max={50}
-                  onChange={(e) => setFontSize(parseInt(e.target.value, 10) || 14)}
-                />
-              </EuiCompressedFormRow>
-              <EuiCompressedFormRow>
-                <EuiCompressedSwitch
-                  label="Wrap long lines"
-                  checked={wrapMode}
-                  onChange={(e) => setWrapMode(e.target.checked)}
-                />
-              </EuiCompressedFormRow>
-            </EuiModalBody>
-            <EuiModalFooter>
-              <EuiSmallButtonEmpty onClick={() => setIsSettingsOpen(false)}>
-                Cancel
-              </EuiSmallButtonEmpty>
-              <EuiSmallButton fill onClick={() => setIsSettingsOpen(false)}>
-                Save
-              </EuiSmallButton>
-            </EuiModalFooter>
-          </EuiModal>
-        )}
-
-        {isImportOpen && (
-          <ImportFlyout
-            onClose={() => setIsImportOpen(false)}
-            onImportQuery={handleImportQuery}
-            onImportResult={handleImportResult}
-          />
-        )}
-
-        {isHelpOpen && (
-          <EuiFlyout onClose={() => setIsHelpOpen(false)} size="s">
-            <EuiFlyoutHeader hasBorder>
-              <EuiTitle size="s">
-                <h2>Query Profiler Help</h2>
-              </EuiTitle>
-            </EuiFlyoutHeader>
-            <EuiFlyoutBody>
-              <EuiText size="s">
-                <h3>About Query Profiler</h3>
-                <p>
-                  The Query Profiler helps you understand how OpenSearch executes your search
-                  queries by providing detailed performance metrics and execution breakdowns.
-                </p>
-
-                <h3>How to Use</h3>
-                <p>
-                  1. Enter your search query in the left editor panel
-                  <br />
-                  2. Click the play button to execute and generate profile
-                  <br />
-                  3. View the profiling results in the right panel
-                  <br />
-                  4. Use the reset button to clear both query and results
-                </p>
-
-                <h3>Query Format</h3>
-                <p>Queries should follow this format:</p>
-                <pre style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
-                  {`GET _search
-{
-  "query": {
-    "match_all": {}
-  }
-}`}
-                </pre>
-
-                <h3>Features</h3>
-                <dl>
-                  <dt>
-                    <strong>Settings</strong>
-                  </dt>
-                  <dd>Customize font size and enable line wrapping for better readability</dd>
-                  <dt>
-                    <strong>Import</strong>
-                  </dt>
-                  <dd>
-                    Load search queries or profile JSON results. Choose &quot;Search query&quot; to
-                    import to the left editor or &quot;Profile JSON&quot; to import to the right
-                    panel
-                  </dd>
-                  <dt>
-                    <strong>Export JSON</strong>
-                  </dt>
-                  <dd>Save profiling results as profile.json for later analysis or sharing</dd>
-                  <dt>
-                    <strong>Auto-profiling</strong>
-                  </dt>
-                  <dd>The profiler automatically adds &quot;profile&quot;: true to your queries</dd>
-                  <dt>
-                    <strong>Reset All</strong>
-                  </dt>
-                  <dd>Clear both query input and profiling results to start fresh</dd>
-                </dl>
-
-                <h3>Keyboard Shortcuts</h3>
-                <dl>
-                  <dt>Ctrl/Cmd + Enter</dt>
-                  <dd>Execute the current query</dd>
-                </dl>
-              </EuiText>
-            </EuiFlyoutBody>
-          </EuiFlyout>
-        )}
+        <div style={{ flex: 1, position: 'relative', background: '#FFF' }}>
+          <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
+        </div>
       </div>
-    </OpenSearchDashboardsContextProvider>
+
+      {isSettingsOpen && (
+        <EuiModal onClose={() => setIsSettingsOpen(false)}>
+          <EuiModalHeader>
+            <EuiModalHeaderTitle>
+              <EuiText size="s">
+                <h2>Query Profiler Settings</h2>
+              </EuiText>
+            </EuiModalHeaderTitle>
+          </EuiModalHeader>
+          <EuiModalBody>
+            <EuiCompressedFormRow label="Font Size">
+              <EuiCompressedFieldNumber
+                value={fontSize}
+                min={6}
+                max={50}
+                onChange={(e) => setFontSize(parseInt(e.target.value, 10) || 14)}
+              />
+            </EuiCompressedFormRow>
+            <EuiCompressedFormRow>
+              <EuiCompressedSwitch
+                label="Wrap long lines"
+                checked={wrapMode}
+                onChange={(e) => setWrapMode(e.target.checked)}
+              />
+            </EuiCompressedFormRow>
+          </EuiModalBody>
+          <EuiModalFooter>
+            <EuiSmallButtonEmpty onClick={() => setIsSettingsOpen(false)}>
+              Cancel
+            </EuiSmallButtonEmpty>
+            <EuiSmallButton fill onClick={() => setIsSettingsOpen(false)}>
+              Save
+            </EuiSmallButton>
+          </EuiModalFooter>
+        </EuiModal>
+      )}
+
+      {isImportOpen && (
+        <ImportFlyout
+          onClose={() => setIsImportOpen(false)}
+          onImportQuery={(c) => {
+            inputEditorInstance.current?.setValue(c, -1);
+            setHideInput(false);
+          }}
+          onImportResult={(c) => {
+            try {
+              setOutput(JSON.stringify(JSON.parse(c), null, 2));
+            } catch {
+              setOutput(c);
+            }
+            setHideInput(true);
+          }}
+        />
+      )}
+
+      {isHelpOpen && (
+        <EuiFlyout onClose={() => setIsHelpOpen(false)} size="s">
+          <EuiFlyoutHeader hasBorder>
+            <EuiTitle size="s">
+              <h2>Query Profiler Help</h2>
+            </EuiTitle>
+          </EuiFlyoutHeader>
+          <EuiFlyoutBody>
+            <EuiText size="s">
+              <h3>About Query Profiler</h3>
+              <p>
+                The Query Profiler helps you understand how OpenSearch executes your search queries
+                by providing detailed performance metrics and execution breakdowns.
+              </p>
+              <h3>How to Use</h3>
+              <p>
+                1. Enter your search query in the left editor panel
+                <br />
+                2. Click the play button to execute and generate profile
+                <br />
+                3. View the profiling results in the right panel
+                <br />
+                4. Use the reset button to clear both query and results
+              </p>
+              <h3>Query Format</h3>
+              <pre
+                style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}
+              >{`GET _search\n{\n  "query": {\n    "match_all": {}\n  }\n}`}</pre>
+              <h3>Features</h3>
+              <dl>
+                <dt>
+                  <strong>Settings</strong>
+                </dt>
+                <dd>Customize font size and enable line wrapping</dd>
+                <dt>
+                  <strong>Import</strong>
+                </dt>
+                <dd>Load search queries or profile JSON results</dd>
+                <dt>
+                  <strong>Export JSON</strong>
+                </dt>
+                <dd>Save profiling results as profile.json</dd>
+                <dt>
+                  <strong>Auto-profiling</strong>
+                </dt>
+                <dd>Automatically adds &quot;profile&quot;: true to your queries</dd>
+                <dt>
+                  <strong>Reset All</strong>
+                </dt>
+                <dd>Clear both query input and profiling results</dd>
+              </dl>
+            </EuiText>
+          </EuiFlyoutBody>
+        </EuiFlyout>
+      )}
+    </div>
   );
 };
 
+// Dev tools registration — kept for backward compatibility
 let coreStart: CoreStart;
-
 export const setCoreStart = (core: CoreStart) => {
   coreStart = core;
 };
 
 let root: any = null;
+export const renderProfiler = (element: HTMLElement, dataSourceId?: string) => {
+  const urlDataSourceId =
+    new URLSearchParams(window.location.search).get('dataSource') || undefined;
+  const effectiveDataSourceId = urlDataSourceId || dataSourceId;
+  const initialQuery = localStorage.getItem('profilerQuery') || undefined;
+  localStorage.removeItem('profilerQuery');
 
-export const renderProfiler = (element: HTMLElement) => {
+  if (root) {
+    root.unmount();
+    root = null;
+  }
+
   root = createRoot(element);
-  root.render(<ConsoleProfiler http={coreStart.http} coreStart={coreStart} />);
+  root.render(
+    <OpenSearchDashboardsContextProvider services={coreStart}>
+      <ProfilerEditor
+        http={coreStart.http}
+        dataSourceId={effectiveDataSourceId}
+        initialQuery={initialQuery}
+      />
+    </OpenSearchDashboardsContextProvider>
+  );
 
   return () => {
     if (root) {

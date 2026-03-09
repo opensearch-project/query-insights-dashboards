@@ -188,8 +188,10 @@ const QueryDetails = ({
                             2
                           )}`;
                           localStorage.setItem('profilerQuery', profilerQuery);
-                          const basePath = core.http.basePath.get();
-                          window.open(`${basePath}/app/dev_tools#/queryProfiler`, '_blank');
+                          const dsParam = dataSource?.id
+                            ? `?dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
+                            : '';
+                          history.push(`/profiler${dsParam}`);
                         } catch (e) {
                           console.error('Failed to parse query for profiler', e);
                         }

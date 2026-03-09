@@ -239,7 +239,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
-          const res = await client('queryInsights.getSettings');
+          const res = await client('queryInsights.getSettings', { include_defaults: true });
           return response.ok({
             body: {
               ok: true,
@@ -250,7 +250,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
-          const res = await client.callAPI('queryInsights.getSettings', {});
+          const res = await client.callAPI('queryInsights.getSettings', { include_defaults: true });
           return response.ok({
             body: {
               ok: true,
@@ -499,31 +499,41 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           }
         }
 
+        // OpenSearch supports POST for _search; use POST when body is present to avoid GET-with-body errors
+        const effectiveMethod = parsedBody !== undefined ? 'POST' : normalizedMethod;
+        const effectivePath = path.startsWith('/') ? path : `/${path}`;
+
         let result;
 
         if (!dataSourceEnabled || !dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
-          result = await client('queryInsights.search', {
-            method: normalizedMethod,
-            path,
+          const esClient = context.core.opensearch.client.asCurrentUser;
+          const res = await esClient.transport.request({
+            method: effectiveMethod,
+            path: effectivePath,
             body: parsedBody,
           });
+          result = res.body;
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
-          result = await client.callAPI('queryInsights.search', {
-            method: normalizedMethod,
-            path,
-            body: parsedBody,
+          result = await client.callAPI('transport.request', {
+            method: effectiveMethod,
+            path: effectivePath,
+            body: parsedBody ? JSON.stringify(parsedBody) : undefined,
           });
         }
 
         return response.ok({ body: JSON.stringify(result, null, 2) });
       } catch (error) {
         logger.error(`Profiler proxy error: ${error.message}`);
+        // Extract meaningful message from OpenSearch/DataSource error
+        const cause = error.body || error.meta?.body;
+        const osError = cause?.error;
+        const message = osError
+          ? `[${osError.type}] ${osError.reason}`
+          : error.message || 'An error occurred while processing the request';
         return response.customError({
           statusCode: error.statusCode || 500,
-          body: 'An error occurred while processing the request',
+          body: { message },
         });
       }
     }

@@ -40,7 +40,7 @@ export class QueryInsightsDashboardsPlugin
         const { renderProfiler, setCoreStart } = await import('./pages/Profiler/Profiler');
         const [coreStart] = await core.getStartServices();
         setCoreStart(coreStart);
-        return renderProfiler(params.element);
+        return renderProfiler(params.element, (params as any).dataSourceId);
       },
     });
 

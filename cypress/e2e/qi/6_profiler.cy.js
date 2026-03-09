@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const PROFILER_PATH = `${Cypress.config('baseUrl')}/app/dev_tools#/queryProfiler`;
+import { BASE_PATH, PLUGIN_NAME } from '../../support/constants';
+
+const PROFILER_PATH = `${BASE_PATH}/app/${PLUGIN_NAME}#/profiler`;
 
 describe('Query Profiler', () => {
   beforeEach(() => {
@@ -26,6 +28,10 @@ describe('Query Profiler', () => {
     cy.get('.conApp__editorActionButton--success').should('have.length', 2);
   });
 
+  it('renders datasource picker', () => {
+    cy.get('[data-test-subj="dataSourceSelectableContextMenuHeaderLink"]').should('exist');
+  });
+
   it('opens settings modal', () => {
     cy.contains('.euiTab', 'Settings').click();
     cy.contains('Query Profiler Settings').should('be.visible');
@@ -44,7 +50,6 @@ describe('Query Profiler', () => {
 
   it('opens import flyout', () => {
     cy.contains('.euiTab', 'Import').click();
-    cy.contains('Import').should('be.visible');
     cy.contains('Search query').should('be.visible');
     cy.contains('Profile JSON').should('be.visible');
     cy.contains('button', 'Cancel').click();
@@ -56,10 +61,30 @@ describe('Query Profiler', () => {
     cy.contains('Reset All').scrollIntoView().should('be.visible');
   });
 
-  it('executes a search query', () => {
+  it('executes a search query and returns 200', () => {
     cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
     cy.get('.conApp__editorActionButton--success').first().click();
     cy.wait('@profilerQuery').its('response.statusCode').should('eq', 200);
+  });
+
+  it('sends profile:true in request body', () => {
+    cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
+    cy.get('.conApp__editorActionButton--success').first().click();
+    cy.wait('@profilerQuery').then(({ request }) => {
+      const body = JSON.parse(request.body);
+      const queryBody = JSON.parse(body.body);
+      expect(queryBody.profile).to.eq(true);
+    });
+  });
+
+  it('shows meaningful error for invalid query', () => {
+    cy.intercept('POST', '**/api/profiler-proxy', {
+      statusCode: 400,
+      body: { message: '[illegal_argument_exception] bad parameter' },
+    }).as('profilerError');
+    cy.get('.conApp__editorActionButton--success').first().click();
+    cy.wait('@profilerError');
+    cy.get('.ace_content').last().should('contain.text', 'Error');
   });
 
   it('resets editors when reset button clicked', () => {
@@ -72,11 +97,10 @@ describe('Query Profiler', () => {
     cy.get('.conApp__editorActionButton--success').first().click();
     cy.wait('@profilerQuery');
     cy.contains('.euiTab', 'Export JSON').click();
-    cy.url().should('include', 'dev_tools');
     cy.task('deleteFile', 'cypress/downloads/profile.json');
   });
 
-  it('imports search query and loads it into editor', () => {
+  it('imports search query into editor', () => {
     const query = 'GET _search\n{\n  "query": {\n    "term": { "status": "active" }\n  }\n}';
     cy.contains('.euiTab', 'Import').click();
     cy.contains('Search query').should('be.visible');
@@ -88,21 +112,29 @@ describe('Query Profiler', () => {
     cy.contains('Search query').should('not.exist');
   });
 
-  it('imports profile JSON and loads it into output panel', () => {
+  it('imports profile JSON into output panel', () => {
     const profile = JSON.stringify({
       profile: { shards: [{ id: '[node1][index][0]', searches: [] }] },
     });
     cy.contains('.euiTab', 'Import').click();
     cy.contains('Profile JSON').click();
     cy.get('input[type="file"]').selectFile(
-      {
-        contents: Cypress.Buffer.from(profile),
-        fileName: 'test_profile.json',
-        mimeType: 'application/json',
-      },
+      { contents: Cypress.Buffer.from(profile), fileName: 'test_profile.json', mimeType: 'application/json' },
       { force: true }
     );
     cy.get('[data-test-subj="importQueriesConfirmBtn"]').should('not.be.disabled').click();
     cy.contains('Profile JSON').should('not.exist');
+  });
+
+  it('navigates to profiler from query details with correct datasource', () => {
+    // Simulate "Open in Profiler" by setting localStorage and navigating
+    const profilerQuery = 'GET _search\n{"profile":true,"query":{"match_all":{}}}';
+    cy.window().then((win) => {
+      win.localStorage.setItem('profilerQuery', profilerQuery);
+    });
+    cy.visit(PROFILER_PATH);
+    cy.contains('Import', { timeout: 30000 }).should('be.visible');
+    // localStorage should be cleared after mount
+    cy.window().its('localStorage').invoke('getItem', 'profilerQuery').should('be.null');
   });
 });

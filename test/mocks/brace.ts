@@ -8,6 +8,7 @@ const mockEditor = {
   session: {
     setMode: jest.fn(),
     setUseWrapMode: jest.fn(),
+    setUseWorker: jest.fn(),
   },
   setValue: jest.fn(),
   setOptions: jest.fn(),
