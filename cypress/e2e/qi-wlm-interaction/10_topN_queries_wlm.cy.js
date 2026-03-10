@@ -5,25 +5,6 @@
 
 describe('Top N Queries - WLM Available', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/settings**', {
-      body: {
-        ok: true,
-        response: {
-          persistent: {
-            search: {
-              insights: {
-                top_queries: {
-                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
-                  cpu: { enabled: 'true', top_n_size: '10', window_size: '1h' },
-                  memory: { enabled: 'true', top_n_size: '10', window_size: '1h' },
-                },
-              },
-            },
-          },
-          transient: {},
-        },
-      },
-    }).as('settings');
     cy.intercept('GET', '/api/top_queries/latency**', {
       fixture: 'stub_top_queries_query_only.json',
     }).as('latency');
@@ -43,7 +24,7 @@ describe('Top N Queries - WLM Available', () => {
       },
     }).as('wlmGroups');
     cy.visit('/app/query-insights-dashboards#/queryInsights');
-    cy.wait(['@settings', '@latency', '@cpu', '@memory', '@wlmGroups']);
+    cy.wait(['@latency', '@cpu', '@memory', '@wlmGroups']);
     cy.get('table', { timeout: 30000 }).should('be.visible');
   });
 
