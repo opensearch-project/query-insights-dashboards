@@ -98,8 +98,8 @@ jobs:
       - name: Build Required Plugins
         run: |
           cd OpenSearch
-          sed -i 's|distributionUrl=.*|distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.1-all.zip|' gradle/wrapper/gradle-wrapper.properties
-          ./gradlew :modules:autotagging-commons:assemble :plugins:workload-management:assemble
+          ./gradlew :modules:autotagging-commons:assemble
+          ./gradlew :plugins:workload-management:assemble
 
       - name: Copy Plugins to Query Insights
         run: |
