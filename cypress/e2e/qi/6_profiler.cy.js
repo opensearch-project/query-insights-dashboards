@@ -116,5 +116,4 @@ describe('Query Profiler', () => {
     cy.get('[data-test-subj="importQueriesConfirmBtn"]').should('not.be.disabled').click();
     cy.contains('Profile JSON').should('not.exist');
   });
-
 });
