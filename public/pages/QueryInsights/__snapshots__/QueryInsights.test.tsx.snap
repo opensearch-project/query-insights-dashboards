@@ -361,64 +361,73 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
   >
     <div
-      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentFlexEnd euiFlexGroup--directionRow euiFlexGroup--responsive"
     >
       <div
         class="euiFlexItem euiFlexItem--flexGrowZero"
       >
-        <h3
-          class="euiTitle euiTitle--small"
+        <fieldset
+          class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
         >
-          Visualizations
-        </h3>
-      </div>
-      <div
-        class="euiFlexItem euiFlexItem--flexGrowZero"
-      >
-        <div
-          class="euiFilterGroup"
-        >
-          <button
-            class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton-hasActiveFilters"
-            type="button"
+          <legend
+            class="euiScreenReaderOnly"
           >
-            <span
-              class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+            Visualization mode
+          </legend>
+          <div
+            class="euiButtonGroup__buttons"
+          >
+            <label
+              class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small euiButtonGroupButton--fill euiButtonGroupButton-isSelected"
+              for="random_html_id"
             >
               <span
-                class="euiButtonEmpty__text"
+                class="euiButtonContent euiButton__content"
               >
                 <span
-                  class="euiFilterButton__textShift"
+                  class="euiButton__text euiButtonGroupButton__textShift"
                   data-text="Query"
                   title="Query"
                 >
+                  <input
+                    checked=""
+                    class="euiScreenReaderOnly"
+                    data-test-subj="query"
+                    id="random_html_id"
+                    name="random_html_id"
+                    type="radio"
+                    value=""
+                  />
                   Query
                 </span>
               </span>
-            </span>
-          </button>
-          <button
-            class="euiButtonEmpty euiButtonEmpty--text euiFilterButton"
-            type="button"
-          >
-            <span
-              class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+            </label>
+            <label
+              class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small"
+              for="random_html_id"
             >
               <span
-                class="euiButtonEmpty__text"
+                class="euiButtonContent euiButton__content"
               >
                 <span
-                  class="euiFilterButton__textShift"
+                  class="euiButton__text euiButtonGroupButton__textShift"
                   data-text="Group"
                   title="Group"
                 >
+                  <input
+                    class="euiScreenReaderOnly"
+                    data-test-subj="group"
+                    id="random_html_id"
+                    name="random_html_id"
+                    type="radio"
+                    value=""
+                  />
                   Group
                 </span>
               </span>
-            </span>
-          </button>
-        </div>
+            </label>
+          </div>
+        </fieldset>
       </div>
     </div>
     <div

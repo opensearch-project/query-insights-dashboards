@@ -396,9 +396,9 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      expect(screen.getByText('Visualizations')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Query' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Group' })).toBeInTheDocument();
+      // EuiButtonGroup renders buttons - find by text within the button group
+      expect(screen.getByText('Query')).toBeInTheDocument();
+      expect(screen.getByText('Group')).toBeInTheDocument();
     });
 
     it('renders percentile metrics in query visualization mode', async () => {
@@ -421,8 +421,17 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const groupButton = screen.getByRole('button', { name: 'Group' });
-      fireEvent.click(groupButton);
+      // First verify the Query mode content is visible (P90 LATENCY)
+      await waitFor(() => {
+        expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
+      });
+
+      // Find the Group radio button by its data-test-subj attribute
+      const groupRadio = document.querySelector('[data-test-subj="group"]') as HTMLInputElement;
+      expect(groupRadio).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(groupRadio);
+      });
 
       await waitFor(() => {
         expect(screen.getByText('No Visualization Available')).toBeInTheDocument();
