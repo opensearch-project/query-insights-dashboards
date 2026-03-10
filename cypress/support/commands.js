@@ -233,51 +233,15 @@ Cypress.Commands.add('waitForPluginToLoad', () => {
 
 Cypress.Commands.add('waitForQueryInsightsPlugin', () => {
   const isCI = Cypress.env('CI') || !Cypress.config('isInteractive');
-  const timeout = isCI ? 360000 : 120000; // 6 minutes in CI, 2 minutes locally
+  const timeout = isCI ? 360000 : 120000;
 
-  // Enhanced debugging
-  cy.log(`=== DEBUGGING INFO ===`);
-  cy.log(`Cypress.env('CI'): ${Cypress.env('CI')}`);
-  cy.log(`Cypress.config('isInteractive'): ${Cypress.config('isInteractive')}`);
-  cy.log(`Detected environment: ${isCI ? 'CI' : 'Local'}`);
-  cy.log(`Timeout: ${timeout}ms (${timeout / 1000} seconds)`);
+  cy.visit(OVERVIEW_PATH, { timeout: 60000 });
 
-  // Much longer initial wait for plugin registration in CI
-  const pluginWait = isCI ? 60000 : 5000; // 60 seconds in CI!
-  cy.log(`Initial wait ${pluginWait}ms (${pluginWait / 1000}s) for plugin registration`);
-  cy.wait(pluginWait);
-
-  cy.visit(OVERVIEW_PATH, { timeout: timeout });
-
-  cy.get('body', { timeout: timeout }).should('be.visible');
-
-  // Log what we find on the page for debugging
-  cy.get('body').then(($body) => {
-    const pageText = $body.text();
-    cy.log(`Page content preview: ${pageText.substring(0, 300)}...`);
-
-    const hasQueryInsights = pageText.includes('Query insights');
-    const hasTopNQueries = pageText.includes('Top N queries');
-    cy.log(`Has "Query insights" text: ${hasQueryInsights}`);
-    cy.log(`Has "Top N queries" text: ${hasTopNQueries}`);
-  });
-
-  cy.get('body').then(($body) => {
-    if ($body.find('h1:contains("Query insights")').length === 0) {
-      // If title is not immediately visible, wait for it with a long timeout
-      cy.log(`Title not found immediately, waiting with ${timeout}ms timeout...`);
-      cy.contains('Query insights', { timeout: timeout }).should('be.visible');
-    } else {
-      cy.log('Title found immediately!');
-    }
-  });
-
-  // Additional wait for React components to fully render
-  const renderWait = isCI ? 15000 : 2000;
-  cy.log(`Final wait ${renderWait}ms for React rendering`);
-  cy.wait(renderWait);
-
-  cy.log(`=== PLUGIN LOADING COMPLETE ===`);
+  // Wait for the plugin page to render. In CI, bundles may still be
+  // compiling on first visit — OSD serves a loading page that auto-refreshes
+  // when ready. Cypress's built-in retry on contains() handles this without
+  // explicit reloads (which can interfere with bundle compilation).
+  cy.contains('Query insights - Top N queries', { timeout }).should('be.visible');
 });
 
 Cypress.Commands.add('enableWlmMode', (auth) => {
