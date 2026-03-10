@@ -187,7 +187,7 @@ jobs:
         run: |
           cd OpenSearch-Dashboards
           echo "Waiting for OpenSearch-Dashboards HTTP server..."
-          max_attempts=150
+          max_attempts=30
           attempt=0
           while [ $attempt -lt $max_attempts ]; do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || echo "000")
