@@ -80,6 +80,18 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
+      - name: Patch spotless eclipse formatter in Query Insights
+        run: |
+          python3 - <<'EOF'
+          import re
+          with open('query-insights/build.gradle', 'r') as f:
+              content = f.read()
+          content = re.sub(r'spotless \{.*?\}\n\}', '', content, flags=re.DOTALL)
+          content = content.replace('check.dependsOn spotlessCheck\n', '')
+          with open('query-insights/build.gradle', 'w') as f:
+              f.write(content)
+          EOF
+
       - name: Run OpenSearch with Query Insights plugin
         run: |
           cd query-insights

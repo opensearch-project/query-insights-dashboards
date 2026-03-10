@@ -44,25 +44,6 @@ jobs:
           repository: ${{github.repository}}
           path: cypress-test
 
-      - name: Checkout Security
-        uses: actions/checkout@v4
-        with:
-          repository: opensearch-project/security
-          path: security
-          ref: ${{ env.OS_BRANCH }}
-
-      - name: Build Security plugin
-        run: |
-          set -e
-          cd security
-          ./gradlew --no-daemon assemble
-
-          echo "Checking security build directory:"
-          ls -la build/distributions/
-
-          cp build/distributions/opensearch-security-*.zip "$GITHUB_WORKSPACE/security.zip"
-          ls -lh "$GITHUB_WORKSPACE/security.zip"
-
       - name: Checkout OpenSearch
         uses: actions/checkout@v4
         with:
@@ -77,6 +58,15 @@ jobs:
           VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}' | sed 's/-SNAPSHOT//')
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected OpenSearch version: $VERSION"
+
+      - name: Download Security plugin from snapshot artifacts
+        run: |
+          VERSION=${{ steps.get-version.outputs.VERSION }}
+          REPO="https://ci.opensearch.org/ci/dbc/snapshots/maven/org/opensearch/plugin/opensearch-security/${VERSION}.0-SNAPSHOT"
+          METADATA=$(curl -s "${REPO}/maven-metadata.xml")
+          SNAPSHOT_VER=$(echo "$METADATA" | grep -oP '(?<=<value>)[^<]+' | head -1)
+          curl -sL "${REPO}/opensearch-security-${SNAPSHOT_VER}.zip" -o "$GITHUB_WORKSPACE/security.zip"
+          ls -lh "$GITHUB_WORKSPACE/security.zip"
 
       - name: Build WLM plugin from OpenSearch
         run: |
@@ -97,7 +87,7 @@ jobs:
         uses: derek-ho/start-opensearch@v9
         with:
           opensearch-version: ${{ steps.get-version.outputs.VERSION }}
-          plugins: "file:$GITHUB_WORKSPACE/security.zip,file:$GITHUB_WORKSPACE/wlm.zip"
+          plugins: "file:$GITHUB_WORKSPACE/wlm.zip,file:$GITHUB_WORKSPACE/security.zip"
           security-enabled: true
           admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
           jdk-version: 21

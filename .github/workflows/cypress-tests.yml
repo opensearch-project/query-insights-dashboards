@@ -118,6 +118,22 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
+      - name: Patch spotless eclipse formatter in Query Insights
+        run: |
+          # Remove the entire spotless block and its check.dependsOn since eclipse formatter
+          # downloads from P2 mirror at configuration time causing network timeout in CI
+          python3 - <<'EOF'
+          import re
+          with open('query-insights/build.gradle', 'r') as f:
+              content = f.read()
+          # Remove spotless block
+          content = re.sub(r'spotless \{.*?\}\n\}', '', content, flags=re.DOTALL)
+          # Remove check.dependsOn spotlessCheck
+          content = content.replace('check.dependsOn spotlessCheck\n', '')
+          with open('query-insights/build.gradle', 'w') as f:
+              f.write(content)
+          EOF
+
       - name: Run OpenSearch with Query Insights plugin
         run: |
           cd query-insights
