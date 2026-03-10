@@ -8,6 +8,7 @@ import { Route, Switch } from 'react-router-dom';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import TopNQueries from '../pages/TopNQueries/TopNQueries';
 import { WorkloadManagement } from '../pages/WorkloadManagement/WorkloadManagement';
+import { ConsoleProfiler } from '../pages/Profiler/Profiler';
 import { AppMountParameters, CoreStart } from '../../../../src/core/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../types';
 
@@ -29,6 +30,17 @@ export const QueryInsightsDashboardsApp = ({
       {isWLMApp && (
         <Route path="/">
           <WorkloadManagement
+            core={core}
+            depsStart={depsStart}
+            params={params}
+            dataSourceManagement={dataSourceManagement}
+          />
+        </Route>
+      )}
+
+      {!isWLMApp && (
+        <Route path="/profiler">
+          <ConsoleProfiler
             core={core}
             depsStart={depsStart}
             params={params}

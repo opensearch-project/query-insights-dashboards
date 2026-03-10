@@ -31,6 +31,19 @@ export class QueryInsightsDashboardsPlugin
     core: CoreSetup,
     deps: QueryInsightsDashboardsPluginSetupDependencies
   ): QueryInsightsDashboardsPluginSetup {
+    // Register profiler dev tool - visibility will be controlled in start()
+    deps.devTools.register({
+      id: 'queryProfiler',
+      title: 'Query Profiler',
+      enableRouting: false,
+      mount: async (params) => {
+        const { renderProfiler, setCoreStart } = await import('./pages/Profiler/Profiler');
+        const [coreStart] = await core.getStartServices();
+        setCoreStart(coreStart);
+        return renderProfiler(params.element, (params as any).dataSourceId);
+      },
+    });
+
     // Register an application into the side navigation menu
     core.application.register({
       id: PLUGIN_NAME,
