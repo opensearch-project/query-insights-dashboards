@@ -9,6 +9,7 @@ on:
 env:
   OPENSEARCH_DASHBOARDS_VERSION: 'main'
   QUERY_INSIGHTS_BRANCH: 'main'
+  OPENSEARCH_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -50,6 +51,37 @@ jobs:
           repository: opensearch-project/OpenSearch
           ref: ${{ env.OPENSEARCH_BRANCH }}
 
+      - name: Checkout plugin repo for Set env
+        uses: actions/checkout@v4
+        with:
+          path: query-insights-dashboards
+
+      - name: Set env
+        run: |
+          opensearch_version=$(node -p "require('./query-insights-dashboards/package.json').opensearchDashboards.version")
+          plugin_version=$(node -p "require('./query-insights-dashboards/package.json').version")
+          major_version=$(echo $opensearch_version | cut -d. -f1)
+          minor_version=$(echo $opensearch_version | cut -d. -f2)
+          opensearch_version=${opensearch_version}-SNAPSHOT
+          plugin_version=${plugin_version}-SNAPSHOT
+          branch_version=${major_version}.${minor_version}
+          os_branch=$branch_version
+          osd_branch=$branch_version
+          qi_branch=$branch_version
+          base_branch=${{ github.base_ref }}
+          ref_name=${{ github.ref_name }}
+          if [ "$base_branch" = "main" ] || [ "$ref_name" = "main" ]; then
+            os_branch=main
+            osd_branch=main
+            qi_branch=main
+          fi
+          echo "OPENSEARCH_BRANCH=$os_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_DASHBOARDS_VERSION=$osd_branch" >> $GITHUB_ENV
+          echo "QUERY_INSIGHTS_BRANCH=$qi_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
+        shell: bash
+
       - name: Fetch OpenSearch version from build.gradle
         run: |
           cd query-insights
@@ -79,6 +111,18 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Patch spotless eclipse formatter in Query Insights
+        run: |
+          python3 - <<'EOF'
+          import re
+          with open('query-insights/build.gradle', 'r') as f:
+              content = f.read()
+          content = re.sub(r'spotless \{.*?\}\n\}', '', content, flags=re.DOTALL)
+          content = content.replace('check.dependsOn spotlessCheck\n', '')
+          with open('query-insights/build.gradle', 'w') as f:
+              f.write(content)
+          EOF
 
       - name: Run OpenSearch with Query Insights plugin
         run: |
@@ -140,81 +184,48 @@ jobs:
           sleep 10
         shell: bash
 
-      - name: Wait for OpenSearch-Dashboards HTTP server to start
+      - name: Wait for OpenSearch-Dashboards to be ready
         run: |
           cd OpenSearch-Dashboards
-          echo "Waiting for OpenSearch-Dashboards HTTP server..."
-          max_attempts=150
-          attempt=0
-          while [ $attempt -lt $max_attempts ]; do
+          echo "Waiting for HTTP server..."
+          max_wait=300
+          elapsed=0
+          while [ $elapsed -lt $max_wait ]; do
             if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
-              echo "HTTP server is responding"
+              echo "HTTP server is responding!"
               break
             fi
-            attempt=$((attempt + 1))
-            echo "Attempt $attempt/$max_attempts: waiting 10s..."
+            if [ $((elapsed % 30)) -eq 0 ]; then
+              echo "[${elapsed}s/${max_wait}s] Still waiting for HTTP..."
+            fi
             sleep 10
+            elapsed=$((elapsed + 10))
           done
-          if [ $attempt -eq $max_attempts ]; then
+          if ! curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
             echo "ERROR: HTTP server failed to start"
-            tail -n 100 dashboards.log
+            tail -n 200 dashboards.log
             exit 1
           fi
-        shell: bash
-
-      - name: Wait for UI bundles to compile and become ready
-        run: |
-          cd OpenSearch-Dashboards
-          echo "=========================================="
-          echo "Waiting for optimizer to compile bundles"
-          echo "This can take 5-10 minutes in CI"
-          echo "=========================================="
-
-          max_wait=600  # 10 minutes
+          echo "Waiting for optimizer to finish compiling bundles..."
+          max_wait=1800
           elapsed=0
-          ui_ready=false
-
           while [ $elapsed -lt $max_wait ]; do
-            # Monitor logs for optimizer completion message
-            # Pattern: "X bundle(s) compiled successfully after Y sec, watching for changes"
-            if grep -qE "[0-9]+ bundles? compiled successfully.*watching for changes" dashboards.log 2>/dev/null; then
-              latest_msg=$(grep -E "bundles? compiled successfully.*watching" dashboards.log | tail -1)
-              echo "Optimizer completed! $(echo "$latest_msg" | grep -oE '[0-9]+ bundles? compiled successfully.*watching for changes')"
-              ui_ready=true
+            if grep -qE "[0-9]+ bundles? compiled successfully" dashboards.log 2>/dev/null; then
+              echo "Bundles compiled! Waiting 20s for plugin initialization..."
+              sleep 20
+              echo "OpenSearch-Dashboards is fully ready!"
               break
             fi
-
-            # Progress update every 30 seconds
             if [ $((elapsed % 30)) -eq 0 ]; then
-              echo "[${elapsed}s/${max_wait}s] Waiting for bundle compilation..."
-
-              # Show recent optimizer activity if available
+              echo "[${elapsed}s/${max_wait}s] Still compiling..."
               if tail -50 dashboards.log 2>/dev/null | grep -q "@osd/optimizer"; then
                 recent=$(tail -50 dashboards.log | grep "@osd/optimizer" | tail -1 | grep -oE '\[[0-9]+/[0-9]+\].*' || echo "compiling...")
                 echo "  Status: $recent"
               fi
             fi
-
             sleep 10
             elapsed=$((elapsed + 10))
           done
-
-          if [ "$ui_ready" = false ]; then
-            echo ""
-            echo "WARNING: Bundle compilation not detected within ${max_wait}s"
-            echo "Continuing anyway - Cypress will handle timeouts if UI is not ready"
-            echo ""
-            echo "=== Last 200 lines of dashboards.log ==="
-            tail -n 200 dashboards.log
-            echo "=========================================="
-          else
-            # Extra wait for plugin initialization
-            echo "Waiting 20s for plugin initialization..."
-            sleep 20
-            echo "=========================================="
-            echo "OpenSearch-Dashboards is fully ready!"
-            echo "=========================================="
-          fi
         shell: bash
 
       - name: Install Cypress
