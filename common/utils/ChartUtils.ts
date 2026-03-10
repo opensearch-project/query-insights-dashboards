@@ -35,7 +35,6 @@ export const computePerformanceChartData = (
   const endTime = new Date(to).getTime();
   const timeRange = endTime - startTime;
   const bucketSize = timeRange / numBuckets;
-  const isMultiDay = timeRange > 24 * 60 * 60 * 1000;
 
   const buckets: PerformanceChartBucket[] = [];
   for (let i = 0; i < numBuckets; i++) {
@@ -70,16 +69,17 @@ export const computePerformanceChartData = (
     bucket.count += 1;
   });
 
-  const formatOpts: Intl.DateTimeFormatOptions = isMultiDay
-    ? { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-    : { hour: '2-digit', minute: '2-digit' };
+  const formatOpts: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  };
 
   return {
     times: buckets.map((b) => {
       const date = new Date(b.time);
-      return isMultiDay
-        ? date.toLocaleDateString('en-US', formatOpts)
-        : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString('en-US', formatOpts);
     }),
     bucketRanges: buckets.map((b) => {
       const bucketStart = new Date(b.time);

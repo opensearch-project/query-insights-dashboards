@@ -25,6 +25,7 @@ import {
   EuiFilterButton,
   EuiPopover,
   EuiSelectable,
+  EuiButtonGroup,
 } from '@elastic/eui';
 import { RadialChart } from 'react-vis';
 import 'react-vis/dist/style.css';
@@ -1229,27 +1230,18 @@ const QueryInsights = ({
           </EuiFlexGroup>
           <EuiSpacer size="m" />
           <EuiPanel>
-            <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+            <EuiFlexGroup justifyContent="flexEnd" alignItems="center">
               <EuiFlexItem grow={false}>
-                <EuiTitle size="s">
-                  <h3>Visualizations</h3>
-                </EuiTitle>
-              </EuiFlexItem>
-              <EuiFlexItem grow={false}>
-                <EuiFilterGroup>
-                  <EuiFilterButton
-                    hasActiveFilters={visualizationMode === 'query'}
-                    onClick={() => setVisualizationMode('query')}
-                  >
-                    Query
-                  </EuiFilterButton>
-                  <EuiFilterButton
-                    hasActiveFilters={visualizationMode === 'group'}
-                    onClick={() => setVisualizationMode('group')}
-                  >
-                    Group
-                  </EuiFilterButton>
-                </EuiFilterGroup>
+                <EuiButtonGroup
+                  legend="Visualization mode"
+                  options={[
+                    { id: 'query', label: 'Query' },
+                    { id: 'group', label: 'Group' },
+                  ]}
+                  idSelected={visualizationMode}
+                  onChange={(id) => setVisualizationMode(id as 'query' | 'group')}
+                  color="primary"
+                />
               </EuiFlexItem>
             </EuiFlexGroup>
             <EuiSpacer size="m" />

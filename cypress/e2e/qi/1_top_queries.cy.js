@@ -652,9 +652,9 @@ describe('Query Insights — Visualizations Panel', () => {
   });
 
   it('displays visualizations panel with Query/Group toggle', () => {
-    cy.contains('Visualizations').should('be.visible');
-    cy.contains('button', 'Query').should('be.visible');
-    cy.contains('button', 'Group').should('be.visible');
+    // EuiButtonGroup renders buttons with the label text
+    cy.get('.euiButtonGroup').contains('Query').should('be.visible');
+    cy.get('.euiButtonGroup').contains('Group').should('be.visible');
   });
 
   it('displays percentile metrics in Query mode', () => {
@@ -675,18 +675,18 @@ describe('Query Insights — Visualizations Panel', () => {
   });
 
   it('shows empty state when Group mode is selected', () => {
-    // Click the Group button in the Visualizations panel
-    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Group').click();
+    // Click the Group button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Group').click();
     cy.contains('No Visualization Available').should('be.visible');
     cy.contains('Visualizations for grouped queries are coming soon').should('be.visible');
   });
 
   it('switches back to Query mode and shows visualizations', () => {
-    // Click the Group button in the Visualizations panel
-    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Group').click();
+    // Click the Group button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Group').click();
     cy.contains('No Visualization Available').should('be.visible');
-    // Click the Query button in the Visualizations panel
-    cy.contains('h3', 'Visualizations').closest('.euiPanel').contains('button', 'Query').click();
+    // Click the Query button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Query').click();
     cy.contains('P90 LATENCY').should('be.visible');
   });
 });
