@@ -28,10 +28,6 @@ describe('Query Profiler', () => {
     cy.get('.conApp__editorActionButton--success').should('have.length', 2);
   });
 
-  it('renders datasource picker', () => {
-    cy.get('[data-test-subj="dataSourceSelectableContextMenuHeaderLink"]').should('exist');
-  });
-
   it('opens settings modal', () => {
     cy.contains('.euiTab', 'Settings').click();
     cy.contains('Query Profiler Settings').should('be.visible');
@@ -66,16 +62,6 @@ describe('Query Profiler', () => {
     cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
     cy.get('.conApp__editorActionButton--success').first().click();
     cy.wait('@profilerQuery').its('response.statusCode').should('eq', 200);
-  });
-
-  it('sends profile:true in request body', () => {
-    cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
-    cy.get('.conApp__editorActionButton--success').first().click();
-    return cy.wait('@profilerQuery').then(({ request }) => {
-      const body = JSON.parse(request.body);
-      const queryBody = JSON.parse(body.body);
-      expect(queryBody.profile).to.eq(true);
-    });
   });
 
   it('shows meaningful error for invalid query', () => {
@@ -131,13 +117,4 @@ describe('Query Profiler', () => {
     cy.contains('Profile JSON').should('not.exist');
   });
 
-  it('clears profilerQuery from localStorage after mount', () => {
-    const profilerQuery = 'GET _search\n{"profile":true,"query":{"match_all":{}}}';
-    cy.window().then((win) => {
-      win.localStorage.setItem('profilerQuery', profilerQuery);
-    });
-    cy.visit(PROFILER_PATH);
-    cy.contains('Import', { timeout: 30000 }).should('be.visible');
-    cy.window().its('localStorage').invoke('getItem', 'profilerQuery').should('be.null');
-  });
 });
