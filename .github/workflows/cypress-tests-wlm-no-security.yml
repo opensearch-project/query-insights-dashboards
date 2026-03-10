@@ -185,28 +185,45 @@ jobs:
       - name: Wait for OpenSearch-Dashboards to be ready
         run: |
           cd OpenSearch-Dashboards
-          echo "Waiting for OpenSearch-Dashboards..."
+          echo "Waiting for HTTP server..."
           max_wait=1800
           elapsed=0
           while [ $elapsed -lt $max_wait ]; do
-            if grep -qE "[0-9]+ bundles? compiled successfully.*watching for changes" dashboards.log 2>/dev/null; then
-              echo "Bundles compiled!"
-              sleep 20
+            if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
+              echo "HTTP server is responding!"
               break
             fi
             if [ $((elapsed % 30)) -eq 0 ]; then
-              echo "[${elapsed}s/${max_wait}s] Still waiting..."
-              tail -5 dashboards.log 2>/dev/null || true
+              echo "[${elapsed}s/${max_wait}s] Still waiting for HTTP..."
             fi
             sleep 10
             elapsed=$((elapsed + 10))
           done
           if ! curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
-            echo "ERROR: Dashboards not responding"
+            echo "ERROR: HTTP server failed to start"
             tail -n 200 dashboards.log
             exit 1
           fi
-          echo "OpenSearch-Dashboards is ready!"
+          echo "Waiting for optimizer to finish compiling bundles..."
+          max_wait=1800
+          elapsed=0
+          while [ $elapsed -lt $max_wait ]; do
+            if grep -qE "[0-9]+ bundles? compiled successfully" dashboards.log 2>/dev/null; then
+              echo "Bundles compiled! Waiting 20s for plugin initialization..."
+              sleep 20
+              echo "OpenSearch-Dashboards is fully ready!"
+              break
+            fi
+            if [ $((elapsed % 30)) -eq 0 ]; then
+              echo "[${elapsed}s/${max_wait}s] Still compiling..."
+              if tail -50 dashboards.log 2>/dev/null | grep -q "@osd/optimizer"; then
+                recent=$(tail -50 dashboards.log | grep "@osd/optimizer" | tail -1 | grep -oE '\[[0-9]+/[0-9]+\].*' || echo "compiling...")
+                echo "  Status: $recent"
+              fi
+            fi
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
         shell: bash
 
       - name: Install Cypress
