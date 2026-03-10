@@ -7,6 +7,9 @@ on:
     branches:
       - "*"
 env:
+  OPENSEARCH_DASHBOARDS_VERSION: 'main'
+  QUERY_INSIGHTS_BRANCH: 'main'
+  OPENSEARCH_BRANCH: 'main'
   GRADLE_VERSION: '7.6.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
@@ -26,39 +29,7 @@ jobs:
     env:
       CI: 1
       TERM: xterm
-      NODE_OPTIONS: '--max-old-space-size=6144 --dns-result-order=ipv4first'
     steps:
-
-      - name: Checkout plugin repo
-        uses: actions/checkout@v4
-
-      - name: Set env
-        run: |
-          opensearch_version=$(node -p "require('./package.json').opensearchDashboards.version")
-          plugin_version=$(node -p "require('./package.json').version")
-          major_version=$(echo $opensearch_version | cut -d. -f1)
-          minor_version=$(echo $opensearch_version | cut -d. -f2)
-          opensearch_bare_version=$opensearch_version
-          opensearch_version=${opensearch_version}-SNAPSHOT
-          plugin_version=${plugin_version}-SNAPSHOT
-          branch_version=${major_version}.${minor_version}
-          os_branch=$branch_version
-          opensearch_dashboards_branch=$branch_version
-          query_insights_branch=$branch_version
-          base_branch=${{ github.base_ref }}
-          ref_name=${{ github.ref_name }}
-          if [ "$base_branch" = "main" ] || [ "$ref_name" = "main" ]; then
-            os_branch=main
-            opensearch_dashboards_branch=main
-            query_insights_branch=main
-          fi
-          echo "OS_BRANCH=$os_branch" >> $GITHUB_ENV
-          echo "OPENSEARCH_DASHBOARDS_VERSION=$opensearch_dashboards_branch" >> $GITHUB_ENV
-          echo "QUERY_INSIGHTS_BRANCH=$query_insights_branch" >> $GITHUB_ENV
-          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
-          echo "OPENSEARCH_BARE_VERSION=$opensearch_bare_version" >> $GITHUB_ENV
-          echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
-        shell: bash
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -78,58 +49,102 @@ jobs:
         with:
           path: OpenSearch
           repository: opensearch-project/OpenSearch
-          ref: ${{ env.OS_BRANCH }}
+          ref: ${{ env.OPENSEARCH_BRANCH }}
 
-      - name: Build WLM and autotagging-commons plugins
+      - name: Checkout plugin repo for Set env
+        uses: actions/checkout@v4
+        with:
+          path: query-insights-dashboards
+
+      - name: Set env
         run: |
-          cd OpenSearch
-          ./gradlew :modules:autotagging-commons:assemble :plugins:workload-management:assemble
-          cp modules/autotagging-commons/build/distributions/autotagging-commons-*.zip "$GITHUB_WORKSPACE/autotagging-commons.zip"
-          cp plugins/workload-management/build/distributions/workload-management-*.zip "$GITHUB_WORKSPACE/wlm.zip"
+          opensearch_version=$(node -p "require('./query-insights-dashboards/package.json').opensearchDashboards.version")
+          plugin_version=$(node -p "require('./query-insights-dashboards/package.json').version")
+          major_version=$(echo $opensearch_version | cut -d. -f1)
+          minor_version=$(echo $opensearch_version | cut -d. -f2)
+          opensearch_version=${opensearch_version}-SNAPSHOT
+          plugin_version=${plugin_version}-SNAPSHOT
+          branch_version=${major_version}.${minor_version}
+          os_branch=$branch_version
+          osd_branch=$branch_version
+          qi_branch=$branch_version
+          base_branch=${{ github.base_ref }}
+          ref_name=${{ github.ref_name }}
+          if [ "$base_branch" = "main" ] || [ "$ref_name" = "main" ]; then
+            os_branch=main
+            osd_branch=main
+            qi_branch=main
+          fi
+          echo "OPENSEARCH_BRANCH=$os_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_DASHBOARDS_VERSION=$osd_branch" >> $GITHUB_ENV
+          echo "QUERY_INSIGHTS_BRANCH=$qi_branch" >> $GITHUB_ENV
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
         shell: bash
 
-      - name: Build Query Insights plugin zip
+      - name: Fetch OpenSearch version from build.gradle
         run: |
           cd query-insights
-          mkdir -p plugins
-          cp "$GITHUB_WORKSPACE/autotagging-commons.zip" plugins/
-          cp "$GITHUB_WORKSPACE/wlm.zip" plugins/
+          opensearch_version=$(node -e "
+            const fs = require('fs');
+            const gradleFile = fs.readFileSync('build.gradle', 'utf-8');
+            const match = gradleFile.match(/opensearch_version\\s*=\\s*System\\.getProperty\\(['\"][^'\"]+['\"],\\s*['\"]([^'\"]+)['\"]\\)/);
+            console.log(match ? match[1] : 'No version found');
+          ")
+          echo "OPENSEARCH_VERSION=$opensearch_version" >> $GITHUB_ENV
+          echo "PLUGIN_VERSION=$opensearch_version" >> $GITHUB_ENV
+        shell: bash
 
+      - name: Build Required Plugins
+        run: |
+          cd OpenSearch
+          sed -i 's|distributionUrl=.*|distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.1-all.zip|' gradle/wrapper/gradle-wrapper.properties
+          ./gradlew :modules:autotagging-commons:assemble :plugins:workload-management:assemble
+
+      - name: Copy Plugins to Query Insights
+        run: |
+          mkdir -p query-insights/plugins
+          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Patch spotless eclipse formatter in Query Insights
+        run: |
           python3 - <<'EOF'
           import re
-          with open('build.gradle', 'r') as f:
+          with open('query-insights/build.gradle', 'r') as f:
               content = f.read()
           content = re.sub(r'spotless \{.*?\}\n\}', '', content, flags=re.DOTALL)
           content = content.replace('check.dependsOn spotlessCheck\n', '')
-          with open('build.gradle', 'w') as f:
+          with open('query-insights/build.gradle', 'w') as f:
               f.write(content)
           EOF
 
-          ./gradlew assemble -Dopensearch.version=${{ env.OPENSEARCH_VERSION }}
-          find build/distributions/ -name "*.zip" -exec cp {} "$GITHUB_WORKSPACE/query-insights.zip" \;
-        shell: bash
-
-      - name: Run OpenSearch with plugins
-        uses: derek-ho/start-opensearch@v9
-        with:
-          opensearch-version: ${{ env.OPENSEARCH_BARE_VERSION }}
-          plugins: "file:$GITHUB_WORKSPACE/autotagging-commons.zip,file:$GITHUB_WORKSPACE/wlm.zip,file:$GITHUB_WORKSPACE/query-insights.zip"
-          security-enabled: false
-          jdk-version: 21
-
-      - name: Enable WLM and create workload groups
+      - name: Run OpenSearch with Query Insights plugin
         run: |
+          cd query-insights
+          ./gradlew run -Dopensearch.version=${{ env.OPENSEARCH_VERSION }} &
+
+          echo "Waiting for OpenSearch to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:9200/_cluster/health > /dev/null 2>&1; then
+              echo "OpenSearch is ready!"
+              break
+            fi
+            echo "Attempt $i/60: OpenSearch not ready yet, waiting 10 seconds..."
+            sleep 10
+          done
+
+          curl -s http://localhost:9200/_cluster/health || (echo "OpenSearch failed to start" && exit 1)
+
+          echo -e "\nEnabling WLM mode:"
           curl -X PUT "http://localhost:9200/_cluster/settings" \
-            -H 'Content-Type: application/json' \
-            -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}'
-
-          curl -s -H 'Content-Type: application/json' \
-            -X PUT 'http://localhost:9200/_wlm/workload_group' \
-            -d '{"name":"analytics_group","resiliency_mode":"soft","resource_limits":{"cpu":0.3,"memory":0.3}}'
-
-          curl -s -H 'Content-Type: application/json' \
-            -X PUT 'http://localhost:9200/_wlm/workload_group' \
-            -d '{"name":"search_group","resiliency_mode":"soft","resource_limits":{"cpu":0.2,"memory":0.2}}'
+          -H 'Content-Type: application/json' \
+          -d '{"persistent":{"wlm.workload_group.mode":"enabled"}}' | jq '.'
         shell: bash
 
       - name: Checkout OpenSearch-Dashboards
@@ -164,10 +179,9 @@ jobs:
       - name: Run OpenSearch-Dashboards server
         run: |
           cd OpenSearch-Dashboards
+          export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
           nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
           sleep 10
-          echo "Initial Dashboards log output:"
-          head -n 100 dashboards.log || true
         shell: bash
 
       - name: Wait for OpenSearch-Dashboards to be ready
@@ -183,7 +197,6 @@ jobs:
             fi
             if [ $((elapsed % 30)) -eq 0 ]; then
               echo "[${elapsed}s/${max_wait}s] Still waiting for HTTP..."
-              tail -5 dashboards.log || true
             fi
             sleep 10
             elapsed=$((elapsed + 10))
@@ -226,6 +239,16 @@ jobs:
         with:
           path: ${{ matrix.cypress_cache_folder }}
           key: cypress-cache-v2-${{ matrix.os }}-${{ hashFiles('OpenSearch-Dashboards/plugins/query-insights-dashboards/package.json') }}
+
+      - name: Create WLM workload groups
+        run: |
+          curl -s -H 'Content-Type: application/json' \
+            -X PUT 'http://localhost:9200/_wlm/workload_group' \
+            -d '{"name":"analytics_group","resiliency_mode":"soft","resource_limits":{"cpu":0.3,"memory":0.3}}'
+          
+          curl -s -H 'Content-Type: application/json' \
+            -X PUT 'http://localhost:9200/_wlm/workload_group' \
+            -d '{"name":"search_group","resiliency_mode":"soft","resource_limits":{"cpu":0.2,"memory":0.2}}'
 
       - name: Cypress tests
         uses: cypress-io/github-action@v5
