@@ -24,6 +24,9 @@ export interface SearchQueryRecord {
   id: string;
   group_by: string;
   wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
+  username?: string;
+  user_roles?: string[];
+  failed?: boolean;
 }
 
 export interface Measurement {

@@ -189,6 +189,495 @@ exports[`QueryDetails component matches snapshot 1`] = `
               </dd>
             </dl>
           </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Status
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(109, 204, 177); color: rgb(0, 0, 0);"
+                  title="Completed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Completed
+                    </span>
+                  </span>
+                </span>
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div
+        class="euiSpacer euiSpacer--m"
+      />
+      <div
+        class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+        data-test-subj="query-details-task-resource-usages"
+      >
+        <h2
+          class="euiTitle euiTitle--small"
+        >
+          Task Resource Usage
+        </h2>
+        <hr
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+        />
+        <h3
+          class="euiTitle euiTitle--xsmall"
+        >
+          Coordinator Task
+        </h3>
+        <hr
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+        />
+        <div
+          class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--fourths euiFlexGrid--responsive"
+        >
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Task ID
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                18808
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Node ID
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                Q36D2z_NRGKim6EZZMgi6A
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  CPU Time (ms)
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                1.90
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Memory (bytes)
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                24176
+              </dd>
+            </dl>
+          </div>
+        </div>
+        <div
+          class="euiSpacer euiSpacer--m"
+        />
+        <h3
+          class="euiTitle euiTitle--xsmall"
+        >
+          Shard Tasks
+        </h3>
+        <hr
+          class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
+        />
+        <div
+          class="euiBasicTable"
+        >
+          <div>
+            <div
+              class="euiTableHeaderMobile"
+            >
+              <div
+                class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+              >
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                />
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                />
+              </div>
+            </div>
+            <table
+              class="euiTable euiTable--responsive"
+              id="random_html_id"
+              tabindex="-1"
+            >
+              <caption
+                class="euiScreenReaderOnly euiTableCaption"
+              />
+              <thead>
+                <tr>
+                  <th
+                    class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_action_0"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Phase"
+                      >
+                        Phase
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_taskId_1"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Task ID"
+                      >
+                        Task ID
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_nodeId_2"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Node ID"
+                      >
+                        Node ID
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_taskResourceUsage_3"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="CPU Time (ms)"
+                      >
+                        CPU Time (ms)
+                      </span>
+                    </span>
+                  </th>
+                  <th
+                    class="euiTableHeaderCell"
+                    data-test-subj="tableHeaderCell_taskResourceUsage_4"
+                    role="columnheader"
+                    scope="col"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Memory (bytes)"
+                      >
+                        Memory (bytes)
+                      </span>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  class="euiTableRow"
+                >
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Phase
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+                    >
+                      Query
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Task ID
+                    </div>
+                    <div
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        18809
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Node ID
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--truncateText"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                      >
+                        Q36D2z_NRGKim6EZZMgi6A
+                      </span>
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      CPU Time (ms)
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      3.61
+                    </div>
+                  </td>
+                  <td
+                    class="euiTableRowCell"
+                  >
+                    <div
+                      class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                    >
+                      Memory (bytes)
+                    </div>
+                    <div
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
+                    >
+                      123944
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div
+              class="euiSpacer euiSpacer--m"
+            />
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+            >
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <div
+                  class="euiPopover euiPopover--anchorUpRight"
+                >
+                  <div
+                    class="euiPopover__anchor"
+                  >
+                    <button
+                      class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall"
+                      data-test-subj="tablePaginationPopoverButton"
+                      type="button"
+                    >
+                      <span
+                        class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                            fill-rule="non-zero"
+                          />
+                        </svg>
+                        <span
+                          class="euiButtonEmpty__text"
+                        >
+                          Rows per page
+                          : 
+                          10
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <nav
+                  class="euiPagination"
+                >
+                  <button
+                    aria-label="Previous page"
+                    class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                    data-test-subj="pagination-button-previous"
+                    disabled=""
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z"
+                        fill-rule="nonzero"
+                      />
+                    </svg>
+                  </button>
+                  <ul
+                    class="euiPagination__list"
+                  >
+                    <li
+                      class="euiPagination__item"
+                    >
+                      <button
+                        aria-controls="random_html_id"
+                        aria-current="true"
+                        aria-label="Page 1 of 1"
+                        class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile"
+                        data-test-subj="pagination-button-0"
+                        disabled=""
+                        type="button"
+                      >
+                        <span
+                          class="euiButtonContent euiButtonEmpty__content"
+                        >
+                          <span
+                            class="euiButtonEmpty__text"
+                          >
+                            1
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  </ul>
+                  <button
+                    aria-label="Next page"
+                    class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                    data-test-subj="pagination-button-next"
+                    disabled=""
+                    type="button"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
+                        fill-rule="nonzero"
+                      />
+                    </svg>
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div
