@@ -8,6 +8,8 @@ import {
   isVersion31OrHigher,
   isVersion33OrHigher,
   isVersion34OrHigher,
+  isVersion35OrHigher,
+  isVersion36OrHigher,
 } from './version-utils';
 
 describe('version-utils', () => {
@@ -87,6 +89,41 @@ describe('version-utils', () => {
     it('should handle snapshot versions correctly', () => {
       expect(isVersion34OrHigher('3.4.0-SNAPSHOT')).toBe(true);
       expect(isVersion34OrHigher('3.3.0-SNAPSHOT')).toBe(false);
+    });
+  });
+
+  describe('isVersion35OrHigher', () => {
+    it('should return true for 3.5.0 and higher', () => {
+      expect(isVersion35OrHigher('3.5.0')).toBe(true);
+      expect(isVersion35OrHigher('3.6.0')).toBe(true);
+      expect(isVersion35OrHigher('4.0.0')).toBe(true);
+    });
+
+    it('should return false for versions below 3.5.0', () => {
+      expect(isVersion35OrHigher('3.4.0')).toBe(false);
+      expect(isVersion35OrHigher('3.3.0')).toBe(false);
+    });
+
+    it('should handle snapshot versions correctly', () => {
+      expect(isVersion35OrHigher('3.5.0-SNAPSHOT')).toBe(true);
+      expect(isVersion35OrHigher('3.4.0-SNAPSHOT')).toBe(false);
+    });
+  });
+
+  describe('isVersion36OrHigher', () => {
+    it('should return true for 3.6.0 and higher', () => {
+      expect(isVersion36OrHigher('3.6.0')).toBe(true);
+      expect(isVersion36OrHigher('4.0.0')).toBe(true);
+    });
+
+    it('should return false for versions below 3.6.0', () => {
+      expect(isVersion36OrHigher('3.5.0')).toBe(false);
+      expect(isVersion36OrHigher('3.4.0')).toBe(false);
+    });
+
+    it('should handle snapshot versions correctly', () => {
+      expect(isVersion36OrHigher('3.6.0-SNAPSHOT')).toBe(true);
+      expect(isVersion36OrHigher('3.5.0-SNAPSHOT')).toBe(false);
     });
   });
 });
