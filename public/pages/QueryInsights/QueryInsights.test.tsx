@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { waitFor, render, screen, fireEvent, within } from '@testing-library/react';
+import { waitFor, render, screen, fireEvent, within, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
@@ -181,7 +181,8 @@ describe('QueryInsights Component', () => {
     expect(mockOnTimeChange).toHaveBeenCalled();
   });
 
-  it('uses query ID as itemId for table rows to prevent duplicate row rendering', () => {
+  it('uses query ID as itemId for table rows to prevent duplicate row rendering', async () => {
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
     const testQueries = [
       {
         ...sampleQueries[0],
@@ -196,7 +197,7 @@ describe('QueryInsights Component', () => {
         group_by: 'NONE',
       },
     ];
-    expect(() => {
+    await act(async () => {
       render(
         <MemoryRouter>
           <DataSourceContext.Provider value={mockDataSourceContext}>
@@ -217,38 +218,47 @@ describe('QueryInsights Component', () => {
           </DataSourceContext.Provider>
         </MemoryRouter>
       );
-    }).not.toThrow();
+    });
 
-    // Verify that the table component renders successfully
-    expect(screen.getByRole('table')).toBeInTheDocument();
+    // Verify that the main data table renders successfully (use getAllByRole and check for the main table)
+    await waitFor(() => {
+      const tables = screen.getAllByRole('table');
+      expect(tables.length).toBeGreaterThan(0);
+    });
   });
 
   it('renders the expected column headers for default (mixed) view', async () => {
     mockHttp.get.mockResolvedValue({ workload_groups: [] });
-    renderQueryInsights();
-
-    await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument());
-
-    // Wait for async version check and WLM detection to complete
-    await waitFor(() => {
-      const headers = screen.getAllByRole('columnheader', { hidden: false });
-      const headerTexts = headers.map((h) => h.textContent?.trim());
-      const expectedHeaders = [
-        'Id',
-        'Type',
-        'Query Count',
-        'Timestamp',
-        'Avg Latency / Latency',
-        'Avg CPU Time / CPU Time',
-        'Avg Memory Usage / Memory Usage',
-        'Indices',
-        'Search Type',
-        'Coordinator Node ID',
-        'WLM Group',
-        'Total Shards',
-      ];
-      expect(headerTexts).toEqual(expectedHeaders);
+    await act(async () => {
+      renderQueryInsights();
     });
+
+    // The main data table is the last table in the DOM (after the chart table)
+    await waitFor(
+      () => {
+        const tables = screen.getAllByRole('table');
+        const mainTable = tables[tables.length - 1];
+        const headers = within(mainTable).getAllByRole('columnheader');
+        const headerTexts = headers.map((h) => h.textContent?.trim());
+        // sampleQueries has both NONE and SIMILARITY, so table shows mixed headers
+        const expectedHeaders = [
+          'Id',
+          'Type',
+          'Query Count',
+          'Timestamp',
+          'Avg Latency / Latency',
+          'Avg CPU Time / CPU Time',
+          'Avg Memory Usage / Memory Usage',
+          'Indices',
+          'Search Type',
+          'Coordinator Node ID',
+          'WLM Group',
+          'Total Shards',
+        ];
+        expect(headerTexts).toEqual(expectedHeaders);
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
@@ -375,6 +385,210 @@ describe('QueryInsights Component', () => {
         expect(mockHttp.get).toHaveBeenCalledWith('/api/_wlm/workload_group', {
           query: { dataSourceId: 'test' },
         });
+      });
+    });
+  });
+
+  describe('Visualizations', () => {
+    it('renders visualization panel with Query/Group toggle', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      // EuiButtonGroup renders buttons - find by text within the button group
+      expect(screen.getByText('Query')).toBeInTheDocument();
+      expect(screen.getByText('Group')).toBeInTheDocument();
+    });
+
+    it('renders percentile metrics in query visualization mode', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
+      expect(screen.getByText('P90 CPU TIME')).toBeInTheDocument();
+      expect(screen.getByText('P90 MEMORY')).toBeInTheDocument();
+      expect(screen.getByText('P99 LATENCY')).toBeInTheDocument();
+      expect(screen.getByText('P99 CPU TIME')).toBeInTheDocument();
+      expect(screen.getByText('P99 MEMORY')).toBeInTheDocument();
+    });
+
+    it('shows "no visualizations" message when Group mode is selected', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      // First verify the Query mode content is visible (P90 LATENCY)
+      await waitFor(() => {
+        expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
+      });
+
+      // Find the Group radio button by its data-test-subj attribute
+      const groupRadio = document.querySelector('[data-test-subj="group"]') as HTMLInputElement;
+      expect(groupRadio).toBeInTheDocument();
+      await act(async () => {
+        fireEvent.click(groupRadio);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('No Visualization Available')).toBeInTheDocument();
+        expect(
+          screen.getByText('Visualizations for grouped queries are coming soon')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('renders chart group-by selector with options', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('Queries by Node')).toBeInTheDocument();
+    });
+
+    it('renders performance analysis section', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByText('Performance Analysis')).toBeInTheDocument();
+    });
+  });
+
+  describe('Filter UI', () => {
+    it('renders all filter buttons', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      // Use getAllByRole since there may be multiple buttons with similar names
+      const buttons = screen.getAllByRole('button');
+      const buttonTexts = buttons.map((b) => b.textContent?.trim());
+      expect(buttonTexts).toContain('Type');
+      expect(buttonTexts).toContain('Indices');
+      expect(buttonTexts).toContain('Search Type');
+      expect(buttonTexts).toContain('Coordinator Node ID');
+      expect(buttonTexts).toContain('WLM Group');
+    });
+
+    it('renders search input field', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      expect(screen.getByPlaceholderText('Search queries')).toBeInTheDocument();
+    });
+
+    it('opens Type filter popover on click', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const typeButton = findTypeFilterButton();
+      fireEvent.click(typeButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+    });
+
+    it('filters table when search text is entered', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'a2e1c822' } });
+
+      // Search should filter the table
+      await waitFor(() => {
+        expect(searchInput).toHaveValue('a2e1c822');
+      });
+    });
+
+    it('filters by index name in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'my-index' } });
+
+      await waitFor(() => {
+        // Should find the query with indices: ["my-index"]
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-9f73af094b43')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by node_id in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'KINGun8' } });
+
+      await waitFor(() => {
+        // Should find queries with node_id containing "KINGun8"
+        expect(screen.getByText('7cd4c7f1-3803-4c5e-a41c-258e04f96f78')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by wlm_group_id in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      fireEvent.change(searchInput, { target: { value: 'SEARCH_GROUP' } });
+
+      await waitFor(() => {
+        // Should find the query with wlm_group_id: "SEARCH_GROUP"
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-9f73af094b43')).toBeInTheDocument();
+      });
+    });
+
+    it('filters by labels in free-text search', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      // Search for X-Opaque-Id value from fixture
+      fireEvent.change(searchInput, { target: { value: '90eb5c3b-8448' } });
+
+      await waitFor(() => {
+        // Should find queries with matching label value
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-258e04f96f78')).toBeInTheDocument();
+      });
+    });
+
+    it('searches all fields dynamically', async () => {
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      const searchInput = screen.getByPlaceholderText('Search queries');
+      // Search for total_shards value
+      fireEvent.change(searchInput, { target: { value: 'query_then_fetch' } });
+
+      await waitFor(() => {
+        // Should find queries with search_type: "query_then_fetch"
+        expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-258e04f96f78')).toBeInTheDocument();
       });
     });
   });

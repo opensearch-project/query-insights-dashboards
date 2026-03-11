@@ -41,4 +41,12 @@ jest.mock('@elastic/eui/lib/services/accessibility/html_id_generator', () => ({
 
 jest.mock('plotly.js-dist', () => ({ Plotly: {} }));
 
+jest.mock('react-ace', () => () => null);
+
+jest.mock('echarts-for-react', () => () => null);
+
+jest.mock('react-vis', () => ({
+  RadialChart: () => null,
+}));
+
 jest.setTimeout(10000); // in milliseconds

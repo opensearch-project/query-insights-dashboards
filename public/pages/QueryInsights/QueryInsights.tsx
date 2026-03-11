@@ -10,7 +10,26 @@ import {
   EuiLink,
   EuiSuperDatePicker,
   EuiIcon,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiSelect,
+  EuiSpacer,
+  EuiPanel,
+  EuiBasicTable,
+  EuiTitle,
+  EuiText,
+  EuiTextAlign,
+  EuiIconTip,
+  EuiFieldSearch,
+  EuiFilterGroup,
+  EuiFilterButton,
+  EuiPopover,
+  EuiSelectable,
+  EuiButtonGroup,
 } from '@elastic/eui';
+import { RadialChart } from 'react-vis';
+import 'react-vis/dist/style.css';
+import ReactECharts from 'echarts-for-react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
@@ -29,18 +48,19 @@ import {
   TOTAL_SHARDS,
   TYPE,
   WLM_GROUP,
+  CHART_COLORS,
 } from '../../../common/constants';
 import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { computePerformanceChartData } from '../../../common/utils/ChartUtils';
 import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
-const MEASUREMENTS_FIELD = 'measurements';
 const LATENCY_FIELD = 'measurements.latency';
 const CPU_FIELD = 'measurements.cpu';
 const MEMORY_FIELD = 'measurements.memory';
@@ -89,6 +109,11 @@ const QueryInsights = ({
   // --- state for pagination and filters ---
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   const [searchText, setSearchText] = useState('');
+  const [isTypeFilterOpen, setIsTypeFilterOpen] = useState(false);
+  const [isIndicesFilterOpen, setIsIndicesFilterOpen] = useState(false);
+  const [isSearchTypeFilterOpen, setIsSearchTypeFilterOpen] = useState(false);
+  const [isNodeIdFilterOpen, setIsNodeIdFilterOpen] = useState(false);
+  const [isWlmGroupFilterOpen, setIsWlmGroupFilterOpen] = useState(false);
   const [selectedGroupBy, setSelectedGroupBy] = useState<string[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
   const [selectedSearchTypes, setSelectedSearchTypes] = useState<string[]>([]);
@@ -105,10 +130,37 @@ const QueryInsights = ({
   const [searchQuery, setSearchQuery] = useState<string>(
     wlmGroupIdFromUrl ? `${WLM_GROUP_FIELD}:(${wlmGroupIdFromUrl})` : ''
   );
+  const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'user' | 'wlm'>('node');
+  const [performanceMetric, setPerformanceMetric] = useState<'latency' | 'cpu' | 'memory'>(
+    'latency'
+  );
+  const [visualizationMode, setVisualizationMode] = useState<'query' | 'group'>('query');
   const tableKey = useMemo(() => {
     const wlmId = new URLSearchParams(location.search).get('wlmGroupId');
     return wlmId ? `table-${wlmId}` : 'table-default';
   }, [location.search]);
+
+  // Build search query string from filter states
+  const buildSearchQuery = useCallback(
+    (
+      groupBy: string[],
+      indices: string[],
+      searchTypes: string[],
+      nodeIds: string[],
+      wlmGroups: string[],
+      freeText: string
+    ) => {
+      const parts: string[] = [];
+      if (groupBy.length) parts.push(`${GROUP_BY_FIELD}:(${groupBy.join(' or ')})`);
+      if (indices.length) parts.push(`${INDICES_FIELD}:(${indices.join(' or ')})`);
+      if (searchTypes.length) parts.push(`${SEARCH_TYPE_FIELD}:(${searchTypes.join(' or ')})`);
+      if (nodeIds.length) parts.push(`${NODE_ID_FIELD}:(${nodeIds.join(' or ')})`);
+      if (wlmGroups.length) parts.push(`${WLM_GROUP_FIELD}:(${wlmGroups.join(' or ')})`);
+      if (freeText) parts.push(freeText);
+      return parts.join(' ');
+    },
+    []
+  );
 
   // Get wlmGroupId from URL parameters once and clean URL
   useEffect(() => {
@@ -121,10 +173,11 @@ const QueryInsights = ({
         currentPath: location.pathname,
         fullUrl: location.pathname + location.search,
       });
-      setSearchQuery(`${WLM_GROUP_FIELD}:(${wlmGroupIdFromSearch})`);
+      setSelectedWlmGroups([wlmGroupIdFromSearch]);
+      setSearchQuery(buildSearchQuery([], [], [], [], [wlmGroupIdFromSearch], ''));
       history.replace(location.pathname);
     }
-  }, [location.search, history, location.pathname]);
+  }, [location.search, history, location.pathname, buildSearchQuery]);
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
@@ -293,8 +346,23 @@ const QueryInsights = ({
       if (selectedWlmGroups.length && !selectedWlmGroups.includes(q.wlm_group_id)) return false;
 
       if (searchText) {
-        const id = (q.id ?? '').toLowerCase();
-        if (!id.includes(searchText.toLowerCase())) return false;
+        const text = searchText.toLowerCase();
+        const searchableText = Object.values(q)
+          .map((v) => {
+            try {
+              if (v == null) return '';
+              if (typeof v === 'string') return v;
+              if (typeof v === 'number') return String(v);
+              if (Array.isArray(v)) return v.join(' ');
+              if (typeof v === 'object') return JSON.stringify(v);
+              return '';
+            } catch {
+              return '';
+            }
+          })
+          .join(' ')
+          .toLowerCase();
+        if (!searchableText.includes(text)) return false;
       }
 
       if (selectedGroupBy.length === 1) {
@@ -313,7 +381,13 @@ const QueryInsights = ({
     selectedGroupBy,
   ]);
 
-  // if no filtered items, show all queries
+  // For metrics/visualizations, always filter out grouped queries
+  const itemsForMetrics = useMemo(() => {
+    return items.filter((q: SearchQueryRecord) => q.group_by === 'NONE');
+  }, [items]);
+
+  // forView is used for effectiveView calculation (table column headers)
+  // Use items to determine if table has mixed content (queries + groups)
   const forView = items.length ? items : queries;
 
   /**
@@ -524,8 +598,9 @@ const QueryInsights = ({
   const metricColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = useMemo(
     () => [
       {
+        field: LATENCY_FIELD as keyof SearchQueryRecord,
         name: latencyHeader,
-        render: (q: SearchQueryRecord) =>
+        render: (_: any, q: SearchQueryRecord) =>
           calculateMetric(
             q.measurements?.latency?.number,
             q.measurements?.latency?.count,
@@ -538,8 +613,9 @@ const QueryInsights = ({
         truncateText: true,
       },
       {
+        field: CPU_FIELD as keyof SearchQueryRecord,
         name: cpuHeader,
-        render: (q: SearchQueryRecord) =>
+        render: (_: any, q: SearchQueryRecord) =>
           calculateMetric(
             q.measurements?.cpu?.number,
             q.measurements?.cpu?.count,
@@ -552,8 +628,9 @@ const QueryInsights = ({
         truncateText: true,
       },
       {
+        field: MEMORY_FIELD as keyof SearchQueryRecord,
         name: memHeader,
-        render: (q: SearchQueryRecord) =>
+        render: (_: any, q: SearchQueryRecord) =>
           calculateMetric(
             q.measurements?.memory?.number,
             q.measurements?.memory?.count,
@@ -661,8 +738,7 @@ const QueryInsights = ({
     return m ? parseList(m[1]) : [];
   };
 
-  const onSearchChange = ({ query }: { query: any }) => {
-    const text: string = query?.text || '';
+  const onSearchChange = (text: string) => {
     setSearchQuery(text);
 
     // Find every structured filter chunk like "field:(...)" in the search text and return the full matches.
@@ -700,11 +776,6 @@ const QueryInsights = ({
     onTimeChange({ start, end });
     retrieveQueries(start, end);
   };
-
-  const filterDuplicates = (options: Array<{ value: string; name: string; view: string }>) =>
-    options.filter(
-      (value, index, self) => index === self.findIndex((t) => t.value === value.value)
-    );
 
   const indexOptions = useMemo(() => {
     const set = new Set<string>();
@@ -752,6 +823,133 @@ const QueryInsights = ({
     });
   }, [queries, wlmIdToNameMap]);
 
+  const percentileMetrics = useMemo(() => {
+    const latencies: number[] = [];
+    const cpus: number[] = [];
+    const memories: number[] = [];
+
+    itemsForMetrics.forEach((q) => {
+      const lat = q.measurements?.latency?.number;
+      const cpu = q.measurements?.cpu?.number;
+      const mem = q.measurements?.memory?.number;
+      if (lat != null) latencies.push(lat);
+      if (cpu != null) cpus.push(calculateMetricNumber(cpu, 1, 1000000));
+      if (mem != null) memories.push(calculateMetricNumber(mem, 1, 1024 * 1024));
+    });
+
+    const percentile = (arr: number[], p: number, decimals: number = 0) => {
+      if (arr.length === 0) return 'N/A';
+      const sorted = [...arr].sort((a, b) => a - b);
+      const idx = Math.ceil((p / 100) * sorted.length) - 1;
+      return sorted[idx].toFixed(decimals);
+    };
+
+    return {
+      p90Latency: percentile(latencies, 90),
+      p90Cpu: percentile(cpus, 90, 1),
+      p90Memory: percentile(memories, 90, 1),
+      p99Latency: percentile(latencies, 99),
+      p99Cpu: percentile(cpus, 99, 1),
+      p99Memory: percentile(memories, 99, 1),
+    };
+  }, [itemsForMetrics]);
+
+  const chartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    itemsForMetrics.forEach((q) => {
+      if (chartGroupBy === 'index') {
+        (q.indices || []).forEach((idx) => {
+          counts[idx] = (counts[idx] || 0) + 1;
+        });
+      } else {
+        let key: string;
+        if (chartGroupBy === 'node') {
+          key = q.node_id || 'Unknown';
+        } else if (chartGroupBy === 'user') {
+          key = q.labels?.user || 'Unknown';
+        } else {
+          const wlmId = q.wlm_group_id || 'Unknown';
+          key = wlmIdToNameMap[wlmId] || wlmId;
+        }
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return Object.entries(counts).map(([name, value], idx) => ({
+      name,
+      value,
+      percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0.0',
+      angle: value,
+      label: name,
+      color: CHART_COLORS[idx % CHART_COLORS.length],
+    }));
+  }, [itemsForMetrics, chartGroupBy, wlmIdToNameMap]);
+
+  const performanceChartData = useMemo(
+    () => computePerformanceChartData(itemsForMetrics, from, to, performanceMetric),
+    [itemsForMetrics, performanceMetric, from, to]
+  );
+
+  const performanceChartOptions = useMemo(
+    () => ({
+      tooltip: {
+        trigger: 'axis',
+        formatter: (tooltipParams: any) => {
+          const dataIndex = tooltipParams[0].dataIndex;
+          const timeRange = performanceChartData.bucketRanges[dataIndex];
+          let result = `<b>${timeRange}</b><br/>`;
+          const hasData = tooltipParams.some((param: any) => param.value !== null);
+          if (!hasData) {
+            result += 'No queries in this time bucket';
+          } else {
+            tooltipParams.forEach((param: any) => {
+              if (param.value !== null) {
+                result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+              }
+            });
+          }
+          return result;
+        },
+      },
+      legend: { data: ['Max', 'Average', 'Min'], bottom: 0 },
+      grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+      xAxis: { type: 'category', data: performanceChartData.times, name: 'Time' },
+      yAxis: {
+        type: 'value',
+        name:
+          performanceMetric === 'latency'
+            ? 'Latency (ms)'
+            : performanceMetric === 'cpu'
+            ? 'CPU Time (ms)'
+            : 'Memory (MB)',
+      },
+      series: [
+        {
+          name: 'Max',
+          type: 'line',
+          data: performanceChartData.max,
+          color: '#ff6b6b',
+          connectNulls: true,
+        },
+        {
+          name: 'Average',
+          type: 'line',
+          data: performanceChartData.avg,
+          color: '#4dabf7',
+          connectNulls: true,
+        },
+        {
+          name: 'Min',
+          type: 'line',
+          data: performanceChartData.min,
+          color: '#51cf66',
+          connectNulls: true,
+        },
+      ],
+    }),
+    [performanceChartData, performanceMetric]
+  );
+
   return (
     <>
       <QueryInsightsDataSourceMenu
@@ -769,70 +967,257 @@ const QueryInsights = ({
       />
 
       {!loading && (
-        <EuiInMemoryTable<SearchQueryRecord>
-          key={tableKey}
-          items={items}
-          columns={columnsToShow}
-          sorting={{
-            sort: {
-              field: TIMESTAMP_FIELD as keyof SearchQueryRecord,
-              direction: 'desc',
-            },
-          }}
-          onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
-          pagination={pagination}
-          loading={loading}
-          search={{
-            box: { placeholder: 'Search queries', schema: false },
-            defaultQuery: searchQuery,
-            filters: [
-              {
-                type: 'field_value_selection',
-                field: GROUP_BY_FIELD,
-                name: TYPE,
-                multiSelect: 'or',
-                options: [
-                  { value: 'NONE', name: 'query', view: 'query' },
-                  { value: 'SIMILARITY', name: 'group', view: 'group' },
-                ],
-              },
-              {
-                type: 'field_value_selection',
-                field: INDICES_FIELD,
-                name: INDICES,
-                multiSelect: 'or',
-                options: filterDuplicates(indexOptions),
-              },
-              {
-                type: 'field_value_selection',
-                field: SEARCH_TYPE_FIELD,
-                name: SEARCH_TYPE,
-                multiSelect: 'or',
-                options: filterDuplicates(searchTypeOptions),
-              },
-              {
-                type: 'field_value_selection',
-                field: NODE_ID_FIELD,
-                name: NODE_ID,
-                multiSelect: 'or',
-                options: filterDuplicates(nodeIdOptions),
-              },
-              ...(queryInsightWlmNavigationSupported
-                ? [
-                    {
-                      type: 'field_value_selection',
-                      field: WLM_GROUP_FIELD,
-                      name: WLM_GROUP,
-                      multiSelect: 'or',
-                      options: filterDuplicates(wlmGroupOptions),
-                    },
-                  ]
-                : []),
-            ],
-            onChange: onSearchChange,
-            toolsRight: [
+        <>
+          <EuiSpacer size="m" />
+          <EuiFlexGroup alignItems="center" gutterSize="m">
+            <EuiFlexItem grow={false}>
+              <EuiFieldSearch
+                placeholder="Search queries"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                compressed
+              />
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <EuiFilterGroup>
+                <EuiPopover
+                  button={
+                    <EuiFilterButton
+                      iconType="arrowDown"
+                      onClick={() => setIsTypeFilterOpen(!isTypeFilterOpen)}
+                      hasActiveFilters={selectedGroupBy.length > 0}
+                      numActiveFilters={
+                        selectedGroupBy.length > 0 ? selectedGroupBy.length : undefined
+                      }
+                    >
+                      {TYPE}
+                    </EuiFilterButton>
+                  }
+                  isOpen={isTypeFilterOpen}
+                  closePopover={() => setIsTypeFilterOpen(false)}
+                  panelPaddingSize="none"
+                >
+                  <EuiSelectable
+                    options={[
+                      {
+                        label: 'query',
+                        checked: selectedGroupBy.includes('NONE') ? 'on' : undefined,
+                      },
+                      {
+                        label: 'group',
+                        checked: selectedGroupBy.includes('SIMILARITY') ? 'on' : undefined,
+                      },
+                    ]}
+                    onChange={(options) => {
+                      const selected = options
+                        .filter((opt) => opt.checked === 'on')
+                        .map((opt) => (opt.label === 'query' ? 'NONE' : 'SIMILARITY'));
+                      setSelectedGroupBy(selected);
+                      setSearchQuery(
+                        buildSearchQuery(
+                          selected,
+                          selectedIndices,
+                          selectedSearchTypes,
+                          selectedNodeIds,
+                          selectedWlmGroups,
+                          searchText
+                        )
+                      );
+                    }}
+                    listProps={{ onFocusBadge: false }}
+                  >
+                    {(list) => <div style={{ width: 200 }}>{list}</div>}
+                  </EuiSelectable>
+                </EuiPopover>
+                <EuiPopover
+                  button={
+                    <EuiFilterButton
+                      iconType="arrowDown"
+                      onClick={() => setIsIndicesFilterOpen(!isIndicesFilterOpen)}
+                      hasActiveFilters={selectedIndices.length > 0}
+                      numActiveFilters={
+                        selectedIndices.length > 0 ? selectedIndices.length : undefined
+                      }
+                    >
+                      {INDICES}
+                    </EuiFilterButton>
+                  }
+                  isOpen={isIndicesFilterOpen}
+                  closePopover={() => setIsIndicesFilterOpen(false)}
+                  panelPaddingSize="none"
+                >
+                  <EuiSelectable
+                    options={indexOptions.map((opt) => ({
+                      label: opt.value,
+                      checked: selectedIndices.includes(opt.value) ? 'on' : undefined,
+                    }))}
+                    onChange={(options) => {
+                      const selected = options
+                        .filter((opt) => opt.checked === 'on')
+                        .map((opt) => opt.label);
+                      setSelectedIndices(selected);
+                      setSearchQuery(
+                        buildSearchQuery(
+                          selectedGroupBy,
+                          selected,
+                          selectedSearchTypes,
+                          selectedNodeIds,
+                          selectedWlmGroups,
+                          searchText
+                        )
+                      );
+                    }}
+                    listProps={{ onFocusBadge: false }}
+                  >
+                    {(list) => (
+                      <div style={{ width: 200, maxHeight: 300, overflow: 'auto' }}>{list}</div>
+                    )}
+                  </EuiSelectable>
+                </EuiPopover>
+                <EuiPopover
+                  button={
+                    <EuiFilterButton
+                      iconType="arrowDown"
+                      onClick={() => setIsSearchTypeFilterOpen(!isSearchTypeFilterOpen)}
+                      hasActiveFilters={selectedSearchTypes.length > 0}
+                      numActiveFilters={
+                        selectedSearchTypes.length > 0 ? selectedSearchTypes.length : undefined
+                      }
+                    >
+                      {SEARCH_TYPE}
+                    </EuiFilterButton>
+                  }
+                  isOpen={isSearchTypeFilterOpen}
+                  closePopover={() => setIsSearchTypeFilterOpen(false)}
+                  panelPaddingSize="none"
+                >
+                  <EuiSelectable
+                    options={searchTypeOptions.map((opt) => ({
+                      label: opt.value,
+                      checked: selectedSearchTypes.includes(opt.value) ? 'on' : undefined,
+                    }))}
+                    onChange={(options) => {
+                      const selected = options
+                        .filter((opt) => opt.checked === 'on')
+                        .map((opt) => opt.label);
+                      setSelectedSearchTypes(selected);
+                      setSearchQuery(
+                        buildSearchQuery(
+                          selectedGroupBy,
+                          selectedIndices,
+                          selected,
+                          selectedNodeIds,
+                          selectedWlmGroups,
+                          searchText
+                        )
+                      );
+                    }}
+                    listProps={{ onFocusBadge: false }}
+                  >
+                    {(list) => (
+                      <div style={{ width: 200, maxHeight: 300, overflow: 'auto' }}>{list}</div>
+                    )}
+                  </EuiSelectable>
+                </EuiPopover>
+                <EuiPopover
+                  button={
+                    <EuiFilterButton
+                      iconType="arrowDown"
+                      onClick={() => setIsNodeIdFilterOpen(!isNodeIdFilterOpen)}
+                      hasActiveFilters={selectedNodeIds.length > 0}
+                      numActiveFilters={
+                        selectedNodeIds.length > 0 ? selectedNodeIds.length : undefined
+                      }
+                    >
+                      {NODE_ID}
+                    </EuiFilterButton>
+                  }
+                  isOpen={isNodeIdFilterOpen}
+                  closePopover={() => setIsNodeIdFilterOpen(false)}
+                  panelPaddingSize="none"
+                >
+                  <EuiSelectable
+                    options={nodeIdOptions.map((opt) => ({
+                      label: opt.value,
+                      checked: selectedNodeIds.includes(opt.value) ? 'on' : undefined,
+                    }))}
+                    onChange={(options) => {
+                      const selected = options
+                        .filter((opt) => opt.checked === 'on')
+                        .map((opt) => opt.label);
+                      setSelectedNodeIds(selected);
+                      setSearchQuery(
+                        buildSearchQuery(
+                          selectedGroupBy,
+                          selectedIndices,
+                          selectedSearchTypes,
+                          selected,
+                          selectedWlmGroups,
+                          searchText
+                        )
+                      );
+                    }}
+                    listProps={{ onFocusBadge: false }}
+                  >
+                    {(list) => (
+                      <div style={{ width: 200, maxHeight: 300, overflow: 'auto' }}>{list}</div>
+                    )}
+                  </EuiSelectable>
+                </EuiPopover>
+                {queryInsightWlmNavigationSupported && (
+                  <EuiPopover
+                    button={
+                      <EuiFilterButton
+                        iconType="arrowDown"
+                        onClick={() => setIsWlmGroupFilterOpen(!isWlmGroupFilterOpen)}
+                        hasActiveFilters={selectedWlmGroups.length > 0}
+                        numActiveFilters={
+                          selectedWlmGroups.length > 0 ? selectedWlmGroups.length : undefined
+                        }
+                      >
+                        {WLM_GROUP}
+                      </EuiFilterButton>
+                    }
+                    isOpen={isWlmGroupFilterOpen}
+                    closePopover={() => setIsWlmGroupFilterOpen(false)}
+                    panelPaddingSize="none"
+                  >
+                    <EuiSelectable
+                      options={wlmGroupOptions.map((opt) => ({
+                        label: opt.name,
+                        checked: selectedWlmGroups.includes(opt.value) ? 'on' : undefined,
+                      }))}
+                      onChange={(options) => {
+                        const selected = options
+                          .filter((opt) => opt.checked === 'on')
+                          .map((opt) => {
+                            const option = wlmGroupOptions.find((o) => o.name === opt.label);
+                            return option ? option.value : opt.label;
+                          });
+                        setSelectedWlmGroups(selected);
+                        setSearchQuery(
+                          buildSearchQuery(
+                            selectedGroupBy,
+                            selectedIndices,
+                            selectedSearchTypes,
+                            selectedNodeIds,
+                            selected,
+                            searchText
+                          )
+                        );
+                      }}
+                      listProps={{ onFocusBadge: false }}
+                    >
+                      {(list) => (
+                        <div style={{ width: 200, maxHeight: 300, overflow: 'auto' }}>{list}</div>
+                      )}
+                    </EuiSelectable>
+                  </EuiPopover>
+                )}
+              </EuiFilterGroup>
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
               <EuiSuperDatePicker
-                key="date-picker"
                 start={currStart}
                 end={currEnd}
                 onTimeChange={onTimeChange}
@@ -840,28 +1225,280 @@ const QueryInsights = ({
                 commonlyUsedRanges={commonlyUsedRanges}
                 onRefresh={onRefresh}
                 updateButtonProps={{ fill: false }}
-              />,
-            ],
-          }}
-          executeQueryOptions={{
-            defaultFields: [
-              'id',
-              GROUP_BY_FIELD,
-              TIMESTAMP_FIELD,
-              MEASUREMENTS_FIELD,
-              LATENCY_FIELD,
-              CPU_FIELD,
-              MEMORY_FIELD,
-              INDICES_FIELD,
-              SEARCH_TYPE_FIELD,
-              NODE_ID_FIELD,
-              ...(queryInsightWlmNavigationSupported ? [WLM_GROUP_FIELD] : []),
-              TOTAL_SHARDS_FIELD,
-            ],
-          }}
-          allowNeutralSort={false}
-          itemId={(q: SearchQueryRecord) => q.id}
-        />
+              />
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiSpacer size="m" />
+          <EuiPanel>
+            <EuiFlexGroup justifyContent="flexEnd" alignItems="center">
+              <EuiFlexItem grow={false}>
+                <EuiButtonGroup
+                  legend="Visualization mode"
+                  options={[
+                    { id: 'query', label: 'Query' },
+                    { id: 'group', label: 'Group' },
+                  ]}
+                  idSelected={visualizationMode}
+                  onChange={(id) => setVisualizationMode(id as 'query' | 'group')}
+                  color="primary"
+                />
+              </EuiFlexItem>
+            </EuiFlexGroup>
+            <EuiSpacer size="m" />
+            {visualizationMode === 'query' ? (
+              <>
+                <EuiFlexGroup>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P90 LATENCY</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p90Latency} ms</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P90 CPU TIME</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p90Cpu} ms</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P90 MEMORY</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p90Memory} MB</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P99 LATENCY</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p99Latency} ms</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P99 CPU TIME</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p99Cpu} ms</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiPanel paddingSize="m">
+                      <EuiText size="s">
+                        <p>P99 MEMORY</p>
+                      </EuiText>
+                      <EuiTitle size="l">
+                        <h2>
+                          <b>{percentileMetrics.p99Memory} MB</b>
+                        </h2>
+                      </EuiTitle>
+                    </EuiPanel>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <EuiSpacer size="m" />
+                <EuiPanel>
+                  <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                    <EuiFlexItem grow={false}>
+                      <EuiTitle size="xs">
+                        <h3>
+                          {chartGroupBy === 'node'
+                            ? 'Queries by Node'
+                            : chartGroupBy === 'index'
+                            ? 'Queries by Index'
+                            : chartGroupBy === 'user'
+                            ? 'Queries by User'
+                            : 'Queries by WLM Group'}
+                        </h3>
+                      </EuiTitle>
+                    </EuiFlexItem>
+                    <EuiFlexItem grow={false}>
+                      <EuiSelect
+                        options={[
+                          { value: 'node', text: 'Node' },
+                          { value: 'index', text: 'Index' },
+                          { value: 'user', text: 'User' },
+                          ...(queryInsightWlmNavigationSupported
+                            ? [{ value: 'wlm', text: 'WLM Group' }]
+                            : []),
+                        ]}
+                        value={chartGroupBy}
+                        onChange={(e) =>
+                          setChartGroupBy(e.target.value as 'node' | 'index' | 'user' | 'wlm')
+                        }
+                        compressed
+                      />
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+                  <EuiSpacer size="l" />
+                  <EuiFlexGroup>
+                    <EuiFlexItem grow={false}>
+                      <RadialChart
+                        data={chartData}
+                        width={300}
+                        height={300}
+                        innerRadius={80}
+                        radius={140}
+                        colorType="literal"
+                      />
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                      <EuiBasicTable
+                        items={chartData}
+                        columns={[
+                          {
+                            field: 'name',
+                            name:
+                              chartGroupBy === 'node'
+                                ? 'Node'
+                                : chartGroupBy === 'index'
+                                ? 'Index'
+                                : chartGroupBy === 'user'
+                                ? 'User'
+                                : 'WLM Group',
+                            render: (name: string, item: typeof chartData[0]) => (
+                              <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+                                <EuiFlexItem grow={false}>
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      width: 16,
+                                      height: 16,
+                                      backgroundColor: item.color,
+                                    }}
+                                  />
+                                </EuiFlexItem>
+                                <EuiFlexItem>{name}</EuiFlexItem>
+                              </EuiFlexGroup>
+                            ),
+                          },
+                          { field: 'value', name: 'Query Count', align: 'right' },
+                          {
+                            field: 'percentage',
+                            name: 'Percentage',
+                            render: (p: string) => `${p}%`,
+                            align: 'right',
+                          },
+                        ]}
+                      />
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+                </EuiPanel>
+                <EuiSpacer size="m" />
+                <EuiPanel>
+                  <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                    <EuiFlexItem grow={false}>
+                      <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+                        <EuiFlexItem grow={false}>
+                          <EuiTitle size="xs">
+                            <h3>Performance Analysis</h3>
+                          </EuiTitle>
+                        </EuiFlexItem>
+                        <EuiFlexItem grow={false}>
+                          <EuiIconTip
+                            content="Time labels represent the start of each time bucket. Data is aggregated into buckets across the selected time range."
+                            position="right"
+                            type="questionInCircle"
+                          />
+                        </EuiFlexItem>
+                      </EuiFlexGroup>
+                    </EuiFlexItem>
+                    <EuiFlexItem grow={false}>
+                      <EuiSelect
+                        options={[
+                          { value: 'latency', text: 'Latency' },
+                          { value: 'cpu', text: 'CPU' },
+                          { value: 'memory', text: 'Memory' },
+                        ]}
+                        value={performanceMetric}
+                        onChange={(e) =>
+                          setPerformanceMetric(e.target.value as 'latency' | 'cpu' | 'memory')
+                        }
+                        compressed
+                      />
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+                  <EuiSpacer size="m" />
+                  {performanceChartData.times.length > 0 ? (
+                    <ReactECharts
+                      option={performanceChartOptions}
+                      style={{ height: 400, width: '100%' }}
+                      opts={{ renderer: 'svg' }}
+                    />
+                  ) : (
+                    <EuiTextAlign textAlign="center">
+                      <EuiText color="subdued">
+                        <p>No data available</p>
+                      </EuiText>
+                    </EuiTextAlign>
+                  )}
+                </EuiPanel>
+              </>
+            ) : (
+              <EuiPanel color="subdued" paddingSize="xl">
+                <EuiSpacer size="xxl" />
+                <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
+                  <EuiFlexItem grow={false}>
+                    <EuiIcon type="visLine" size="xxl" color="subdued" />
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <EuiTitle size="s">
+                      <h3>No Visualization Available</h3>
+                    </EuiTitle>
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <EuiText color="subdued" size="s">
+                      <p>Visualizations for grouped queries are coming soon</p>
+                    </EuiText>
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <EuiSpacer size="xxl" />
+              </EuiPanel>
+            )}
+          </EuiPanel>
+          <EuiSpacer size="m" />
+          <EuiInMemoryTable<SearchQueryRecord>
+            key={tableKey}
+            items={items}
+            columns={columnsToShow}
+            sorting={{
+              sort: {
+                field: TIMESTAMP_FIELD as keyof SearchQueryRecord,
+                direction: 'desc',
+              },
+            }}
+            onTableChange={({ page: { index } }) => setPagination({ pageIndex: index })}
+            pagination={pagination}
+            loading={loading}
+            allowNeutralSort={false}
+            itemId={(q: SearchQueryRecord) => q.id}
+          />
+        </>
       )}
     </>
   );

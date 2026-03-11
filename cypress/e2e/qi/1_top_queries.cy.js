@@ -22,16 +22,22 @@ const makeTimestampedBody = (raw) => {
 const getRowsFromRaw = (raw) => (raw?.response?.top_queries ?? raw?.top_queries ?? []).slice();
 
 const assertRowCountEquals = (expected) => {
-  cy.get('.euiTableRow').should('have.length', expected);
+  // Target the main data table (last table on page), not the chart table
+  cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', expected);
 };
 
 const getHeaders = () =>
-  cy.get('.euiTableHeaderCell').then(($h) =>
-    $h
-      .map((_, el) => Cypress.$(el).text().trim())
-      .get()
-      .filter(Boolean)
-  );
+  // Target the main data table headers (last table on page), not the chart table
+  cy
+    .get('.euiBasicTable')
+    .last()
+    .find('.euiTableHeaderCell')
+    .then(($h) =>
+      $h
+        .map((_, el) => Cypress.$(el).text().trim())
+        .get()
+        .filter(Boolean)
+    );
 
 const expectSortedBy = (label, colIdx) => {
   const extract = ($rows) =>
@@ -44,19 +50,26 @@ const expectSortedBy = (label, colIdx) => {
       return Number.isNaN(num) ? 0 : num;
     });
 
-  cy.get('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiTableRow').then(($r) => {
-    const v = extract($r);
-    const asc = [...v].sort((a, b) => a - b);
-    expect(v, `${label} asc`).to.deep.equal(asc);
-  });
+  // Target the main data table (last table on page)
+  cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains(label).click();
+  cy.get('.euiBasicTable')
+    .last()
+    .find('.euiTableRow')
+    .then(($r) => {
+      const v = extract($r);
+      const asc = [...v].sort((a, b) => a - b);
+      expect(v, `${label} asc`).to.deep.equal(asc);
+    });
 
-  cy.get('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiTableRow').then(($r) => {
-    const v = extract($r);
-    const desc = [...v].sort((a, b) => b - a);
-    expect(v, `${label} desc`).to.deep.equal(desc);
-  });
+  cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains(label).click();
+  cy.get('.euiBasicTable')
+    .last()
+    .find('.euiTableRow')
+    .then(($r) => {
+      const v = extract($r);
+      const desc = [...v].sort((a, b) => b - a);
+      expect(v, `${label} desc`).to.deep.equal(desc);
+    });
 };
 
 const norm = (s) => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -97,13 +110,19 @@ const findFilterButton = (labels) => {
 
 const openFilter = (labels) => {
   findFilterButton(labels).scrollIntoView().click();
-  cy.get('.euiFilterSelectItem', { timeout: 10000 }).should('exist');
+  cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
 };
 
 const clearAllOpenFilterOptions = () => {
-  cy.get('.euiFilterSelectItem').each(($item) => {
-    const isOn = $item.find('svg[data-euiicon-type="check"]').length > 0;
-    if (isOn) cy.wrap($item).click();
+  cy.get('.euiSelectableListItem').each(($item) => {
+    // Check if item is selected by looking for the check icon or euiSelectableListItem-isChecked class
+    const hasCheck =
+      $item.find('[data-euiicon-type="check"]').length > 0 ||
+      $item.hasClass('euiSelectableListItem-isChecked') ||
+      $item.attr('aria-checked') === 'true';
+    if (hasCheck) {
+      cy.wrap($item).click();
+    }
   });
 };
 
@@ -114,7 +133,7 @@ const setListFilter = (buttonLabels, values = []) => {
   clearAllOpenFilterOptions();
   values.forEach((label) => {
     const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    cy.contains('.euiFilterSelectItem', new RegExp(`^${esc(label)}$`, 'i'))
+    cy.contains('.euiSelectableListItem', new RegExp(`^${esc(label)}$`, 'i'))
       .scrollIntoView()
       .click();
   });
@@ -127,13 +146,20 @@ const setSearchTypeFilter = (types = []) => setListFilter(['Search Type'], types
 const setIndicesFilter = (indices = []) => setListFilter(['Indices'], indices);
 
 const setTypeFilter = (mode /* 'query' | 'group' | 'both' */) => {
-  cy.contains('button', /^Type\b/).click();
-  const ensureToggle = (label, on) => {
-    cy.contains('.euiFilterSelectItem', new RegExp(`^${esc(label)}$`, 'i')).then(($item) => {
-      const isOn = $item.find('svg[data-euiicon-type="check"]').length > 0;
-      if (isOn !== on) cy.wrap($item).click();
+  // Click the Type filter button (in the filter group, not visualization toggle)
+  findFilterButton(['Type']).click();
+  cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
+
+  const ensureToggle = (label, shouldBeOn) => {
+    cy.contains('.euiSelectableListItem', new RegExp(`^${esc(label)}$`, 'i')).then(($item) => {
+      // SVG with path = checked, empty SVG = unchecked
+      const isOn = $item.find('svg path').length > 0;
+      if (isOn !== shouldBeOn) {
+        cy.wrap($item).click();
+      }
     });
   };
+
   if (mode === 'query') {
     ensureToggle('query', true);
     ensureToggle('group', false);
@@ -149,15 +175,25 @@ const setTypeFilter = (mode /* 'query' | 'group' | 'both' */) => {
 };
 
 const resetTypeFilterToNone = () => {
-  cy.contains('button', /^Type\b/).click();
-  ['query', 'group'].forEach((label) => {
-    cy.contains('.euiFilterSelectItem', new RegExp(`^${esc(label)}$`, 'i')).then(($item) => {
-      const isOn = $item.find('svg[data-euiicon-type="check"]').length > 0;
-      if (isOn) cy.wrap($item).click();
-    });
+  // Click the Type filter button to open the popover
+  findFilterButton(['Type']).click();
+  cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
+
+  // Only click items where SVG has content (path element = checked)
+  cy.contains('.euiSelectableListItem', /^query$/i).then(($item) => {
+    if ($item.find('svg path').length > 0) {
+      cy.wrap($item).click();
+    }
   });
+
+  cy.contains('.euiSelectableListItem', /^group$/i).then(($item) => {
+    if ($item.find('svg path').length > 0) {
+      cy.wrap($item).click();
+    }
+  });
+
   cy.get('body').click(0, 0);
-  cy.wait(300);
+  cy.wait(500);
 };
 
 const deriveExpectations = (payload, type = 'all') => {
@@ -245,12 +281,15 @@ describe('Query Insights Dashboard', () => {
     // Verify the URL is correct
     cy.url().should('include', '/queryInsights');
 
-    // Verify the table is visible and has content
-    cy.get('.euiBasicTable').should('be.visible');
-    cy.get('.euiTableHeaderCell').should('have.length.greaterThan', 0);
+    // Verify the main data table is visible and has content
+    cy.get('.euiBasicTable').last().should('be.visible');
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .should('have.length.greaterThan', 0);
 
-    // Verify there are query rows in the table
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+    // Verify there are query rows in the main table
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
   /**
@@ -260,20 +299,27 @@ describe('Query Insights Dashboard', () => {
     // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.navigateToOverview();
-    // Ensure table has data before attempting to sort
-    cy.get('.euiTableRow', { timeout: 30000 }).should('have.length.greaterThan', 0);
+    // Ensure main table has data before attempting to sort
+    cy.get('.euiBasicTable', { timeout: 30000 })
+      .last()
+      .find('.euiTableRow')
+      .should('have.length.greaterThan', 0);
     cy.get('body').should('not.contain', 'No items found');
-    // Click the Timestamp column header to sort
-    cy.get('.euiTableHeaderCell').contains('Timestamp').click();
+    // Click the Timestamp column header in main table to sort
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
-    cy.get('.euiTableRow')
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableRow')
       .first()
       .invoke('text')
       .then((firstRowAfterSort) => {
         const firstTimestamp = firstRowAfterSort.trim();
-        cy.get('.euiTableHeaderCell').contains('Timestamp').click();
+        cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
         // eslint-disable-next-line jest/valid-expect-in-promise
-        cy.get('.euiTableRow')
+        cy.get('.euiBasicTable')
+          .last()
+          .find('.euiTableRow')
           .first()
           .invoke('text')
           .then((firstRowAfterSecondSort) => {
@@ -293,20 +339,6 @@ describe('Query Insights Dashboard', () => {
     cy.url().should('include', '/queryInsights');
   });
 
-  it('should filter queries', () => {
-    cy.get('.euiFieldSearch').should('be.visible');
-    cy.get('.euiFieldSearch').type('sample_index');
-    // Add assertions for filtered results
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-  });
-
-  it('should clear the search input and reset results', () => {
-    cy.get('.euiFieldSearch').type('random_string');
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-    cy.get('.euiFieldSearch').clear();
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
-  });
-
   it('should display a message when no top queries are found', () => {
     clearAll();
     cy.wait(10000);
@@ -320,10 +352,11 @@ describe('Query Insights Dashboard', () => {
     }
     cy.wait(10000);
     cy.reload();
+    // Pagination is on the main table
     cy.get('.euiPagination').should('be.visible');
     cy.get('.euiPagination__item').contains('2').click();
-    // Verify rows on the second page
-    cy.get('.euiTableRow').should('have.length.greaterThan', 0);
+    // Verify rows on the second page in main table
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
   });
 
   after(() => clearAll());
@@ -496,7 +529,7 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
   });
 });
 
-describe('Query Insights — Filters: Node ID, Search Type, Indices (QUERY_ONLY, no Type toggle)', () => {
+describe('Query Insights — Filters and Search', () => {
   let expected;
   let expectingAll;
   let primaryNodeId;
@@ -528,14 +561,20 @@ describe('Query Insights — Filters: Node ID, Search Type, Indices (QUERY_ONLY,
     if (primaryNodeId) {
       setNodeIdFilter([primaryNodeId]);
       assertRowCountEquals(expected.nodeIdCounts[primaryNodeId]);
-      cy.get('.euiTableRow').each(($r) => cy.wrap($r).contains('td', primaryNodeId));
+      cy.get('.euiBasicTable')
+        .last()
+        .find('.euiTableRow')
+        .each(($r) => cy.wrap($r).contains('td', primaryNodeId));
     }
     setNodeIdFilter([primaryNodeId]); // clear
 
     if (secondaryNodeId) {
       setNodeIdFilter([secondaryNodeId]);
       assertRowCountEquals(expected.nodeIdCounts[secondaryNodeId]);
-      cy.get('.euiTableRow').each(($r) => cy.wrap($r).contains('td', secondaryNodeId));
+      cy.get('.euiBasicTable')
+        .last()
+        .find('.euiTableRow')
+        .each(($r) => cy.wrap($r).contains('td', secondaryNodeId));
     }
     setNodeIdFilter([secondaryNodeId]); // clear
     assertRowCountEquals(expectingAll.totalRowCount);
@@ -545,7 +584,10 @@ describe('Query Insights — Filters: Node ID, Search Type, Indices (QUERY_ONLY,
     if (defaultSearchType) {
       setSearchTypeFilter([defaultSearchType]);
       assertRowCountEquals(expected.searchTypeCounts[defaultSearchType]);
-      cy.get('.euiTableRow').each(($r) => cy.wrap($r).contains('td', 'query then fetch'));
+      cy.get('.euiBasicTable')
+        .last()
+        .find('.euiTableRow')
+        .each(($r) => cy.wrap($r).contains('td', 'query then fetch'));
     }
     setSearchTypeFilter([defaultSearchType]);
 
@@ -556,14 +598,20 @@ describe('Query Insights — Filters: Node ID, Search Type, Indices (QUERY_ONLY,
     if (primaryIndexName) {
       setIndicesFilter([primaryIndexName]);
       assertRowCountEquals(expected.indexCounts[primaryIndexName]);
-      cy.get('.euiTableRow').each(($r) => cy.wrap($r).contains('td', primaryIndexName));
+      cy.get('.euiBasicTable')
+        .last()
+        .find('.euiTableRow')
+        .each(($r) => cy.wrap($r).contains('td', primaryIndexName));
     }
     setIndicesFilter([primaryIndexName]);
 
     if (secondaryIndexName) {
       setIndicesFilter([secondaryIndexName]);
       assertRowCountEquals(expected.indexCounts[secondaryIndexName]);
-      cy.get('.euiTableRow').each(($r) => cy.wrap($r).contains('td', secondaryIndexName));
+      cy.get('.euiBasicTable')
+        .last()
+        .find('.euiTableRow')
+        .each(($r) => cy.wrap($r).contains('td', secondaryIndexName));
     }
     setIndicesFilter([secondaryIndexName]);
 
@@ -575,5 +623,144 @@ describe('Query Insights — Filters: Node ID, Search Type, Indices (QUERY_ONLY,
 
     setIndicesFilter([]); // clear
     assertRowCountEquals(expected.totalRowCount);
+  });
+
+  it('updates search box when filter is selected', () => {
+    resetTypeFilterToNone();
+    cy.get('.euiFieldSearch').should('have.value', '');
+    setTypeFilter('query');
+    cy.get('.euiFieldSearch').should('contain.value', 'group_by');
+  });
+
+  it('clears search box when filters are cleared', () => {
+    setTypeFilter('query');
+    cy.get('.euiFieldSearch').should('not.have.value', '');
+    resetTypeFilterToNone();
+    cy.get('.euiFieldSearch').should('have.value', '');
+  });
+
+  it('filters by query ID in free-text search', () => {
+    // a2e1c822 matches 2 queries in fixture
+    cy.get('.euiFieldSearch').clear().type('a2e1c822');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
+  });
+
+  it('filters by index name in free-text search', () => {
+    // my-index only appears in one query (group_by: NONE)
+    cy.get('.euiFieldSearch').clear().type('my-index');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 1);
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('contain', 'my-index');
+  });
+
+  it('filters by node ID in free-text search', () => {
+    // UYKFun8 appears in 2 queries (1 NONE, 1 SIMILARITY) - free-text filters to NONE only
+    cy.get('.euiFieldSearch').clear().type('UYKFun8');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
+  });
+
+  it('shows no results for non-matching free-text search', () => {
+    cy.get('.euiFieldSearch').clear().type('nonexistent_xyz_123');
+    cy.get('.euiBasicTable').last().contains('No items found').should('be.visible');
+  });
+
+  it('combines free-text search with filter selection', () => {
+    setTypeFilter('query');
+    // .kibana appears in all queries
+    cy.get('.euiFieldSearch').type(' kibana');
+    cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
+    cy.get('.euiFieldSearch').should('contain.value', 'group_by');
+    cy.get('.euiFieldSearch').should('contain.value', 'kibana');
+  });
+});
+
+describe('Query Insights — Visualizations Panel', () => {
+  beforeEach(() => {
+    cy.intercept('GET', '**/api/top_queries/**', (req) => {
+      req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
+    }).as('topQueries');
+
+    cy.waitForQueryInsightsPlugin();
+    cy.wait('@topQueries');
+  });
+
+  it('displays visualizations panel with Query/Group toggle', () => {
+    // EuiButtonGroup renders buttons with the label text
+    cy.get('.euiButtonGroup').contains('Query').should('be.visible');
+    cy.get('.euiButtonGroup').contains('Group').should('be.visible');
+  });
+
+  it('displays percentile metrics in Query mode', () => {
+    cy.contains('P90 LATENCY').should('be.visible');
+    cy.contains('P90 CPU TIME').should('be.visible');
+    cy.contains('P90 MEMORY').should('be.visible');
+    cy.contains('P99 LATENCY').should('be.visible');
+    cy.contains('P99 CPU TIME').should('be.visible');
+    cy.contains('P99 MEMORY').should('be.visible');
+  });
+
+  it('displays Queries by Node chart', () => {
+    cy.contains('Queries by Node').should('be.visible');
+  });
+
+  it('displays Performance Analysis section', () => {
+    cy.contains('Performance Analysis').should('be.visible');
+  });
+
+  it('shows empty state when Group mode is selected', () => {
+    // Click the Group button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Group').click();
+    cy.contains('No Visualization Available').should('be.visible');
+    cy.contains('Visualizations for grouped queries are coming soon').should('be.visible');
+  });
+
+  it('switches back to Query mode and shows visualizations', () => {
+    // Click the Group button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Group').click();
+    cy.contains('No Visualization Available').should('be.visible');
+    // Click the Query button in the EuiButtonGroup
+    cy.get('.euiButtonGroup').contains('Query').click();
+    cy.contains('P90 LATENCY').should('be.visible');
+  });
+
+  it('changes Queries by chart grouping via dropdown', () => {
+    // Find the Queries by Node section and its dropdown
+    cy.contains('h3', 'Queries by Node')
+      .closest('.euiPanel')
+      .find('select')
+      .as('queriesByDropdown');
+
+    // Default should be Node
+    cy.get('@queriesByDropdown').should('have.value', 'node');
+
+    // Change to Index
+    cy.get('@queriesByDropdown').select('index');
+    cy.contains('h3', 'Queries by Index').should('be.visible');
+
+    // Change to User
+    cy.contains('h3', 'Queries by Index').closest('.euiPanel').find('select').select('user');
+    cy.contains('h3', 'Queries by User').should('be.visible');
+
+    // Change back to Node
+    cy.contains('h3', 'Queries by User').closest('.euiPanel').find('select').select('node');
+    cy.contains('h3', 'Queries by Node').should('be.visible');
+  });
+
+  it('changes Performance Analysis metric via dropdown', () => {
+    // Find the Performance Analysis section by its title and get the nearby dropdown
+    cy.contains('h3', 'Performance Analysis')
+      .closest('.euiPanel')
+      .find('select')
+      .as('perfDropdown');
+
+    // Default should be Latency
+    cy.get('@perfDropdown').should('have.value', 'latency');
+
+    // Change to CPU
+    cy.get('@perfDropdown').select('cpu');
+    cy.get('@perfDropdown').should('have.value', 'cpu');
+
+    // Change to Memory
+    cy.get('@perfDropdown').select('memory');
+    cy.get('@perfDropdown').should('have.value', 'memory');
   });
 });
