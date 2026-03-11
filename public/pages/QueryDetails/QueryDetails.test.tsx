@@ -23,6 +23,13 @@ jest.mock('../../../common/utils/QueryUtils', () => ({
   retrieveQueryById: jest.fn(),
 }));
 
+jest.mock('../../utils/version-utils', () => ({
+  getVersionOnce: jest.fn().mockResolvedValue('3.6.0'),
+  isVersion33OrHigher: jest.fn().mockReturnValue(true),
+  isVersion35OrHigher: jest.fn().mockReturnValue(true),
+  isVersion36OrHigher: jest.fn().mockReturnValue(true),
+}));
+
 const mockCoreStart = {
   chrome: {
     setBreadcrumbs: jest.fn(),

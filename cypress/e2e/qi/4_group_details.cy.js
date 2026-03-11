@@ -67,6 +67,7 @@ describe('Query Group Details Page', () => {
       'Average CPU Time',
       'Average Memory Usage',
       'Group by',
+      'Query Group Hashcode',
     ];
 
     // Validate all field labels exist in the first EuiPanel
@@ -140,6 +141,7 @@ describe('Query Group Details Page', () => {
 
         const firstQuery = responseData.top_queries[0];
         expect(firstQuery).to.include.all.keys([
+          'failed',
           'group_by',
           'id',
           'indices',
