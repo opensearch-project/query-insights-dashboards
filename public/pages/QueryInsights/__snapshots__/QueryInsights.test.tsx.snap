@@ -1165,7 +1165,32 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.latency_4"
+              data-test-subj="tableHeaderCell_Status_4"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Status"
+                  >
+                    Status
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_measurements.latency_5"
               role="columnheader"
               scope="col"
             >
@@ -1190,7 +1215,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.cpu_5"
+              data-test-subj="tableHeaderCell_measurements.cpu_6"
               role="columnheader"
               scope="col"
             >
@@ -1215,7 +1240,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.memory_6"
+              data-test-subj="tableHeaderCell_measurements.memory_7"
               role="columnheader"
               scope="col"
             >
@@ -1240,7 +1265,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_indices_7"
+              data-test-subj="tableHeaderCell_indices_8"
               role="columnheader"
               scope="col"
             >
@@ -1265,7 +1290,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_search_type_8"
+              data-test-subj="tableHeaderCell_search_type_9"
               role="columnheader"
               scope="col"
             >
@@ -1290,7 +1315,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_node_id_9"
+              data-test-subj="tableHeaderCell_node_id_10"
               role="columnheader"
               scope="col"
             >
@@ -1315,7 +1340,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_total_shards_10"
+              data-test-subj="tableHeaderCell_total_shards_11"
               role="columnheader"
               scope="col"
             >
@@ -1422,6 +1447,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     Jan 13, 2025 @ 12:00:00 AM
                   </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(109, 204, 177); color: rgb(0, 0, 0);"
+                  title="Completed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Completed
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -1632,6 +1685,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -1824,6 +1895,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     Jan 13, 2025 @ 12:00:00 AM
                   </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                  title="Failed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Failed
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2034,6 +2133,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(109, 204, 177); color: rgb(0, 0, 0);"
+                  title="Completed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Completed
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2226,6 +2353,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     -
                   </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
                 </span>
               </div>
             </td>
@@ -2436,6 +2581,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2637,6 +2800,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2829,6 +3010,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   >
                     -
                   </button>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
                 </span>
               </div>
             </td>

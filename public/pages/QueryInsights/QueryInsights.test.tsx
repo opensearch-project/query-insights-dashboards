@@ -247,6 +247,7 @@ describe('QueryInsights Component', () => {
           'Type',
           'Query Count',
           'Timestamp',
+          'Status',
           'Avg Latency / Latency',
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
