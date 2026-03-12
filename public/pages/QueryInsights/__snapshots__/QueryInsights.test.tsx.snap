@@ -361,631 +361,996 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
   >
     <div
-      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentFlexEnd euiFlexGroup--directionRow euiFlexGroup--responsive"
+      class="euiAccordion euiAccordion-isOpen"
     >
       <div
-        class="euiFlexItem euiFlexItem--flexGrowZero"
+        class="euiAccordion__triggerWrapper"
       >
-        <fieldset
-          class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
+        <button
+          aria-controls="visualizations-accordion"
+          aria-expanded="true"
+          class="euiAccordion__button"
+          id="random_html_id"
+          type="button"
         >
-          <legend
-            class="euiScreenReaderOnly"
+          <span
+            class="euiAccordion__iconWrapper"
           >
-            Visualization mode
-          </legend>
-          <div
-            class="euiButtonGroup__buttons"
-          >
-            <label
-              class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small euiButtonGroupButton--fill euiButtonGroupButton-isSelected"
-              for="random_html_id"
+            <svg
+              aria-hidden="true"
+              class="euiIcon euiIcon--medium euiAccordion__icon euiAccordion__icon-isOpen"
+              focusable="false"
+              height="16"
+              role="img"
+              viewBox="0 0 16 16"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <span
-                class="euiButtonContent euiButton__content"
+              <path
+                d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
+                fill-rule="nonzero"
+              />
+            </svg>
+          </span>
+          <span
+            class="euiIEFlexWrapFix"
+          >
+            <h3
+              class="euiTitle euiTitle--small"
+            >
+              Visualizations
+            </h3>
+          </span>
+        </button>
+        <div
+          class="euiAccordion__optionalAction"
+        >
+          <fieldset
+            class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
+            data-test-subj="visualizationModeToggle"
+          >
+            <legend
+              class="euiScreenReaderOnly"
+            >
+              Visualization mode
+            </legend>
+            <div
+              class="euiButtonGroup__buttons"
+            >
+              <label
+                class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small euiButtonGroupButton--fill euiButtonGroupButton-isSelected"
+                for="random_html_id"
               >
                 <span
-                  class="euiButton__text euiButtonGroupButton__textShift"
-                  data-text="Query"
-                  title="Query"
+                  class="euiButtonContent euiButton__content"
                 >
-                  <input
-                    checked=""
-                    class="euiScreenReaderOnly"
-                    data-test-subj="query"
-                    id="random_html_id"
-                    name="random_html_id"
-                    type="radio"
-                    value=""
-                  />
-                  Query
+                  <span
+                    class="euiButton__text euiButtonGroupButton__textShift"
+                    data-text="Query"
+                    title="Query"
+                  >
+                    <input
+                      checked=""
+                      class="euiScreenReaderOnly"
+                      data-test-subj="query"
+                      id="random_html_id"
+                      name="random_html_id"
+                      type="radio"
+                      value=""
+                    />
+                    Query
+                  </span>
                 </span>
-              </span>
-            </label>
-            <label
-              class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small"
-              for="random_html_id"
-            >
-              <span
-                class="euiButtonContent euiButton__content"
+              </label>
+              <label
+                class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small"
+                for="random_html_id"
               >
                 <span
-                  class="euiButton__text euiButtonGroupButton__textShift"
-                  data-text="Group"
-                  title="Group"
+                  class="euiButtonContent euiButton__content"
                 >
-                  <input
-                    class="euiScreenReaderOnly"
-                    data-test-subj="group"
-                    id="random_html_id"
-                    name="random_html_id"
-                    type="radio"
-                    value=""
-                  />
-                  Group
+                  <span
+                    class="euiButton__text euiButtonGroupButton__textShift"
+                    data-text="Group"
+                    title="Group"
+                  >
+                    <input
+                      class="euiScreenReaderOnly"
+                      data-test-subj="group"
+                      id="random_html_id"
+                      name="random_html_id"
+                      type="radio"
+                      value=""
+                    />
+                    Group
+                  </span>
                 </span>
-              </span>
-            </label>
-          </div>
-        </fieldset>
-      </div>
-    </div>
-    <div
-      class="euiSpacer euiSpacer--m"
-    />
-    <div
-      class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
-    >
-      <div
-        class="euiFlexItem"
-      >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
-          <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P90 LATENCY
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              22
-               ms
-            </b>
-          </h2>
+              </label>
+            </div>
+          </fieldset>
         </div>
       </div>
       <div
-        class="euiFlexItem"
+        aria-labelledby="random_html_id"
+        class="euiAccordion__childWrapper"
+        id="visualizations-accordion"
+        role="region"
+        tabindex="-1"
       >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
+        <div>
           <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P90 CPU TIME
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              2.1
-               ms
-            </b>
-          </h2>
-        </div>
-      </div>
-      <div
-        class="euiFlexItem"
-      >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
-          <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P90 MEMORY
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              0.2
-               MB
-            </b>
-          </h2>
-        </div>
-      </div>
-      <div
-        class="euiFlexItem"
-      >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
-          <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P99 LATENCY
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              22
-               ms
-            </b>
-          </h2>
-        </div>
-      </div>
-      <div
-        class="euiFlexItem"
-      >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
-          <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P99 CPU TIME
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              2.1
-               ms
-            </b>
-          </h2>
-        </div>
-      </div>
-      <div
-        class="euiFlexItem"
-      >
-        <div
-          class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-        >
-          <div
-            class="euiText euiText--small"
-          >
-            <p>
-              P99 MEMORY
-            </p>
-          </div>
-          <h2
-            class="euiTitle euiTitle--large"
-          >
-            <b>
-              0.2
-               MB
-            </b>
-          </h2>
-        </div>
-      </div>
-    </div>
-    <div
-      class="euiSpacer euiSpacer--m"
-    />
-    <div
-      class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-    >
-      <div
-        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
-      >
-        <div
-          class="euiFlexItem euiFlexItem--flexGrowZero"
-        >
-          <h3
-            class="euiTitle euiTitle--xsmall"
-          >
-            Queries by Node
-          </h3>
-        </div>
-        <div
-          class="euiFlexItem euiFlexItem--flexGrowZero"
-        >
-          <div
-            class="euiFormControlLayout euiFormControlLayout--compressed"
+            class=""
           >
             <div
-              class="euiFormControlLayout__childrenWrapper"
+              class="euiSpacer euiSpacer--m"
+            />
+            <div
+              class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
             >
-              <select
-                class="euiSelect euiSelect--compressed"
-              >
-                <option
-                  value="node"
-                >
-                  Node
-                </option>
-                <option
-                  value="index"
-                >
-                  Index
-                </option>
-                <option
-                  value="user"
-                >
-                  User
-                </option>
-              </select>
               <div
-                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
-              >
-                <span
-                  class="euiFormControlLayoutCustomIcon"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        class="euiSpacer euiSpacer--l"
-      />
-      <div
-        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
-      >
-        <div
-          class="euiFlexItem euiFlexItem--flexGrowZero"
-        />
-        <div
-          class="euiFlexItem"
-        >
-          <div
-            class="euiBasicTable"
-          >
-            <div>
-              <div
-                class="euiTableHeaderMobile"
+                class="euiFlexItem"
               >
                 <div
-                  class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
                 >
                   <div
-                    class="euiFlexItem euiFlexItem--flexGrowZero"
-                  />
-                  <div
-                    class="euiFlexItem euiFlexItem--flexGrowZero"
-                  />
+                    class="euiText euiText--small"
+                  >
+                    <p>
+                      P90 LATENCY
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      22 ms
+                    </b>
+                  </h2>
                 </div>
               </div>
-              <table
-                class="euiTable euiTable--responsive"
-                id="random_html_id"
-                tabindex="-1"
-              >
-                <caption
-                  class="euiScreenReaderOnly euiTableCaption"
-                />
-                <thead>
-                  <tr>
-                    <th
-                      class="euiTableHeaderCell"
-                      data-test-subj="tableHeaderCell_name_0"
-                      role="columnheader"
-                      scope="col"
-                    >
-                      <span
-                        class="euiTableCellContent"
-                      >
-                        <span
-                          class="euiTableCellContent__text"
-                          title="Node"
-                        >
-                          Node
-                        </span>
-                      </span>
-                    </th>
-                    <th
-                      class="euiTableHeaderCell"
-                      data-test-subj="tableHeaderCell_value_1"
-                      role="columnheader"
-                      scope="col"
-                    >
-                      <span
-                        class="euiTableCellContent euiTableCellContent--alignRight"
-                      >
-                        <span
-                          class="euiTableCellContent__text"
-                          title="Query Count"
-                        >
-                          Query Count
-                        </span>
-                      </span>
-                    </th>
-                    <th
-                      class="euiTableHeaderCell"
-                      data-test-subj="tableHeaderCell_percentage_2"
-                      role="columnheader"
-                      scope="col"
-                    >
-                      <span
-                        class="euiTableCellContent euiTableCellContent--alignRight"
-                      >
-                        <span
-                          class="euiTableCellContent__text"
-                          title="Percentage"
-                        >
-                          Percentage
-                        </span>
-                      </span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    class="euiTableRow"
-                  >
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Node
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--overflowingContent"
-                      >
-                        <div
-                          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
-                        >
-                          <div
-                            class="euiFlexItem euiFlexItem--flexGrowZero"
-                          >
-                            <span
-                              style="display: inline-block; width: 16px; height: 16px; background-color: rgb(31, 119, 180);"
-                            />
-                          </div>
-                          <div
-                            class="euiFlexItem"
-                          >
-                            UYKFun8PSAeJvkkt9cWf0w
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Query Count
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--alignRight"
-                      >
-                        <span
-                          class="euiTableCellContent__text"
-                        >
-                          2
-                        </span>
-                      </div>
-                    </td>
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Percentage
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
-                      >
-                        66.7%
-                      </div>
-                    </td>
-                  </tr>
-                  <tr
-                    class="euiTableRow"
-                  >
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Node
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--overflowingContent"
-                      >
-                        <div
-                          class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
-                        >
-                          <div
-                            class="euiFlexItem euiFlexItem--flexGrowZero"
-                          >
-                            <span
-                              style="display: inline-block; width: 16px; height: 16px; background-color: rgb(255, 127, 14);"
-                            />
-                          </div>
-                          <div
-                            class="euiFlexItem"
-                          >
-                            KINGun8PSAeJvkkt9cWf0w
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Query Count
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--alignRight"
-                      >
-                        <span
-                          class="euiTableCellContent__text"
-                        >
-                          1
-                        </span>
-                      </div>
-                    </td>
-                    <td
-                      class="euiTableRowCell"
-                    >
-                      <div
-                        class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                      >
-                        Percentage
-                      </div>
-                      <div
-                        class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
-                      >
-                        33.3%
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      class="euiSpacer euiSpacer--m"
-    />
-    <div
-      class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
-    >
-      <div
-        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
-      >
-        <div
-          class="euiFlexItem euiFlexItem--flexGrowZero"
-        >
-          <div
-            class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
-          >
-            <div
-              class="euiFlexItem euiFlexItem--flexGrowZero"
-            >
-              <h3
-                class="euiTitle euiTitle--xsmall"
-              >
-                Performance Analysis
-              </h3>
-            </div>
-            <div
-              class="euiFlexItem euiFlexItem--flexGrowZero"
-            >
-              <span
-                class="euiToolTipAnchor"
-              >
-                <svg
-                  aria-label="Info"
-                  class="euiIcon euiIcon--medium"
-                  focusable="true"
-                  height="16"
-                  role="img"
-                  tabindex="0"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12Zm0-1A5 5 0 1 0 8 3a5 5 0 0 0 0 10Zm-.186-1.065A.785.785 0 0 1 7 11.12c0-.48.34-.82.814-.82.475 0 .809.34.809.82 0 .475-.334.815-.809.815ZM5.9 6.317C5.96 5.168 6.755 4.4 8.048 4.4c1.218 0 2.091.759 2.091 1.8 0 .736-.36 1.304-1.03 1.707-.56.33-.717.56-.717 1.022v.305l-.1.1H7.47l-.1-.1v-.431c-.005-.646.302-1.104.987-1.514.527-.322.708-.59.708-1.047 0-.536-.416-.91-1.05-.91-.652 0-1.064.374-1.112.998l-.1.092H6l-.1-.105Z"
-                  />
-                </svg>
-              </span>
-            </div>
-          </div>
-        </div>
-        <div
-          class="euiFlexItem euiFlexItem--flexGrowZero"
-        >
-          <div
-            class="euiFormControlLayout euiFormControlLayout--compressed"
-          >
-            <div
-              class="euiFormControlLayout__childrenWrapper"
-            >
-              <select
-                class="euiSelect euiSelect--compressed"
-              >
-                <option
-                  value="latency"
-                >
-                  Latency
-                </option>
-                <option
-                  value="cpu"
-                >
-                  CPU
-                </option>
-                <option
-                  value="memory"
-                >
-                  Memory
-                </option>
-              </select>
               <div
-                class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                class="euiFlexItem"
               >
-                <span
-                  class="euiFormControlLayoutCustomIcon"
+                <div
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
                 >
-                  <svg
-                    aria-hidden="true"
-                    class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
-                    focusable="false"
-                    height="16"
-                    role="img"
-                    viewBox="0 0 16 16"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <div
+                    class="euiText euiText--small"
                   >
-                    <path
-                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                      fill-rule="non-zero"
-                    />
-                  </svg>
-                </span>
+                    <p>
+                      P90 CPU TIME
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      2.1 ms
+                    </b>
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+                >
+                  <div
+                    class="euiText euiText--small"
+                  >
+                    <p>
+                      P90 MEMORY
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      0.2 MB
+                    </b>
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+                >
+                  <div
+                    class="euiText euiText--small"
+                  >
+                    <p>
+                      P99 LATENCY
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      22 ms
+                    </b>
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+                >
+                  <div
+                    class="euiText euiText--small"
+                  >
+                    <p>
+                      P99 CPU TIME
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      2.1 ms
+                    </b>
+                  </h2>
+                </div>
+              </div>
+              <div
+                class="euiFlexItem"
+              >
+                <div
+                  class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+                >
+                  <div
+                    class="euiText euiText--small"
+                  >
+                    <p>
+                      P99 MEMORY
+                    </p>
+                  </div>
+                  <h2
+                    class="euiTitle euiTitle--large"
+                  >
+                    <b>
+                      0.2 MB
+                    </b>
+                  </h2>
+                </div>
               </div>
             </div>
+            <div
+              class="euiSpacer euiSpacer--m"
+            />
+            <div
+              class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            >
+              <div
+                class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+              >
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                >
+                  <h3
+                    class="euiTitle euiTitle--xsmall"
+                  >
+                    Queries by Node
+                  </h3>
+                </div>
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                >
+                  <div
+                    class="euiFormControlLayout euiFormControlLayout--compressed"
+                  >
+                    <div
+                      class="euiFormControlLayout__childrenWrapper"
+                    >
+                      <select
+                        class="euiSelect euiSelect--compressed"
+                      >
+                        <option
+                          value="node"
+                        >
+                          Node
+                        </option>
+                        <option
+                          value="index"
+                        >
+                          Index
+                        </option>
+                        <option
+                          value="username"
+                        >
+                          Username
+                        </option>
+                      </select>
+                      <div
+                        class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                      >
+                        <span
+                          class="euiFormControlLayoutCustomIcon"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                              fill-rule="non-zero"
+                            />
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="euiSpacer euiSpacer--l"
+              />
+              <div
+                class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
+              >
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                />
+                <div
+                  class="euiFlexItem"
+                >
+                  <div
+                    class="euiBasicTable"
+                  >
+                    <div>
+                      <div
+                        class="euiTableHeaderMobile"
+                      >
+                        <div
+                          class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsBaseline euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+                        >
+                          <div
+                            class="euiFlexItem euiFlexItem--flexGrowZero"
+                          />
+                          <div
+                            class="euiFlexItem euiFlexItem--flexGrowZero"
+                          >
+                            <div
+                              class="euiTableSortMobile"
+                            >
+                              <div
+                                class="euiPopover euiPopover--anchorDownRight"
+                              >
+                                <div
+                                  class="euiPopover__anchor"
+                                >
+                                  <button
+                                    class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight"
+                                    type="button"
+                                  >
+                                    <span
+                                      class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                                    >
+                                      <svg
+                                        aria-hidden="true"
+                                        class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                                        focusable="false"
+                                        height="16"
+                                        role="img"
+                                        viewBox="0 0 16 16"
+                                        width="16"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                          fill-rule="non-zero"
+                                        />
+                                      </svg>
+                                      <span
+                                        class="euiButtonEmpty__text"
+                                      >
+                                        Sorting
+                                      </span>
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <table
+                        class="euiTable euiTable--responsive"
+                        id="random_html_id"
+                        tabindex="-1"
+                      >
+                        <caption
+                          class="euiScreenReaderOnly euiTableCaption"
+                        />
+                        <thead>
+                          <tr>
+                            <th
+                              aria-live="polite"
+                              aria-sort="none"
+                              class="euiTableHeaderCell"
+                              data-test-subj="tableHeaderCell_name_0"
+                              role="columnheader"
+                              scope="col"
+                            >
+                              <button
+                                class="euiTableHeaderButton"
+                                data-test-subj="tableHeaderSortButton"
+                                type="button"
+                              >
+                                <span
+                                  class="euiTableCellContent"
+                                >
+                                  <span
+                                    class="euiTableCellContent__text"
+                                    title="Node"
+                                  >
+                                    Node
+                                  </span>
+                                </span>
+                              </button>
+                            </th>
+                            <th
+                              aria-live="polite"
+                              aria-sort="descending"
+                              class="euiTableHeaderCell"
+                              data-test-subj="tableHeaderCell_value_1"
+                              role="columnheader"
+                              scope="col"
+                            >
+                              <button
+                                class="euiTableHeaderButton euiTableHeaderButton-isSorted"
+                                data-test-subj="tableHeaderSortButton"
+                                type="button"
+                              >
+                                <span
+                                  class="euiTableCellContent euiTableCellContent--alignRight"
+                                >
+                                  <span
+                                    class="euiTableCellContent__text"
+                                    title="Query Count"
+                                  >
+                                    Query Count
+                                  </span>
+                                  <svg
+                                    aria-hidden="true"
+                                    class="euiIcon euiIcon--medium euiTableSortIcon"
+                                    focusable="false"
+                                    height="16"
+                                    role="img"
+                                    viewBox="0 0 16 16"
+                                    width="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M7 11.692V3.556C7 3.249 7.224 3 7.5 3s.5.249.5.556v8.136l4.096-4.096a.5.5 0 0 1 .707.707l-4.242 4.243a1.494 1.494 0 0 1-.925.433.454.454 0 0 1-.272 0 1.494 1.494 0 0 1-.925-.433L2.197 8.303a.5.5 0 1 1 .707-.707L7 11.692Z"
+                                    />
+                                  </svg>
+                                </span>
+                              </button>
+                            </th>
+                            <th
+                              aria-live="polite"
+                              aria-sort="none"
+                              class="euiTableHeaderCell"
+                              data-test-subj="tableHeaderCell_percentage_2"
+                              role="columnheader"
+                              scope="col"
+                            >
+                              <button
+                                class="euiTableHeaderButton"
+                                data-test-subj="tableHeaderSortButton"
+                                type="button"
+                              >
+                                <span
+                                  class="euiTableCellContent euiTableCellContent--alignRight"
+                                >
+                                  <span
+                                    class="euiTableCellContent__text"
+                                    title="Percentage"
+                                  >
+                                    Percentage
+                                  </span>
+                                </span>
+                              </button>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr
+                            class="euiTableRow"
+                          >
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Node
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--overflowingContent"
+                              >
+                                <div
+                                  class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                                >
+                                  <div
+                                    class="euiFlexItem euiFlexItem--flexGrowZero"
+                                  >
+                                    <svg
+                                      aria-hidden="true"
+                                      class="euiIcon euiIcon--medium euiIcon--customColor"
+                                      focusable="false"
+                                      height="16"
+                                      role="img"
+                                      style="color: rgb(31, 119, 180);"
+                                      viewBox="0 0 16 16"
+                                      width="16"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <circle
+                                        cx="8"
+                                        cy="8"
+                                        r="4"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <div
+                                    class="euiFlexItem"
+                                  >
+                                    UYKFun8PSAeJvkkt9cWf0w
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Query Count
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--alignRight"
+                              >
+                                <span
+                                  class="euiTableCellContent__text"
+                                >
+                                  2
+                                </span>
+                              </div>
+                            </td>
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Percentage
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
+                              >
+                                66.7%
+                              </div>
+                            </td>
+                          </tr>
+                          <tr
+                            class="euiTableRow"
+                          >
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Node
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--overflowingContent"
+                              >
+                                <div
+                                  class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                                >
+                                  <div
+                                    class="euiFlexItem euiFlexItem--flexGrowZero"
+                                  >
+                                    <svg
+                                      aria-hidden="true"
+                                      class="euiIcon euiIcon--medium euiIcon--customColor"
+                                      focusable="false"
+                                      height="16"
+                                      role="img"
+                                      style="color: rgb(255, 127, 14);"
+                                      viewBox="0 0 16 16"
+                                      width="16"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <circle
+                                        cx="8"
+                                        cy="8"
+                                        r="4"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <div
+                                    class="euiFlexItem"
+                                  >
+                                    KINGun8PSAeJvkkt9cWf0w
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Query Count
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--alignRight"
+                              >
+                                <span
+                                  class="euiTableCellContent__text"
+                                >
+                                  1
+                                </span>
+                              </div>
+                            </td>
+                            <td
+                              class="euiTableRowCell"
+                            >
+                              <div
+                                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                              >
+                                Percentage
+                              </div>
+                              <div
+                                class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--overflowingContent"
+                              >
+                                33.3%
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div>
+                      <div
+                        class="euiSpacer euiSpacer--m"
+                      />
+                      <div
+                        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow"
+                      >
+                        <div
+                          class="euiFlexItem euiFlexItem--flexGrowZero"
+                        >
+                          <div
+                            class="euiPopover euiPopover--anchorUpRight"
+                          >
+                            <div
+                              class="euiPopover__anchor"
+                            >
+                              <button
+                                class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--xSmall"
+                                data-test-subj="tablePaginationPopoverButton"
+                                type="button"
+                              >
+                                <span
+                                  class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                                >
+                                  <svg
+                                    aria-hidden="true"
+                                    class="euiIcon euiIcon--small euiIcon--inherit euiButtonContent__icon"
+                                    focusable="false"
+                                    height="16"
+                                    role="img"
+                                    viewBox="0 0 16 16"
+                                    width="16"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                  >
+                                    <path
+                                      d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                      fill-rule="non-zero"
+                                    />
+                                  </svg>
+                                  <span
+                                    class="euiButtonEmpty__text"
+                                  >
+                                    Rows per page
+                                    : 
+                                    10
+                                  </span>
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          class="euiFlexItem euiFlexItem--flexGrowZero"
+                        >
+                          <nav
+                            class="euiPagination"
+                          >
+                            <button
+                              aria-label="Previous page"
+                              class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                              data-test-subj="pagination-button-previous"
+                              disabled=""
+                              type="button"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M10.843 13.069 6.232 8.384a.546.546 0 0 1 0-.768l4.61-4.685a.552.552 0 0 0 0-.771.53.53 0 0 0-.759 0l-4.61 4.684a1.65 1.65 0 0 0 0 2.312l4.61 4.684a.53.53 0 0 0 .76 0 .552.552 0 0 0 0-.771Z"
+                                  fill-rule="nonzero"
+                                />
+                              </svg>
+                            </button>
+                            <ul
+                              class="euiPagination__list"
+                            >
+                              <li
+                                class="euiPagination__item"
+                              >
+                                <button
+                                  aria-controls="random_html_id"
+                                  aria-current="true"
+                                  aria-label="Page 1 of 1"
+                                  class="euiButtonEmpty euiButtonEmpty--text euiButtonEmpty--small euiButtonEmpty-isDisabled euiPaginationButton euiPaginationButton-isActive euiPaginationButton--hideOnMobile"
+                                  data-test-subj="pagination-button-0"
+                                  disabled=""
+                                  type="button"
+                                >
+                                  <span
+                                    class="euiButtonContent euiButtonEmpty__content"
+                                  >
+                                    <span
+                                      class="euiButtonEmpty__text"
+                                    >
+                                      1
+                                    </span>
+                                  </span>
+                                </button>
+                              </li>
+                            </ul>
+                            <button
+                              aria-label="Next page"
+                              class="euiButtonIcon euiButtonIcon--text euiButtonIcon--empty euiButtonIcon--xSmall"
+                              data-test-subj="pagination-button-next"
+                              disabled=""
+                              type="button"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--medium euiIcon--inherit euiButtonIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="m5.157 13.069 4.611-4.685a.546.546 0 0 0 0-.768L5.158 2.93a.552.552 0 0 1 0-.771.53.53 0 0 1 .759 0l4.61 4.684c.631.641.63 1.672 0 2.312l-4.61 4.684a.53.53 0 0 1-.76 0 .552.552 0 0 1 0-.771Z"
+                                  fill-rule="nonzero"
+                                />
+                              </svg>
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="euiSpacer euiSpacer--m"
+            />
+            <div
+              class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            >
+              <div
+                class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsCenter euiFlexGroup--justifyContentSpaceBetween euiFlexGroup--directionRow euiFlexGroup--responsive"
+              >
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <h3
+                        class="euiTitle euiTitle--xsmall"
+                      >
+                        Performance Analysis
+                      </h3>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <span
+                        class="euiToolTipAnchor"
+                      >
+                        <svg
+                          aria-label="Info"
+                          class="euiIcon euiIcon--medium"
+                          focusable="true"
+                          height="16"
+                          role="img"
+                          tabindex="0"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M8 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12Zm0-1A5 5 0 1 0 8 3a5 5 0 0 0 0 10Zm-.186-1.065A.785.785 0 0 1 7 11.12c0-.48.34-.82.814-.82.475 0 .809.34.809.82 0 .475-.334.815-.809.815ZM5.9 6.317C5.96 5.168 6.755 4.4 8.048 4.4c1.218 0 2.091.759 2.091 1.8 0 .736-.36 1.304-1.03 1.707-.56.33-.717.56-.717 1.022v.305l-.1.1H7.47l-.1-.1v-.431c-.005-.646.302-1.104.987-1.514.527-.322.708-.59.708-1.047 0-.536-.416-.91-1.05-.91-.652 0-1.064.374-1.112.998l-.1.092H6l-.1-.105Z"
+                          />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="euiFlexItem euiFlexItem--flexGrowZero"
+                >
+                  <div
+                    class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive"
+                  >
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <div
+                        class="euiFormControlLayout euiFormControlLayout--compressed"
+                      >
+                        <div
+                          class="euiFormControlLayout__childrenWrapper"
+                        >
+                          <select
+                            class="euiSelect euiSelect--compressed"
+                          >
+                            <option
+                              value="latency"
+                            >
+                              Latency
+                            </option>
+                            <option
+                              value="cpu"
+                            >
+                              CPU
+                            </option>
+                            <option
+                              value="memory"
+                            >
+                              Memory
+                            </option>
+                          </select>
+                          <div
+                            class="euiFormControlLayoutIcons euiFormControlLayoutIcons--right"
+                          >
+                            <span
+                              class="euiFormControlLayoutCustomIcon"
+                            >
+                              <svg
+                                aria-hidden="true"
+                                class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                                focusable="false"
+                                height="16"
+                                role="img"
+                                viewBox="0 0 16 16"
+                                width="16"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                                  fill-rule="non-zero"
+                                />
+                              </svg>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="euiFlexItem euiFlexItem--flexGrowZero"
+                    >
+                      <fieldset
+                        class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
+                      >
+                        <legend
+                          class="euiScreenReaderOnly"
+                        >
+                          Chart type
+                        </legend>
+                        <div
+                          class="euiButtonGroup__buttons"
+                        >
+                          <label
+                            class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small euiButtonGroupButton--fill euiButtonGroupButton-isSelected"
+                            for="random_html_id"
+                          >
+                            <span
+                              class="euiButtonContent euiButton__content"
+                            >
+                              <span
+                                class="euiButton__text euiButtonGroupButton__textShift"
+                                data-text="Line Chart"
+                                title="Line Chart"
+                              >
+                                <input
+                                  checked=""
+                                  class="euiScreenReaderOnly"
+                                  data-test-subj="line"
+                                  id="random_html_id"
+                                  name="random_html_id"
+                                  type="radio"
+                                  value=""
+                                />
+                                Line Chart
+                              </span>
+                            </span>
+                          </label>
+                          <label
+                            class="euiButtonGroupButton euiButtonGroupButton--primary euiButtonGroupButton--small"
+                            for="random_html_id"
+                          >
+                            <span
+                              class="euiButtonContent euiButton__content"
+                            >
+                              <span
+                                class="euiButton__text euiButtonGroupButton__textShift"
+                                data-text="Heatmap"
+                                title="Heatmap"
+                              >
+                                <input
+                                  class="euiScreenReaderOnly"
+                                  data-test-subj="heatmap"
+                                  id="random_html_id"
+                                  name="random_html_id"
+                                  type="radio"
+                                  value=""
+                                />
+                                Heatmap
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      </fieldset>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="euiSpacer euiSpacer--m"
+              />
+            </div>
           </div>
         </div>
       </div>
-      <div
-        class="euiSpacer euiSpacer--m"
-      />
     </div>
   </div>
   <div
