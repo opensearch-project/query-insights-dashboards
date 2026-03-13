@@ -897,7 +897,7 @@ const QueryInsights = ({
         if (chartGroupBy === 'node') {
           key = q.node_id || 'Unknown';
         } else if (chartGroupBy === 'user') {
-          key = q.labels?.user || 'Unknown';
+          key = q.username || 'Unknown';
         } else {
           const wlmId = q.wlm_group_id || 'Unknown';
           key = wlmIdToNameMap[wlmId] || wlmId;
