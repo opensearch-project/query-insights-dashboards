@@ -15,11 +15,7 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
 jest.mock('object-hash', () => jest.fn(() => '8c1e50c035663459d567fa11d8eb494d'));
 
-jest.mock('plotly.js-dist', () => ({
-  newPlot: jest.fn(),
-  react: jest.fn(),
-  relayout: jest.fn(),
-}));
+jest.mock('echarts-for-react', () => () => <div data-testid="echarts-mock" />);
 
 jest.mock('../../../common/utils/QueryUtils', () => ({
   retrieveQueryById: jest.fn(),
@@ -119,7 +115,7 @@ describe('QueryGroupDetails', () => {
       expect(screen.getAllByText('Latency')).toHaveLength(1);
     });
 
-    expect(document.getElementById('latency')).toBeInTheDocument();
+    expect(screen.getByTestId('echarts-mock')).toBeInTheDocument();
   });
 
   it('renders tooltips', () => {

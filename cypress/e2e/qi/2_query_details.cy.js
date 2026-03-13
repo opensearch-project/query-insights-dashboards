@@ -132,11 +132,10 @@ describe('Top Queries Details Page', () => {
    * Validate the latency chart interaction
    */
   it('should render the latency chart and allow interaction', () => {
-    // Ensure the chart is visible
-    cy.get('#latency').should('be.visible');
-    cy.get('.plot-container').should('be.visible');
-    // Simulate hover over the chart for a data point
-    cy.get('#latency').trigger('mousemove', { clientX: 100, clientY: 100 });
+    // Ensure the chart container is visible
+    cy.get('[data-test-subj="query-details-latency-chart"]').should('be.visible');
+    // Validate ECharts canvas is rendered
+    cy.get('[data-test-subj="query-details-latency-chart"] canvas').should('be.visible');
   });
 
   it('should get complete details of the query using verbose=true for query type', () => {
