@@ -41,12 +41,13 @@ describe('Top Queries Details Page', () => {
   });
 
   it('should display correct details on the query details page', () => {
-    // cy.get('.euiBasicTable a').first().click(); // Navigate to details
     cy.url().should('include', '/query-details');
     // Validate the page title
     cy.get('h1').contains('Query details').should('be.visible');
     // Validate the summary section
     cy.get('[data-test-subj="query-details-summary-section"]').should('be.visible');
+    // Validate the task resource usage section
+    cy.get('[data-test-subj="query-details-task-resource-usages"]').should('be.visible');
     // Validate the presence of latency chart
     cy.get('[data-test-subj="query-details-latency-chart"]').should('be.visible');
     // Validate the presence of query source details section
@@ -67,6 +68,7 @@ describe('Top Queries Details Page', () => {
       'Search Type',
       'Coordinator Node ID',
       'Total Shards',
+      'Status',
     ];
     fieldLabels.forEach((label) => {
       cy.get('.euiPanel').contains('h4', label).should('be.visible');
@@ -125,6 +127,27 @@ describe('Top Queries Details Page', () => {
           const shardCount = parseInt(text.trim(), 10);
           expect(shardCount).to.be.a('number').and.to.be.greaterThan(0);
         });
+    });
+  });
+
+  /**
+   * Validate Task Resource Usage panel renders when verbose=true
+   */
+  it('should display the Task Resource Usage panel with coordinator and shard tasks', () => {
+    cy.get('[data-test-subj="query-details-task-resource-usages"]').should('be.visible');
+    cy.get('[data-test-subj="query-details-task-resource-usages"]').within(() => {
+      cy.contains('h2', 'Task Resource Usage').should('be.visible');
+      cy.contains('h3', 'Coordinator Task').should('be.visible');
+      cy.contains('h3', 'Shard Tasks').should('be.visible');
+      // Coordinator task fields
+      cy.contains('Task ID').should('be.visible');
+      cy.contains('Node ID').should('be.visible');
+      cy.contains('CPU Time (ms)').should('be.visible');
+      cy.contains('Memory (bytes)').should('be.visible');
+      // Shard tasks table
+      cy.get('.euiBasicTable').should('be.visible');
+      cy.get('.euiTableHeaderCell').contains('Phase').should('be.visible');
+      cy.get('.euiTableRow').should('have.length.greaterThan', 0);
     });
   });
 

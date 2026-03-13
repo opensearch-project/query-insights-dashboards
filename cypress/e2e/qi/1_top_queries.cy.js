@@ -39,8 +39,8 @@ const getHeaders = () =>
         .filter(Boolean)
     );
 
-const expectSortedBy = (label, colIdx) => {
-  const extract = ($rows) =>
+const expectSortedBy = (label) => {
+  const extract = ($rows, colIdx) =>
     [...$rows].map(($r) => {
       const txt = Cypress.$($r).find('td').eq(colIdx).text().trim();
       if (/ms|s|B|KB|MB|GB|TB/i.test(txt)) return parseFloat(txt.replace(/[^\d.]/g, '')) || 0;
@@ -382,6 +382,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Type',
       'Query Count',
       'Timestamp',
+      'Status',
       'Avg Latency / Latency',
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
@@ -393,10 +394,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Avg Latency / Latency', 4);
-    expectSortedBy('Avg CPU Time / CPU Time', 5);
-    expectSortedBy('Avg Memory Usage / Memory Usage', 6);
+    expectSortedBy('Query Count');
+    expectSortedBy('Avg Latency / Latency');
+    expectSortedBy('Avg CPU Time / CPU Time');
+    expectSortedBy('Avg Memory Usage / Memory Usage');
   });
 
   it('renders query-only headers when Type=query', () => {
@@ -405,6 +406,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Id',
       'Type',
       'Timestamp',
+      'Status',
       'Latency',
       'CPU Time',
       'Memory Usage',
@@ -420,10 +422,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       .length;
     assertRowCountEquals(queryOnlyCount);
 
-    expectSortedBy('Timestamp', 2);
-    expectSortedBy('Latency', 3);
-    expectSortedBy('CPU Time', 4);
-    expectSortedBy('Memory Usage', 5);
+    expectSortedBy('Timestamp');
+    expectSortedBy('Latency');
+    expectSortedBy('CPU Time');
+    expectSortedBy('Memory Usage');
   });
 
   it('renders group-only headers when Type=group', () => {
@@ -442,10 +444,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       .length;
     assertRowCountEquals(groupOnlyCount);
 
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Average Latency', 3);
-    expectSortedBy('Average CPU Time', 4);
-    expectSortedBy('Average Memory Usage', 5);
+    expectSortedBy('Query Count');
+    expectSortedBy('Average Latency');
+    expectSortedBy('Average CPU Time');
+    expectSortedBy('Average Memory Usage');
   });
 
   it('renders combined headers when Type=both', () => {
@@ -455,6 +457,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Type',
       'Query Count',
       'Timestamp',
+      'Status',
       'Avg Latency / Latency',
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
@@ -467,10 +470,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
 
-    expectSortedBy('Query Count', 2);
-    expectSortedBy('Avg Latency / Latency', 4);
-    expectSortedBy('Avg CPU Time / CPU Time', 5);
-    expectSortedBy('Avg Memory Usage / Memory Usage', 6);
+    expectSortedBy('Query Count');
+    expectSortedBy('Avg Latency / Latency');
+    expectSortedBy('Avg CPU Time / CPU Time');
+    expectSortedBy('Avg Memory Usage / Memory Usage');
   });
 });
 
@@ -490,6 +493,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'Id',
       'Type',
       'Timestamp',
+      'Status',
       'Latency',
       'CPU Time',
       'Memory Usage',
@@ -526,6 +530,12 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(getRowsFromRaw(GROUP_ONLY).length);
+  });
+
+  it('renders dash in status column for group rows', () => {
+    cy.get('.euiTableRow').each(($row) => {
+      cy.wrap($row).find('.euiBadge').should('not.exist');
+    });
   });
 });
 
