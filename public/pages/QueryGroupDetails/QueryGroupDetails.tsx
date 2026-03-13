@@ -5,10 +5,9 @@
 
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-// @ts-ignore
-import Plotly from 'plotly.js-dist';
+import ReactECharts from 'echarts-for-react';
 import { useHistory, useLocation } from 'react-router-dom';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import {
   EuiCodeBlock,
   EuiFlexGrid,
@@ -96,45 +95,36 @@ export const QueryGroupDetails = ({
     }
   }, [core.chrome, history, location, query]);
 
-  useEffect(() => {
-    if (query && query.phase_latency_map) {
-      let x: number[] = Object.values(query.phase_latency_map);
-      if (x.length < 3) {
-        x = [0, 0, 0];
-      }
-      const data = [
+  const chartOptions = useMemo(() => {
+    const phaseLatency = query?.phase_latency_map || { expand: 0, query: 0, fetch: 0 };
+    return {
+      grid: { left: 80, right: 80, top: 25, bottom: 15 },
+      xAxis: {
+        type: 'value',
+        position: 'top',
+        axisLabel: { formatter: '{value}ms', color: '#535966' },
+        axisLine: { lineStyle: { color: '#D4DAE5' } },
+        splitLine: { lineStyle: { color: '#D4DAE5' } },
+      },
+      yAxis: {
+        type: 'category',
+        data: ['Fetch', 'Query', 'Expand'],
+        axisLine: { lineStyle: { color: '#D4DAE5' } },
+      },
+      series: [
         {
-          x: x.reverse(),
-          y: ['Fetch    ', 'Query    ', 'Expand    '],
           type: 'bar',
-          orientation: 'h',
-          width: 0.5,
-          marker: { color: ['#F990C0', '#1BA9F5', '#7DE2D1'] },
-          base: [x[2] + x[1], x[2], 0],
-          text: x.map((value) => `${value}ms`),
-          textposition: 'outside',
-          cliponaxis: false,
+          stack: 'total',
+          data: [
+            { value: phaseLatency.fetch || 0, itemStyle: { color: '#F990C0' } },
+            { value: phaseLatency.query || 0, itemStyle: { color: '#1BA9F5' } },
+            { value: phaseLatency.expand || 0, itemStyle: { color: '#7DE2D1' } },
+          ],
+          label: { show: true, position: 'right', formatter: '{c}ms' },
+          barWidth: '50%',
         },
-      ];
-      const layout = {
-        autosize: true,
-        margin: { l: 80, r: 80, t: 25, b: 15, pad: 0 },
-        autorange: true,
-        height: 120,
-        xaxis: {
-          side: 'top',
-          zeroline: false,
-          ticksuffix: 'ms',
-          autorangeoptions: { clipmin: 0 },
-          tickfont: { color: '#535966' },
-          linecolor: '#D4DAE5',
-          gridcolor: '#D4DAE5',
-        },
-        yaxis: { linecolor: '#D4DAE5' },
-      };
-      const config = { responsive: true };
-      Plotly.newPlot('latency', data, layout, config);
-    }
+      ],
+    };
   }, [query]);
 
   const queryDisplay = formatQueryDisplay(query);
@@ -216,12 +206,12 @@ export const QueryGroupDetails = ({
             </EuiPanel>
           </EuiFlexItem>
           <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
-            <EuiPanel>
+            <EuiPanel data-test-subj="query-group-details-latency-chart">
               <EuiTitle size="s">
                 <h2>Latency</h2>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
-              <div id="latency" />
+              <ReactECharts option={chartOptions} style={{ height: 120 }} />
             </EuiPanel>
           </EuiFlexItem>
         </EuiFlexGrid>

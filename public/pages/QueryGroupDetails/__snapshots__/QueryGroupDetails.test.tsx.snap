@@ -601,6 +601,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
         >
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            data-test-subj="query-group-details-latency-chart"
           >
             <h2
               class="euiTitle euiTitle--small"
@@ -611,7 +612,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
               class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
             />
             <div
-              id="latency"
+              data-testid="echarts-mock"
             />
           </div>
         </div>
