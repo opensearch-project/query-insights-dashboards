@@ -195,10 +195,10 @@ exports[`QueryDetails component matches snapshot 1`] = `
         class="euiSpacer euiSpacer--m"
       />
       <div
-        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--alignItemsFlexStart euiFlexGroup--directionRow euiFlexGroup--responsive"
+        class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--halves euiFlexGrid--responsive"
       >
         <div
-          class="euiFlexItem"
+          class="euiFlexItem euiFlexItem--flexGrow1"
         >
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
@@ -1088,7 +1088,8 @@ exports[`QueryDetails component matches snapshot 1`] = `
           </div>
         </div>
         <div
-          class="euiFlexItem"
+          class="euiFlexItem euiFlexItem--flexGrow1"
+          style="align-self: start;"
         >
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"

@@ -205,7 +205,7 @@ export const QueryGroupDetails = ({
               </EuiCodeBlock>
             </EuiPanel>
           </EuiFlexItem>
-          <EuiFlexItem grow={1}>
+          <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
             <EuiPanel data-test-subj="query-group-details-latency-chart">
               <EuiTitle size="s">
                 <h2>Latency</h2>

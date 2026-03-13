@@ -7,6 +7,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import ReactECharts from 'echarts-for-react';
 import {
   EuiCodeBlock,
+  EuiFlexGrid,
   EuiFlexGroup,
   EuiFlexItem,
   EuiHorizontalRule,
@@ -155,8 +156,8 @@ const QueryDetails = ({
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />
-        <EuiFlexGroup alignItems="flexStart">
-          <EuiFlexItem>
+        <EuiFlexGrid columns={2}>
+          <EuiFlexItem grow={1}>
             <EuiPanel data-test-subj={'query-details-source-section'}>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
                 <EuiFlexItem>
@@ -178,7 +179,7 @@ const QueryDetails = ({
               </EuiCodeBlock>
             </EuiPanel>
           </EuiFlexItem>
-          <EuiFlexItem>
+          <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
             <EuiPanel data-test-subj={'query-details-latency-chart'}>
               <EuiTitle size="xs">
                 <h2>Latency</h2>
@@ -187,7 +188,7 @@ const QueryDetails = ({
               <ReactECharts option={chartOptions} style={{ height: 120 }} />
             </EuiPanel>
           </EuiFlexItem>
-        </EuiFlexGroup>
+        </EuiFlexGrid>
       </EuiFlexItem>
     </div>
   );
