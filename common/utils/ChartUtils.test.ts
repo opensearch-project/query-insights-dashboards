@@ -35,7 +35,8 @@ const createMockQuery = (
     group_by: 'NONE',
     indices,
     node_id: nodeId,
-    labels: username || userRoles ? { username, user_roles: userRoles } : undefined,
+    username,
+    user_roles: userRoles,
     wlm_group_id: wlmGroupId,
     measurements: {
       latency: { number: latency, count: 1, aggregationType: 'NONE' },

@@ -138,10 +138,10 @@ export const computeHeatmapChartData = (
         if (q.node_id) groupSet.add(q.node_id);
         break;
       case 'username':
-        if (q.labels?.username) groupSet.add(q.labels.username);
+        if (q.username) groupSet.add(q.username);
         break;
       case 'user_roles':
-        (q.labels?.user_roles || []).forEach((role) => groupSet.add(role));
+        (q.user_roles || []).forEach((role) => groupSet.add(role));
         break;
       case 'wlm_group':
         if (q.wlm_group_id) groupSet.add(q.wlm_group_id);
@@ -191,10 +191,10 @@ export const computeHeatmapChartData = (
         groupKeys = q.node_id ? [q.node_id] : [];
         break;
       case 'username':
-        groupKeys = q.labels?.username ? [q.labels.username] : [];
+        groupKeys = q.username ? [q.username] : [];
         break;
       case 'user_roles':
-        groupKeys = q.labels?.user_roles || [];
+        groupKeys = q.user_roles || [];
         break;
       case 'wlm_group':
         groupKeys = q.wlm_group_id ? [q.wlm_group_id] : [];
