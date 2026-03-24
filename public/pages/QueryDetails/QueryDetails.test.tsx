@@ -8,16 +8,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import QueryDetails from './QueryDetails';
 import { MockQueries } from '../../../test/testUtils';
 import '@testing-library/jest-dom';
-// @ts-ignore
-import plotly from 'plotly.js-dist';
 import { MemoryRouter, Route } from 'react-router-dom';
 import hash from 'object-hash';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 
-jest.mock('plotly.js-dist', () => ({
-  newPlot: jest.fn(),
-}));
+jest.mock('echarts-for-react', () => () => <div data-testid="echarts-mock" />);
 
 jest.mock('../../../common/utils/QueryUtils', () => ({
   retrieveQueryById: jest.fn(),
@@ -102,12 +98,11 @@ describe('QueryDetails component', () => {
     expect(latencyChart).toBeInTheDocument();
   });
 
-  it('initializes the Plotly chart', async () => {
+  it('renders the ECharts latency chart', async () => {
     renderQueryDetails();
 
     await waitFor(() => {
-      expect(plotly.newPlot).toHaveBeenCalled();
-      expect(plotly.newPlot.mock.calls[0][0]).toBe('latency');
+      expect(screen.getByTestId('echarts-mock')).toBeInTheDocument();
     });
   });
 

@@ -319,10 +319,11 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
         class="euiSpacer euiSpacer--m"
       />
       <div
-        class="euiFlexGrid euiFlexGrid--gutterLarge euiFlexGrid--halves euiFlexGrid--responsive"
+        class="euiFlexGroup euiFlexGroup--gutterLarge euiFlexGroup--directionRow euiFlexGroup--responsive"
       >
         <div
           class="euiFlexItem euiFlexItem--flexGrow1"
+          style="min-width: 0;"
         >
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
@@ -597,10 +598,11 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
         </div>
         <div
           class="euiFlexItem euiFlexItem--flexGrow1"
-          style="align-self: start;"
+          style="align-self: start; min-width: 0;"
         >
           <div
             class="euiPanel euiPanel--paddingMedium euiPanel--borderRadiusMedium euiPanel--plain euiPanel--hasShadow"
+            data-test-subj="query-group-details-latency-chart"
           >
             <h2
               class="euiTitle euiTitle--small"
@@ -611,7 +613,7 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
               class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
             />
             <div
-              id="latency"
+              data-testid="echarts-mock"
             />
           </div>
         </div>
