@@ -57,7 +57,7 @@ describe('Query Group Details Page', () => {
     cy.get('.euiPanel').contains('Query').should('be.visible');
 
     // Validate the presence of the latency chart
-    cy.get('[data-test-subj="query-group-details-latency-chart"] canvas').should('be.visible');
+    cy.get('[data-test-subj="query-group-details-latency-chart"] svg').should('be.visible');
   });
 
   it('should validate the aggregate summary fields', () => {
@@ -107,7 +107,7 @@ describe('Query Group Details Page', () => {
     // Validate the fourth EuiPanel contains the Latency section
     cy.get('[data-test-subj="query-group-details-latency-chart"]').within(() => {
       cy.contains('h2', 'Latency').should('be.visible');
-      cy.get('canvas').should('be.visible');
+      cy.get('svg').should('be.visible');
     });
   });
   it('should get complete details of the query using verbose=true for group type', () => {

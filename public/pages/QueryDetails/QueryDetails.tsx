@@ -7,7 +7,6 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import ReactECharts from 'echarts-for-react';
 import {
   EuiCodeBlock,
-  EuiFlexGrid,
   EuiFlexGroup,
   EuiFlexItem,
   EuiHorizontalRule,
@@ -80,6 +79,9 @@ const QueryDetails = ({
   // ECharts options for latency chart
   const chartOptions = useMemo(() => {
     const phaseLatency = query?.phase_latency_map || { expand: 0, query: 0, fetch: 0 };
+    const expand = phaseLatency.expand || 0;
+    const queryVal = phaseLatency.query || 0;
+    const fetch = phaseLatency.fetch || 0;
     return {
       grid: { left: 80, right: 80, top: 25, bottom: 15 },
       xAxis: {
@@ -98,10 +100,20 @@ const QueryDetails = ({
         {
           type: 'bar',
           stack: 'total',
+          silent: true,
+          data: [expand + queryVal, expand, 0],
+          itemStyle: { color: 'transparent' },
+          label: { show: false },
+          tooltip: { show: false },
+          barWidth: '50%',
+        },
+        {
+          type: 'bar',
+          stack: 'total',
           data: [
-            { value: phaseLatency.fetch || 0, itemStyle: { color: '#F990C0' } },
-            { value: phaseLatency.query || 0, itemStyle: { color: '#1BA9F5' } },
-            { value: phaseLatency.expand || 0, itemStyle: { color: '#7DE2D1' } },
+            { value: fetch, itemStyle: { color: '#F990C0' } },
+            { value: queryVal, itemStyle: { color: '#1BA9F5' } },
+            { value: expand, itemStyle: { color: '#7DE2D1' } },
           ],
           label: { show: true, position: 'right', formatter: '{c}ms' },
           barWidth: '50%',
@@ -156,8 +168,8 @@ const QueryDetails = ({
       <EuiFlexItem>
         <QuerySummary query={query} />
         <EuiSpacer size="m" />
-        <EuiFlexGrid columns={2}>
-          <EuiFlexItem grow={1}>
+        <EuiFlexGroup>
+          <EuiFlexItem grow={1} style={{ minWidth: 0 }}>
             <EuiPanel data-test-subj={'query-details-source-section'}>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
                 <EuiFlexItem>
@@ -179,16 +191,20 @@ const QueryDetails = ({
               </EuiCodeBlock>
             </EuiPanel>
           </EuiFlexItem>
-          <EuiFlexItem grow={1} style={{ alignSelf: 'start' }}>
+          <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
             <EuiPanel data-test-subj={'query-details-latency-chart'}>
               <EuiTitle size="xs">
                 <h2>Latency</h2>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
-              <ReactECharts option={chartOptions} style={{ height: 120 }} />
+              <ReactECharts
+                option={chartOptions}
+                style={{ height: 120, width: '100%' }}
+                opts={{ renderer: 'svg' }}
+              />
             </EuiPanel>
           </EuiFlexItem>
-        </EuiFlexGrid>
+        </EuiFlexGroup>
       </EuiFlexItem>
     </div>
   );

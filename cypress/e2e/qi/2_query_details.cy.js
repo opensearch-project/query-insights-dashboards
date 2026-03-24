@@ -135,7 +135,7 @@ describe('Top Queries Details Page', () => {
     // Ensure the chart container is visible
     cy.get('[data-test-subj="query-details-latency-chart"]').should('be.visible');
     // Validate ECharts canvas is rendered
-    cy.get('[data-test-subj="query-details-latency-chart"] canvas').should('be.visible');
+    cy.get('[data-test-subj="query-details-latency-chart"] svg').should('be.visible');
   });
 
   it('should get complete details of the query using verbose=true for query type', () => {
