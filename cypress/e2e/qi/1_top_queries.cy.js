@@ -673,7 +673,7 @@ describe('Query Insights — Filters and Search', () => {
   });
 });
 
-describe('Query Insights — Visualizations Panel', () => {
+describe('Query Insights — Stats & Visualizations Panel', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
@@ -697,7 +697,7 @@ describe('Query Insights — Visualizations Panel', () => {
     cy.get('[data-test-subj="visualizationModeToggle"]').should('be.visible');
 
     // Collapse accordion by clicking the Visualizations heading
-    cy.contains('h3', 'Visualizations').click();
+    cy.contains('h3', 'Stats & Visualizations').click();
 
     // Content should be hidden
     cy.contains('P90 LATENCY').should('not.be.visible');
@@ -707,7 +707,7 @@ describe('Query Insights — Visualizations Panel', () => {
     cy.get('[data-test-subj="visualizationModeToggle"]').should('not.exist');
 
     // Expand accordion
-    cy.contains('h3', 'Visualizations').click();
+    cy.contains('h3', 'Stats & Visualizations').click();
 
     // Content and toggle should be restored
     cy.contains('P90 LATENCY').should('be.visible');

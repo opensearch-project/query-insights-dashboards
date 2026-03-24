@@ -388,7 +388,7 @@ describe('QueryInsights Component', () => {
     });
   });
 
-  describe('Visualizations', () => {
+  describe('Stats & Visualizations', () => {
     beforeEach(() => {
       mockHttp.get.mockResolvedValue({ workload_groups: [] });
     });

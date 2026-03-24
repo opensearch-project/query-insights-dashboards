@@ -398,7 +398,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
             <h3
               class="euiTitle euiTitle--small"
             >
-              Visualizations
+              Stats & Visualizations
             </h3>
           </span>
         </button>

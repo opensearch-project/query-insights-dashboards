@@ -1346,7 +1346,7 @@ const QueryInsights = ({
               id="visualizations-accordion"
               buttonContent={
                 <EuiTitle size="s">
-                  <h3>Visualizations</h3>
+                  <h3>Stats & Visualizations</h3>
                 </EuiTitle>
               }
               extraAction={
