@@ -62,7 +62,11 @@ import {
   HeatmapAggregation,
   HeatmapGroupBy,
 } from '../../../common/utils/ChartUtils';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion36OrHigher,
+} from '../../utils/version-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
 // --- constants for field names and defaults ---
@@ -127,6 +131,7 @@ const QueryInsights = ({
   const [selectedWlmGroups, setSelectedWlmGroups] = useState<string[]>([]);
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const [statusSupported, setStatusSupported] = useState<boolean>(false);
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
     boolean
   >(false);
@@ -136,7 +141,7 @@ const QueryInsights = ({
   const [searchQuery, setSearchQuery] = useState<string>(
     wlmGroupIdFromUrl ? `${WLM_GROUP_FIELD}:(${wlmGroupIdFromUrl})` : ''
   );
-  const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'user' | 'wlm'>('node');
+  const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'username' | 'wlm'>('node');
   const [performanceMetric, setPerformanceMetric] = useState<
     'latency' | 'cpu' | 'memory' | 'count'
   >('latency');
@@ -252,6 +257,7 @@ const QueryInsights = ({
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
+        setStatusSupported(isVersion36OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -658,7 +664,7 @@ const QueryInsights = ({
       ...baseColumns,
       ...querycountColumn,
       ...timestampColumn,
-      ...statusColumn,
+      ...(statusSupported ? statusColumn : []),
       ...metricColumns,
       ...QueryTypeSpecificColumns,
     ],
@@ -666,6 +672,7 @@ const QueryInsights = ({
       baseColumns,
       querycountColumn,
       timestampColumn,
+      statusSupported,
       statusColumn,
       metricColumns,
       QueryTypeSpecificColumns,
@@ -681,11 +688,18 @@ const QueryInsights = ({
     () => [
       ...baseColumns,
       ...timestampColumn,
-      ...statusColumn,
+      ...(statusSupported ? statusColumn : []),
       ...metricColumns,
       ...QueryTypeSpecificColumns,
     ],
-    [baseColumns, timestampColumn, statusColumn, metricColumns, QueryTypeSpecificColumns]
+    [
+      baseColumns,
+      timestampColumn,
+      statusSupported,
+      statusColumn,
+      metricColumns,
+      QueryTypeSpecificColumns,
+    ]
   );
 
   /**
@@ -886,7 +900,7 @@ const QueryInsights = ({
         let key: string;
         if (chartGroupBy === 'node') {
           key = q.node_id || 'Unknown';
-        } else if (chartGroupBy === 'user') {
+        } else if (chartGroupBy === 'username') {
           key = q.username || 'Unknown';
         } else {
           const wlmId = q.wlm_group_id || 'Unknown';
@@ -1541,7 +1555,7 @@ const QueryInsights = ({
                                 ? 'Queries by Node'
                                 : chartGroupBy === 'index'
                                 ? 'Queries by Index'
-                                : chartGroupBy === 'user'
+                                : chartGroupBy === 'username'
                                 ? 'Queries by Username'
                                 : 'Queries by WLM Group'}
                             </h3>
@@ -1552,7 +1566,7 @@ const QueryInsights = ({
                             options={[
                               { value: 'node', text: 'Node' },
                               { value: 'index', text: 'Index' },
-                              { value: 'user', text: 'Username' },
+                              { value: 'username', text: 'Username' },
                               ...(queryInsightWlmNavigationSupported
                                 ? [{ value: 'wlm', text: 'WLM Group' }]
                                 : []),
@@ -1560,7 +1574,7 @@ const QueryInsights = ({
                             value={chartGroupBy}
                             onChange={(e) => {
                               setChartGroupBy(
-                                e.target.value as 'node' | 'index' | 'user' | 'wlm'
+                                e.target.value as 'node' | 'index' | 'username' | 'wlm'
                               );
                               setChartTablePage(0);
                             }}
@@ -1584,7 +1598,7 @@ const QueryInsights = ({
                                       ? 'Node'
                                       : chartGroupBy === 'index'
                                       ? 'Index'
-                                      : chartGroupBy === 'user'
+                                      : chartGroupBy === 'username'
                                       ? 'Username'
                                       : 'WLM Group';
                                   return `${label}: ${pieParams.name}<br/>Query Count: ${pieParams.value}<br/>Percentage: ${pieParams.percent}%`;
@@ -1629,7 +1643,7 @@ const QueryInsights = ({
                                     ? 'Node'
                                     : chartGroupBy === 'index'
                                     ? 'Index'
-                                    : chartGroupBy === 'user'
+                                    : chartGroupBy === 'username'
                                     ? 'Username'
                                     : 'WLM Group',
                                 sortable: true,
