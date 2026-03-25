@@ -82,7 +82,6 @@ const ensureTypePopoverOpen = async (): Promise<HTMLElement> => {
 
 const clickTypeOption = async (label: 'group' | 'query') => {
   const pop = await ensureTypePopoverOpen();
-
   const nodes = within(pop).getAllByText((content, element) => {
     const text = element?.textContent?.trim() ?? '';
     return new RegExp(`^${label}$`, 'i').test(text);
@@ -393,74 +392,228 @@ describe('QueryInsights Component', () => {
     });
   });
 
-  describe('Visualizations', () => {
-    it('renders visualization panel with Query/Group toggle', async () => {
+  describe('Stats & Visualizations', () => {
+    beforeEach(() => {
       mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    });
+
+    it('renders visualization panel with Query/Group toggle', async () => {
       await act(async () => {
         renderQueryInsights();
       });
 
-      // EuiButtonGroup renders buttons - find by text within the button group
       expect(screen.getByText('Query')).toBeInTheDocument();
       expect(screen.getByText('Group')).toBeInTheDocument();
     });
 
-    it('renders percentile metrics in query visualization mode', async () => {
-      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    it('renders percentile metrics', async () => {
       await act(async () => {
         renderQueryInsights();
       });
 
       expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
-      expect(screen.getByText('P90 CPU TIME')).toBeInTheDocument();
-      expect(screen.getByText('P90 MEMORY')).toBeInTheDocument();
       expect(screen.getByText('P99 LATENCY')).toBeInTheDocument();
-      expect(screen.getByText('P99 CPU TIME')).toBeInTheDocument();
-      expect(screen.getByText('P99 MEMORY')).toBeInTheDocument();
     });
 
     it('shows "no visualizations" message when Group mode is selected', async () => {
-      mockHttp.get.mockResolvedValue({ workload_groups: [] });
       await act(async () => {
         renderQueryInsights();
       });
 
-      // First verify the Query mode content is visible (P90 LATENCY)
-      await waitFor(() => {
-        expect(screen.getByText('P90 LATENCY')).toBeInTheDocument();
-      });
-
-      // Find the Group radio button by its data-test-subj attribute
       const groupRadio = document.querySelector('[data-test-subj="group"]') as HTMLInputElement;
-      expect(groupRadio).toBeInTheDocument();
       await act(async () => {
         fireEvent.click(groupRadio);
       });
 
       await waitFor(() => {
         expect(screen.getByText('No Visualization Available')).toBeInTheDocument();
-        expect(
-          screen.getByText('Visualizations for grouped queries are coming soon')
-        ).toBeInTheDocument();
       });
     });
 
-    it('renders chart group-by selector with options', async () => {
-      mockHttp.get.mockResolvedValue({ workload_groups: [] });
-      await act(async () => {
-        renderQueryInsights();
+    describe('Pie Chart', () => {
+      it('renders pie chart with Queries by Node title', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        expect(screen.getByText('Queries by Node')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Queries by Node')).toBeInTheDocument();
+      it('changes title when groupBy selector changes', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        // Find the groupBy selector (first combobox in the Queries by section)
+        const selects = screen.getAllByRole('combobox');
+        const groupBySelect = selects[0];
+
+        await act(async () => {
+          fireEvent.change(groupBySelect, { target: { value: 'index' } });
+        });
+
+        await waitFor(() => {
+          expect(screen.getByText('Queries by Index')).toBeInTheDocument();
+        });
+      });
+
+      it('renders table with Node, Query Count, and Percentage columns', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        // The pie chart table has a Percentage column which the main table doesn't have
+        const percentageHeaders = screen
+          .getAllByRole('columnheader')
+          .filter((h) => h.textContent?.trim() === 'Percentage');
+        expect(percentageHeaders.length).toBeGreaterThan(0);
+      });
     });
 
-    it('renders performance analysis section', async () => {
-      mockHttp.get.mockResolvedValue({ workload_groups: [] });
-      await act(async () => {
-        renderQueryInsights();
+    describe('Line Chart', () => {
+      it('renders Performance Analysis section with line chart by default', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        expect(screen.getByText('Performance Analysis')).toBeInTheDocument();
+        expect(screen.getByText('Line Chart')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Performance Analysis')).toBeInTheDocument();
+      it('shows metric selector with Latency, CPU, Memory options', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        const selects = screen.getAllByRole('combobox');
+        const metricSelect = selects.find((s) => {
+          const options = within(s).queryAllByRole('option');
+          return options.some((o) => o.textContent === 'Latency');
+        });
+        expect(metricSelect).toBeDefined();
+        const options = metricSelect ? within(metricSelect).getAllByRole('option') : [];
+        const optionTexts = options.map((o) => o.textContent);
+        expect(optionTexts).toContain('Latency');
+        expect(optionTexts).toContain('CPU');
+        expect(optionTexts).toContain('Memory');
+      });
+    });
+
+    describe('Heatmap', () => {
+      const clickHeatmapToggle = async () => {
+        const heatmapButton = document.querySelector(
+          '[data-test-subj="heatmap"]'
+        ) as HTMLInputElement;
+        await act(async () => {
+          fireEvent.click(heatmapButton);
+        });
+      };
+
+      it('shows heatmap options when heatmap is selected', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        await clickHeatmapToggle();
+
+        await waitFor(() => {
+          // Should show groupBy, metric, and aggregation selectors
+          const selects = screen.getAllByRole('combobox');
+          expect(selects.length).toBeGreaterThanOrEqual(3);
+        });
+      });
+
+      it('shows aggregation options (Avg, Max, Min)', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        await clickHeatmapToggle();
+
+        await waitFor(() => {
+          const selects = screen.getAllByRole('combobox');
+          // Find the aggregation select (has Avg/Max/Min options)
+          const aggSelect = selects.find((s) => {
+            const options = within(s).queryAllByRole('option');
+            return options.some((o) => o.textContent === 'Max');
+          });
+          expect(aggSelect).toBeDefined();
+        });
+      });
+
+      it('shows groupBy options (Index, Node, Username, User Roles, WLM Group)', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        await clickHeatmapToggle();
+
+        await waitFor(() => {
+          const selects = screen.getAllByRole('combobox');
+          // Find the groupBy select (has Index/Node options)
+          const groupBySelect = selects.find((s) => {
+            const options = within(s).queryAllByRole('option');
+            return options.some((o) => o.textContent === 'Index');
+          });
+          expect(groupBySelect).toBeDefined();
+        });
+
+        // Verify options after confirming select exists
+        const selects = screen.getAllByRole('combobox');
+        const groupBySelect = selects.find((s) => {
+          const options = within(s).queryAllByRole('option');
+          return options.some((o) => o.textContent === 'Index');
+        })!;
+        const options = within(groupBySelect).getAllByRole('option');
+        const optionTexts = options.map((o) => o.textContent);
+        expect(optionTexts).toContain('Index');
+        expect(optionTexts).toContain('Node');
+        expect(optionTexts).toContain('Username');
+      });
+
+      it('shows Count option in metric selector when heatmap is selected', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        await clickHeatmapToggle();
+
+        await waitFor(() => {
+          const selects = screen.getAllByRole('combobox');
+          // Find the metric select (has Latency/CPU/Memory/Count options)
+          const metricSelect = selects.find((s) => {
+            const options = within(s).queryAllByRole('option');
+            return options.some((o) => o.textContent === 'Count');
+          });
+          expect(metricSelect).toBeDefined();
+        });
+      });
+
+      it('disables aggregation selector when Count metric is selected', async () => {
+        await act(async () => {
+          renderQueryInsights();
+        });
+
+        await clickHeatmapToggle();
+
+        // Find and change metric to Count
+        const selects = screen.getAllByRole('combobox');
+        const metricSelect = selects.find((s) => {
+          const options = within(s).queryAllByRole('option');
+          return options.some((o) => o.textContent === 'Count');
+        })!;
+        fireEvent.change(metricSelect, { target: { value: 'count' } });
+
+        await waitFor(() => {
+          // Find the aggregation select and check if it's disabled
+          const updatedSelects = screen.getAllByRole('combobox');
+          const aggSelect = updatedSelects.find((s) => {
+            const options = within(s).queryAllByRole('option');
+            return options.some((o) => o.textContent === 'Max');
+          });
+          expect(aggSelect).toBeDisabled();
+        });
+      });
     });
   });
 

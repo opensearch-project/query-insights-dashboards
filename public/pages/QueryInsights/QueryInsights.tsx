@@ -15,7 +15,6 @@ import {
   EuiSelect,
   EuiSpacer,
   EuiPanel,
-  EuiBasicTable,
   EuiTitle,
   EuiText,
   EuiTextAlign,
@@ -27,8 +26,9 @@ import {
   EuiSelectable,
   EuiButtonGroup,
   EuiBadge,
+  EuiAccordion,
+  EuiToolTip,
 } from '@elastic/eui';
-import { RadialChart } from 'react-vis';
 import 'react-vis/dist/style.css';
 import ReactECharts from 'echarts-for-react';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -62,6 +62,12 @@ import {
   isVersion33OrHigher,
   isVersion36OrHigher,
 } from '../../utils/version-utils';
+import {
+  computePerformanceChartData,
+  computeHeatmapChartData,
+  HeatmapAggregation,
+  HeatmapGroupBy,
+} from '../../../common/utils/ChartUtils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
 // --- constants for field names and defaults ---
@@ -136,10 +142,31 @@ const QueryInsights = ({
   const [searchQuery, setSearchQuery] = useState<string>(
     wlmGroupIdFromUrl ? `${WLM_GROUP_FIELD}:(${wlmGroupIdFromUrl})` : ''
   );
-  const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'user' | 'wlm'>('node');
-  const [performanceMetric, setPerformanceMetric] = useState<'latency' | 'cpu' | 'memory'>(
-    'latency'
-  );
+  const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'username' | 'wlm'>('node');
+  const [performanceMetric, setPerformanceMetric] = useState<
+    'latency' | 'cpu' | 'memory' | 'count'
+  >('latency');
+  const [performanceChartType, setPerformanceChartType] = useState<'line' | 'heatmap'>('line');
+
+  useEffect(() => {
+    if (performanceChartType === 'line' && performanceMetric === 'count') {
+      setPerformanceMetric('latency');
+    }
+  }, [performanceChartType]);
+  const [heatmapAggregation, setHeatmapAggregation] = useState<HeatmapAggregation>('max');
+  const [heatmapGroupBy, setHeatmapGroupBy] = useState<HeatmapGroupBy>('index');
+  const [chartTablePage, setChartTablePage] = useState(0);
+  const [chartTableSort, setChartTableSort] = useState<{
+    field: string;
+    direction: 'asc' | 'desc';
+  }>({
+    field: 'value',
+    direction: 'desc',
+  });
+  const [visualizationsOpen, setVisualizationsOpen] = useState<boolean>(() => {
+    const saved = sessionStorage.getItem('queryInsights_visualizationsOpen');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [visualizationMode, setVisualizationMode] = useState<'query' | 'group'>('query');
   const tableKey = useMemo(() => {
     const wlmId = new URLSearchParams(location.search).get('wlmGroupId');
@@ -253,42 +280,6 @@ const QueryInsights = ({
     fetchWorkloadGroups();
   }, [fetchWorkloadGroups]);
 
-  // Log filter selection changes
-  useEffect(() => {
-    if (selectedIndices.length > 0) {
-      console.log('[QueryInsights] Indices filter selected:', selectedIndices);
-    }
-  }, [selectedIndices]);
-
-  useEffect(() => {
-    if (selectedSearchTypes.length > 0) {
-      console.log('[QueryInsights] Search types filter selected:', selectedSearchTypes);
-    }
-  }, [selectedSearchTypes]);
-
-  useEffect(() => {
-    if (selectedNodeIds.length > 0) {
-      console.log('[QueryInsights] Node IDs filter selected:', selectedNodeIds);
-    }
-  }, [selectedNodeIds]);
-
-  useEffect(() => {
-    if (selectedWlmGroups.length > 0) {
-      console.log('[QueryInsights] WLM groups filter selected:', selectedWlmGroups);
-    }
-  }, [selectedWlmGroups]);
-
-  useEffect(() => {
-    if (selectedGroupBy.length > 0) {
-      console.log('[QueryInsights] Group by filter selected:', selectedGroupBy);
-    }
-  }, [selectedGroupBy]);
-
-  useEffect(() => {
-    if (searchText) {
-      console.log('[QueryInsights] Search text filter applied:', searchText);
-    }
-  }, [searchText]);
   const commonlyUsedRanges = [
     { label: 'Today', start: 'now/d', end: 'now' },
     { label: 'This week', start: 'now/w', end: 'now' },
@@ -910,7 +901,7 @@ const QueryInsights = ({
         let key: string;
         if (chartGroupBy === 'node') {
           key = q.node_id || 'Unknown';
-        } else if (chartGroupBy === 'user') {
+        } else if (chartGroupBy === 'username') {
           key = q.username || 'Unknown';
         } else {
           const wlmId = q.wlm_group_id || 'Unknown';
@@ -920,20 +911,149 @@ const QueryInsights = ({
       }
     });
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
-    return Object.entries(counts).map(([name, value], idx) => ({
+    // Sort by value desc, then name asc for consistent ordering
+    const sorted = Object.entries(counts).sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    });
+    const getColor = (index: number) => {
+      if (index < CHART_COLORS.length) return CHART_COLORS[index];
+      // Generate additional colors using golden angle for overflow
+      const hue = ((index - CHART_COLORS.length) * 137.508 + 60) % 360;
+      return `hsl(${hue}, 65%, 55%)`;
+    };
+    return sorted.map(([name, value], idx) => ({
       name,
       value,
       percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0.0',
       angle: value,
       label: name,
-      color: CHART_COLORS[idx % CHART_COLORS.length],
+      color: getColor(idx),
     }));
   }, [itemsForMetrics, chartGroupBy, wlmIdToNameMap]);
+
+  const pieChartData = useMemo(() => {
+    if (chartData.length <= 25) return chartData;
+    const top25 = chartData.slice(0, 25);
+    const others = chartData.slice(25);
+    const othersTotal = others.reduce((sum, item) => sum + item.value, 0);
+    const total = chartData.reduce((sum, item) => sum + item.value, 0);
+    return [
+      ...top25,
+      {
+        name: 'Others',
+        value: othersTotal,
+        percentage: total > 0 ? ((othersTotal / total) * 100).toFixed(1) : '0.0',
+        angle: othersTotal,
+        label: 'Others',
+        color: '#999999',
+      },
+    ];
+  }, [chartData]);
 
   const performanceChartData = useMemo(
     () => computePerformanceChartData(itemsForMetrics, from, to, performanceMetric),
     [itemsForMetrics, performanceMetric, from, to]
   );
+
+  const heatmapChartData = useMemo(
+    () =>
+      computeHeatmapChartData(
+        itemsForMetrics,
+        from,
+        to,
+        performanceMetric,
+        heatmapAggregation,
+        heatmapGroupBy
+      ),
+    [itemsForMetrics, performanceMetric, heatmapAggregation, heatmapGroupBy, from, to]
+  );
+
+  const heatmapChartOptions = useMemo(() => {
+    const { min, max } = heatmapChartData;
+    // Ensure min/max are different for proper color scaling
+    const visualMin = min;
+    const visualMax = max === min ? min + 1 : max;
+
+    const getUnit = () => {
+      if (performanceMetric === 'count') return '';
+      if (performanceMetric === 'memory') return 'MB';
+      return 'ms';
+    };
+
+    const unitText = getUnit();
+    const textLabels = unitText ? [`High (${unitText})`, `Low (${unitText})`] : ['High', 'Low'];
+
+    return {
+      tooltip: {
+        position: 'top',
+        formatter: (tooltipParams: any) => {
+          const [timeIdx, indexIdx, , formatted] = tooltipParams.data;
+          const indexName = heatmapChartData.indices[indexIdx];
+          const startTime = heatmapChartData.times[timeIdx];
+          const endTime = heatmapChartData.times[timeIdx + 1] || 'now';
+          return `${indexName}<br/>${startTime} - ${endTime}<br/>${formatted}`;
+        },
+      },
+      grid: { left: 100, right: 60, top: 30, bottom: 130 },
+      xAxis: {
+        type: 'category',
+        data: heatmapChartData.times,
+        splitArea: { show: true },
+        axisLabel: { rotate: 45, fontSize: 10 },
+      },
+      yAxis: {
+        type: 'category',
+        data: heatmapChartData.indices,
+        splitArea: { show: true },
+      },
+      dataZoom:
+        heatmapChartData.indices.length > 10
+          ? [
+              {
+                type: 'slider',
+                yAxisIndex: 0,
+                right: 10,
+                start: 0,
+                end: Math.min(100, (10 / heatmapChartData.indices.length) * 100),
+                filterMode: 'none',
+              },
+            ]
+          : [],
+      visualMap: {
+        min: visualMin,
+        max: visualMax,
+        calculable: true,
+        orient: 'horizontal',
+        left: 'center',
+        bottom: 0,
+        inRange: { color: ['#d0e1f9', '#4a90d9', '#1a3a6e'] },
+        seriesIndex: 0,
+        dimension: 2,
+        text: textLabels,
+        textStyle: { fontSize: 11 },
+      },
+      series: [
+        {
+          type: 'heatmap',
+          data: heatmapChartData.data.filter((d) => d[2] !== null),
+          itemStyle: {
+            borderColor: '#fff',
+            borderWidth: 1,
+          },
+          label: {
+            show: true,
+            formatter: (labelParams: any) => labelParams.data[3],
+            fontSize: 9,
+            color: '#000',
+          },
+          emphasis: {
+            itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' },
+          },
+        },
+      ],
+    };
+  }, [heatmapChartData, performanceMetric]);
 
   const performanceChartOptions = useMemo(
     () => ({
@@ -1275,256 +1395,480 @@ const QueryInsights = ({
           </EuiFlexGroup>
           <EuiSpacer size="m" />
           <EuiPanel>
-            <EuiFlexGroup justifyContent="flexEnd" alignItems="center">
-              <EuiFlexItem grow={false}>
-                <EuiButtonGroup
-                  legend="Visualization mode"
-                  options={[
-                    { id: 'query', label: 'Query' },
-                    { id: 'group', label: 'Group' },
-                  ]}
-                  idSelected={visualizationMode}
-                  onChange={(id) => setVisualizationMode(id as 'query' | 'group')}
-                  color="primary"
-                />
-              </EuiFlexItem>
-            </EuiFlexGroup>
-            <EuiSpacer size="m" />
-            {visualizationMode === 'query' ? (
-              <>
-                <EuiFlexGroup>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P90 LATENCY</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p90Latency} ms</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P90 CPU TIME</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p90Cpu} ms</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P90 MEMORY</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p90Memory} MB</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P99 LATENCY</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p99Latency} ms</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P99 CPU TIME</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p99Cpu} ms</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                  <EuiFlexItem>
-                    <EuiPanel paddingSize="m">
-                      <EuiText size="s">
-                        <p>P99 MEMORY</p>
-                      </EuiText>
-                      <EuiTitle size="l">
-                        <h2>
-                          <b>{percentileMetrics.p99Memory} MB</b>
-                        </h2>
-                      </EuiTitle>
-                    </EuiPanel>
-                  </EuiFlexItem>
-                </EuiFlexGroup>
-                <EuiSpacer size="m" />
-                <EuiPanel>
-                  <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
-                    <EuiFlexItem grow={false}>
-                      <EuiTitle size="xs">
-                        <h3>
-                          {chartGroupBy === 'node'
-                            ? 'Queries by Node'
-                            : chartGroupBy === 'index'
-                            ? 'Queries by Index'
-                            : chartGroupBy === 'user'
-                            ? 'Queries by User'
-                            : 'Queries by WLM Group'}
-                        </h3>
-                      </EuiTitle>
-                    </EuiFlexItem>
-                    <EuiFlexItem grow={false}>
-                      <EuiSelect
-                        options={[
-                          { value: 'node', text: 'Node' },
-                          { value: 'index', text: 'Index' },
-                          { value: 'user', text: 'User' },
-                          ...(queryInsightWlmNavigationSupported
-                            ? [{ value: 'wlm', text: 'WLM Group' }]
-                            : []),
-                        ]}
-                        value={chartGroupBy}
-                        onChange={(e) =>
-                          setChartGroupBy(e.target.value as 'node' | 'index' | 'user' | 'wlm')
-                        }
-                        compressed
-                      />
-                    </EuiFlexItem>
-                  </EuiFlexGroup>
-                  <EuiSpacer size="l" />
-                  <EuiFlexGroup>
-                    <EuiFlexItem grow={false}>
-                      <RadialChart
-                        data={chartData}
-                        width={300}
-                        height={300}
-                        innerRadius={80}
-                        radius={140}
-                        colorType="literal"
-                      />
-                    </EuiFlexItem>
-                    <EuiFlexItem>
-                      <EuiBasicTable
-                        items={chartData}
-                        columns={[
-                          {
-                            field: 'name',
-                            name:
-                              chartGroupBy === 'node'
-                                ? 'Node'
-                                : chartGroupBy === 'index'
-                                ? 'Index'
-                                : chartGroupBy === 'user'
-                                ? 'User'
-                                : 'WLM Group',
-                            render: (name: string, item: typeof chartData[0]) => (
-                              <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
-                                <EuiFlexItem grow={false}>
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      width: 16,
-                                      height: 16,
-                                      backgroundColor: item.color,
-                                    }}
-                                  />
-                                </EuiFlexItem>
-                                <EuiFlexItem>{name}</EuiFlexItem>
-                              </EuiFlexGroup>
-                            ),
-                          },
-                          { field: 'value', name: 'Query Count', align: 'right' },
-                          {
-                            field: 'percentage',
-                            name: 'Percentage',
-                            render: (p: string) => `${p}%`,
-                            align: 'right',
-                          },
-                        ]}
-                      />
-                    </EuiFlexItem>
-                  </EuiFlexGroup>
-                </EuiPanel>
-                <EuiSpacer size="m" />
-                <EuiPanel>
-                  <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
-                    <EuiFlexItem grow={false}>
-                      <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+            <EuiAccordion
+              id="visualizations-accordion"
+              buttonContent={
+                <EuiTitle size="s">
+                  <h3>Stats & Visualizations</h3>
+                </EuiTitle>
+              }
+              extraAction={
+                visualizationsOpen ? (
+                  <EuiButtonGroup
+                    legend="Visualization mode"
+                    options={[
+                      { id: 'query', label: 'Query' },
+                      { id: 'group', label: 'Group' },
+                    ]}
+                    idSelected={visualizationMode}
+                    onChange={(id) => setVisualizationMode(id as 'query' | 'group')}
+                    color="primary"
+                    data-test-subj="visualizationModeToggle"
+                  />
+                ) : null
+              }
+              forceState={visualizationsOpen ? 'open' : 'closed'}
+              onToggle={(isOpen) => {
+                setVisualizationsOpen(isOpen);
+                sessionStorage.setItem('queryInsights_visualizationsOpen', String(isOpen));
+              }}
+              paddingSize="none"
+            >
+              <EuiSpacer size="m" />
+              {visualizationMode === 'query' ? (
+                itemsForMetrics.length === 0 ? (
+                  <EuiPanel color="subdued" paddingSize="xl">
+                    <EuiSpacer size="xxl" />
+                    <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
+                      <EuiFlexItem grow={false}>
+                        <EuiIcon type="visLine" size="xxl" color="subdued" />
+                      </EuiFlexItem>
+                      <EuiFlexItem grow={false}>
+                        <EuiTitle size="s">
+                          <h3>No Data Available</h3>
+                        </EuiTitle>
+                      </EuiFlexItem>
+                      <EuiFlexItem grow={false}>
+                        <EuiText color="subdued" size="s">
+                          <p>No queries found</p>
+                        </EuiText>
+                      </EuiFlexItem>
+                    </EuiFlexGroup>
+                    <EuiSpacer size="xxl" />
+                  </EuiPanel>
+                ) : (
+                  <>
+                    <EuiFlexGroup>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P90 LATENCY</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p90Latency === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p90Latency} ms`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P90 CPU TIME</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p90Cpu === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p90Cpu} ms`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P90 MEMORY</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p90Memory === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p90Memory} MB`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P99 LATENCY</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p99Latency === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p99Latency} ms`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P99 CPU TIME</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p99Cpu === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p99Cpu} ms`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                      <EuiFlexItem>
+                        <EuiPanel paddingSize="m">
+                          <EuiText size="s">
+                            <p>P99 MEMORY</p>
+                          </EuiText>
+                          <EuiTitle size="l">
+                            <h2>
+                              <b>
+                                {percentileMetrics.p99Memory === 'N/A'
+                                  ? 'N/A'
+                                  : `${percentileMetrics.p99Memory} MB`}
+                              </b>
+                            </h2>
+                          </EuiTitle>
+                        </EuiPanel>
+                      </EuiFlexItem>
+                    </EuiFlexGroup>
+                    <EuiSpacer size="m" />
+                    <EuiPanel>
+                      <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
                         <EuiFlexItem grow={false}>
                           <EuiTitle size="xs">
-                            <h3>Performance Analysis</h3>
+                            <h3>
+                              {chartGroupBy === 'node'
+                                ? 'Queries by Node'
+                                : chartGroupBy === 'index'
+                                ? 'Queries by Index'
+                                : chartGroupBy === 'username'
+                                ? 'Queries by Username'
+                                : 'Queries by WLM Group'}
+                            </h3>
                           </EuiTitle>
                         </EuiFlexItem>
                         <EuiFlexItem grow={false}>
-                          <EuiIconTip
-                            content="Time labels represent the start of each time bucket. Data is aggregated into buckets across the selected time range."
-                            position="right"
-                            type="questionInCircle"
+                          <EuiSelect
+                            options={[
+                              { value: 'node', text: 'Node' },
+                              { value: 'index', text: 'Index' },
+                              { value: 'username', text: 'Username' },
+                              ...(queryInsightWlmNavigationSupported
+                                ? [{ value: 'wlm', text: 'WLM Group' }]
+                                : []),
+                            ]}
+                            value={chartGroupBy}
+                            onChange={(e) => {
+                              setChartGroupBy(
+                                e.target.value as 'node' | 'index' | 'username' | 'wlm'
+                              );
+                              setChartTablePage(0);
+                            }}
+                            compressed
                           />
                         </EuiFlexItem>
                       </EuiFlexGroup>
+                      <EuiSpacer size="l" />
+                      <EuiFlexGroup>
+                        <EuiFlexItem grow={false}>
+                          <ReactECharts
+                            option={{
+                              tooltip: {
+                                trigger: 'item',
+                                formatter: (pieParams: any) => {
+                                  if (pieParams.name === 'Others') {
+                                    return `Other<br/>Query Count: ${pieParams.value}<br/>Percentage: ${pieParams.percent}%`;
+                                  }
+                                  const label =
+                                    chartGroupBy === 'node'
+                                      ? 'Node'
+                                      : chartGroupBy === 'index'
+                                      ? 'Index'
+                                      : chartGroupBy === 'username'
+                                      ? 'Username'
+                                      : 'WLM Group';
+                                  return `${label}: ${pieParams.name}<br/>Query Count: ${pieParams.value}<br/>Percentage: ${pieParams.percent}%`;
+                                },
+                              },
+                              series: [
+                                {
+                                  type: 'pie',
+                                  radius: ['40%', '80%'],
+                                  data: pieChartData.map((item) => ({
+                                    name: item.name,
+                                    value: item.value,
+                                    itemStyle: { color: item.color },
+                                  })),
+                                  label: { show: false },
+                                  sort: 'none',
+                                  clockwise: true,
+                                  startAngle: 90,
+                                  emphasis: {
+                                    itemStyle: {
+                                      shadowBlur: 10,
+                                      shadowOffsetX: 0,
+                                      shadowColor: 'rgba(0, 0, 0, 0.5)',
+                                    },
+                                  },
+                                },
+                              ],
+                            }}
+                            style={{ height: '40vh', width: '40vh' }}
+                            opts={{ renderer: 'svg' }}
+                          />
+                        </EuiFlexItem>
+                        <EuiFlexItem>
+                          <EuiInMemoryTable
+                            key={`chart-table-${chartGroupBy}`}
+                            items={chartData}
+                            columns={[
+                              {
+                                field: 'name',
+                                name:
+                                  chartGroupBy === 'node'
+                                    ? 'Node'
+                                    : chartGroupBy === 'index'
+                                    ? 'Index'
+                                    : chartGroupBy === 'username'
+                                    ? 'Username'
+                                    : 'WLM Group',
+                                sortable: true,
+                                render: (name: string, item: typeof chartData[0]) => (
+                                  <EuiFlexGroup
+                                    gutterSize="s"
+                                    alignItems="center"
+                                    responsive={false}
+                                  >
+                                    <EuiFlexItem grow={false}>
+                                      <EuiIcon type="dot" color={item.color} />
+                                    </EuiFlexItem>
+                                    <EuiFlexItem>{name}</EuiFlexItem>
+                                  </EuiFlexGroup>
+                                ),
+                              },
+                              {
+                                field: 'value',
+                                name: 'Query Count',
+                                align: 'right',
+                                sortable: true,
+                              },
+                              {
+                                field: 'percentage',
+                                name: 'Percentage',
+                                render: (p: string) => `${p}%`,
+                                align: 'right',
+                                sortable: (item: typeof chartData[0]) =>
+                                  parseFloat(item.percentage),
+                              },
+                            ]}
+                            sorting={{
+                              sort: chartTableSort,
+                            }}
+                            pagination={{
+                              pageIndex: chartTablePage,
+                              initialPageSize: 10,
+                              pageSizeOptions: [10, 25, 50],
+                            }}
+                            onTableChange={({
+                              page,
+                              sort,
+                            }: {
+                              page?: { index: number };
+                              sort?: { field: string; direction: 'asc' | 'desc' };
+                            }) => {
+                              if (page) {
+                                setChartTablePage(page.index);
+                              }
+                              if (sort) {
+                                setChartTableSort(sort);
+                              }
+                            }}
+                          />
+                        </EuiFlexItem>
+                      </EuiFlexGroup>
+                    </EuiPanel>
+                    <EuiSpacer size="m" />
+                    <EuiPanel>
+                      <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                        <EuiFlexItem grow={false}>
+                          <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+                            <EuiFlexItem grow={false}>
+                              <EuiTitle size="xs">
+                                <h3>Performance Analysis</h3>
+                              </EuiTitle>
+                            </EuiFlexItem>
+                            <EuiFlexItem grow={false}>
+                              <EuiIconTip
+                                content="Time labels represent the start of each time bucket. Data is aggregated into buckets across the selected time range."
+                                position="right"
+                                type="questionInCircle"
+                              />
+                            </EuiFlexItem>
+                          </EuiFlexGroup>
+                        </EuiFlexItem>
+                        <EuiFlexItem grow={false}>
+                          <EuiFlexGroup gutterSize="s" alignItems="center">
+                            {performanceChartType === 'heatmap' && (
+                              <EuiFlexItem grow={false}>
+                                <EuiSelect
+                                  options={[
+                                    { value: 'index', text: 'Index' },
+                                    { value: 'node', text: 'Node' },
+                                    { value: 'username', text: 'Username' },
+                                    { value: 'user_roles', text: 'User Roles' },
+                                    { value: 'wlm_group', text: 'WLM Group' },
+                                  ]}
+                                  value={heatmapGroupBy}
+                                  onChange={(e) =>
+                                    setHeatmapGroupBy(e.target.value as HeatmapGroupBy)
+                                  }
+                                  compressed
+                                />
+                              </EuiFlexItem>
+                            )}
+                            <EuiFlexItem grow={false}>
+                              <EuiSelect
+                                options={
+                                  performanceChartType === 'heatmap'
+                                    ? [
+                                        { value: 'latency', text: 'Latency' },
+                                        { value: 'cpu', text: 'CPU' },
+                                        { value: 'memory', text: 'Memory' },
+                                        { value: 'count', text: 'Count' },
+                                      ]
+                                    : [
+                                        { value: 'latency', text: 'Latency' },
+                                        { value: 'cpu', text: 'CPU' },
+                                        { value: 'memory', text: 'Memory' },
+                                      ]
+                                }
+                                value={performanceMetric}
+                                onChange={(e) =>
+                                  setPerformanceMetric(
+                                    e.target.value as 'latency' | 'cpu' | 'memory' | 'count'
+                                  )
+                                }
+                                compressed
+                              />
+                            </EuiFlexItem>
+                            {performanceChartType === 'heatmap' && (
+                              <EuiFlexItem grow={false}>
+                                <EuiToolTip
+                                  content={
+                                    performanceMetric === 'count'
+                                      ? 'Aggregation is not available for count metric'
+                                      : undefined
+                                  }
+                                >
+                                  <EuiSelect
+                                    options={[
+                                      { value: 'avg', text: 'Avg' },
+                                      { value: 'max', text: 'Max' },
+                                      { value: 'min', text: 'Min' },
+                                    ]}
+                                    value={heatmapAggregation}
+                                    onChange={(e) =>
+                                      setHeatmapAggregation(e.target.value as HeatmapAggregation)
+                                    }
+                                    compressed
+                                    disabled={performanceMetric === 'count'}
+                                    style={
+                                      performanceMetric === 'count'
+                                        ? { textDecoration: 'line-through' }
+                                        : undefined
+                                    }
+                                  />
+                                </EuiToolTip>
+                              </EuiFlexItem>
+                            )}
+                            <EuiFlexItem grow={false}>
+                              <EuiButtonGroup
+                                legend="Chart type"
+                                options={[
+                                  { id: 'line', label: 'Line Chart' },
+                                  { id: 'heatmap', label: 'Heatmap' },
+                                ]}
+                                idSelected={performanceChartType}
+                                onChange={(id) => setPerformanceChartType(id as 'line' | 'heatmap')}
+                                color="primary"
+                              />
+                            </EuiFlexItem>
+                          </EuiFlexGroup>
+                        </EuiFlexItem>
+                      </EuiFlexGroup>
+                      <EuiSpacer size="m" />
+                      {performanceChartType === 'line' &&
+                        (performanceChartData.times.length > 0 ? (
+                          <ReactECharts
+                            key="performance-line-chart"
+                            option={performanceChartOptions}
+                            style={{ height: '40vh', width: '100%' }}
+                            opts={{ renderer: 'svg' }}
+                            notMerge={true}
+                          />
+                        ) : (
+                          <EuiTextAlign textAlign="center">
+                            <EuiText color="subdued">
+                              <p>No data available</p>
+                            </EuiText>
+                          </EuiTextAlign>
+                        ))}
+                      {performanceChartType === 'heatmap' &&
+                        (heatmapChartData.indices.length > 0 ? (
+                          <ReactECharts
+                            key="performance-heatmap-chart"
+                            option={heatmapChartOptions}
+                            style={{ height: '70vh', width: '100%' }}
+                            opts={{ renderer: 'svg' }}
+                            notMerge={true}
+                          />
+                        ) : (
+                          <EuiTextAlign textAlign="center">
+                            <EuiText color="subdued">
+                              <p>No data available</p>
+                            </EuiText>
+                          </EuiTextAlign>
+                        ))}
+                    </EuiPanel>
+                  </>
+                )
+              ) : (
+                <EuiPanel color="subdued" paddingSize="xl">
+                  <EuiSpacer size="xxl" />
+                  <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
+                    <EuiFlexItem grow={false}>
+                      <EuiIcon type="visLine" size="xxl" color="subdued" />
                     </EuiFlexItem>
                     <EuiFlexItem grow={false}>
-                      <EuiSelect
-                        options={[
-                          { value: 'latency', text: 'Latency' },
-                          { value: 'cpu', text: 'CPU' },
-                          { value: 'memory', text: 'Memory' },
-                        ]}
-                        value={performanceMetric}
-                        onChange={(e) =>
-                          setPerformanceMetric(e.target.value as 'latency' | 'cpu' | 'memory')
-                        }
-                        compressed
-                      />
+                      <EuiTitle size="s">
+                        <h3>No Visualization Available</h3>
+                      </EuiTitle>
+                    </EuiFlexItem>
+                    <EuiFlexItem grow={false}>
+                      <EuiText color="subdued" size="s">
+                        <p>Visualizations for grouped queries are coming soon</p>
+                      </EuiText>
                     </EuiFlexItem>
                   </EuiFlexGroup>
-                  <EuiSpacer size="m" />
-                  {performanceChartData.times.length > 0 ? (
-                    <ReactECharts
-                      option={performanceChartOptions}
-                      style={{ height: 400, width: '100%' }}
-                      opts={{ renderer: 'svg' }}
-                    />
-                  ) : (
-                    <EuiTextAlign textAlign="center">
-                      <EuiText color="subdued">
-                        <p>No data available</p>
-                      </EuiText>
-                    </EuiTextAlign>
-                  )}
+                  <EuiSpacer size="xxl" />
                 </EuiPanel>
-              </>
-            ) : (
-              <EuiPanel color="subdued" paddingSize="xl">
-                <EuiSpacer size="xxl" />
-                <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
-                  <EuiFlexItem grow={false}>
-                    <EuiIcon type="visLine" size="xxl" color="subdued" />
-                  </EuiFlexItem>
-                  <EuiFlexItem grow={false}>
-                    <EuiTitle size="s">
-                      <h3>No Visualization Available</h3>
-                    </EuiTitle>
-                  </EuiFlexItem>
-                  <EuiFlexItem grow={false}>
-                    <EuiText color="subdued" size="s">
-                      <p>Visualizations for grouped queries are coming soon</p>
-                    </EuiText>
-                  </EuiFlexItem>
-                </EuiFlexGroup>
-                <EuiSpacer size="xxl" />
-              </EuiPanel>
-            )}
+              )}
+            </EuiAccordion>
           </EuiPanel>
           <EuiSpacer size="m" />
           <EuiInMemoryTable<SearchQueryRecord>
