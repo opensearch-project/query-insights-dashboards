@@ -139,6 +139,12 @@ const QueryInsights = ({
     'latency' | 'cpu' | 'memory' | 'count'
   >('latency');
   const [performanceChartType, setPerformanceChartType] = useState<'line' | 'heatmap'>('line');
+
+  useEffect(() => {
+    if (performanceChartType === 'line' && performanceMetric === 'count') {
+      setPerformanceMetric('latency');
+    }
+  }, [performanceChartType]);
   const [heatmapAggregation, setHeatmapAggregation] = useState<HeatmapAggregation>('max');
   const [heatmapGroupBy, setHeatmapGroupBy] = useState<HeatmapGroupBy>('index');
   const [chartTablePage, setChartTablePage] = useState(0);
