@@ -26,6 +26,7 @@ import {
   EuiSelectable,
   EuiButtonGroup,
   EuiAccordion,
+  EuiToolTip,
 } from '@elastic/eui';
 import 'react-vis/dist/style.css';
 import ReactECharts from 'echarts-for-react';
@@ -1721,19 +1722,32 @@ const QueryInsights = ({
                             </EuiFlexItem>
                             {performanceChartType === 'heatmap' && (
                               <EuiFlexItem grow={false}>
-                                <EuiSelect
-                                  options={[
-                                    { value: 'avg', text: 'Avg' },
-                                    { value: 'max', text: 'Max' },
-                                    { value: 'min', text: 'Min' },
-                                  ]}
-                                  value={heatmapAggregation}
-                                  onChange={(e) =>
-                                    setHeatmapAggregation(e.target.value as HeatmapAggregation)
+                                <EuiToolTip
+                                  content={
+                                    performanceMetric === 'count'
+                                      ? 'Aggregation is not available for count metric'
+                                      : undefined
                                   }
-                                  compressed
-                                  disabled={performanceMetric === 'count'}
-                                />
+                                >
+                                  <EuiSelect
+                                    options={[
+                                      { value: 'avg', text: 'Avg' },
+                                      { value: 'max', text: 'Max' },
+                                      { value: 'min', text: 'Min' },
+                                    ]}
+                                    value={heatmapAggregation}
+                                    onChange={(e) =>
+                                      setHeatmapAggregation(e.target.value as HeatmapAggregation)
+                                    }
+                                    compressed
+                                    disabled={performanceMetric === 'count'}
+                                    style={
+                                      performanceMetric === 'count'
+                                        ? { textDecoration: 'line-through' }
+                                        : undefined
+                                    }
+                                  />
+                                </EuiToolTip>
                               </EuiFlexItem>
                             )}
                             <EuiFlexItem grow={false}>
