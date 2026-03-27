@@ -18,6 +18,7 @@ import {
   AVERAGE_MEMORY_USAGE,
   GROUP_BY,
   ID,
+  QUERY_GROUP_HASHCODE,
 } from '../../../../common/constants';
 import { calculateMetric } from '../../../../common/utils/MetricUtils';
 
@@ -44,7 +45,7 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
       </EuiTitle>
     );
   }
-  const { measurements, id: id, group_by: groupBy } = query;
+  const { measurements, id: id, group_by: groupBy, query_group_hashcode: hashcode } = query;
   const queryCount =
     measurements.latency?.count || measurements.cpu?.count || measurements.memory?.count || 1;
   return (
@@ -75,6 +76,7 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
           value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B', 1)}
         />
         <PanelItem label={GROUP_BY} value={groupBy !== undefined ? `${groupBy}` : 'N/A'} />
+        {hashcode && <PanelItem label={QUERY_GROUP_HASHCODE} value={hashcode} />}
       </EuiFlexGrid>
     </EuiPanel>
   );
