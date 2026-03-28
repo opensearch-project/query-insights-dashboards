@@ -10,6 +10,7 @@ import {
   DEFAULT_NAV_GROUPS,
   Plugin,
 } from '../../../src/core/public';
+import { i18n } from '@osd/i18n';
 import {
   QueryInsightsDashboardsPluginSetup,
   QueryInsightsDashboardsPluginSetupDependencies,
@@ -145,6 +146,26 @@ export class QueryInsightsDashboardsPlugin
         },
       ]);
     }
+
+    // Register Query Profiler with Dev Tools
+    deps.devTools.register({
+      id: 'queryProfiler',
+      order: 2,
+      title: i18n.translate('queryInsightsDashboards.queryProfiler.title', {
+        defaultMessage: 'Query Profiler',
+      }),
+      enableRouting: false,
+      mount: async ({ element, dataSourceId }) => {
+        const [coreStart] = await core.getStartServices();
+        const { renderQueryProfiler } = await import('./pages/QueryProfiler');
+
+        return renderQueryProfiler({
+          element,
+          core: coreStart,
+          dataSourceId,
+        });
+      },
+    });
 
     return {};
   }
