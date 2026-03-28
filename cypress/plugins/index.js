@@ -8,8 +8,18 @@
 /**
  * @type {Cypress.PluginConfig}
  */
+const fs = require('fs');
+
 module.exports = (on, config) => {
-  // `on` is used to hook into various events Cypress emits
-  // `config` is the resolved Cypress config
+  on('task', {
+    deleteFile(filePath) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (e) {
+        console.error(e);
+      }
+      return null;
+    },
+  });
   return config;
 };

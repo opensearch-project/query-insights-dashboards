@@ -6,6 +6,7 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
+  EuiButton,
   EuiCodeBlock,
   EuiFlexGroup,
   EuiFlexItem,
@@ -74,6 +75,7 @@ const QueryDetails = ({
     if (id && from && to && verbose != null) {
       fetchQueryDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, from, to, verbose]);
 
   // ECharts options for latency chart
@@ -177,6 +179,36 @@ const QueryDetails = ({
                     <h2>Query</h2>
                   </EuiTitle>
                 </EuiFlexItem>
+                {queryDisplay && !queryDisplay.includes('...truncated') && (
+                  <EuiFlexItem grow={false}>
+                    <EuiButton
+                      size="s"
+                      onClick={() => {
+                        try {
+                          const { profile: _p, ...rest } = JSON.parse(queryDisplay);
+                          const profilerBody = { profile: true, ...rest };
+                          const indexPath = query?.indices?.join(',') || '_search';
+                          const searchPath =
+                            indexPath === '_search' ? '_search' : `${indexPath}/_search`;
+                          const profilerQuery = `GET ${searchPath}\n${JSON.stringify(
+                            profilerBody,
+                            null,
+                            2
+                          )}`;
+                          localStorage.setItem('profilerQuery', profilerQuery);
+                          const dsParam = dataSource?.id
+                            ? `?dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
+                            : '';
+                          history.push(`/profiler${dsParam}`);
+                        } catch (e) {
+                          console.error('Failed to parse query for profiler', e);
+                        }
+                      }}
+                    >
+                      Open in Profiler
+                    </EuiButton>
+                  </EuiFlexItem>
+                )}
               </EuiFlexGroup>
               <EuiHorizontalRule margin="xs" />
               <EuiSpacer size="xs" />
