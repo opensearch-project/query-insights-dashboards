@@ -54,7 +54,7 @@
     "braces": "3.0.3",
     "micromatch": "4.0.8",
     "cross-spawn": "7.0.5",
-    "serialize-javascript": "6.0.2",
+    "serialize-javascript": "7.0.3",
     "glob-parent": "^6.0.0",
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
