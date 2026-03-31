@@ -1088,16 +1088,17 @@ const QueryInsights = ({
       {!loading && (
         <>
           <EuiSpacer size="m" />
-          <EuiFlexGroup alignItems="center" gutterSize="m">
-            <EuiFlexItem grow={false}>
+          <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
+            <EuiFlexItem grow style={{ minWidth: 0 }}>
               <EuiFieldSearch
                 placeholder="Search queries"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 compressed
+                fullWidth
               />
             </EuiFlexItem>
-            <EuiFlexItem grow={false}>
+            <EuiFlexItem grow={false} style={{ minWidth: 0, overflow: 'auto' }}>
               <EuiFilterGroup>
                 <EuiPopover
                   button={
