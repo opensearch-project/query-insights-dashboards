@@ -27,6 +27,7 @@ import {
   EuiButtonGroup,
   EuiAccordion,
   EuiToolTip,
+  EuiBadge,
 } from '@elastic/eui';
 import 'react-vis/dist/style.css';
 import ReactECharts from 'echarts-for-react';
@@ -61,7 +62,11 @@ import {
   HeatmapAggregation,
   HeatmapGroupBy,
 } from '../../../common/utils/ChartUtils';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion36OrHigher,
+} from '../../utils/version-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 
 // --- constants for field names and defaults ---
@@ -126,6 +131,7 @@ const QueryInsights = ({
   const [selectedWlmGroups, setSelectedWlmGroups] = useState<string[]>([]);
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const [statusSupported, setStatusSupported] = useState<boolean>(false);
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
     boolean
   >(false);
@@ -251,6 +257,7 @@ const QueryInsights = ({
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
+        setStatusSupported(isVersion36OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -504,6 +511,22 @@ const QueryInsights = ({
     },
   ];
 
+  const statusColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+    {
+      name: 'Status',
+      render: (q: SearchQueryRecord) => {
+        if (q.group_by === 'SIMILARITY') return <span>-</span>;
+        return q.failed ? (
+          <EuiBadge color="danger">Failed</EuiBadge>
+        ) : (
+          <EuiBadge color="success">Completed</EuiBadge>
+        );
+      },
+      sortable: (q: SearchQueryRecord) => (q.group_by === 'SIMILARITY' ? -1 : q.failed ? 0 : 1),
+      truncateText: true,
+    },
+  ];
+
   // columns shown only for query-type records
   const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
     {
@@ -641,10 +664,19 @@ const QueryInsights = ({
       ...baseColumns,
       ...querycountColumn,
       ...timestampColumn,
+      ...(statusSupported ? statusColumn : []),
       ...metricColumns,
       ...QueryTypeSpecificColumns,
     ],
-    [baseColumns, querycountColumn, timestampColumn, metricColumns, QueryTypeSpecificColumns]
+    [
+      baseColumns,
+      querycountColumn,
+      timestampColumn,
+      statusSupported,
+      statusColumn,
+      metricColumns,
+      QueryTypeSpecificColumns,
+    ]
   );
   const groupTypeColumns = useMemo(() => [...baseColumns, ...querycountColumn, ...metricColumns], [
     baseColumns,
@@ -653,8 +685,21 @@ const QueryInsights = ({
   ]);
 
   const queryTypeColumns = useMemo(
-    () => [...baseColumns, ...timestampColumn, ...metricColumns, ...QueryTypeSpecificColumns],
-    [baseColumns, timestampColumn, metricColumns, QueryTypeSpecificColumns]
+    () => [
+      ...baseColumns,
+      ...timestampColumn,
+      ...(statusSupported ? statusColumn : []),
+      ...metricColumns,
+      ...QueryTypeSpecificColumns,
+    ],
+    [
+      baseColumns,
+      timestampColumn,
+      statusSupported,
+      statusColumn,
+      metricColumns,
+      QueryTypeSpecificColumns,
+    ]
   );
 
   /**
