@@ -6,19 +6,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     class="euiSpacer euiSpacer--m"
   />
   <div
-    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive"
+    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
   >
     <div
-      class="euiFlexItem euiFlexItem--flexGrowZero"
+      class="euiFlexItem"
+      style="min-width: 0;"
     >
       <div
-        class="euiFormControlLayout euiFormControlLayout--compressed"
+        class="euiFormControlLayout euiFormControlLayout--fullWidth euiFormControlLayout--compressed"
       >
         <div
           class="euiFormControlLayout__childrenWrapper"
         >
           <input
-            class="euiFieldSearch euiFieldSearch--compressed"
+            class="euiFieldSearch euiFieldSearch--fullWidth euiFieldSearch--compressed"
             placeholder="Search queries"
             type="search"
             value=""
@@ -50,6 +51,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     </div>
     <div
       class="euiFlexItem euiFlexItem--flexGrowZero"
+      style="min-width: 0; overflow: auto;"
     >
       <div
         class="euiFilterGroup"
