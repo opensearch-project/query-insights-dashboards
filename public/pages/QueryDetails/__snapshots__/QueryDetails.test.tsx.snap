@@ -706,6 +706,24 @@ exports[`QueryDetails component matches snapshot 1`] = `
                   Query
                 </h2>
               </div>
+              <div
+                class="euiFlexItem euiFlexItem--flexGrowZero"
+              >
+                <button
+                  class="euiButton euiButton--primary euiButton--small"
+                  type="button"
+                >
+                  <span
+                    class="euiButtonContent euiButton__content"
+                  >
+                    <span
+                      class="euiButton__text"
+                    >
+                      Open in Profiler
+                    </span>
+                  </span>
+                </button>
+              </div>
             </div>
             <hr
               class="euiHorizontalRule euiHorizontalRule--full euiHorizontalRule--marginXSmall"
