@@ -39,6 +39,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
   DEFAULT_REFRESH_INTERVAL,
   TOP_N_DISPLAY_LIMIT,
@@ -99,6 +100,7 @@ export const InflightQueries = ({
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [showFinishedQueries, setShowFinishedQueries] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
@@ -1033,32 +1035,7 @@ export const InflightQueries = ({
             {
               field: 'id',
               name: 'Task ID',
-              render: (id: string, item: any) => {
-                if (item._finished && item._topNId) {
-                  const now = new Date().toISOString();
-                  const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-                  return (
-                    <EuiLink
-                      onClick={() =>
-                        history.push(
-                          `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
-                            now
-                          )}&id=${encodeURIComponent(item._topNId)}&verbose=true`
-                        )
-                      }
-                    >
-                      {id}
-                    </EuiLink>
-                  );
-                }
-                return (
-                  <EuiLink
-                    onClick={() => history.push(`/task-detail?taskId=${encodeURIComponent(id)}`)}
-                  >
-                    {id}
-                  </EuiLink>
-                );
-              },
+              render: (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>,
             },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
@@ -1174,6 +1151,65 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
+
+      {/* Task Detail Flyout */}
+      {selectedTaskId &&
+        (() => {
+          const flyoutQueries = query?.response?.live_queries || [];
+          const selectedItem = flyoutQueries.find((q) => q.id === selectedTaskId);
+          if (!selectedItem) return null;
+          // Build a RichLiveQueryRecord-compatible object from the row
+          const richTask = {
+            id: selectedItem.id,
+            status: (selectedItem as any)._finished
+              ? (selectedItem as any)._status || 'completed'
+              : selectedItem.is_cancelled
+              ? 'cancelled'
+              : 'running',
+            start_time: selectedItem.timestamp,
+            wlm_group_id: selectedItem.wlm_group_id,
+            total_latency_millis: (selectedItem.measurements?.latency?.number || 0) / 1e6,
+            total_cpu_nanos: selectedItem.measurements?.cpu?.number || 0,
+            total_memory_bytes: selectedItem.measurements?.memory?.number || 0,
+            coordinator_task: (selectedItem as any).coordinator_task || null,
+            shard_tasks: (selectedItem as any).shard_tasks || [],
+            _topNId: (selectedItem as any)._topNId,
+          };
+          return (
+            <TaskDetailFlyout
+              task={richTask as any}
+              onClose={() => setSelectedTaskId(null)}
+              onRefresh={async () => {
+                await fetchLiveQueries();
+              }}
+              onKillQuery={
+                richTask.status === 'running'
+                  ? async () => {
+                      try {
+                        await core.http.post(API_ENDPOINTS.CANCEL_TASK(selectedTaskId));
+                        await fetchLiveQueries();
+                      } catch (e) {
+                        console.error('Failed to cancel task:', e);
+                      }
+                    }
+                  : undefined
+              }
+              onViewTopN={
+                richTask._topNId
+                  ? (topNId) => {
+                      const now = new Date().toISOString();
+                      const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+                      history.push(
+                        `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+                          now
+                        )}&id=${encodeURIComponent(topNId)}&verbose=true`
+                      );
+                    }
+                  : undefined
+              }
+            />
+          );
+        })()}
     </div>
   );
 };
