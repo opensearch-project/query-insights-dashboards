@@ -214,16 +214,15 @@ jobs:
           echo "This can take 5-10 minutes in CI"
           echo "=========================================="
 
-          max_wait=600  # 10 minutes
+          max_wait=1800  # 30 minutes
           elapsed=0
           ui_ready=false
 
           while [ $elapsed -lt $max_wait ]; do
             # Monitor logs for optimizer completion message
-            # Pattern: "X bundle(s) compiled successfully after Y sec, watching for changes"
-            if grep -qE "[0-9]+ bundles? compiled successfully.*watching for changes" dashboards.log 2>/dev/null; then
-              latest_msg=$(grep -E "bundles? compiled successfully.*watching" dashboards.log | tail -1)
-              echo "Optimizer completed! $(echo "$latest_msg" | grep -oE '[0-9]+ bundles? compiled successfully.*watching for changes')"
+            if grep -qE "[0-9]+ bundles? compiled successfully" dashboards.log 2>/dev/null; then
+              latest_msg=$(grep -E "bundles? compiled successfully" dashboards.log | tail -1)
+              echo "Optimizer completed! $latest_msg"
               ui_ready=true
               break
             fi

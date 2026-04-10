@@ -5,7 +5,7 @@
 
 module.exports = {
   rootDir: '../',
-  setupFiles: ['<rootDir>/test/setupTests.ts'],
+  setupFiles: ['<rootDir>/test/setupTests.ts', '<rootDir>/test/aceSetup.ts'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.jest.ts'],
   roots: ['<rootDir>'],
   coverageDirectory: './coverage',
@@ -16,10 +16,14 @@ module.exports = {
     '^monaco-editor/esm/vs/editor/editor.api$': '<rootDir>/test/mocks/monaco-editor.ts',
     '^monaco-editor$': '<rootDir>/test/mocks/monaco-editor.ts',
     '^@osd/monaco$': '<rootDir>/test/mocks/monaco-editor.ts',
+    '^brace$': '<rootDir>/test/mocks/brace.js',
+    '^brace/(.*)': '<rootDir>/test/mocks/brace.js',
+    '^react-ace$': '<rootDir>/test/mocks/brace.js',
+    '^react-ace/(.*)': '<rootDir>/test/mocks/brace.js',
+    '^@elastic/eui/lib/components/code_editor(.*)': '<rootDir>/test/mocks/brace.js',
     '^react$': '<rootDir>/../../node_modules/react',
     '^react-dom$': '<rootDir>/../../node_modules/react-dom',
   },
-  transformIgnorePatterns: ['node_modules/(?!(monaco-editor)/)'],
   coverageReporters: ['lcov', 'text', 'cobertura'],
   testMatch: ['**/*.test.js', '**/*.test.jsx', '**/*.test.ts', '**/*.test.tsx'],
   collectCoverageFrom: [
@@ -51,6 +55,6 @@ module.exports = {
     '^.+\\.(js|tsx?)$': '<rootDir>/../../src/dev/jest/babel_transform.js',
   },
   transformIgnorePatterns: [
-    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor))[/\\\\].+\\.js$',
+    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor|react-ace))[/\\\\].+\\.(js|ts|tsx)$',
   ],
 };
