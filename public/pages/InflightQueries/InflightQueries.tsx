@@ -35,7 +35,7 @@ import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
@@ -103,6 +103,7 @@ export const InflightQueries = ({
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
   const location = useLocation();
+  const history = useHistory();
   const urlSearchParams = new URLSearchParams(location.search);
   const initialWlmGroup = urlSearchParams.get(WLM_GROUP_ID_PARAM) || '';
 
@@ -967,7 +968,17 @@ export const InflightQueries = ({
           }}
           columns={[
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { field: 'id', name: 'Task ID' },
+            {
+              field: 'id',
+              name: 'Task ID',
+              render: (id: string) => (
+                <EuiLink
+                  onClick={() => history.push(`/task-detail?taskId=${encodeURIComponent(id)}`)}
+                >
+                  {id}
+                </EuiLink>
+              ),
+            },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
             {
