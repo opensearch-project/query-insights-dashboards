@@ -281,20 +281,33 @@ export const InflightQueries = ({
         const indexCount: Record<string, number> = {};
 
         const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
-          const indexMatch = q.description?.match(/indices\[(.*?)\]/);
-          const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+          const desc = (q as any).coordinator_task?.description || (q as any).description || '';
+          const indexMatch = desc.match(/indices\[(.*?)\]/);
+          const searchTypeMatch = desc.match(/search_type\[(.*?)\]/);
+          const nodeId = (q as any).coordinator_task?.node_id || (q as any).node_id || '';
 
           const wlmDisplay =
             typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
               ? idToName[q.wlm_group_id] ?? q.wlm_group_id
               : 'N/A';
 
+          // Normalize measurements for both old and new API formats
+          const measurements = (q as any).measurements || {
+            latency: { number: ((q as any).total_latency_millis || 0) * 1e6 },
+            cpu: { number: (q as any).total_cpu_nanos || 0 },
+            memory: { number: (q as any).total_memory_bytes || 0 },
+          };
+
           return {
             ...q,
+            description: desc,
+            node_id: nodeId,
+            measurements,
+            is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
             index: indexMatch ? indexMatch[1] : 'N/A',
             search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
-            coordinator_node: q.node_id,
-            node_label: q.node_id,
+            coordinator_node: nodeId,
+            node_label: nodeId,
             wlm_group: wlmDisplay,
           };
         });
@@ -392,6 +405,7 @@ export const InflightQueries = ({
   const [_tableFilters, setTableFilters] = useState([]);
 
   const formatTime = (seconds: number): string => {
+    if (isNaN(seconds) || seconds == null) return '-';
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
 
