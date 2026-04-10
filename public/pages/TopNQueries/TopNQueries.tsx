@@ -16,6 +16,7 @@ import QueryDetails from '../QueryDetails/QueryDetails';
 import { InflightQueries } from '../InflightQueries/InflightQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { QueryGroupDetails } from '../QueryGroupDetails/QueryGroupDetails';
+import TaskDetail from '../TaskDetail/TaskDetail';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { PageHeader } from '../../components/PageHeader';
 import {
@@ -460,6 +461,16 @@ const TopNQueries = ({
                 />
               );
             }}
+          </Route>
+          <Route exact path="/task-detail">
+            {() => (
+              <TaskDetail
+                core={core}
+                depsStart={depsStart}
+                params={params}
+                dataSourceManagement={dataSourceManagement}
+              />
+            )}
           </Route>
           {showLiveQueries && (
             <Route exact path={LIVE_QUERIES}>

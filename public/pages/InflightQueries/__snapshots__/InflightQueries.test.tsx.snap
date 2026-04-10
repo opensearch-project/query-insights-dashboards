@@ -1507,13 +1507,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-A1B2C3D4E5:3600
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -1728,13 +1729,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         4W2VTHIgQY-oB7dSrYz4B:3601
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -1948,13 +1950,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-X9Y8Z7W6:3602
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2196,13 +2199,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-P0Q9R8S7:3603
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2444,13 +2448,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         4W2VTHIgQY-oB7dSrYz4:3604
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2693,13 +2698,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-M2O3P4Q5:3605
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2914,13 +2920,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-B2C3D4E5:3606
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3134,13 +3141,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-N2O3P4Q5:3607
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3383,13 +3391,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         2VTHIgQY-oB7dSrYz4BQ:3608
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3604,13 +3613,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-X9Y8Z7W6V5:3609
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
