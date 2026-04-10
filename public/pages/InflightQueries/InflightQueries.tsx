@@ -1174,6 +1174,13 @@ export const InflightQueries = ({
             coordinator_task: (selectedItem as any).coordinator_task || null,
             shard_tasks: (selectedItem as any).shard_tasks || [],
             _topNId: (selectedItem as any)._topNId,
+            // Direct fields for finished queries
+            _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
+            _searchType: (selectedItem as any).search_type || selectedItem.search_type,
+            _nodeId: (selectedItem as any).node_id || selectedItem.coordinator_node,
+            _totalShards: (selectedItem as any).total_shards,
+            _source: (selectedItem as any).source,
+            _taskResourceUsages: (selectedItem as any).task_resource_usages,
           };
           return (
             <TaskDetailFlyout
