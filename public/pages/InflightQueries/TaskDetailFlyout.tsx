@@ -270,9 +270,10 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             >
               {(() => {
                 try {
+                  if (typeof querySource === 'object') return JSON.stringify(querySource, null, 2);
                   return JSON.stringify(JSON.parse(querySource), null, 2);
                 } catch {
-                  return querySource;
+                  return String(querySource);
                 }
               })()}
             </EuiCodeBlock>
