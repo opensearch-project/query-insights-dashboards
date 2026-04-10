@@ -9,6 +9,7 @@ import {
   EuiButtonEmpty,
   EuiCodeBlock,
   EuiDescriptionList,
+  EuiBadge,
   EuiFlyout,
   EuiFlyoutBody,
   EuiFlyoutHeader,
@@ -17,6 +18,7 @@ import {
   EuiFlexItem,
   EuiHorizontalRule,
   EuiInMemoryTable,
+  EuiPanel,
   EuiSpacer,
   EuiTitle,
 } from '@elastic/eui';
@@ -141,142 +143,176 @@ export const TaskDetailFlyout: React.FC<Props> = ({
       </EuiFlyoutHeader>
       <EuiFlyoutBody>
         {/* Task Summary */}
-        <EuiTitle size="s">
-          <h3>Task Summary</h3>
-        </EuiTitle>
-        <EuiHorizontalRule margin="xs" />
-        <EuiFlexGrid columns={3}>
-          <PanelItem label="Status" value={isFinished ? task.status : task.status} />
-          <PanelItem label="Start Time" value={convertTime(task.start_time)} />
-          {isFinished && endTime > 0 && <PanelItem label="End Time" value={convertTime(endTime)} />}
-          <PanelItem label="Coordinator Node" value={coordinatorNode} />
-          <PanelItem label="Search Type" value={searchType} />
-          <PanelItem label="Indices" value={indices} />
-          {(task as any)._topNId && <PanelItem label="Top N ID" value={(task as any)._topNId} />}
-          {task.wlm_group_id && <PanelItem label="WLM Group" value={task.wlm_group_id} />}
-          <PanelItem label="Time Elapsed" value={`${task.total_latency_millis} ms`} />
-          <PanelItem label="CPU Usage" value={formatCpu(task.total_cpu_nanos)} />
-          <PanelItem label="Memory Usage" value={formatMem(task.total_memory_bytes)} />
-          {totalShards != null && <PanelItem label="Total Shards" value={totalShards} />}
-        </EuiFlexGrid>
+        <EuiPanel>
+          <EuiTitle size="s">
+            <h3>Task Summary</h3>
+          </EuiTitle>
+          <EuiHorizontalRule margin="xs" />
+          <EuiFlexGrid columns={3}>
+            <EuiFlexItem>
+              <EuiDescriptionList
+                compressed
+                listItems={[
+                  {
+                    title: <h4>Status</h4>,
+                    description: (
+                      <EuiBadge
+                        color={
+                          task.status === 'failed' || task.status === 'cancelled'
+                            ? 'danger'
+                            : task.status === 'completed'
+                            ? 'success'
+                            : 'primary'
+                        }
+                      >
+                        {task.status}
+                      </EuiBadge>
+                    ),
+                  },
+                ]}
+              />
+            </EuiFlexItem>
+            <PanelItem label="Start Time" value={convertTime(task.start_time)} />
+            {isFinished && endTime > 0 && (
+              <PanelItem label="End Time" value={convertTime(endTime)} />
+            )}
+            <PanelItem label="Coordinator Node" value={coordinatorNode} />
+            <PanelItem label="Search Type" value={searchType} />
+            <PanelItem label="Indices" value={indices} />
+            {(task as any)._topNId && <PanelItem label="Top N ID" value={(task as any)._topNId} />}
+            {task.wlm_group_id && <PanelItem label="WLM Group" value={task.wlm_group_id} />}
+            <PanelItem label="Time Elapsed" value={`${task.total_latency_millis} ms`} />
+            <PanelItem label="CPU Usage" value={formatCpu(task.total_cpu_nanos)} />
+            <PanelItem label="Memory Usage" value={formatMem(task.total_memory_bytes)} />
+            {totalShards != null && <PanelItem label="Total Shards" value={totalShards} />}
+          </EuiFlexGrid>
+        </EuiPanel>
 
-        <EuiSpacer size="l" />
+        <EuiSpacer size="m" />
 
         {/* Task Resource Usage */}
-        <EuiTitle size="s">
-          <h3>Task Resource Usage</h3>
-        </EuiTitle>
-        <EuiHorizontalRule margin="xs" />
+        <EuiPanel>
+          <EuiTitle size="s">
+            <h3>Task Resource Usage</h3>
+          </EuiTitle>
+          <EuiHorizontalRule margin="xs" />
 
-        {coord && (
-          <>
-            <EuiTitle size="xs">
-              <h4>Coordinator Task</h4>
-            </EuiTitle>
-            <EuiFlexGrid columns={4}>
-              <PanelItem label="Task ID" value={coord.task_id} />
-              <PanelItem label="Node ID" value={coord.node_id} />
-              <PanelItem label="CPU Time (ms)" value={(coord.cpu_nanos / 1e6).toFixed(2)} />
-              <PanelItem label="Memory (bytes)" value={coord.memory_bytes} />
-            </EuiFlexGrid>
-            <EuiSpacer size="m" />
-          </>
-        )}
+          {coord && (
+            <>
+              <EuiTitle size="xs">
+                <h4>Coordinator Task</h4>
+              </EuiTitle>
+              <EuiFlexGrid columns={4}>
+                <PanelItem label="Task ID" value={coord.task_id} />
+                <PanelItem label="Node ID" value={coord.node_id} />
+                <PanelItem label="CPU Time (ms)" value={(coord.cpu_nanos / 1e6).toFixed(2)} />
+                <PanelItem label="Memory (bytes)" value={coord.memory_bytes} />
+              </EuiFlexGrid>
+              <EuiSpacer size="m" />
+            </>
+          )}
 
-        {task.shard_tasks.length > 0 && (
-          <>
-            <EuiTitle size="xs">
-              <h4>Shard Tasks</h4>
-            </EuiTitle>
-            <EuiHorizontalRule margin="xs" />
-            <EuiInMemoryTable
-              items={task.shard_tasks}
-              columns={shardColumns}
-              itemId="task_id"
-              pagination={{ initialPageSize: 10, showPerPageOptions: false }}
-            />
-          </>
-        )}
+          {task.shard_tasks.length > 0 && (
+            <>
+              <EuiTitle size="xs">
+                <h4>Shard Tasks</h4>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiInMemoryTable
+                items={task.shard_tasks}
+                columns={shardColumns}
+                itemId="task_id"
+                pagination={{ initialPageSize: 10, showPerPageOptions: false }}
+              />
+            </>
+          )}
 
-        {task.shard_tasks.length === 0 && !taskResourceUsages?.length && (
-          <p>No active shard tasks at this moment. Refresh to update.</p>
-        )}
+          {task.shard_tasks.length === 0 && !taskResourceUsages?.length && (
+            <p>No active shard tasks at this moment. Refresh to update.</p>
+          )}
 
-        {/* Finished query task resource usages (old format) */}
-        {taskResourceUsages?.length > 0 && task.shard_tasks.length === 0 && (
-          <>
-            <EuiTitle size="xs">
-              <h4>Coordinator Task</h4>
-            </EuiTitle>
-            <EuiHorizontalRule margin="xs" />
-            {taskResourceUsages
-              .filter((t: any) => t.parentTaskId === -1)
-              .map((t: any) => (
-                <EuiFlexGrid columns={4} key={t.taskId}>
-                  <PanelItem label="Task ID" value={t.taskId} />
-                  <PanelItem label="Node ID" value={t.nodeId} />
-                  <PanelItem
-                    label="CPU Time (ms)"
-                    value={(t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2)}
-                  />
-                  <PanelItem label="Memory (bytes)" value={t.taskResourceUsage.memory_in_bytes} />
-                </EuiFlexGrid>
-              ))}
-            <EuiSpacer size="m" />
-            <EuiTitle size="xs">
-              <h4>Shard Tasks</h4>
-            </EuiTitle>
-            <EuiHorizontalRule margin="xs" />
-            <EuiInMemoryTable
-              items={taskResourceUsages.filter((t: any) => t.parentTaskId !== -1)}
-              columns={[
-                { field: 'taskId', name: 'Task ID' },
-                { field: 'nodeId', name: 'Node ID', truncateText: true },
-                {
-                  field: 'action',
-                  name: 'Phase',
-                  render: (action: string) => {
-                    const m = action.match(/\[([^\]]+)\]/);
-                    const raw = m ? m[1].replace('phase/', '') : action;
-                    return PHASE_DISPLAY[raw] ?? raw;
+          {/* Finished query task resource usages (old format) */}
+          {taskResourceUsages?.length > 0 && task.shard_tasks.length === 0 && (
+            <>
+              <EuiTitle size="xs">
+                <h4>Coordinator Task</h4>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              {taskResourceUsages
+                .filter((t: any) => t.parentTaskId === -1)
+                .map((t: any) => (
+                  <EuiFlexGrid columns={4} key={t.taskId}>
+                    <PanelItem label="Task ID" value={t.taskId} />
+                    <PanelItem label="Node ID" value={t.nodeId} />
+                    <PanelItem
+                      label="CPU Time (ms)"
+                      value={(t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2)}
+                    />
+                    <PanelItem label="Memory (bytes)" value={t.taskResourceUsage.memory_in_bytes} />
+                  </EuiFlexGrid>
+                ))}
+              <EuiSpacer size="m" />
+              <EuiTitle size="xs">
+                <h4>Shard Tasks</h4>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiInMemoryTable
+                items={taskResourceUsages.filter((t: any) => t.parentTaskId !== -1)}
+                columns={[
+                  { field: 'taskId', name: 'Task ID' },
+                  { field: 'nodeId', name: 'Node ID', truncateText: true },
+                  {
+                    field: 'action',
+                    name: 'Phase',
+                    render: (action: string) => {
+                      const m = action.match(/\[([^\]]+)\]/);
+                      const raw = m ? m[1].replace('phase/', '') : action;
+                      return PHASE_DISPLAY[raw] ?? raw;
+                    },
                   },
-                },
-                {
-                  name: 'CPU Time (ms)',
-                  render: (t: any) => (t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2),
-                },
-                { name: 'Memory (bytes)', render: (t: any) => t.taskResourceUsage.memory_in_bytes },
-              ]}
-              itemId="taskId"
-              pagination={{ initialPageSize: 10, showPerPageOptions: false }}
-            />
-          </>
-        )}
+                  {
+                    name: 'CPU Time (ms)',
+                    render: (t: any) => (t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2),
+                  },
+                  {
+                    name: 'Memory (bytes)',
+                    render: (t: any) => t.taskResourceUsage.memory_in_bytes,
+                  },
+                ]}
+                itemId="taskId"
+                pagination={{ initialPageSize: 10, showPerPageOptions: false }}
+              />
+            </>
+          )}
+        </EuiPanel>
 
         {/* Query Source */}
         {querySource && (
           <>
-            <EuiSpacer size="l" />
-            <EuiTitle size="s">
-              <h3>Query Source</h3>
-            </EuiTitle>
-            <EuiHorizontalRule margin="xs" />
-            <EuiCodeBlock
-              language="json"
-              paddingSize="m"
-              fontSize="s"
-              overflowHeight={400}
-              isCopyable
-            >
-              {(() => {
-                try {
-                  if (typeof querySource === 'object') return JSON.stringify(querySource, null, 2);
-                  return JSON.stringify(JSON.parse(querySource), null, 2);
-                } catch {
-                  return String(querySource);
-                }
-              })()}
-            </EuiCodeBlock>
+            <EuiSpacer size="m" />
+            <EuiPanel>
+              <EuiTitle size="s">
+                <h3>Query Source</h3>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiCodeBlock
+                language="json"
+                paddingSize="m"
+                fontSize="s"
+                overflowHeight={400}
+                isCopyable
+              >
+                {(() => {
+                  try {
+                    if (typeof querySource === 'object')
+                      return JSON.stringify(querySource, null, 2);
+                    return JSON.stringify(JSON.parse(querySource), null, 2);
+                  } catch {
+                    return String(querySource);
+                  }
+                })()}
+              </EuiCodeBlock>
+            </EuiPanel>
           </>
         )}
       </EuiFlyoutBody>
