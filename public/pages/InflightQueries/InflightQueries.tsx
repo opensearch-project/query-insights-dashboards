@@ -98,6 +98,7 @@ export const InflightQueries = ({
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [showFinishedQueries, setShowFinishedQueries] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
@@ -269,7 +270,12 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId);
+      const retrieved = await retrieveLiveQueries(
+        core,
+        dataSource?.id,
+        wlmGroupId,
+        showFinishedQueries
+      );
 
       if (retrieved?.response?.live_queries) {
         const mapFromOptions: Record<string, string> = Object.fromEntries(
@@ -314,6 +320,40 @@ export const InflightQueries = ({
 
         setQuery({ ...retrieved, response: { live_queries: parsed } });
 
+        // Merge finished queries if available
+        const finishedQueries = (retrieved.response as any).finished_queries || [];
+        if (showFinishedQueries && finishedQueries.length > 0) {
+          const finishedRows: LiveQueryRow[] = finishedQueries.map((fq: any) => {
+            const wlmDisplay =
+              typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
+                ? idToName[fq.wlm_group_id] ?? fq.wlm_group_id
+                : 'N/A';
+            return {
+              ...fq,
+              id: fq.id,
+              timestamp: fq.timestamp,
+              node_id: fq.node_id || '-',
+              description: '',
+              is_cancelled: fq.failed || false,
+              measurements: fq.measurements || {
+                latency: { number: 0 },
+                cpu: { number: 0 },
+                memory: { number: 0 },
+              },
+              index: fq.indices?.join(', ') || '-',
+              search_type: fq.search_type || '-',
+              coordinator_node: fq.node_id || '-',
+              node_label: fq.node_id || '-',
+              wlm_group: wlmDisplay,
+              _finished: true,
+              _topNId: fq.top_n_id,
+              _status: fq.status || (fq.failed ? 'Failed' : 'Completed'),
+            };
+          });
+          const allRows = [...parsed, ...finishedRows];
+          setQuery({ ...retrieved, response: { live_queries: allRows } });
+        }
+
         parsed.forEach((liveQuery) => {
           const nodeId = liveQuery.node_id;
           tempNodeCount[nodeId] = (tempNodeCount[nodeId] || 0) + 1;
@@ -345,7 +385,7 @@ export const InflightQueries = ({
       }
     },
     // deps for react-hooks/exhaustive-deps
-    [core, dataSource?.id, wlmGroupId, wlmGroupOptions]
+    [core, dataSource?.id, wlmGroupId, wlmGroupOptions, showFinishedQueries]
   );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -578,6 +618,14 @@ export const InflightQueries = ({
         {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>
           <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+            <EuiFlexItem grow={false}>
+              <EuiSwitch
+                label="Show finished queries"
+                checked={showFinishedQueries}
+                onChange={(e) => setShowFinishedQueries(e.target.checked)}
+                data-test-subj="live-queries-show-finished-toggle"
+              />
+            </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiSwitch
                 label="Auto-refresh"
@@ -985,13 +1033,32 @@ export const InflightQueries = ({
             {
               field: 'id',
               name: 'Task ID',
-              render: (id: string) => (
-                <EuiLink
-                  onClick={() => history.push(`/task-detail?taskId=${encodeURIComponent(id)}`)}
-                >
-                  {id}
-                </EuiLink>
-              ),
+              render: (id: string, item: any) => {
+                if (item._finished && item._topNId) {
+                  const now = new Date().toISOString();
+                  const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+                  return (
+                    <EuiLink
+                      onClick={() =>
+                        history.push(
+                          `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+                            now
+                          )}&id=${encodeURIComponent(item._topNId)}&verbose=true`
+                        )
+                      }
+                    >
+                      {id}
+                    </EuiLink>
+                  );
+                }
+                return (
+                  <EuiLink
+                    onClick={() => history.push(`/task-detail?taskId=${encodeURIComponent(id)}`)}
+                  >
+                    {id}
+                  </EuiLink>
+                );
+              },
             },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
@@ -1012,7 +1079,15 @@ export const InflightQueries = ({
             {
               name: 'Status',
               render: (item) =>
-                item.is_cancelled === true ? (
+                (item as any)._finished ? (
+                  <EuiBadge
+                    color={
+                      item.is_cancelled || (item as any)._status === 'Failed' ? 'danger' : 'success'
+                    }
+                  >
+                    {(item as any)._status || 'Completed'}
+                  </EuiBadge>
+                ) : item.is_cancelled === true ? (
                   <EuiText color="danger">
                     <b>Cancelled</b>
                   </EuiText>
