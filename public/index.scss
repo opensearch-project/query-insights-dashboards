@@ -1,1 +1,12 @@
 /* stylelint-disable no-empty-source */
+
+.conApp__editorActionButton {
+  padding: 0 $euiSizeXS;
+  appearance: none;
+  border: none;
+  background: none;
+}
+
+.conApp__editorActionButton--success {
+  color: $euiColorSuccess;
+}

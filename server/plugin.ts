@@ -71,7 +71,7 @@ export class QueryInsightsDashboardsPlugin
     });
 
     // Register server side APIs
-    defineRoutes(router, dataSourceEnabled);
+    defineRoutes(router, dataSourceEnabled, this.logger);
     defineWlmRoutes(router, dataSourceEnabled);
 
     return {};

@@ -155,14 +155,19 @@ export const QueryInsightsPlugin = function (Client, config, components) {
 
   queryInsights.getSettings = ca({
     url: {
-      fmt: `_cluster/settings?include_defaults=true`,
+      fmt: `/_cluster/settings`,
+      params: {
+        include_defaults: {
+          type: 'boolean',
+        },
+      },
     },
     method: 'GET',
   });
 
   queryInsights.setSettings = ca({
     url: {
-      fmt: `_cluster/settings`,
+      fmt: `/_cluster/settings`,
     },
     method: 'PUT',
     needBody: true,
