@@ -265,7 +265,7 @@ const QueryInsights = ({
         } else {
           setWlmAvailable(false);
         }
-      } catch (e) {
+      } catch (_e) {
         setQueryInsightWlmNavigationSupported(false);
         setWlmAvailable(false);
       }
