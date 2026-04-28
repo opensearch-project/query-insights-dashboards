@@ -76,8 +76,8 @@ const ImportFlyout: React.FC<{
         if (importType === 'query') onImportQuery(content);
         else onImportResult(content);
         onClose();
-      } catch (_err) {
-        setError('Failed to read file');
+      } catch (err) {
+        setError(`Failed to read file: ${err}`);
       }
     };
     reader.onerror = () => setError('Failed to read file');
