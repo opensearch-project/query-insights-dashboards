@@ -4,10 +4,10 @@
  */
 
 import { schema } from '@osd/config-schema';
-import { IRouter } from '../../../../src/core/server';
+import { IRouter, Logger } from '../../../../src/core/server';
 import { EXPORTER_TYPE } from '../../common/constants';
 
-export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
+export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger: Logger) {
   router.get(
     {
       path: '/api/top_queries',
@@ -239,7 +239,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
-          const res = await client('queryInsights.getSettings');
+          const res = await client('queryInsights.getSettings', { include_defaults: true });
           return response.ok({
             body: {
               ok: true,
@@ -250,7 +250,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
-          const res = await client.callAPI('queryInsights.getSettings', {});
+          const res = await client.callAPI('queryInsights.getSettings', { include_defaults: true });
           return response.ok({
             body: {
               ok: true,
@@ -460,6 +460,80 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean) {
             ok: false,
             error: error.message,
           },
+        });
+      }
+    }
+  );
+
+  router.post(
+    {
+      path: '/api/profiler-proxy',
+      validate: {
+        body: schema.object({
+          method: schema.string({ defaultValue: 'GET' }),
+          path: schema.string({ defaultValue: '_search' }),
+          body: schema.maybe(schema.string()),
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const { method, path, body, dataSourceId } = request.body;
+
+        const ALLOWED_METHODS = ['GET', 'POST'];
+        const normalizedMethod = (method || 'GET').toUpperCase();
+        if (!ALLOWED_METHODS.includes(normalizedMethod)) {
+          return response.badRequest({ body: 'Invalid HTTP method' });
+        }
+        if (!path || path.includes('..') || !path.split('?')[0].endsWith('_search')) {
+          return response.badRequest({ body: 'Only _search paths are allowed' });
+        }
+
+        let parsedBody;
+        if (body) {
+          try {
+            parsedBody = JSON.parse(body);
+          } catch (e) {
+            return response.badRequest({ body: 'Invalid JSON body' });
+          }
+        }
+
+        // OpenSearch supports POST for _search; use POST when body is present to avoid GET-with-body errors
+        const effectiveMethod = parsedBody !== undefined ? 'POST' : normalizedMethod;
+        const effectivePath = path.startsWith('/') ? path : `/${path}`;
+
+        let result;
+
+        if (!dataSourceEnabled || !dataSourceId) {
+          const esClient = context.core.opensearch.client.asCurrentUser;
+          const res = await esClient.transport.request({
+            method: effectiveMethod,
+            path: effectivePath,
+            body: parsedBody,
+          });
+          result = res.body;
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(dataSourceId);
+          result = await client.callAPI('transport.request', {
+            method: effectiveMethod,
+            path: effectivePath,
+            body: parsedBody ? JSON.stringify(parsedBody) : undefined,
+          });
+        }
+
+        return response.ok({ body: JSON.stringify(result, null, 2) });
+      } catch (error) {
+        logger.error(`Profiler proxy error: ${error.message}`);
+        // Extract meaningful message from OpenSearch/DataSource error
+        const cause = error.body || error.meta?.body;
+        const osError = cause?.error;
+        const message = osError
+          ? `[${osError.type}] ${osError.reason}`
+          : error.message || 'An error occurred while processing the request';
+        return response.customError({
+          statusCode: error.statusCode || 500,
+          body: { message },
         });
       }
     }

@@ -6,7 +6,9 @@
   "ui": true,
   "requiredPlugins": [
     "navigation",
-    "opensearchDashboardsUtils"
+    "opensearchDashboardsUtils",
+    "devTools",
+    "opensearchDashboardsReact"
   ],
   "optionalPlugins": [
     "dataSource",

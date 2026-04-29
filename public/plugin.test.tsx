@@ -40,7 +40,8 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should register the application in setup', () => {
-    plugin.setup(coreSetupMock, {} as any);
+    const devToolsMock = { register: jest.fn() };
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(registerMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -56,10 +57,18 @@ describe('QueryInsightsDashboardsPlugin', () => {
         description: expect.any(String),
       })
     );
+
+    expect(devToolsMock.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'queryProfiler',
+        title: 'Query Profiler',
+      })
+    );
   });
 
   it('should mount the application correctly', async () => {
-    plugin.setup(coreSetupMock, {} as any);
+    const devToolsMock = { register: jest.fn() };
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     const appRegistration = registerMock.mock.calls[0][0];
     expect(appRegistration).toBeDefined();
@@ -83,7 +92,8 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers WLM when enabled', () => {
-    plugin.setup(coreSetupMock, {} as any);
+    const devToolsMock = { register: jest.fn() };
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(registerMock).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'workloadManagement' })
@@ -91,9 +101,10 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('does NOT register WLM when disabled', () => {
+    const devToolsMock = { register: jest.fn() };
     // override the mocked export for this test
     (WLM_CONFIG as any).enabled = false;
-    plugin.setup(coreSetupMock, {} as any);
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(registerMock).not.toHaveBeenCalledWith(
       expect.objectContaining({ id: 'workloadManagement' })
@@ -101,8 +112,9 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers only Query Insights when WLM disabled', () => {
+    const devToolsMock = { register: jest.fn() };
     (WLM_CONFIG as any).enabled = false;
-    plugin.setup(coreSetupMock, {} as any);
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     const calls = registerMock.mock.calls.map(([app]: any) => ({
       id: app.id,
@@ -114,8 +126,9 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers Query Insights and Workload Management when WLM enabled', () => {
+    const devToolsMock = { register: jest.fn() };
     (WLM_CONFIG as any).enabled = true;
-    plugin.setup(coreSetupMock, {} as any);
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     const calls = registerMock.mock.calls.map(([app]: any) => ({
       id: app.id,
@@ -130,7 +143,8 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should add navigation links to group', () => {
-    plugin.setup(coreSetupMock, {} as any);
+    const devToolsMock = { register: jest.fn() };
+    plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(addNavLinksToGroupMock).toHaveBeenCalledWith(DEFAULT_NAV_GROUPS.dataAdministration, [
       {
