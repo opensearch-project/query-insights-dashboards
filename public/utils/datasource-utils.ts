@@ -63,7 +63,7 @@ export function getDataSourceFromUrl(): DataSourceOption {
   // following block is needed if the dataSource param is set to non-JSON value, say 'undefined'
   try {
     return JSON.parse(dataSourceParam);
-  } catch (e) {
+  } catch (_e) {
     return JSON.parse('{}'); // Return an empty object or some default value if parsing fails
   }
 }

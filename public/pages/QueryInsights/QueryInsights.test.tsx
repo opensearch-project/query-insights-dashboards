@@ -282,7 +282,7 @@ describe('QueryInsights Component', () => {
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       });
-    } catch (error) {
+    } catch (_error) {
       console.log('Skipping filter test - Type filter not available');
     }
   });
@@ -313,7 +313,7 @@ describe('QueryInsights Component', () => {
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       });
-    } catch (error) {
+    } catch (_error) {
       console.log('Skipping filter test - Type filter not available');
     }
   });
@@ -346,7 +346,7 @@ describe('QueryInsights Component', () => {
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       });
-    } catch (error) {
+    } catch (_error) {
       console.log('Skipping filter test - Type filter not available');
     }
   });
