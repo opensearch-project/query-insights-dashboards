@@ -35,10 +35,11 @@ import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
   DEFAULT_REFRESH_INTERVAL,
   TOP_N_DISPLAY_LIMIT,
@@ -98,11 +99,14 @@ export const InflightQueries = ({
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [showFinishedQueries, setShowFinishedQueries] = useState(true);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
   const location = useLocation();
+  const history = useHistory();
   const urlSearchParams = new URLSearchParams(location.search);
   const initialWlmGroup = urlSearchParams.get(WLM_GROUP_ID_PARAM) || '';
 
@@ -164,11 +168,17 @@ export const InflightQueries = ({
     checkWlmSupport();
   }, [detectWlm, dataSource?.id]);
 
-  const [workloadGroupStats, setWorkloadGroupStats] = useState<{
+  const [_workloadGroupStats, setWorkloadGroupStats] = useState<{
     total_completions: number;
     total_cancellations: number;
     total_rejections: number;
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+
+  const [finishedQueryStats, setFinishedQueryStats] = useState<{
+    total_completions: number;
+    total_cancellations: number;
+    total_failures: number;
+  }>({ total_completions: 0, total_cancellations: 0, total_failures: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
@@ -268,7 +278,12 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId);
+      const retrieved = await retrieveLiveQueries(
+        core,
+        dataSource?.id,
+        wlmGroupId,
+        showFinishedQueries
+      );
 
       if (retrieved?.response?.live_queries) {
         const mapFromOptions: Record<string, string> = Object.fromEntries(
@@ -280,25 +295,94 @@ export const InflightQueries = ({
         const indexCount: Record<string, number> = {};
 
         const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
-          const indexMatch = q.description?.match(/indices\[(.*?)\]/);
-          const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+          const desc = (q as any).coordinator_task?.description || (q as any).description || '';
+          const indexMatch = desc.match(/indices\[(.*?)\]/);
+          const searchTypeMatch = desc.match(/search_type\[(.*?)\]/);
+          const nodeId = (q as any).coordinator_task?.node_id || (q as any).node_id || '';
 
           const wlmDisplay =
             typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
               ? idToName[q.wlm_group_id] ?? q.wlm_group_id
               : 'N/A';
 
+          // Normalize measurements for both old and new API formats
+          const measurements = (q as any).measurements || {
+            latency: { number: ((q as any).total_latency_millis || 0) * 1e6 },
+            cpu: { number: (q as any).total_cpu_nanos || 0 },
+            memory: { number: (q as any).total_memory_bytes || 0 },
+          };
+
           return {
             ...q,
+            timestamp: (q as any).timestamp || (q as any).start_time,
+            description: desc,
+            node_id: nodeId,
+            measurements,
+            is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
             index: indexMatch ? indexMatch[1] : 'N/A',
-            search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
-            coordinator_node: q.node_id,
-            node_label: q.node_id,
+            search_type: searchTypeMatch
+              ? searchTypeMatch[1].replace(/_/g, ' ')
+              : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
+            coordinator_node: nodeId,
+            node_label: nodeId,
             wlm_group: wlmDisplay,
           };
         });
 
         setQuery({ ...retrieved, response: { live_queries: parsed } });
+
+        // Merge finished queries if available
+        const finishedQueries = (retrieved.response as any).finished_queries || [];
+        if (showFinishedQueries && finishedQueries.length > 0) {
+          let completions = 0;
+          let cancellations = 0;
+          let failures = 0;
+          const finishedRows: LiveQueryRow[] = finishedQueries.map((fq: any) => {
+            const wlmDisplay =
+              typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
+                ? idToName[fq.wlm_group_id] ?? fq.wlm_group_id
+                : 'N/A';
+            const status = fq.status || (fq.failed ? 'Failed' : 'Completed');
+            const lowerStatus = status.toLowerCase();
+            if (lowerStatus === 'failed') failures++;
+            else if (lowerStatus === 'cancelled') cancellations++;
+            else completions++;
+            return {
+              ...fq,
+              id: fq.id,
+              timestamp: fq.timestamp,
+              node_id: fq.node_id || '-',
+              description: '',
+              is_cancelled: fq.failed || false,
+              measurements: fq.measurements || {
+                latency: { number: 0 },
+                cpu: { number: 0 },
+                memory: { number: 0 },
+              },
+              index: fq.indices?.join(', ') || '-',
+              search_type: fq.search_type || '-',
+              coordinator_node: fq.node_id || '-',
+              node_label: fq.node_id || '-',
+              wlm_group: wlmDisplay,
+              _finished: true,
+              _topNId: fq.top_n_id,
+              _status: status,
+            };
+          });
+          setFinishedQueryStats({
+            total_completions: completions,
+            total_cancellations: cancellations,
+            total_failures: failures,
+          });
+          const allRows = [...parsed, ...finishedRows];
+          setQuery({ ...retrieved, response: { live_queries: allRows } });
+        } else {
+          setFinishedQueryStats({
+            total_completions: 0,
+            total_cancellations: 0,
+            total_failures: 0,
+          });
+        }
 
         parsed.forEach((liveQuery) => {
           const nodeId = liveQuery.node_id;
@@ -331,7 +415,7 @@ export const InflightQueries = ({
       }
     },
     // deps for react-hooks/exhaustive-deps
-    [core, dataSource?.id, wlmGroupId, wlmGroupOptions]
+    [core, dataSource?.id, wlmGroupId, wlmGroupOptions, showFinishedQueries]
   );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -391,6 +475,7 @@ export const InflightQueries = ({
   const [_tableFilters, setTableFilters] = useState([]);
 
   const formatTime = (seconds: number): string => {
+    if (isNaN(seconds) || seconds == null) return '-';
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
 
@@ -433,7 +518,7 @@ export const InflightQueries = ({
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
-    selectable: (item: any) => item.is_cancelled !== true,
+    selectable: (item: any) => item.is_cancelled !== true && !item._finished,
     onSelectionChange: (selected: any[]) => {
       setSelectedItems(selected);
     },
@@ -463,7 +548,11 @@ export const InflightQueries = ({
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
 
-    const queries = query.response.live_queries;
+    const queries = query.response.live_queries.filter(
+      (q) => !(q as any)._finished && !q.is_cancelled
+    );
+
+    if (queries.length === 0) return null;
 
     const activeQueries = queries.length;
     let totalLatency = 0;
@@ -565,6 +654,14 @@ export const InflightQueries = ({
           <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
             <EuiFlexItem grow={false}>
               <EuiSwitch
+                label="Show finished queries"
+                checked={showFinishedQueries}
+                onChange={(e) => setShowFinishedQueries(e.target.checked)}
+                data-test-subj="live-queries-show-finished-toggle"
+              />
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <EuiSwitch
                 label="Auto-refresh"
                 checked={autoRefreshEnabled}
                 onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
@@ -634,7 +731,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Avg. across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Avg. across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -656,7 +753,12 @@ export const InflightQueries = ({
                 </EuiTitle>
                 {metrics?.longestQueryId && (
                   <EuiText size="s">
-                    <p>ID: {metrics.longestQueryId}</p>
+                    <p>
+                      ID:{' '}
+                      <EuiLink onClick={() => setSelectedTaskId(metrics.longestQueryId)}>
+                        {metrics.longestQueryId}
+                      </EuiLink>
+                    </p>
                   </EuiText>
                 )}
               </EuiTextAlign>
@@ -678,7 +780,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -699,7 +801,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -712,7 +814,7 @@ export const InflightQueries = ({
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
-                <p>Queries by Node</p>
+                <p>Active Queries by Node</p>
               </EuiTitle>
               <EuiButtonGroup
                 legend="Chart Type"
@@ -773,7 +875,7 @@ export const InflightQueries = ({
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
-                <p>Queries by Index</p>
+                <p>Active Queries by Index</p>
               </EuiTitle>
               <EuiButtonGroup
                 legend="Chart Type"
@@ -829,9 +931,9 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      {queryInsightWlmNavigationSupported && (
+      {showFinishedQueries && (
         <EuiFlexGroup>
-          {/* WLM Group Stats Panels */}
+          {/* Finished Query Stats Panels */}
           <EuiFlexItem>
             <EuiPanel paddingSize="m">
               <EuiTextAlign textAlign="center">
@@ -839,7 +941,7 @@ export const InflightQueries = ({
                   <p>Total completions</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_completions}</h2>
+                  <h2>{finishedQueryStats.total_completions}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -852,7 +954,7 @@ export const InflightQueries = ({
                   <p>Total cancellations</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_cancellations}</h2>
+                  <h2>{finishedQueryStats.total_cancellations}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -862,10 +964,10 @@ export const InflightQueries = ({
             <EuiPanel paddingSize="m">
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
-                  <p>Total rejections</p>
+                  <p>Total failures</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_rejections}</h2>
+                  <h2>{finishedQueryStats.total_failures}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -967,7 +1069,11 @@ export const InflightQueries = ({
           }}
           columns={[
             { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { field: 'id', name: 'Task ID' },
+            {
+              field: 'id',
+              name: 'Task ID',
+              render: (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>,
+            },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
             {
@@ -987,14 +1093,18 @@ export const InflightQueries = ({
             {
               name: 'Status',
               render: (item) =>
-                item.is_cancelled === true ? (
-                  <EuiText color="danger">
-                    <b>Cancelled</b>
-                  </EuiText>
+                (item as any)._finished ? (
+                  <EuiBadge
+                    color={
+                      item.is_cancelled || (item as any)._status === 'Failed' ? 'danger' : 'success'
+                    }
+                  >
+                    {(item as any)._status || 'Completed'}
+                  </EuiBadge>
+                ) : item.is_cancelled === true ? (
+                  <EuiBadge color="danger">Cancelled</EuiBadge>
                 ) : (
-                  <EuiText style={{ color: '#0073e6' }}>
-                    <b>Running</b>
-                  </EuiText>
+                  <EuiBadge color="primary">Running</EuiBadge>
                 ),
             },
 
@@ -1043,7 +1153,7 @@ export const InflightQueries = ({
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.is_cancelled !== true,
+                  available: (item) => item.is_cancelled !== true && !(item as any)._finished,
                   onClick: async (item) => {
                     try {
                       const httpClient = dataSource?.id
@@ -1074,6 +1184,73 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
+
+      {/* Task Detail Flyout */}
+      {selectedTaskId &&
+        (() => {
+          const flyoutQueries = query?.response?.live_queries || [];
+          const selectedItem = flyoutQueries.find((q) => q.id === selectedTaskId);
+          if (!selectedItem) return null;
+          // Build a RichLiveQueryRecord-compatible object from the row
+          const richTask = {
+            id: selectedItem.id,
+            status: (selectedItem as any)._finished
+              ? (selectedItem as any)._status || 'completed'
+              : selectedItem.is_cancelled
+              ? 'cancelled'
+              : 'running',
+            start_time: selectedItem.timestamp || (selectedItem as any).start_time,
+            wlm_group_id: selectedItem.wlm_group_id,
+            total_latency_millis: (selectedItem.measurements?.latency?.number || 0) / 1e6,
+            total_cpu_nanos: selectedItem.measurements?.cpu?.number || 0,
+            total_memory_bytes: selectedItem.measurements?.memory?.number || 0,
+            coordinator_task: (selectedItem as any).coordinator_task || null,
+            shard_tasks: (selectedItem as any).shard_tasks || [],
+            _topNId: (selectedItem as any)._topNId,
+            // Direct fields for finished queries
+            _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
+            _searchType: (selectedItem as any).search_type || selectedItem.search_type,
+            _nodeId: (selectedItem as any).node_id || selectedItem.coordinator_node,
+            _totalShards: (selectedItem as any).total_shards,
+            _source: (selectedItem as any).source,
+            _taskResourceUsages: (selectedItem as any).task_resource_usages,
+          };
+          return (
+            <TaskDetailFlyout
+              task={richTask as any}
+              onClose={() => setSelectedTaskId(null)}
+              onRefresh={async () => {
+                await fetchLiveQueries();
+              }}
+              onKillQuery={
+                richTask.status === 'running'
+                  ? async () => {
+                      try {
+                        await core.http.post(API_ENDPOINTS.CANCEL_TASK(selectedTaskId));
+                        await fetchLiveQueries();
+                      } catch (e) {
+                        console.error('Failed to cancel task:', e);
+                      }
+                    }
+                  : undefined
+              }
+              onViewTopN={
+                richTask._topNId || richTask.status !== 'running'
+                  ? (_topNId) => {
+                      const id = richTask._topNId || selectedTaskId;
+                      const now = new Date().toISOString();
+                      const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+                      history.push(
+                        `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+                          now
+                        )}&id=${encodeURIComponent(id)}&verbose=true`
+                      );
+                    }
+                  : undefined
+              }
+            />
+          );
+        })()}
     </div>
   );
 };

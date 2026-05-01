@@ -72,6 +72,38 @@ export interface QueryInsightsSettingsResponse {
   exporter?: ExporterSettingsResponse;
 }
 
+// --- New rich live query types matching backend LiveQueryRecord ---
+export interface TaskDetailRecord {
+  task_id: string;
+  node_id: string;
+  action: string;
+  status: string;
+  description?: string;
+  start_time: number;
+  running_time_nanos: number;
+  cpu_nanos: number;
+  memory_bytes: number;
+}
+
+export interface RichLiveQueryRecord {
+  id: string;
+  status: string;
+  start_time: number;
+  wlm_group_id?: string;
+  total_latency_millis: number;
+  total_cpu_nanos: number;
+  total_memory_bytes: number;
+  coordinator_task?: TaskDetailRecord;
+  shard_tasks: TaskDetailRecord[];
+}
+
+// Finished query record — extends SearchQueryRecord with top_n_id and status
+export interface FinishedQueryRecord extends SearchQueryRecord {
+  top_n_id?: string;
+  status?: string;
+}
+
+// Legacy type kept for backward compatibility
 export interface LiveSearchQueryRecord {
   timestamp: number;
   id: string;
@@ -83,12 +115,15 @@ export interface LiveSearchQueryRecord {
   };
   node_id: string;
   is_cancelled: boolean;
-  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
+  wlm_group_id?: string;
+}
+
+export interface LiveQueriesApiResponse {
+  live_queries: RichLiveQueryRecord[];
+  finished_queries?: FinishedQueryRecord[];
 }
 
 export interface LiveSearchQueryResponse {
   ok: boolean;
-  response: {
-    live_queries: LiveSearchQueryRecord[];
-  };
+  response: LiveQueriesApiResponse;
 }

@@ -90,6 +90,70 @@ exports[`InflightQueries matches snapshot 1`] = `
                 aria-checked="true"
                 aria-labelledby="random_html_id"
                 class="euiSwitch__button"
+                data-test-subj="live-queries-show-finished-toggle"
+                id="random_html_id"
+                role="switch"
+                type="button"
+              >
+                <span
+                  class="euiSwitch__body"
+                >
+                  <span
+                    class="euiSwitch__thumb"
+                  />
+                  <span
+                    class="euiSwitch__track"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon-isLoaded euiSwitch__icon"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M7.293 8 3.146 3.854a.5.5 0 1 1 .708-.708L8 7.293l4.146-4.147a.5.5 0 0 1 .708.708L8.707 8l4.147 4.146a.5.5 0 0 1-.708.708L8 8.707l-4.146 4.147a.5.5 0 0 1-.708-.708L7.293 8Z"
+                      />
+                    </svg>
+                    <svg
+                      aria-hidden="true"
+                      class="euiIcon euiIcon--medium euiIcon-isLoaded euiSwitch__icon euiSwitch__icon--checked"
+                      focusable="false"
+                      height="16"
+                      role="img"
+                      viewBox="0 0 16 16"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M6.5 12a.502.502 0 0 1-.354-.146l-4-4a.502.502 0 0 1 .708-.708L6.5 10.793l6.646-6.647a.502.502 0 0 1 .708.708l-7 7A.502.502 0 0 1 6.5 12"
+                        fill-rule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </span>
+              </button>
+              <span
+                class="euiSwitch__label"
+                id="random_html_id"
+              >
+                Show finished queries
+              </span>
+            </div>
+          </div>
+          <div
+            class="euiFlexItem euiFlexItem--flexGrowZero"
+          >
+            <div
+              class="euiSwitch euiSwitch--primary"
+            >
+              <button
+                aria-checked="true"
+                aria-labelledby="random_html_id"
+                class="euiSwitch__button"
                 data-test-subj="live-queries-autorefresh-toggle"
                 id="random_html_id"
                 role="switch"
@@ -281,7 +345,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  20
+                  7
                 </b>
               </h2>
               <svg
@@ -326,7 +390,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  7.19 s
+                  8.25 s
                 </b>
               </h2>
               <div
@@ -334,8 +398,8 @@ exports[`InflightQueries matches snapshot 1`] = `
               >
                 <p>
                   (Avg. across 
-                  20
-                  )
+                  7
+                   active queries)
                 </p>
               </div>
             </div>
@@ -373,8 +437,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                 class="euiText euiText--small"
               >
                 <p>
-                  ID: 
-                  node-A1B2C4E5:3614
+                  ID:
+                   
+                  <button
+                    class="euiLink euiLink--primary"
+                    type="button"
+                  >
+                    node-A1B2C4E5:3614
+                  </button>
                 </p>
               </div>
             </div>
@@ -405,7 +475,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  1.68 ms
+                  576.76 µs
                 </b>
               </h2>
               <div
@@ -413,8 +483,8 @@ exports[`InflightQueries matches snapshot 1`] = `
               >
                 <p>
                   (Sum across 
-                  20
-                  )
+                  7
+                   active queries)
                 </p>
               </div>
             </div>
@@ -445,7 +515,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                 class="euiTitle euiTitle--large"
               >
                 <b>
-                  69.12 KB
+                  23.53 KB
                 </b>
               </h2>
               <div
@@ -453,8 +523,8 @@ exports[`InflightQueries matches snapshot 1`] = `
               >
                 <p>
                   (Sum across 
-                  20
-                  )
+                  7
+                   active queries)
                 </p>
               </div>
             </div>
@@ -477,7 +547,7 @@ exports[`InflightQueries matches snapshot 1`] = `
             <p
               class="euiTitle euiTitle--xsmall"
             >
-              Queries by Node
+              Active Queries by Node
             </p>
             <fieldset
               class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
@@ -747,7 +817,7 @@ exports[`InflightQueries matches snapshot 1`] = `
             <p
               class="euiTitle euiTitle--xsmall"
             >
-              Queries by Index
+              Active Queries by Index
             </p>
             <fieldset
               class="euiButtonGroup euiButtonGroup--small euiButtonGroup--primary"
@@ -958,7 +1028,7 @@ exports[`InflightQueries matches snapshot 1`] = `
               class="euiText euiText--small"
             >
               <p>
-                Total rejections
+                Total failures
               </p>
             </div>
             <h2
@@ -1507,13 +1577,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-A1B2C3D4E5:3600
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -1608,7 +1679,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -1623,17 +1694,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -1728,13 +1803,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         4W2VTHIgQY-oB7dSrYz4B:3601
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -1829,7 +1905,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -1844,17 +1920,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -1948,13 +2028,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-X9Y8Z7W6:3602
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2049,7 +2130,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -2064,14 +2145,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
-                        style="color: rgb(0, 115, 230);"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                        title="Running"
                       >
-                        <b>
-                          Running
-                        </b>
-                      </div>
+                        <span
+                          class="euiBadge__content"
+                        >
+                          <span
+                            class="euiBadge__text"
+                          >
+                            Running
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -2196,13 +2284,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-P0Q9R8S7:3603
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2297,7 +2386,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -2312,14 +2401,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
-                        style="color: rgb(0, 115, 230);"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                        title="Running"
                       >
-                        <b>
-                          Running
-                        </b>
-                      </div>
+                        <span
+                          class="euiBadge__content"
+                        >
+                          <span
+                            class="euiBadge__text"
+                          >
+                            Running
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -2444,13 +2540,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         4W2VTHIgQY-oB7dSrYz4:3604
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2545,7 +2642,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -2560,14 +2657,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
-                        style="color: rgb(0, 115, 230);"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                        title="Running"
                       >
-                        <b>
-                          Running
-                        </b>
-                      </div>
+                        <span
+                          class="euiBadge__content"
+                        >
+                          <span
+                            class="euiBadge__text"
+                          >
+                            Running
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -2693,13 +2797,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-M2O3P4Q5:3605
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -2794,7 +2899,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -2809,17 +2914,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -2914,13 +3023,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-B2C3D4E5:3606
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3015,7 +3125,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -3030,17 +3140,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -3134,13 +3248,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-N2O3P4Q5:3607
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3235,7 +3350,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -3250,14 +3365,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
-                        style="color: rgb(0, 115, 230);"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                        title="Running"
                       >
-                        <b>
-                          Running
-                        </b>
-                      </div>
+                        <span
+                          class="euiBadge__content"
+                        >
+                          <span
+                            class="euiBadge__text"
+                          >
+                            Running
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -3383,13 +3505,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         2VTHIgQY-oB7dSrYz4BQ:3608
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3484,7 +3607,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -3499,17 +3622,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
@@ -3604,13 +3731,14 @@ exports[`InflightQueries matches snapshot 1`] = `
                       Task ID
                     </div>
                     <div
-                      class="euiTableCellContent"
+                      class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <span
-                        class="euiTableCellContent__text"
+                      <button
+                        class="euiLink euiLink--primary"
+                        type="button"
                       >
                         node-X9Y8Z7W6V5:3609
-                      </span>
+                      </button>
                     </div>
                   </td>
                   <td
@@ -3705,7 +3833,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <span
                         class="euiTableCellContent__text"
                       >
-                        QUERY_THEN_FETCH
+                        QUERY THEN FETCH
                       </span>
                     </div>
                   </td>
@@ -3720,17 +3848,21 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <div
                       class="euiTableCellContent euiTableCellContent--overflowingContent"
                     >
-                      <div
-                        class="euiText euiText--medium"
+                      <span
+                        class="euiBadge euiBadge--iconLeft"
+                        style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                        title="Cancelled"
                       >
-                        <div
-                          class="euiTextColor euiTextColor--danger"
+                        <span
+                          class="euiBadge__content"
                         >
-                          <b>
+                          <span
+                            class="euiBadge__text"
+                          >
                             Cancelled
-                          </b>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                      </span>
                     </div>
                   </td>
                   <td
