@@ -651,32 +651,32 @@ describe('Query Insights — Filters and Search', () => {
 
   it('filters by query ID in free-text search', () => {
     // a2e1c822 matches 2 queries in fixture
-    cy.get('.euiFieldSearch').clear().type('a2e1c822');
+    cy.get('.euiFieldSearch').clear({ force: true }).type('a2e1c822');
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
   });
 
   it('filters by index name in free-text search', () => {
     // my-index only appears in one query (group_by: NONE)
-    cy.get('.euiFieldSearch').clear().type('my-index');
+    cy.get('.euiFieldSearch').clear({ force: true }).type('my-index');
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 1);
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('contain', 'my-index');
   });
 
   it('filters by node ID in free-text search', () => {
     // UYKFun8 appears in 2 queries (1 NONE, 1 SIMILARITY) - free-text filters to NONE only
-    cy.get('.euiFieldSearch').clear().type('UYKFun8');
+    cy.get('.euiFieldSearch').clear({ force: true }).type('UYKFun8');
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length', 2);
   });
 
   it('shows no results for non-matching free-text search', () => {
-    cy.get('.euiFieldSearch').clear().type('nonexistent_xyz_123');
+    cy.get('.euiFieldSearch').clear({ force: true }).type('nonexistent_xyz_123');
     cy.get('.euiBasicTable').last().contains('No items found').should('be.visible');
   });
 
   it('combines free-text search with filter selection', () => {
     setTypeFilter('query');
     // .kibana appears in all queries
-    cy.get('.euiFieldSearch').type(' kibana');
+    cy.get('.euiFieldSearch').type(' kibana', { force: true });
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
     cy.get('.euiFieldSearch').should('contain.value', 'group_by');
     cy.get('.euiFieldSearch').should('contain.value', 'kibana');
