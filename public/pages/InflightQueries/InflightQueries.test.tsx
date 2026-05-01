@@ -720,7 +720,11 @@ describe('InflightQueries - additional coverage', () => {
             timestamp: Date.now(),
             node_id: 'node1',
             description: 'indices[idx1] search_type[query_then_fetch]',
-            measurements: { latency: { number: 1e9 }, cpu: { number: 1e6 }, memory: { number: 1024 } },
+            measurements: {
+              latency: { number: 1e9 },
+              cpu: { number: 1e6 },
+              memory: { number: 1024 },
+            },
             is_cancelled: false,
           },
         ],
@@ -732,7 +736,11 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['idx1'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 2e9 }, cpu: { number: 2e6 }, memory: { number: 2048 } },
+            measurements: {
+              latency: { number: 2e9 },
+              cpu: { number: 2e6 },
+              memory: { number: 2048 },
+            },
             task_resource_usages: [],
           },
           {
@@ -743,7 +751,11 @@ describe('InflightQueries - additional coverage', () => {
             failed: true,
             indices: ['idx1'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 3e9 }, cpu: { number: 3e6 }, memory: { number: 3072 } },
+            measurements: {
+              latency: { number: 3e9 },
+              cpu: { number: 3e6 },
+              memory: { number: 3072 },
+            },
             task_resource_usages: [],
           },
         ],
@@ -789,15 +801,21 @@ describe('InflightQueries - additional coverage', () => {
             id: 'task-abc:123',
             timestamp: 1640995200000,
             node_id: 'node1',
-            description: 'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
-            measurements: { latency: { number: 5e9 }, cpu: { number: 1e6 }, memory: { number: 4096 } },
+            description:
+              'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+            measurements: {
+              latency: { number: 5e9 },
+              cpu: { number: 1e6 },
+              memory: { number: 4096 },
+            },
             is_cancelled: false,
             coordinator_task: {
               task_id: 'task-abc:123',
               node_id: 'node1',
               action: 'indices:data/read/search',
               status: 'running',
-              description: 'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+              description:
+                'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
               start_time: 1640995200000,
               running_time_nanos: 5e9,
               cpu_nanos: 1e6,
@@ -874,7 +892,11 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 2e9 }, cpu: { number: 5e6 }, memory: { number: 8192 } },
+            measurements: {
+              latency: { number: 2e9 },
+              cpu: { number: 5e6 },
+              memory: { number: 8192 },
+            },
             task_resource_usages: [],
             top_n_id: 'topn-abc-123',
             source: '{"query":{"match_all":{}}}',
@@ -936,7 +958,8 @@ describe('InflightQueries - additional coverage', () => {
               node_id: 'nodeA',
               action: 'indices:data/read/search',
               status: 'running',
-              description: 'indices[big-test] search_type[dfs_query_then_fetch] source[{"size":10}]',
+              description:
+                'indices[big-test] search_type[dfs_query_then_fetch] source[{"size":10}]',
               start_time: 1640995200000,
               running_time_nanos: 5e8,
               cpu_nanos: 1e8,
@@ -1163,7 +1186,11 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 2e9 }, cpu: { number: 5e6 }, memory: { number: 8192 } },
+            measurements: {
+              latency: { number: 2e9 },
+              cpu: { number: 5e6 },
+              memory: { number: 8192 },
+            },
             task_resource_usages: [
               {
                 taskId: 100,

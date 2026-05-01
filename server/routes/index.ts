@@ -508,8 +508,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         if (body) {
           try {
             parsedBody = JSON.parse(body);
-          } catch (_e) {
-            return response.badRequest({ body: 'Invalid JSON body' });
+          } catch (e) {
+            return response.badRequest({ body: `Invalid JSON body: ${e}` });
           }
         }
 

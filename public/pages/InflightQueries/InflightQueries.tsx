@@ -306,10 +306,17 @@ export const InflightQueries = ({
               : 'N/A';
 
           // Normalize measurements for both old and new API formats
+          // For running queries, top-level totals may be 0 — sum from shard tasks instead
+          const shards = (q as any).shard_tasks || [];
+          const shardCpuTotal = shards.reduce((sum: number, s: any) => sum + (s.cpu_nanos || 0), 0);
+          const shardMemTotal = shards.reduce(
+            (sum: number, s: any) => sum + (s.memory_bytes || 0),
+            0
+          );
           const measurements = (q as any).measurements || {
             latency: { number: ((q as any).total_latency_millis || 0) * 1e6 },
-            cpu: { number: (q as any).total_cpu_nanos || 0 },
-            memory: { number: (q as any).total_memory_bytes || 0 },
+            cpu: { number: (q as any).total_cpu_nanos || shardCpuTotal || 0 },
+            memory: { number: (q as any).total_memory_bytes || shardMemTotal || 0 },
           };
 
           return {
@@ -371,7 +378,7 @@ export const InflightQueries = ({
           });
           setFinishedQueryStats({
             total_completions: completions,
-            total_cancellations: cancellations,
+            total_cancellations: cancellations + parsed.filter((p) => p.is_cancelled).length,
             total_failures: failures,
           });
           const allRows = [...parsed, ...finishedRows];
@@ -379,7 +386,7 @@ export const InflightQueries = ({
         } else {
           setFinishedQueryStats({
             total_completions: 0,
-            total_cancellations: 0,
+            total_cancellations: parsed.filter((p) => p.is_cancelled).length,
             total_failures: 0,
           });
         }

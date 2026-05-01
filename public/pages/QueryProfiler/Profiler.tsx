@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   EuiButton,
   EuiButtonEmpty,
@@ -34,15 +34,16 @@ import {
   EuiSmallButton,
   EuiCompressedFieldNumber,
   EuiCompressedSwitch,
+  EuiPanel,
 } from '@elastic/eui';
 import { createRoot } from 'react-dom/client';
 import ace from 'brace';
-import { AppMountParameters, CoreStart } from '../../../../../src/core/public';
-import { DataSourceManagementPluginSetup } from '../../../../../src/plugins/data_source_management/public';
-import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
-import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { getDataSourceFromUrl } from '../../utils/datasource-utils';
+import { CoreStart } from '../../../../../src/core/public';
 import { OpenSearchDashboardsContextProvider } from '../../../../../src/plugins/opensearch_dashboards_react/public';
+import { ShardTable } from './components/ShardTable';
+import { QueryTree } from './components/QueryTree';
+import { ProfileData, ProcessedQuery } from './types';
+import { DEFAULT_THRESHOLDS } from './constants';
 import 'brace/mode/json';
 import 'brace/theme/textmate';
 
@@ -75,10 +76,11 @@ const ImportFlyout: React.FC<{
         if (importType === 'query') onImportQuery(content);
         else onImportResult(content);
         onClose();
-      } catch (_err) {
-        setError('Failed to read file');
+      } catch (err) {
+        setError(`Failed to read file: ${err}`);
       }
     };
+    reader.onerror = () => setError('Failed to read file');
     reader.readAsText(file);
   };
 
@@ -189,35 +191,6 @@ const SettingsModal: React.FC<{
   );
 };
 
-// Page component — used inside the query-insights app router
-export const ConsoleProfiler: React.FC<{
-  core: CoreStart;
-  depsStart: QueryInsightsDashboardsPluginStartDependencies;
-  params: AppMountParameters;
-  dataSourceManagement?: DataSourceManagementPluginSetup;
-}> = ({ core, depsStart, params, dataSourceManagement }) => {
-  const [dataSource, setDataSource] = useState(getDataSourceFromUrl());
-  const initialQuery = localStorage.getItem('profilerQuery') || undefined;
-  localStorage.removeItem('profilerQuery');
-
-  return (
-    <OpenSearchDashboardsContextProvider services={core}>
-      <QueryInsightsDataSourceMenu
-        coreStart={core}
-        depsStart={depsStart}
-        params={params}
-        dataSourceManagement={dataSourceManagement}
-        setDataSource={setDataSource}
-        selectedDataSource={dataSource}
-        onManageDataSource={() => {}}
-        onSelectedDataSource={() => {}}
-        dataSourcePickerReadOnly={false}
-      />
-      <ProfilerEditor http={core.http} dataSourceId={dataSource?.id} initialQuery={initialQuery} />
-    </OpenSearchDashboardsContextProvider>
-  );
-};
-
 // Core editor — used both by the page component and the dev_tools registration
 export const ProfilerEditor: React.FC<{
   http: CoreStart['http'];
@@ -232,6 +205,13 @@ export const ProfilerEditor: React.FC<{
   const [fontSize, setFontSize] = useState(14);
   const [wrapMode, setWrapMode] = useState(false);
   const [hideInput, setHideInput] = useState(false);
+
+  // Visualization state
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [selectedShardIndex, setSelectedShardIndex] = useState<number>(0);
+  const [selectedQuery, setSelectedQuery] = useState<ProcessedQuery | null>(null);
+  const [redThreshold, setRedThreshold] = useState<number>(DEFAULT_THRESHOLDS.RED);
+  const [orangeThreshold, setOrangeThreshold] = useState<number>(DEFAULT_THRESHOLDS.ORANGE);
 
   const inputEditorRef = useRef<HTMLDivElement>(null);
   const outputEditorRef = useRef<HTMLDivElement>(null);
@@ -287,9 +267,9 @@ export const ProfilerEditor: React.FC<{
   }, []);
 
   useEffect(() => {
-    inputEditorInstance.current?.setFontSize(fontSize);
+    inputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
     inputEditorInstance.current?.session.setUseWrapMode(wrapMode);
-    outputEditorInstance.current?.setFontSize(fontSize);
+    outputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
     outputEditorInstance.current?.session.setUseWrapMode(wrapMode);
   }, [fontSize, wrapMode]);
 
@@ -344,6 +324,27 @@ export const ProfilerEditor: React.FC<{
     }, 100);
   };
 
+  const handleVisualize = useCallback(() => {
+    if (!output.trim()) {
+      setOutput('Error: No profile output to visualize. Run a query first.');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(output);
+      if (!parsed.profile || !parsed.profile.shards) {
+        setOutput(
+          'Error: Response does not contain profile data. Ensure your query includes "profile": true.'
+        );
+        return;
+      }
+      setProfileData(parsed as ProfileData);
+      setSelectedShardIndex(0);
+      setSelectedQuery(null);
+    } catch {
+      setOutput('Error: Failed to parse profile output as JSON.');
+    }
+  }, [output]);
+
   return (
     <div>
       <EuiTabs size="s">
@@ -368,15 +369,9 @@ export const ProfilerEditor: React.FC<{
               borderRight: '1px solid #D4DAE5',
               cursor: 'pointer',
             }}
-            onClick={() => {
-              setHideInput(false);
-              inputEditorInstance.current?.setValue('', -1);
-            }}
+            onClick={() => setHideInput(false)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                setHideInput(false);
-                inputEditorInstance.current?.setValue('', -1);
-              }
+              if (e.key === 'Enter' || e.key === ' ') setHideInput(false);
             }}
           >
             <EuiToolTip content="Show query editor">
@@ -399,15 +394,17 @@ export const ProfilerEditor: React.FC<{
               style={{ position: 'absolute', zIndex: 1000, top: 0, right: '16px', lineHeight: 1 }}
             >
               <EuiFlexItem>
-                <EuiToolTip content="Generate profile">
-                  <button
-                    onClick={() => executeQuery()}
-                    className="conApp__editorActionButton conApp__editorActionButton--success"
-                    style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
-                  >
-                    <EuiIcon type="play" />
-                  </button>
-                </EuiToolTip>
+                <button
+                  onClick={() => executeQuery()}
+                  className="conApp__editorActionButton conApp__editorActionButton--success"
+                  style={{
+                    padding: '0 8px',
+                    cursor: 'pointer',
+                    lineHeight: 'inherit',
+                  }}
+                >
+                  <EuiIcon type="play" />
+                </button>
               </EuiFlexItem>
               <EuiFlexItem>
                 <EuiToolTip content="Reset all">
@@ -415,6 +412,7 @@ export const ProfilerEditor: React.FC<{
                     onClick={() => {
                       inputEditorInstance.current?.setValue(DEFAULT_PROFILER_QUERY, -1);
                       setOutput('');
+                      setProfileData(null);
                     }}
                     className="conApp__editorActionButton conApp__editorActionButton--success"
                     style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
@@ -431,6 +429,59 @@ export const ProfilerEditor: React.FC<{
           <div ref={outputEditorRef} style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
+
+      <EuiSpacer size="m" />
+      <div style={{ marginLeft: '16px' }}>
+        <EuiButton onClick={handleVisualize} fill style={{ textDecoration: 'none' }}>
+          Visualize profile
+        </EuiButton>
+      </div>
+
+      {/* Profile visualization */}
+      {profileData &&
+        profileData.profile &&
+        profileData.profile.shards &&
+        profileData.profile.shards.length > 0 && (
+          <>
+            <EuiSpacer size="m" />
+            <EuiPanel paddingSize="l">
+              <EuiTitle size="s">
+                <h3>Profile Results</h3>
+              </EuiTitle>
+              <EuiSpacer size="m" />
+              <ShardTable
+                shards={profileData.profile.shards}
+                onShardSelect={(idx) => {
+                  setSelectedShardIndex(idx);
+                  setSelectedQuery(null);
+                }}
+                redThreshold={redThreshold}
+                orangeThreshold={orangeThreshold}
+                onRedThresholdChange={setRedThreshold}
+                onOrangeThresholdChange={setOrangeThreshold}
+              />
+              <EuiSpacer size="l" />
+              {profileData.profile.shards[selectedShardIndex] &&
+                profileData.profile.shards[selectedShardIndex].searches &&
+                profileData.profile.shards[selectedShardIndex].searches.length > 0 && (
+                  <QueryTree
+                    queries={profileData.profile.shards[selectedShardIndex].searches[0].query}
+                    aggregations={profileData.profile.shards[selectedShardIndex].aggregations}
+                    selectedQuery={selectedQuery}
+                    onQuerySelect={setSelectedQuery}
+                    rewriteTime={
+                      profileData.profile.shards[selectedShardIndex].searches[0].rewrite_time
+                    }
+                    collectors={
+                      profileData.profile.shards[selectedShardIndex].searches[0].collector
+                    }
+                    redThreshold={redThreshold}
+                    orangeThreshold={orangeThreshold}
+                  />
+                )}
+            </EuiPanel>
+          </>
+        )}
 
       {isSettingsOpen && (
         <SettingsModal
@@ -481,9 +532,9 @@ export const ProfilerEditor: React.FC<{
               <p>
                 1. Enter your search query in the left editor panel
                 <br />
-                2. Click the play button to execute and generate profile
+                2. Click the play button to run the query
                 <br />
-                3. View the profiling results in the right panel
+                3. Click the visualize button (bar chart icon) to see profile graphs
                 <br />
                 4. Use the reset button to clear both query and results
               </p>
