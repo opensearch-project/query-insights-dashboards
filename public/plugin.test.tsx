@@ -25,10 +25,13 @@ describe('QueryInsightsDashboardsPlugin', () => {
   let registerMock: jest.Mock;
   let addNavLinksToGroupMock: jest.Mock;
 
+  const devToolsMock = { register: jest.fn() };
+
   beforeEach(() => {
     coreSetupMock = coreMock.createSetup();
     coreStartMock = coreMock.createStart();
     addNavLinksToGroupMock = jest.fn();
+    devToolsMock.register = jest.fn();
 
     // Properly mock the navGroup structure
     coreSetupMock.chrome.navGroup = {
@@ -40,7 +43,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should register the application in setup', () => {
-    const devToolsMock = { register: jest.fn() };
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(registerMock).toHaveBeenCalledWith(
@@ -67,7 +69,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should mount the application correctly', async () => {
-    const devToolsMock = { register: jest.fn() };
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     const appRegistration = registerMock.mock.calls[0][0];
@@ -92,7 +93,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers WLM when enabled', () => {
-    const devToolsMock = { register: jest.fn() };
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(registerMock).toHaveBeenCalledWith(
@@ -101,7 +101,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('does NOT register WLM when disabled', () => {
-    const devToolsMock = { register: jest.fn() };
     // override the mocked export for this test
     (WLM_CONFIG as any).enabled = false;
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
@@ -112,7 +111,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers only Query Insights when WLM disabled', () => {
-    const devToolsMock = { register: jest.fn() };
     (WLM_CONFIG as any).enabled = false;
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
@@ -126,7 +124,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('registers Query Insights and Workload Management when WLM enabled', () => {
-    const devToolsMock = { register: jest.fn() };
     (WLM_CONFIG as any).enabled = true;
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
@@ -143,7 +140,6 @@ describe('QueryInsightsDashboardsPlugin', () => {
   });
 
   it('should add navigation links to group', () => {
-    const devToolsMock = { register: jest.fn() };
     plugin.setup(coreSetupMock, { devTools: devToolsMock } as any);
 
     expect(addNavLinksToGroupMock).toHaveBeenCalledWith(DEFAULT_NAV_GROUPS.dataAdministration, [

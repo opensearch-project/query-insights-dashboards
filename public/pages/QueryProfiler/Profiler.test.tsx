@@ -41,7 +41,7 @@ const mockHttp = {
   get: jest.fn(),
 };
 
-const mockCoreStart = ({ http: mockHttp } as unknown) as Parameters<typeof setCoreStart>[0];
+const mockCoreStart = ({ http: mockHttp } as unknown) as CoreStart;
 
 beforeAll(() => {
   setCoreStart(mockCoreStart);
@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 const renderEditor = (props: { dataSourceId?: string; initialQuery?: string } = {}) =>
-  render(<ProfilerEditor http={mockHttp as CoreStart['http']} {...props} />);
+  render(<ProfilerEditor http={(mockHttp as unknown) as CoreStart['http']} {...props} />);
 
 describe('ProfilerEditor', () => {
   it('renders all tabs', () => {

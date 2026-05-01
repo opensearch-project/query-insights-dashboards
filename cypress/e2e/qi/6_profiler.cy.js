@@ -116,4 +116,40 @@ describe('Query Profiler', () => {
     cy.get('[data-test-subj="importQueriesConfirmBtn"]').should('not.be.disabled').click();
     cy.contains('Profile JSON').should('not.exist');
   });
+
+  it('Visualize button exists', () => {
+    cy.contains('Visualize profile').should('be.visible');
+  });
+
+  it('Visualize shows error when no output', () => {
+    cy.contains('Visualize profile').click();
+    cy.get('.ace_content').last().invoke('text').should('include', 'Error');
+  });
+
+  it('Visualize renders profile results after query', () => {
+    cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
+    cy.get('.conApp__editorActionButton--success').first().click();
+    cy.wait('@profilerQuery');
+    cy.contains('Visualize profile').click();
+    cy.contains('Profile Results').should('be.visible');
+  });
+
+  it('Shard table has search control after visualize', () => {
+    cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
+    cy.get('.conApp__editorActionButton--success').first().click();
+    cy.wait('@profilerQuery');
+    cy.contains('Visualize profile').click();
+    cy.contains('Profile Results').should('be.visible');
+    cy.get('input[placeholder="Search shard"]').should('exist');
+  });
+
+  it('Query tree renders with Search and Aggregation tabs', () => {
+    cy.intercept('POST', '**/api/profiler-proxy').as('profilerQuery');
+    cy.get('.conApp__editorActionButton--success').first().click();
+    cy.wait('@profilerQuery');
+    cy.contains('Visualize profile').click();
+    cy.contains('Profile Results').should('be.visible');
+    cy.contains('.euiTab', 'Search').should('be.visible');
+    cy.contains('.euiTab', 'Aggregation').should('be.visible');
+  });
 });
