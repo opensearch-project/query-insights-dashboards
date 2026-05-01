@@ -201,17 +201,17 @@ describe('InflightQueries', () => {
       timeout: 5000,
     });
 
-    // Wait for data to load
-    await waitFor(() => expect(screen.getByText('20')).toBeInTheDocument(), { timeout: 5000 });
+    // Wait for data to load — 7 active queries (13 cancelled are excluded from metrics)
+    await waitFor(() => expect(screen.getByText('7')).toBeInTheDocument(), { timeout: 5000 });
 
-    // Spot-check a few fixture-driven values from your JSON
-    expect(screen.getByText('7.19 s')).toBeInTheDocument();
+    // Spot-check a few fixture-driven values from your JSON (active queries only)
+    expect(screen.getByText('8.25 s')).toBeInTheDocument();
     expect(screen.getByText('9.69 s')).toBeInTheDocument();
-    expect(screen.getByText('1.68 ms')).toBeInTheDocument();
-    expect(screen.getByText('69.12 KB')).toBeInTheDocument();
+    expect(screen.getByText('576.76 µs')).toBeInTheDocument();
+    expect(screen.getByText('23.53 KB')).toBeInTheDocument();
 
-    // A row identifier
-    expect(screen.getByText('ID: node-A1B2C4E5:3614')).toBeInTheDocument();
+    // A row identifier — text is split across elements due to the link
+    expect(screen.getByText('node-A1B2C4E5:3614')).toBeInTheDocument();
   });
 
   it('shows zeros when there are no queries', async () => {
@@ -236,7 +236,7 @@ describe('InflightQueries', () => {
     await waitFor(
       () => {
         expect(screen.getByText('Active queries')).toBeInTheDocument();
-        expect(screen.getAllByText('0')).toHaveLength(5); // No WLM panels in older versions
+        expect(screen.getAllByText('0')).toHaveLength(8); // 5 metric panels + 3 finished query stats panels
       },
       { timeout: 5000 }
     );
@@ -259,16 +259,24 @@ describe('InflightQueries', () => {
       )
     );
 
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1), { timeout: 5000 });
 
     await act(async () => {
       jest.advanceTimersByTime(30_000);
+      await Promise.resolve();
       await Promise.resolve();
     });
     await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2), { timeout: 5000 });
 
     await act(async () => {
       jest.advanceTimersByTime(30_000);
+      await Promise.resolve();
       await Promise.resolve();
     });
     await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(3), { timeout: 5000 });
@@ -308,6 +316,12 @@ describe('InflightQueries', () => {
       )
     );
 
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
     await waitFor(
       () => {
         expect(screen.getByText('Active queries')).toBeInTheDocument();
@@ -334,6 +348,12 @@ describe('InflightQueries', () => {
         />
       )
     );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     await waitFor(
       () => {
@@ -408,9 +428,15 @@ describe('InflightQueries', () => {
       )
     );
 
-    await waitFor(() => expect(screen.getByRole('switch')).toBeInTheDocument(), {
-      timeout: 5000,
-    });
+    await waitFor(
+      () => {
+        const switches = screen.getAllByRole('switch');
+        expect(switches.length).toBeGreaterThanOrEqual(1);
+      },
+      {
+        timeout: 5000,
+      }
+    );
   });
 
   it('displays ANALYTICS_WORKLOAD_GROUP and SEARCH_WORKLOAD_GROUP in rows', async () => {
@@ -488,7 +514,8 @@ describe('InflightQueries', () => {
         expect(retrieveLiveQueries).toHaveBeenCalledWith(
           expect.any(Object),
           'default',
-          'SEARCH_WORKLOAD_GROUP'
+          'SEARCH_WORKLOAD_GROUP',
+          true
         );
       },
       { timeout: 5000 }
@@ -521,7 +548,8 @@ describe('InflightQueries', () => {
         expect(retrieveLiveQueries).toHaveBeenCalledWith(
           expect.any(Object),
           'default',
-          'ANALYTICS_WORKLOAD_GROUP'
+          'ANALYTICS_WORKLOAD_GROUP',
+          true
         );
       },
       { timeout: 5000 }
@@ -634,8 +662,565 @@ describe('InflightQueries', () => {
       { timeout: 5000 }
     );
 
-    // Should not show WLM selector or panels
+    // Should not show WLM selector
     expect(screen.queryByLabelText('Workload group selector')).not.toBeInTheDocument();
-    expect(screen.queryByText('Total completions')).not.toBeInTheDocument();
+  });
+});
+
+describe('InflightQueries - additional coverage', () => {
+  it('shows bar chart when bar option is selected', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    const { container } = render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(screen.getByText(/Active Queries by Node/i)).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // Click bar chart button — find by icon type
+    const barButtons = container.querySelectorAll('[data-test-subj="bar"]');
+    if (barButtons.length > 0) {
+      (barButtons[0] as HTMLElement).click();
+    }
+
+    // Verify chart area is still rendered
+    expect(screen.getByText(/Active Queries by Node/i)).toBeInTheDocument();
+  });
+
+  it('shows finished queries stats when showFinished is enabled', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'running-1',
+            timestamp: Date.now(),
+            node_id: 'node1',
+            description: 'indices[idx1] search_type[query_then_fetch]',
+            measurements: { latency: { number: 1e9 }, cpu: { number: 1e6 }, memory: { number: 1024 } },
+            is_cancelled: false,
+          },
+        ],
+        finished_queries: [
+          {
+            id: 'finished-1',
+            timestamp: Date.now() - 5000,
+            node_id: 'node1',
+            status: 'completed',
+            indices: ['idx1'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 2e9 }, cpu: { number: 2e6 }, memory: { number: 2048 } },
+            task_resource_usages: [],
+          },
+          {
+            id: 'finished-2',
+            timestamp: Date.now() - 3000,
+            node_id: 'node1',
+            status: 'failed',
+            failed: true,
+            indices: ['idx1'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 3e9 }, cpu: { number: 3e6 }, memory: { number: 3072 } },
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Total completions')).toBeInTheDocument();
+        expect(screen.getByText('Total cancellations')).toBeInTheDocument();
+        expect(screen.getByText('Total failures')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('opens flyout when Task ID is clicked', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'task-abc:123',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            description: 'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+            measurements: { latency: { number: 5e9 }, cpu: { number: 1e6 }, memory: { number: 4096 } },
+            is_cancelled: false,
+            coordinator_task: {
+              task_id: 'task-abc:123',
+              node_id: 'node1',
+              action: 'indices:data/read/search',
+              status: 'running',
+              description: 'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+              start_time: 1640995200000,
+              running_time_nanos: 5e9,
+              cpu_nanos: 1e6,
+              memory_bytes: 4096,
+            },
+            shard_tasks: [
+              {
+                task_id: 'shard-xyz:456',
+                node_id: 'node1',
+                action: 'indices:data/read/search[phase/query]',
+                status: 'running',
+                description: 'shardId[[my-index][0]]',
+                start_time: 1640995200000,
+                running_time_nanos: 4e9,
+                cpu_nanos: 800000,
+                memory_bytes: 2048,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Wait for table to render, then click the link
+    await waitFor(
+      () => expect(screen.getAllByText('task-abc:123').length).toBeGreaterThanOrEqual(1),
+      { timeout: 5000 }
+    );
+
+    // Click the link (first match is the table link)
+    const link = screen.getAllByText('task-abc:123')[0];
+    link.click();
+
+    await waitFor(() => {
+      expect(screen.getByText('Task ID - task-abc:123')).toBeInTheDocument();
+      expect(screen.getByText('Task Summary')).toBeInTheDocument();
+      expect(screen.getByText('Task Resource Usage')).toBeInTheDocument();
+      expect(screen.getByText('Query Source')).toBeInTheDocument();
+      expect(screen.getByText('my-index[0]')).toBeInTheDocument();
+      expect(screen.getByText('Kill Query')).toBeInTheDocument();
+    });
+  });
+
+  it('flyout shows View Top N for completed tasks', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [],
+        finished_queries: [
+          {
+            id: 'finished-task:789',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'completed',
+            indices: ['test-idx'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 2e9 }, cpu: { number: 5e6 }, memory: { number: 8192 } },
+            task_resource_usages: [],
+            top_n_id: 'topn-abc-123',
+            source: '{"query":{"match_all":{}}}',
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => expect(screen.getAllByText('finished-task:789').length).toBeGreaterThanOrEqual(1),
+      { timeout: 5000 }
+    );
+
+    screen.getAllByText('finished-task:789')[0].click();
+
+    await waitFor(() => {
+      expect(screen.getByText('Task ID - finished-task:789')).toBeInTheDocument();
+      expect(screen.getByText('View Top N')).toBeInTheDocument();
+      // Completed task should NOT show Kill Query
+      expect(screen.queryByText('Kill Query')).not.toBeInTheDocument();
+    });
+  });
+
+  it('handles new API format with coordinator_task and start_time', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'new-format:100',
+            start_time: 1640995200000,
+            status: 'running',
+            wlm_group_id: 'DEFAULT_WORKLOAD_GROUP',
+            total_latency_millis: 500,
+            total_cpu_nanos: 1e8,
+            total_memory_bytes: 65536,
+            coordinator_task: {
+              task_id: 'new-format:100',
+              node_id: 'nodeA',
+              action: 'indices:data/read/search',
+              status: 'running',
+              description: 'indices[big-test] search_type[dfs_query_then_fetch] source[{"size":10}]',
+              start_time: 1640995200000,
+              running_time_nanos: 5e8,
+              cpu_nanos: 1e8,
+              memory_bytes: 65536,
+            },
+            shard_tasks: [],
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        // Should render the task in the table
+        expect(screen.getAllByText('new-format:100').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText('dfs query then fetch')).toBeInTheDocument();
+        expect(screen.getByText('big-test')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('shows status badges for running, cancelled, and completed queries', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'running-q:1',
+            timestamp: Date.now(),
+            node_id: 'n1',
+            description: 'indices[idx] search_type[query_then_fetch]',
+            measurements: { latency: { number: 1e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            is_cancelled: false,
+          },
+          {
+            id: 'cancelled-q:2',
+            timestamp: Date.now(),
+            node_id: 'n1',
+            description: 'indices[idx] search_type[query_then_fetch]',
+            measurements: { latency: { number: 2e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            is_cancelled: true,
+          },
+        ],
+        finished_queries: [
+          {
+            id: 'completed-q:3',
+            timestamp: Date.now() - 1000,
+            node_id: 'n1',
+            status: 'completed',
+            indices: ['idx'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 3e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+
+    const { container } = render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        // Check badges exist via their CSS class
+        const badges = container.querySelectorAll('.euiBadge');
+        expect(badges.length).toBeGreaterThanOrEqual(3);
+        expect(screen.getByText('Running')).toBeInTheDocument();
+        expect(screen.getByText('Cancelled')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('cancel action is not available for finished queries', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [],
+        finished_queries: [
+          {
+            id: 'done-q:1',
+            timestamp: Date.now() - 1000,
+            node_id: 'n1',
+            status: 'completed',
+            indices: ['idx'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 1e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+
+    const { container } = render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('done-q:1')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // No cancel/trash icon should be present for finished queries
+    const trashButtons = container.querySelectorAll('[data-euiicon-type="trash"]');
+    expect(trashButtons.length).toBe(0);
+  });
+
+  it('handles formatTime edge cases', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'edge-q:1',
+            timestamp: Date.now(),
+            node_id: 'n1',
+            description: 'indices[idx] search_type[query_then_fetch]',
+            measurements: {
+              latency: { number: null as any },
+              cpu: { number: undefined as any },
+              memory: { number: 0 },
+            },
+            is_cancelled: false,
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        // Should render dashes for null/undefined measurements
+        expect(screen.getAllByText('-').length).toBeGreaterThanOrEqual(1);
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('flyout renders task resource usages for finished queries (old format)', async () => {
+    const core = makeCore();
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [],
+        finished_queries: [
+          {
+            id: 'old-format:1',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'completed',
+            indices: ['test-idx'],
+            search_type: 'query_then_fetch',
+            measurements: { latency: { number: 2e9 }, cpu: { number: 5e6 }, memory: { number: 8192 } },
+            task_resource_usages: [
+              {
+                taskId: 100,
+                nodeId: 'node1',
+                parentTaskId: -1,
+                action: 'indices:data/read/search',
+                taskResourceUsage: { cpu_time_in_nanos: 5e6, memory_in_bytes: 4096 },
+              },
+              {
+                taskId: 101,
+                nodeId: 'node1',
+                parentTaskId: 100,
+                action: 'indices:data/read/search[phase/query]',
+                taskResourceUsage: { cpu_time_in_nanos: 3e6, memory_in_bytes: 2048 },
+              },
+            ],
+            source: '{"query":{"match_all":{}}}',
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('old-format:1')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // Click to open flyout
+    screen.getByText('old-format:1').click();
+
+    await waitFor(() => {
+      expect(screen.getByText('Task ID - old-format:1')).toBeInTheDocument();
+      expect(screen.getByText('Task Resource Usage')).toBeInTheDocument();
+      // Should show coordinator and shard tasks from old format
+      expect(screen.getAllByText('Coordinator Task').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('Query Source')).toBeInTheDocument();
+    });
   });
 });

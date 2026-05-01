@@ -5,6 +5,7 @@
 
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
+  EuiBadge,
   EuiButton,
   EuiButtonEmpty,
   EuiCodeBlock,
@@ -144,8 +145,15 @@ const TaskDetail = ({
 
   // Shard tasks table columns
   const shardColumns = [
-    { field: 'task_id', name: 'Task ID' },
-    { field: 'node_id', name: 'Node ID', truncateText: true },
+    { field: 'task_id', name: 'Task ID', width: '25%' },
+    { field: 'node_id', name: 'Node ID', width: '20%' },
+    {
+      name: 'Shard',
+      render: (t: TaskDetailRecord) => {
+        const match = t.description?.match(/shardId\[\[([^\]]+)\]\[(\d+)\]\]/);
+        return match ? `${match[1]}[${match[2]}]` : '-';
+      },
+    },
     {
       field: 'action',
       name: 'Phase',
@@ -163,7 +171,13 @@ const TaskDetail = ({
         return PHASE_DISPLAY[raw] ?? raw;
       },
     },
-    { field: 'status', name: 'Status' },
+    {
+      field: 'status',
+      name: 'Status',
+      render: (status: string) => (
+        <EuiBadge color={status === 'cancelled' ? 'danger' : 'primary'}>{status}</EuiBadge>
+      ),
+    },
     { name: 'CPU Time (ms)', render: (t: TaskDetailRecord) => (t.cpu_nanos / 1e6).toFixed(2) },
     { name: 'Memory (bytes)', render: (t: TaskDetailRecord) => t.memory_bytes },
   ];
@@ -194,15 +208,36 @@ const TaskDetail = ({
         dataSourcePickerReadOnly={true}
       />
       <EuiFlexGroup justifyContent="flexEnd" gutterSize="s">
-        <EuiFlexItem grow={false}>
-          <EuiButtonEmpty iconType="refresh" onClick={fetchTask}>
-            Refresh
-          </EuiButtonEmpty>
-        </EuiFlexItem>
+        {liveTask && liveTask.status !== 'cancelled' && (
+          <EuiFlexItem grow={false}>
+            <EuiButtonEmpty iconType="refresh" onClick={fetchTask}>
+              Refresh
+            </EuiButtonEmpty>
+          </EuiFlexItem>
+        )}
         {liveTask && liveTask.status !== 'cancelled' && (
           <EuiFlexItem grow={false}>
             <EuiButton color="danger" onClick={handleCancel} iconType="cross">
               Kill Query
+            </EuiButton>
+          </EuiFlexItem>
+        )}
+        {finishedTask && finishedTask.top_n_id && (
+          <EuiFlexItem grow={false}>
+            <EuiButton onClick={() => navigateToTopN(finishedTask.top_n_id!)} iconType="inspect">
+              View Top N
+            </EuiButton>
+          </EuiFlexItem>
+        )}
+        {!finishedTask?.top_n_id && liveTask && liveTask.status === 'cancelled' && (
+          <EuiFlexItem grow={false}>
+            <EuiButton
+              onClick={() => navigateToTopN(taskId!)}
+              iconType="inspect"
+              color="primary"
+              fill
+            >
+              View Top N
             </EuiButton>
           </EuiFlexItem>
         )}
@@ -240,20 +275,35 @@ const TaskDetail = ({
                   <h2>Task Summary (Completed)</h2>
                 </EuiTitle>
               </EuiFlexItem>
-              {finishedTask.top_n_id && (
-                <EuiFlexItem grow={false}>
-                  <EuiButton onClick={() => navigateToTopN(finishedTask.top_n_id!)}>
-                    View in Top N Queries
-                  </EuiButton>
-                </EuiFlexItem>
-              )}
             </EuiFlexGroup>
             <EuiHorizontalRule margin="xs" />
             <EuiFlexGrid columns={4}>
-              <PanelItem
-                label="Status"
-                value={finishedTask.status || (finishedTask.failed ? 'Failed' : 'Completed')}
-              />
+              <EuiFlexItem>
+                <EuiDescriptionList
+                  compressed
+                  listItems={[
+                    {
+                      title: <h4>Status</h4>,
+                      description: (() => {
+                        const status =
+                          finishedTask.status || (finishedTask.failed ? 'Failed' : 'Completed');
+                        const lowerStatus = status.toLowerCase();
+                        return (
+                          <EuiBadge
+                            color={
+                              lowerStatus === 'failed' || lowerStatus === 'cancelled'
+                                ? 'danger'
+                                : 'success'
+                            }
+                          >
+                            {status}
+                          </EuiBadge>
+                        );
+                      })(),
+                    },
+                  ]}
+                />
+              </EuiFlexItem>
               <PanelItem label="Timestamp" value={convertTime(finishedTask.timestamp)} />
               <PanelItem label="Indices" value={finishedTask.indices?.join(', ') || '-'} />
               <PanelItem
@@ -262,6 +312,14 @@ const TaskDetail = ({
               />
               <PanelItem label="Node ID" value={finishedTask.node_id || '-'} />
               <PanelItem label="Total Shards" value={finishedTask.total_shards || '-'} />
+              <PanelItem
+                label="CPU Usage"
+                value={formatTime(finishedTask.measurements?.cpu?.number)}
+              />
+              <PanelItem
+                label="Memory Usage"
+                value={formatMemory(finishedTask.measurements?.memory?.number)}
+              />
               {finishedTask.wlm_group_id && (
                 <PanelItem label="WLM Group" value={finishedTask.wlm_group_id} />
               )}
@@ -277,25 +335,114 @@ const TaskDetail = ({
                 <h2>Task Resource Usage</h2>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
-              <EuiInMemoryTable
-                items={finishedTask.task_resource_usages}
-                columns={[
-                  { field: 'taskId', name: 'Task ID' },
-                  { field: 'nodeId', name: 'Node ID', truncateText: true },
-                  { field: 'action', name: 'Action' },
-                  {
-                    name: 'CPU (ms)',
-                    render: (t: any) => (t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2),
-                  },
-                  {
-                    name: 'Memory (bytes)',
-                    render: (t: any) => t.taskResourceUsage.memory_in_bytes,
-                  },
-                ]}
-                itemId="taskId"
-                pagination={{ initialPageSize: 10, showPerPageOptions: false }}
-              />
+              {(() => {
+                const coordinatorTasks = finishedTask.task_resource_usages.filter(
+                  (t: any) => t.parentTaskId === -1
+                );
+                const shardTasks = finishedTask.task_resource_usages.filter(
+                  (t: any) => t.parentTaskId !== -1
+                );
+                const phaseDisplay: Record<string, string> = {
+                  query: 'Query',
+                  fetch: 'Fetch',
+                  'fetch/id': 'Fetch (ID)',
+                  dfs: 'DFS',
+                  expand: 'Expand',
+                  can_match: 'Can Match',
+                };
+                const parsePhase = (action: string) => {
+                  const match = action.match(/\[([^\]]+)\]/);
+                  const raw = match ? match[1].replace('phase/', '') : action;
+                  return phaseDisplay[raw] ?? raw;
+                };
+                return (
+                  <>
+                    {coordinatorTasks.length > 0 && (
+                      <>
+                        <EuiTitle size="xs">
+                          <h3>Coordinator Task</h3>
+                        </EuiTitle>
+                        <EuiHorizontalRule margin="xs" />
+                        {coordinatorTasks.map((t: any) => (
+                          <EuiFlexGrid columns={4} key={t.taskId}>
+                            <PanelItem label="Task ID" value={t.taskId} />
+                            <PanelItem label="Node ID" value={t.nodeId} />
+                            <PanelItem
+                              label="CPU Time (ms)"
+                              value={(t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2)}
+                            />
+                            <PanelItem
+                              label="Memory (bytes)"
+                              value={t.taskResourceUsage.memory_in_bytes}
+                            />
+                          </EuiFlexGrid>
+                        ))}
+                        <EuiSpacer size="m" />
+                      </>
+                    )}
+                    {shardTasks.length > 0 && (
+                      <>
+                        <EuiTitle size="xs">
+                          <h3>Shard Tasks</h3>
+                        </EuiTitle>
+                        <EuiHorizontalRule margin="xs" />
+                        <EuiInMemoryTable
+                          items={shardTasks}
+                          columns={[
+                            { field: 'taskId', name: 'Task ID', width: '25%' },
+                            { field: 'nodeId', name: 'Node ID', width: '20%' },
+                            {
+                              field: 'action',
+                              name: 'Phase',
+                              render: (action: string) => parsePhase(action),
+                            },
+                            {
+                              name: 'CPU Time (ms)',
+                              render: (t: any) =>
+                                (t.taskResourceUsage.cpu_time_in_nanos / 1e6).toFixed(2),
+                            },
+                            {
+                              name: 'Memory (bytes)',
+                              render: (t: any) => t.taskResourceUsage.memory_in_bytes,
+                            },
+                          ]}
+                          itemId="taskId"
+                          pagination={{ initialPageSize: 10, showPerPageOptions: false }}
+                        />
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </EuiPanel>
+          )}
+          {finishedTask.source && (
+            <>
+              <EuiSpacer size="m" />
+              <EuiPanel data-test-subj="task-detail-query-source">
+                <EuiTitle size="s">
+                  <h2>Query Source</h2>
+                </EuiTitle>
+                <EuiHorizontalRule margin="xs" />
+                <EuiCodeBlock
+                  language="json"
+                  paddingSize="m"
+                  fontSize="s"
+                  overflowHeight={600}
+                  isCopyable
+                >
+                  {(() => {
+                    try {
+                      if (typeof finishedTask.source === 'object')
+                        return JSON.stringify(finishedTask.source, null, 2);
+                      return JSON.stringify(JSON.parse(finishedTask.source as string), null, 2);
+                    } catch {
+                      return String(finishedTask.source);
+                    }
+                  })()}
+                </EuiCodeBlock>
+              </EuiPanel>
+            </>
           )}
         </>
       )}
@@ -309,7 +456,21 @@ const TaskDetail = ({
             </EuiTitle>
             <EuiHorizontalRule margin="xs" />
             <EuiFlexGrid columns={4}>
-              <PanelItem label="Status" value={liveTask.status} />
+              <EuiFlexItem>
+                <EuiDescriptionList
+                  compressed
+                  listItems={[
+                    {
+                      title: <h4>Status</h4>,
+                      description: (
+                        <EuiBadge color={liveTask.status === 'cancelled' ? 'danger' : 'primary'}>
+                          {liveTask.status}
+                        </EuiBadge>
+                      ),
+                    },
+                  ]}
+                />
+              </EuiFlexItem>
               <PanelItem label="Start Time" value={convertTime(liveTask.start_time)} />
               <PanelItem
                 label="Coordinator Node"
@@ -320,6 +481,9 @@ const TaskDetail = ({
               <PanelItem label="Memory Usage" value={formatMemory(liveTask.total_memory_bytes)} />
               {liveTask.wlm_group_id && (
                 <PanelItem label="WLM Group" value={liveTask.wlm_group_id} />
+              )}
+              {finishedTask?.top_n_id && (
+                <PanelItem label="Top N Query ID" value={finishedTask.top_n_id} />
               )}
             </EuiFlexGrid>
           </EuiPanel>

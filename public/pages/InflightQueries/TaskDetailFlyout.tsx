@@ -89,12 +89,20 @@ export const TaskDetailFlyout: React.FC<Props> = ({
   const totalShards = (task as any)._totalShards;
   const taskResourceUsages = (task as any)._taskResourceUsages;
 
-  const isFinished = task.status === 'completed' || task.status === 'failed';
+  const isFinished =
+    task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled';
   const endTime = coord ? coord.start_time + coord.running_time_nanos / 1e6 : 0;
 
   const shardColumns = [
     { field: 'task_id', name: 'Task ID' },
     { field: 'node_id', name: 'Node ID', truncateText: true },
+    {
+      name: 'Shard',
+      render: (t: TaskDetailRecord) => {
+        const match = t.description?.match(/shardId\[\[([^\]]+)\]\[(\d+)\]\]/);
+        return match ? `${match[1]}[${match[2]}]` : '-';
+      },
+    },
     {
       name: 'Phase',
       render: (t: TaskDetailRecord) => {
@@ -118,11 +126,13 @@ export const TaskDetailFlyout: React.FC<Props> = ({
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
             <EuiFlexGroup gutterSize="s">
-              <EuiFlexItem grow={false}>
-                <EuiButtonEmpty iconType="refresh" onClick={onRefresh} size="s">
-                  Refresh
-                </EuiButtonEmpty>
-              </EuiFlexItem>
+              {!isFinished && (
+                <EuiFlexItem grow={false}>
+                  <EuiButtonEmpty iconType="refresh" onClick={onRefresh} size="s">
+                    Refresh
+                  </EuiButtonEmpty>
+                </EuiFlexItem>
+              )}
               {!isFinished && onKillQuery && (
                 <EuiFlexItem grow={false}>
                   <EuiButton color="danger" onClick={onKillQuery} size="s" iconType="cross">
@@ -130,9 +140,14 @@ export const TaskDetailFlyout: React.FC<Props> = ({
                   </EuiButton>
                 </EuiFlexItem>
               )}
-              {onViewTopN && (task as any)._topNId && (
+              {isFinished && onViewTopN && (
                 <EuiFlexItem grow={false}>
-                  <EuiButton onClick={() => onViewTopN((task as any)._topNId)} size="s">
+                  <EuiButton
+                    onClick={() => onViewTopN((task as any)._topNId || task.id)}
+                    size="s"
+                    iconType="inspect"
+                    fill
+                  >
                     View Top N
                   </EuiButton>
                 </EuiFlexItem>

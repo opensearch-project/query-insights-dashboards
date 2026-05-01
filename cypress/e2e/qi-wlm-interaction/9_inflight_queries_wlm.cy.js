@@ -5,10 +5,10 @@
 
 describe('Inflight Queries Dashboard - WLM Enabled', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/live_queries*', { fixture: 'stub_live_queries.json' }).as(
+    cy.intercept('GET', '**/api/live_queries**', { fixture: 'stub_live_queries.json' }).as(
       'liveQueries'
     );
-    cy.intercept('GET', '/api/_wlm/stats*', {
+    cy.intercept('GET', '**/api/_wlm/stats**', {
       statusCode: 200,
       body: {
         node1: {
@@ -22,7 +22,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
         },
       },
     }).as('wlmStats');
-    cy.intercept('GET', '/api/_wlm/workload_group*', {
+    cy.intercept('GET', '**/api/_wlm/workload_group**', {
       statusCode: 200,
       body: {
         workload_groups: [{ _id: 'ANALYTICS_WORKLOAD_GROUP', name: 'Analytics Team' }],
@@ -51,10 +51,10 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
     cy.wait('@wlmStats');
   });
 
-  it('displays total completion, cancellation, and rejection metrics correctly', () => {
+  it('displays finished query stats panels', () => {
     cy.contains('Total completions').should('be.visible');
     cy.contains('Total cancellations').should('be.visible');
-    cy.contains('Total rejections').should('be.visible');
+    cy.contains('Total failures').should('be.visible');
     cy.contains('Total completions')
       .closest('.euiPanel')
       .within(() => {
@@ -65,7 +65,7 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       .within(() => {
         cy.get('h2').should('be.visible');
       });
-    cy.contains('Total rejections')
+    cy.contains('Total failures')
       .closest('.euiPanel')
       .within(() => {
         cy.get('h2').should('be.visible');
@@ -75,5 +75,24 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
   it('shows workload group selector with mapped names', () => {
     cy.contains('.euiBadge', 'Workload group').should('be.visible');
     cy.get('[aria-label="Workload group selector"]').should('be.visible');
+  });
+
+  it('displays status badges in the table', () => {
+    cy.get('.euiBadge').contains('Running').should('exist');
+    cy.get('.euiBadge').contains('Cancelled').should('exist');
+  });
+
+  it('Task ID links open flyout', () => {
+    cy.fixture('stub_live_queries.json').then((data) => {
+      const firstRunning = data.response.live_queries.find((q) => !q.is_cancelled);
+      if (firstRunning) {
+        cy.get('.euiLink').contains(firstRunning.id).click();
+        cy.get('.euiFlyout').should('be.visible');
+        cy.get('.euiFlyout').within(() => {
+          cy.contains(`Task ID - ${firstRunning.id}`).should('exist');
+          cy.contains('Task Summary').should('exist');
+        });
+      }
+    });
   });
 });

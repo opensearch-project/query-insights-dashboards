@@ -99,7 +99,7 @@ export const InflightQueries = ({
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-  const [showFinishedQueries, setShowFinishedQueries] = useState(false);
+  const [showFinishedQueries, setShowFinishedQueries] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
@@ -168,11 +168,17 @@ export const InflightQueries = ({
     checkWlmSupport();
   }, [detectWlm, dataSource?.id]);
 
-  const [workloadGroupStats, setWorkloadGroupStats] = useState<{
+  const [_workloadGroupStats, setWorkloadGroupStats] = useState<{
     total_completions: number;
     total_cancellations: number;
     total_rejections: number;
   }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+
+  const [finishedQueryStats, setFinishedQueryStats] = useState<{
+    total_completions: number;
+    total_cancellations: number;
+    total_failures: number;
+  }>({ total_completions: 0, total_cancellations: 0, total_failures: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
@@ -308,12 +314,15 @@ export const InflightQueries = ({
 
           return {
             ...q,
+            timestamp: (q as any).timestamp || (q as any).start_time,
             description: desc,
             node_id: nodeId,
             measurements,
             is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
             index: indexMatch ? indexMatch[1] : 'N/A',
-            search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
+            search_type: searchTypeMatch
+              ? searchTypeMatch[1].replace(/_/g, ' ')
+              : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
             coordinator_node: nodeId,
             node_label: nodeId,
             wlm_group: wlmDisplay,
@@ -325,11 +334,19 @@ export const InflightQueries = ({
         // Merge finished queries if available
         const finishedQueries = (retrieved.response as any).finished_queries || [];
         if (showFinishedQueries && finishedQueries.length > 0) {
+          let completions = 0;
+          let cancellations = 0;
+          let failures = 0;
           const finishedRows: LiveQueryRow[] = finishedQueries.map((fq: any) => {
             const wlmDisplay =
               typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
                 ? idToName[fq.wlm_group_id] ?? fq.wlm_group_id
                 : 'N/A';
+            const status = fq.status || (fq.failed ? 'Failed' : 'Completed');
+            const lowerStatus = status.toLowerCase();
+            if (lowerStatus === 'failed') failures++;
+            else if (lowerStatus === 'cancelled') cancellations++;
+            else completions++;
             return {
               ...fq,
               id: fq.id,
@@ -349,11 +366,22 @@ export const InflightQueries = ({
               wlm_group: wlmDisplay,
               _finished: true,
               _topNId: fq.top_n_id,
-              _status: fq.status || (fq.failed ? 'Failed' : 'Completed'),
+              _status: status,
             };
+          });
+          setFinishedQueryStats({
+            total_completions: completions,
+            total_cancellations: cancellations,
+            total_failures: failures,
           });
           const allRows = [...parsed, ...finishedRows];
           setQuery({ ...retrieved, response: { live_queries: allRows } });
+        } else {
+          setFinishedQueryStats({
+            total_completions: 0,
+            total_cancellations: 0,
+            total_failures: 0,
+          });
         }
 
         parsed.forEach((liveQuery) => {
@@ -490,7 +518,7 @@ export const InflightQueries = ({
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
-    selectable: (item: any) => item.is_cancelled !== true,
+    selectable: (item: any) => item.is_cancelled !== true && !item._finished,
     onSelectionChange: (selected: any[]) => {
       setSelectedItems(selected);
     },
@@ -520,7 +548,11 @@ export const InflightQueries = ({
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
 
-    const queries = query.response.live_queries;
+    const queries = query.response.live_queries.filter(
+      (q) => !(q as any)._finished && !q.is_cancelled
+    );
+
+    if (queries.length === 0) return null;
 
     const activeQueries = queries.length;
     let totalLatency = 0;
@@ -699,7 +731,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Avg. across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Avg. across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -721,7 +753,12 @@ export const InflightQueries = ({
                 </EuiTitle>
                 {metrics?.longestQueryId && (
                   <EuiText size="s">
-                    <p>ID: {metrics.longestQueryId}</p>
+                    <p>
+                      ID:{' '}
+                      <EuiLink onClick={() => setSelectedTaskId(metrics.longestQueryId)}>
+                        {metrics.longestQueryId}
+                      </EuiLink>
+                    </p>
                   </EuiText>
                 )}
               </EuiTextAlign>
@@ -743,7 +780,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -764,7 +801,7 @@ export const InflightQueries = ({
                   </h2>
                 </EuiTitle>
                 <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
+                  <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
                 </EuiText>
               </EuiTextAlign>
             </EuiFlexItem>
@@ -777,7 +814,7 @@ export const InflightQueries = ({
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
-                <p>Queries by Node</p>
+                <p>Active Queries by Node</p>
               </EuiTitle>
               <EuiButtonGroup
                 legend="Chart Type"
@@ -838,7 +875,7 @@ export const InflightQueries = ({
           <EuiPanel paddingSize="m">
             <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
               <EuiTitle size="xs">
-                <p>Queries by Index</p>
+                <p>Active Queries by Index</p>
               </EuiTitle>
               <EuiButtonGroup
                 legend="Chart Type"
@@ -894,9 +931,9 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      {queryInsightWlmNavigationSupported && (
+      {showFinishedQueries && (
         <EuiFlexGroup>
-          {/* WLM Group Stats Panels */}
+          {/* Finished Query Stats Panels */}
           <EuiFlexItem>
             <EuiPanel paddingSize="m">
               <EuiTextAlign textAlign="center">
@@ -904,7 +941,7 @@ export const InflightQueries = ({
                   <p>Total completions</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_completions}</h2>
+                  <h2>{finishedQueryStats.total_completions}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -917,7 +954,7 @@ export const InflightQueries = ({
                   <p>Total cancellations</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_cancellations}</h2>
+                  <h2>{finishedQueryStats.total_cancellations}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -927,10 +964,10 @@ export const InflightQueries = ({
             <EuiPanel paddingSize="m">
               <EuiTextAlign textAlign="center">
                 <EuiText size="s">
-                  <p>Total rejections</p>
+                  <p>Total failures</p>
                 </EuiText>
                 <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_rejections}</h2>
+                  <h2>{finishedQueryStats.total_failures}</h2>
                 </EuiTitle>
               </EuiTextAlign>
             </EuiPanel>
@@ -1065,13 +1102,9 @@ export const InflightQueries = ({
                     {(item as any)._status || 'Completed'}
                   </EuiBadge>
                 ) : item.is_cancelled === true ? (
-                  <EuiText color="danger">
-                    <b>Cancelled</b>
-                  </EuiText>
+                  <EuiBadge color="danger">Cancelled</EuiBadge>
                 ) : (
-                  <EuiText style={{ color: '#0073e6' }}>
-                    <b>Running</b>
-                  </EuiText>
+                  <EuiBadge color="primary">Running</EuiBadge>
                 ),
             },
 
@@ -1120,7 +1153,7 @@ export const InflightQueries = ({
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.is_cancelled !== true,
+                  available: (item) => item.is_cancelled !== true && !(item as any)._finished,
                   onClick: async (item) => {
                     try {
                       const httpClient = dataSource?.id
@@ -1166,7 +1199,7 @@ export const InflightQueries = ({
               : selectedItem.is_cancelled
               ? 'cancelled'
               : 'running',
-            start_time: selectedItem.timestamp,
+            start_time: selectedItem.timestamp || (selectedItem as any).start_time,
             wlm_group_id: selectedItem.wlm_group_id,
             total_latency_millis: (selectedItem.measurements?.latency?.number || 0) / 1e6,
             total_cpu_nanos: selectedItem.measurements?.cpu?.number || 0,
@@ -1202,14 +1235,15 @@ export const InflightQueries = ({
                   : undefined
               }
               onViewTopN={
-                richTask._topNId
-                  ? (topNId) => {
+                richTask._topNId || richTask.status !== 'running'
+                  ? (_topNId) => {
+                      const id = richTask._topNId || selectedTaskId;
                       const now = new Date().toISOString();
                       const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
                       history.push(
                         `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
                           now
-                        )}&id=${encodeURIComponent(topNId)}&verbose=true`
+                        )}&id=${encodeURIComponent(id)}&verbose=true`
                       );
                     }
                   : undefined
