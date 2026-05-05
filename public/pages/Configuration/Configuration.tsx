@@ -8,13 +8,17 @@ import {
   EuiBottomBar,
   EuiButton,
   EuiButtonEmpty,
+  EuiCallOut,
+  EuiComboBox,
   EuiFieldNumber,
+  EuiFieldText,
   EuiFlexGrid,
   EuiFlexGroup,
   EuiFlexItem,
   EuiForm,
   EuiFormRow,
   EuiHealth,
+  EuiLink,
   EuiPanel,
   EuiSelect,
   EuiSpacer,
@@ -22,6 +26,7 @@ import {
   EuiText,
   EuiTitle,
   EuiDescriptionList,
+  EuiLoadingSpinner,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -32,6 +37,7 @@ import {
   GroupBySettings,
   DataSourceContext,
   DataRetentionSettings,
+  RemoteExporterSettings,
 } from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
@@ -44,6 +50,7 @@ import {
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { validateConfiguration } from './configurationValidation';
+import RegisterRepositoryFlyout from './Components/RegisterRepositoryFlyout';
 
 const Configuration = ({
   latencySettings,
@@ -51,6 +58,7 @@ const Configuration = ({
   memorySettings,
   groupBySettings,
   dataRetentionSettings,
+  remoteExporterSettings,
   configInfo,
   core,
   depsStart,
@@ -62,6 +70,7 @@ const Configuration = ({
   memorySettings: MetricSettings;
   groupBySettings: GroupBySettings;
   dataRetentionSettings: DataRetentionSettings;
+  remoteExporterSettings: RemoteExporterSettings;
   configInfo: any;
   core: CoreStart;
   params: AppMountParameters;
@@ -81,6 +90,58 @@ const Configuration = ({
   const [deleteAfterDays, setDeleteAfterDays] = useState(dataRetentionSettings.deleteAfterDays);
   const [exporterType, setExporterTypeType] = useState(dataRetentionSettings.exporterType);
 
+  const [remoteEnabled, setRemoteEnabled] = useState(remoteExporterSettings.enabled);
+  const [remoteRepository, setRemoteRepository] = useState(remoteExporterSettings.repository);
+  const [remotePath, setRemotePath] = useState(remoteExporterSettings.path);
+  const [isRepoFlyoutOpen, setIsRepoFlyoutOpen] = useState(false);
+  const [repoOptions, setRepoOptions] = useState<Array<{ label: string }>>([]);
+  const [isS3PluginInstalled, setIsS3PluginInstalled] = useState<boolean | null>(null);
+  const [isCheckingPlugin, setIsCheckingPlugin] = useState(false);
+
+  const checkS3Plugin = useCallback(async () => {
+    setIsCheckingPlugin(true);
+    try {
+      const resp = await core.http.get('/api/cat/plugins', {
+        query: { dataSourceId: dataSource?.id || '' },
+      });
+      if (resp.ok && Array.isArray(resp.response)) {
+        const found = resp.response.some(
+          (p: { component: string }) => p.component === 'repository-s3'
+        );
+        setIsS3PluginInstalled(found);
+      }
+    } catch (error) {
+      console.error('Failed to check for repository-s3 plugin:', error);
+      // On failure, assume plugin is installed so the user isn't stuck
+      setIsS3PluginInstalled(true);
+    } finally {
+      setIsCheckingPlugin(false);
+    }
+  }, [core.http, dataSource]);
+
+  const fetchRepositories = useCallback(async () => {
+    try {
+      const resp = await core.http.get('/api/snapshot/repositories', {
+        query: { dataSourceId: dataSource?.id || '' },
+      });
+      if (resp.ok && resp.response) {
+        const names = Object.keys(resp.response)
+          .filter((name) => resp.response[name].type === 's3')
+          .map((name) => ({ label: name }));
+        setRepoOptions(names);
+      }
+    } catch (error) {
+      console.error('Failed to fetch snapshot repositories:', error);
+    }
+  }, [core.http, dataSource]);
+
+  useEffect(() => {
+    fetchRepositories();
+    if (remoteExporterSettings.enabled) {
+      checkS3Plugin();
+    }
+  }, [fetchRepositories, checkS3Plugin, remoteExporterSettings.enabled]);
+
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
     cpu: cpuSettings,
@@ -93,6 +154,10 @@ const Configuration = ({
 
   const [dataRetentionSettingMap, setDataRetentionSettingMap] = useState({
     dataRetention: dataRetentionSettings,
+  });
+
+  const [remoteExporterSettingMap, setRemoteExporterSettingMap] = useState({
+    remoteExporter: remoteExporterSettings,
   });
 
   useEffect(() => {
@@ -110,7 +175,10 @@ const Configuration = ({
     setTime(currMetric.currTimeUnit);
     setIsEnabled(currMetric.isEnabled);
     // setExporterTypeType(currMetric.exporterType);
-  }, [metric, metricSettingsMap]);
+    setRemoteEnabled(remoteExporterSettingMap.remoteExporter.enabled);
+    setRemoteRepository(remoteExporterSettingMap.remoteExporter.repository);
+    setRemotePath(remoteExporterSettingMap.remoteExporter.path);
+  }, [metric, metricSettingsMap, remoteExporterSettingMap]);
 
   useEffect(() => {
     newOrReset();
@@ -130,6 +198,15 @@ const Configuration = ({
     setDeleteAfterDays(dataRetentionSettings.deleteAfterDays);
     setExporterTypeType(dataRetentionSettings.exporterType);
   }, [dataRetentionSettings]);
+
+  useEffect(() => {
+    setRemoteExporterSettingMap({
+      remoteExporter: remoteExporterSettings,
+    });
+    setRemoteEnabled(remoteExporterSettings.enabled);
+    setRemoteRepository(remoteExporterSettings.repository);
+    setRemotePath(remoteExporterSettings.path);
+  }, [remoteExporterSettings]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -178,6 +255,18 @@ const Configuration = ({
     setDeleteAfterDays(e.target.value);
   };
 
+  const onRemoteEnabledChange = (e: any) => {
+    const enabling = e.target.checked;
+    setRemoteEnabled(enabling);
+    if (enabling && isS3PluginInstalled === null) {
+      checkS3Plugin();
+    }
+  };
+
+  const onRemotePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRemotePath(e.target.value);
+  };
+
   const MinutesBox = () => (
     <EuiSelect
       id="minutes"
@@ -210,9 +299,22 @@ const Configuration = ({
     time !== metricSettingsMap[metric].currTimeUnit ||
     groupBy !== groupBySettingMap.groupBy.groupBy ||
     exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
-    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays;
+    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays ||
+    remoteEnabled !== remoteExporterSettingMap.remoteExporter.enabled ||
+    remoteRepository !== remoteExporterSettingMap.remoteExporter.repository ||
+    remotePath !== remoteExporterSettingMap.remoteExporter.path;
 
-  const isValid = validateConfiguration(topNSize, windowSize, time, deleteAfterDays, exporterType);
+  const isValid =
+    validateConfiguration(
+      topNSize,
+      windowSize,
+      time,
+      deleteAfterDays,
+      exporterType,
+      remoteEnabled,
+      remoteRepository
+    ) &&
+    (!remoteEnabled || isS3PluginInstalled !== false);
 
   const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
@@ -464,7 +566,7 @@ const Configuration = ({
             <EuiForm>
               <EuiFlexItem>
                 <EuiTitle size="s">
-                  <h2>Query Insights export and data retention settings</h2>
+                  <h2>Export and data retention settings</h2>
                 </EuiTitle>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -534,7 +636,7 @@ const Configuration = ({
           <EuiPanel paddingSize="m" grow={false}>
             <EuiFlexItem>
               <EuiTitle size="s">
-                <h2>Statuses for data retention</h2>
+                <h2>Statuses for export and retention</h2>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem>
@@ -545,6 +647,192 @@ const Configuration = ({
                 <EuiFlexItem>
                   <EuiSpacer size="xs" />
                   {exporterType === EXPORTER_TYPE.localIndex ? enabledSymb : disabledSymb}
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </EuiFlexItem>
+          </EuiPanel>
+        </EuiFlexItem>
+      </EuiFlexGroup>
+      <EuiFlexGroup>
+        <EuiFlexItem grow={6}>
+          <EuiPanel paddingSize="m">
+            <EuiForm>
+              <EuiFlexItem>
+                <EuiTitle size="s">
+                  <h2>Remote repository exporter settings</h2>
+                </EuiTitle>
+                <EuiSpacer size="xs" />
+                <EuiText size="xs" color="subdued">
+                  Export top N query insights data to a remote S3 repository for cheaper, long-term
+                  storage. Unlike the local index exporter, Query Insights does not read from remote
+                  repository data. Data retention is managed by the bucket configuration, not
+                  OpenSearch.
+                </EuiText>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '15px 0px' }}>
+                  <EuiFlexItem>
+                    <EuiDescriptionList
+                      compressed={true}
+                      listItems={[
+                        {
+                          title: <h3>Enabled</h3>,
+                          description: 'Enable or disable the remote repository exporter.',
+                        },
+                      ]}
+                    />
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <EuiFormRow style={formRowPadding}>
+                      <EuiFlexItem>
+                        <EuiSpacer size="s" />
+                        <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+                          <EuiFlexItem grow={false}>
+                            <EuiSwitch
+                              label=""
+                              checked={remoteEnabled}
+                              onChange={onRemoteEnabledChange}
+                              data-test-subj="remote-exporter-toggle"
+                            />
+                          </EuiFlexItem>
+                          {isCheckingPlugin && (
+                            <EuiFlexItem grow={false}>
+                              <EuiLoadingSpinner size="m" />
+                            </EuiFlexItem>
+                          )}
+                        </EuiFlexGroup>
+                      </EuiFlexItem>
+                    </EuiFormRow>
+                  </EuiFlexItem>
+                </EuiFlexGrid>
+              </EuiFlexItem>
+              {remoteEnabled && isS3PluginInstalled === false && (
+                <EuiFlexItem>
+                  <EuiCallOut
+                    title="The repository-s3 plugin is not installed"
+                    color="danger"
+                    iconType="alert"
+                    size="s"
+                  >
+                    <EuiText size="xs">
+                      <p>
+                        The remote exporter requires the{' '}
+                        <EuiLink
+                          href="https://opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/snapshots/snapshot-restore/#amazon-s3"
+                          target="_blank"
+                          external
+                        >
+                          repository-s3 plugin
+                        </EuiLink>
+                        . Follow the setup guide to install the plugin, configure AWS credentials,
+                        and restart the cluster.
+                      </p>
+                    </EuiText>
+                  </EuiCallOut>
+                </EuiFlexItem>
+              )}
+              {remoteEnabled && isS3PluginInstalled === true && (
+                <EuiFlexItem>
+                  <EuiFlexGrid columns={2} gutterSize="s" style={{ padding: '0px 0px 15px' }}>
+                    <EuiFlexItem>
+                      <EuiDescriptionList
+                        compressed={true}
+                        listItems={[
+                          {
+                            title: <h3>Repository</h3>,
+                            description:
+                              'The name of the registered snapshot repository to use for exporting data.',
+                          },
+                        ]}
+                      />
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                      <EuiFormRow
+                        label="exporter.remote.repository"
+                        helpText="Select an existing repository or register a new one."
+                        style={formRowPadding}
+                        isInvalid={remoteEnabled && remoteRepository.trim() === ''}
+                        error={
+                          remoteEnabled && remoteRepository.trim() === ''
+                            ? 'Repository name is required when remote export is enabled.'
+                            : undefined
+                        }
+                      >
+                        <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+                          <EuiFlexItem>
+                            <EuiComboBox
+                              placeholder={
+                                repoOptions.length === 0
+                                  ? 'No S3 repositories registered'
+                                  : 'Select a registered S3 repository'
+                              }
+                              singleSelection={{ asPlainText: true }}
+                              options={repoOptions}
+                              isLoading={isCheckingPlugin}
+                              selectedOptions={
+                                remoteRepository ? [{ label: remoteRepository }] : []
+                              }
+                              onChange={(selected) => {
+                                setRemoteRepository(selected.length > 0 ? selected[0].label : '');
+                              }}
+                              data-test-subj="remote-exporter-repository"
+                            />
+                          </EuiFlexItem>
+                          <EuiFlexItem grow={false}>
+                            <EuiButton
+                              size="s"
+                              onClick={() => setIsRepoFlyoutOpen(true)}
+                              data-test-subj="register-repo-button"
+                            >
+                              Register new
+                            </EuiButton>
+                          </EuiFlexItem>
+                        </EuiFlexGroup>
+                      </EuiFormRow>
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                      <EuiDescriptionList
+                        compressed={true}
+                        listItems={[
+                          {
+                            title: <h3>Path</h3>,
+                            description:
+                              'The base path within the repository for organizing exported files.',
+                          },
+                        ]}
+                      />
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                      <EuiFormRow label="exporter.remote.path" style={formRowPadding}>
+                        <EuiFieldText
+                          placeholder="query-insights"
+                          value={remotePath}
+                          onChange={onRemotePathChange}
+                          data-test-subj="remote-exporter-path"
+                        />
+                      </EuiFormRow>
+                    </EuiFlexItem>
+                  </EuiFlexGrid>
+                </EuiFlexItem>
+              )}
+            </EuiForm>
+          </EuiPanel>
+        </EuiFlexItem>
+        <EuiFlexItem grow={2}>
+          <EuiPanel paddingSize="m" grow={false}>
+            <EuiFlexItem>
+              <EuiTitle size="s">
+                <h2>Statuses for remote exporter</h2>
+              </EuiTitle>
+            </EuiFlexItem>
+            <EuiFlexItem>
+              <EuiFlexGroup>
+                <EuiFlexItem>
+                  <EuiText size="s">Remote Exporter</EuiText>
+                </EuiFlexItem>
+                <EuiFlexItem>
+                  <EuiSpacer size="xs" />
+                  {remoteExporterSettings.enabled ? enabledSymb : disabledSymb}
                 </EuiFlexItem>
               </EuiFlexGroup>
             </EuiFlexItem>
@@ -576,7 +864,10 @@ const Configuration = ({
                     time,
                     exporterType,
                     groupBy,
-                    deleteAfterDays
+                    deleteAfterDays,
+                    remoteEnabled,
+                    remoteRepository,
+                    remotePath
                   );
                   return history.push(QUERY_INSIGHTS);
                 }}
@@ -587,6 +878,17 @@ const Configuration = ({
           </EuiFlexGroup>
         </EuiBottomBar>
       ) : null}
+      {isRepoFlyoutOpen && (
+        <RegisterRepositoryFlyout
+          core={core}
+          dataSourceId={dataSource?.id}
+          onClose={() => setIsRepoFlyoutOpen(false)}
+          onSuccess={(repoName) => {
+            setRemoteRepository(repoName);
+            fetchRepositories();
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -202,4 +202,45 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     },
     method: 'POST',
   });
+
+  queryInsights.createSnapshotRepository = ca({
+    url: {
+      fmt: `/_snapshot/<%=repository%>`,
+      req: {
+        repository: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'PUT',
+    needBody: true,
+  });
+
+  queryInsights.getSnapshotRepositories = ca({
+    url: {
+      fmt: `/_snapshot/_all`,
+    },
+    method: 'GET',
+  });
+
+  queryInsights.deleteSnapshotRepository = ca({
+    url: {
+      fmt: `/_snapshot/<%=repository%>`,
+      req: {
+        repository: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'DELETE',
+  });
+
+  queryInsights.getCatPlugins = ca({
+    url: {
+      fmt: `/_cat/plugins?format=json`,
+    },
+    method: 'GET',
+  });
 };
