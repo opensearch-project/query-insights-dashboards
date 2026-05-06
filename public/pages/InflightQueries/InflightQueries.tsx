@@ -51,7 +51,11 @@ import {
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion37OrHigher,
+} from '../../utils/version-utils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -122,6 +126,7 @@ export const InflightQueries = ({
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
     boolean
   >(false);
+  const [taskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -150,6 +155,7 @@ export const InflightQueries = ({
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
+        setTaskDetailSupported(isVersion37OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -161,6 +167,7 @@ export const InflightQueries = ({
       } catch (e) {
         console.warn('Failed to check version for WLM groups support', e);
         setQueryInsightWlmNavigationSupported(false);
+        setTaskDetailSupported(false);
         setWlmAvailable(false);
       }
     };
@@ -282,7 +289,7 @@ export const InflightQueries = ({
         core,
         dataSource?.id,
         wlmGroupId,
-        showFinishedQueries
+        taskDetailSupported && showFinishedQueries
       );
 
       if (retrieved?.response?.live_queries) {
@@ -422,7 +429,7 @@ export const InflightQueries = ({
       }
     },
     // deps for react-hooks/exhaustive-deps
-    [core, dataSource?.id, wlmGroupId, wlmGroupOptions, showFinishedQueries]
+    [core, dataSource?.id, wlmGroupId, wlmGroupOptions, showFinishedQueries, taskDetailSupported]
   );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -659,14 +666,16 @@ export const InflightQueries = ({
         {/* RIGHT: refresh / auto-refresh */}
         <EuiFlexItem grow={false}>
           <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
-            <EuiFlexItem grow={false}>
-              <EuiSwitch
-                label="Show finished queries"
-                checked={showFinishedQueries}
-                onChange={(e) => setShowFinishedQueries(e.target.checked)}
-                data-test-subj="live-queries-show-finished-toggle"
-              />
-            </EuiFlexItem>
+            {taskDetailSupported && (
+              <EuiFlexItem grow={false}>
+                <EuiSwitch
+                  label="Show finished queries"
+                  checked={showFinishedQueries}
+                  onChange={(e) => setShowFinishedQueries(e.target.checked)}
+                  data-test-subj="live-queries-show-finished-toggle"
+                />
+              </EuiFlexItem>
+            )}
             <EuiFlexItem grow={false}>
               <EuiSwitch
                 label="Auto-refresh"
@@ -762,9 +771,13 @@ export const InflightQueries = ({
                   <EuiText size="s">
                     <p>
                       ID:{' '}
-                      <EuiLink onClick={() => setSelectedTaskId(metrics.longestQueryId)}>
-                        {metrics.longestQueryId}
-                      </EuiLink>
+                      {taskDetailSupported ? (
+                        <EuiLink onClick={() => setSelectedTaskId(metrics.longestQueryId)}>
+                          {metrics.longestQueryId}
+                        </EuiLink>
+                      ) : (
+                        metrics.longestQueryId
+                      )}
                     </p>
                   </EuiText>
                 )}
@@ -938,7 +951,7 @@ export const InflightQueries = ({
           </EuiPanel>
         </EuiFlexItem>
       </EuiFlexGroup>
-      {showFinishedQueries && (
+      {taskDetailSupported && showFinishedQueries && (
         <EuiFlexGroup>
           {/* Finished Query Stats Panels */}
           <EuiFlexItem>
@@ -1079,7 +1092,9 @@ export const InflightQueries = ({
             {
               field: 'id',
               name: 'Task ID',
-              render: (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>,
+              render: taskDetailSupported
+                ? (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
+                : undefined,
             },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
@@ -1193,7 +1208,8 @@ export const InflightQueries = ({
       </EuiPanel>
 
       {/* Task Detail Flyout */}
-      {selectedTaskId &&
+      {taskDetailSupported &&
+        selectedTaskId &&
         (() => {
           const flyoutQueries = query?.response?.live_queries || [];
           const selectedItem = flyoutQueries.find((q) => q.id === selectedTaskId);

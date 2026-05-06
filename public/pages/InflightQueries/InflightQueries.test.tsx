@@ -10,7 +10,11 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion37OrHigher,
+} from '../../utils/version-utils';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
@@ -18,7 +22,14 @@ jest.mock('../../../common/utils/QueryUtils');
 jest.mock('../../utils/datasource-utils', () => ({
   getDataSourceVersion: jest.fn().mockResolvedValue('3.3.0'),
 }));
-jest.mock('../../utils/version-utils');
+jest.mock('../../utils/version-utils', () => ({
+  getVersionOnce: jest.fn(),
+  isVersion33OrHigher: jest.fn(),
+  isVersion37OrHigher: jest.fn(),
+  isVersion31OrHigher: jest.fn(),
+  isVersion219: jest.fn(),
+  getGroupBySettingsPath: jest.fn(),
+}));
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useLocation: jest.fn(),
@@ -95,9 +106,10 @@ beforeEach(() => {
   cleanup();
   // Reset useLocation mock to default
   (useLocation as jest.Mock).mockReturnValue({ search: '' });
-  // Mock version utilities - default to 3.3.0 for WLM support
-  (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.3.0');
+  // Mock version utilities - default to 3.7.0 for full feature support
+  (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.7.0');
   (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(true);
+  (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(true);
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
