@@ -14,7 +14,9 @@ export const mockQueries = [
       query: 5,
       fetch: 0,
     },
-    labels: {},
+    labels: { 'X-QI-Application-Id': 'my-analytics-app' },
+    username: 'admin',
+    user_roles: ['all_access', 'analyst'],
     source: {
       size: 0,
       aggregations: {

@@ -313,6 +313,66 @@ exports[`QueryGroupDetails matches snapshot 1`] = `
               </dd>
             </dl>
           </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Application ID
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                my-analytics-app
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  Username
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                admin
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
+                  User Roles
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                all_access, analyst
+              </dd>
+            </dl>
+          </div>
         </div>
       </div>
       <div

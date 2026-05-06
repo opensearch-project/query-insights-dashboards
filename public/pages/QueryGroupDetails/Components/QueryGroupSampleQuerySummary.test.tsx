@@ -78,4 +78,17 @@ describe('QueryGroupSampleQuerySummary', () => {
 
     expect(screen.getByText(mockQueries[0].total_shards)).toBeInTheDocument();
   });
+
+  it('displays application ID when present in labels', () => {
+    render(
+      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
+        <Route exact path="/query-group-details/:hashedQuery">
+          <QueryGroupSampleQuerySummary query={mockQueries[0]} />
+        </Route>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Application ID')).toBeInTheDocument();
+    expect(screen.getByText('my-analytics-app')).toBeInTheDocument();
+  });
 });

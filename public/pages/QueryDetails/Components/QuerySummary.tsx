@@ -23,6 +23,10 @@ import {
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  APPLICATION_ID,
+  APPLICATION_ID_LABEL_KEY,
+  USERNAME,
+  USER_ROLES,
   WLM_GROUP,
 } from '../../../../common/constants';
 import { calculateMetric } from '../../../../common/utils/MetricUtils';
@@ -44,14 +48,14 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 
 const QuerySummary = ({
   query,
-  wlmSupported,
-  statusSupported,
-  userInfoSupported,
+  userInfoSupported = true,
+  wlmSupported = false,
+  statusSupported = false,
 }: {
   query: SearchQueryRecord | null;
+  userInfoSupported?: boolean;
   wlmSupported?: boolean;
   statusSupported?: boolean;
-  userInfoSupported?: boolean;
 }) => {
   // If query is null, return a message indicating no data is available
   if (!query) {
@@ -69,18 +73,21 @@ const QuerySummary = ({
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
+
+  /* eslint-disable @typescript-eslint/naming-convention */
   const {
     timestamp,
     measurements,
     indices,
-    search_type, // eslint-disable-line @typescript-eslint/naming-convention
-    node_id, // eslint-disable-line @typescript-eslint/naming-convention
-    total_shards, // eslint-disable-line @typescript-eslint/naming-convention
-    wlm_group_id, // eslint-disable-line @typescript-eslint/naming-convention
+    search_type,
+    node_id,
+    total_shards,
+    labels,
     username,
-    user_roles, // eslint-disable-line @typescript-eslint/naming-convention
+    user_roles,
   } = query;
   return (
+    /* eslint-enable @typescript-eslint/naming-convention */
     <EuiPanel data-test-subj={'query-details-summary-section'}>
       <EuiTitle size="s">
         <h2>Summary</h2>
@@ -104,10 +111,11 @@ const QuerySummary = ({
         <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
         <PanelItem label={NODE_ID} value={node_id} />
         <PanelItem label={TOTAL_SHARDS} value={total_shards} />
-        {wlmSupported && wlm_group_id && <PanelItem label={WLM_GROUP} value={wlm_group_id} />}
-        {userInfoSupported && username && <PanelItem label="Username" value={username} />}
-        {userInfoSupported && user_roles?.length > 0 && (
-          <PanelItem label="User Roles" value={user_roles.join(', ')} />
+        {labels?.[APPLICATION_ID_LABEL_KEY] && (
+          <PanelItem label={APPLICATION_ID} value={labels[APPLICATION_ID_LABEL_KEY]} />
+        )}
+        {wlmSupported && query.wlm_group_id && (
+          <PanelItem label={WLM_GROUP} value={query.wlm_group_id} />
         )}
         {statusSupported && (
           <EuiFlexItem>
@@ -116,15 +124,19 @@ const QuerySummary = ({
               listItems={[
                 {
                   title: <h4>Status</h4>,
-                  description: query.failed ? (
-                    <EuiBadge color="danger">Failed</EuiBadge>
-                  ) : (
-                    <EuiBadge color="success">Completed</EuiBadge>
+                  description: (
+                    <EuiBadge color={query.failed ? 'danger' : 'success'}>
+                      {query.failed ? 'Failed' : 'Completed'}
+                    </EuiBadge>
                   ),
                 },
               ]}
             />
           </EuiFlexItem>
+        )}
+        {userInfoSupported && username && <PanelItem label={USERNAME} value={username} />}
+        {userInfoSupported && user_roles && user_roles.length > 0 && (
+          <PanelItem label={USER_ROLES} value={user_roles.join(', ')} />
         )}
       </EuiFlexGrid>
     </EuiPanel>

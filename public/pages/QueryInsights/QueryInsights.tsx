@@ -49,6 +49,10 @@ import {
   TOTAL_SHARDS,
   TYPE,
   WLM_GROUP,
+  APPLICATION_ID,
+  APPLICATION_ID_LABEL_KEY,
+  USERNAME,
+  USER_ROLES,
   CHART_COLORS,
 } from '../../../common/constants';
 import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
@@ -79,6 +83,8 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const WLM_GROUP_FIELD = 'wlm_group_id';
+const USERNAME_FIELD = 'username';
+const USER_ROLES_FIELD = 'user_roles';
 const METRIC_DEFAULT_MSG = 'Not enabled';
 const GROUP_BY_FIELD = 'group_by';
 
@@ -313,6 +319,12 @@ const QueryInsights = ({
    *   and the user hasn’t explicitly chosen a single group mode, we hide grouped aggregates
    *   (`group_by !== 'NONE'`) to avoid double counting and missing per-index/search-type/node metadata.
    */
+
+  // Detect if security plugin is enabled by checking if any query has username data
+  const userInfoSupported = useMemo(
+    () => queries.some((q) => q.username != null && q.username !== ''),
+    [queries]
+  );
 
   const items = useMemo(() => {
     const nonGroupActive =
@@ -556,6 +568,28 @@ const QueryInsights = ({
       sortable: true,
       truncateText: true,
     },
+    ...(userInfoSupported
+      ? [
+          {
+            field: USERNAME_FIELD as keyof SearchQueryRecord,
+            name: USERNAME,
+            render: (username: string, q: SearchQueryRecord) => (
+              <span>{q.group_by === 'SIMILARITY' ? '-' : username || '-'}</span>
+            ),
+            sortable: true,
+            truncateText: true,
+          },
+          {
+            field: USER_ROLES_FIELD as keyof SearchQueryRecord,
+            name: USER_ROLES,
+            render: (roles: string[], q: SearchQueryRecord) => (
+              <span>{q.group_by === 'SIMILARITY' ? '-' : roles?.join(', ') || '-'}</span>
+            ),
+            sortable: true,
+            truncateText: true,
+          },
+        ]
+      : []),
     ...(queryInsightWlmNavigationSupported
       ? [
           {
@@ -603,6 +637,17 @@ const QueryInsights = ({
         <span>{q.group_by === 'SIMILARITY' ? '-' : ts}</span>
       ),
       sortable: true,
+      truncateText: true,
+    },
+    {
+      name: APPLICATION_ID,
+      render: (q: SearchQueryRecord) => {
+        if (q.group_by === 'SIMILARITY') return <span>-</span>;
+        const appId = q.labels?.[APPLICATION_ID_LABEL_KEY] || q.labels?.['X-Opaque-Id'] || '-';
+        return <span>{appId}</span>;
+      },
+      sortable: (q: SearchQueryRecord) =>
+        q.labels?.[APPLICATION_ID_LABEL_KEY] || q.labels?.['X-Opaque-Id'] || '',
       truncateText: true,
     },
   ];
@@ -1567,7 +1612,9 @@ const QueryInsights = ({
                             options={[
                               { value: 'node', text: 'Node' },
                               { value: 'index', text: 'Index' },
-                              { value: 'username', text: 'Username' },
+                              ...(userInfoSupported
+                                ? [{ value: 'username', text: 'Username' }]
+                                : []),
                               ...(queryInsightWlmNavigationSupported
                                 ? [{ value: 'wlm', text: 'WLM Group' }]
                                 : []),
@@ -1729,8 +1776,12 @@ const QueryInsights = ({
                                   options={[
                                     { value: 'index', text: 'Index' },
                                     { value: 'node', text: 'Node' },
-                                    { value: 'username', text: 'Username' },
-                                    { value: 'user_roles', text: 'User Roles' },
+                                    ...(userInfoSupported
+                                      ? [
+                                          { value: 'username', text: 'Username' },
+                                          { value: 'user_roles', text: 'User Roles' },
+                                        ]
+                                      : []),
                                     { value: 'wlm_group', text: 'WLM Group' },
                                   ]}
                                   value={heatmapGroupBy}
