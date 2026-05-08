@@ -41,7 +41,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
@@ -98,7 +98,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (latency): ', error);
         return response.ok({
           body: {
@@ -156,7 +156,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (cpu): ', error);
         return response.ok({
           body: {
@@ -213,7 +213,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (memory): ', error);
         return response.ok({
           body: {
@@ -258,7 +258,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
@@ -346,7 +346,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to set settings: ', error);
         return response.ok({
           body: {
@@ -401,7 +401,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             response: res,
           },
         });
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get live queries: ', error);
         return response.customError({
           statusCode: error.statusCode ?? 500,
@@ -437,7 +437,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
 
         return response.ok({ body: { ok: true, res } });
-      } catch (_error) {
+      } catch (error) {
         console.error(error);
         return response.customError({
           statusCode: error.statusCode ?? 500,
@@ -466,7 +466,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             version,
           },
         });
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get cluster version: ', error);
         return response.ok({
           body: {
@@ -536,7 +536,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
 
         return response.ok({ body: JSON.stringify(result, null, 2) });
-      } catch (_error) {
+      } catch (error) {
         logger.error(`Profiler proxy error: ${error.message}`);
         // Extract meaningful message from OpenSearch/DataSource error
         const cause = error.body || error.meta?.body;
