@@ -41,7 +41,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
@@ -98,7 +98,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (latency): ', error);
         return response.ok({
           body: {
@@ -156,7 +156,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (cpu): ', error);
         return response.ok({
           body: {
@@ -213,7 +213,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries (memory): ', error);
         return response.ok({
           body: {
@@ -258,7 +258,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get top queries: ', error);
         return response.ok({
           body: {
@@ -283,6 +283,9 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           group_by: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
           delete_after_days: schema.maybe(schema.string({ defaultValue: '' })),
+          remote_enabled: schema.maybe(schema.boolean({ defaultValue: false })),
+          remote_repository: schema.maybe(schema.string({ defaultValue: '' })),
+          remote_path: schema.maybe(schema.string({ defaultValue: '' })),
         }),
       },
     },
@@ -311,6 +314,16 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
               ? query.exporterType
               : EXPORTER_TYPE.none;
         }
+        params.body.persistent['search.insights.top_queries.exporter.remote.enabled'] =
+          query.remote_enabled;
+        if (query.remote_repository !== '') {
+          params.body.persistent['search.insights.top_queries.exporter.remote.repository'] =
+            query.remote_repository;
+        }
+        if (query.remote_path !== '') {
+          params.body.persistent['search.insights.top_queries.exporter.remote.path'] =
+            query.remote_path;
+        }
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
@@ -333,7 +346,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             },
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to set settings: ', error);
         return response.ok({
           body: {
@@ -402,7 +415,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             response: res,
           },
         });
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get live queries: ', error);
         return response.customError({
           statusCode: error.statusCode ?? 500,
@@ -438,7 +451,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
 
         return response.ok({ body: { ok: true, res } });
-      } catch (_error) {
+      } catch (error) {
         console.error(error);
         return response.customError({
           statusCode: error.statusCode ?? 500,
@@ -467,7 +480,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             version,
           },
         });
-      } catch (_error) {
+      } catch (error) {
         console.error('Unable to get cluster version: ', error);
         return response.ok({
           body: {
@@ -537,7 +550,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
 
         return response.ok({ body: JSON.stringify(result, null, 2) });
-      } catch (_error) {
+      } catch (error) {
         logger.error(`Profiler proxy error: ${error.message}`);
         // Extract meaningful message from OpenSearch/DataSource error
         const cause = error.body || error.meta?.body;
@@ -548,6 +561,146 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         return response.customError({
           statusCode: error.statusCode || 500,
           body: { message },
+        });
+      }
+    }
+  );
+
+  router.get(
+    {
+      path: '/api/snapshot/repositories',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getSnapshotRepositories');
+          return response.ok({ body: { ok: true, response: res } });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getSnapshotRepositories', {});
+          return response.ok({ body: { ok: true, response: res } });
+        }
+      } catch (error) {
+        console.error('Unable to get snapshot repositories: ', error);
+        return response.ok({ body: { ok: false, response: error.message } });
+      }
+    }
+  );
+
+  router.get(
+    {
+      path: '/api/cat/plugins',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getCatPlugins');
+          return response.ok({ body: { ok: true, response: res } });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getCatPlugins', {});
+          return response.ok({ body: { ok: true, response: res } });
+        }
+      } catch (error) {
+        console.error('Unable to get cat plugins: ', error);
+        return response.ok({ body: { ok: false, response: error.message } });
+      }
+    }
+  );
+
+  router.delete(
+    {
+      path: '/api/snapshot/repository/{repository}',
+      validate: {
+        params: schema.object({
+          repository: schema.string(),
+        }),
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const params = { repository: request.params.repository };
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.deleteSnapshotRepository', params);
+          return response.ok({ body: { ok: true, response: res } });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.deleteSnapshotRepository', params);
+          return response.ok({ body: { ok: true, response: res } });
+        }
+      } catch (error) {
+        console.error('Unable to delete snapshot repository: ', error);
+        return response.ok({ body: { ok: false, response: error.message } });
+      }
+    }
+  );
+
+  router.put(
+    {
+      path: '/api/snapshot/repository',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+        body: schema.object({
+          repository: schema.string(),
+          type: schema.string(),
+          settings: schema.object({}, { unknowns: 'allow' }),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        const { repository, type, settings } = request.body;
+        const params = {
+          repository,
+          body: { type, settings },
+        };
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.createSnapshotRepository', params);
+          return response.ok({ body: { ok: true, response: res } });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.createSnapshotRepository', params);
+          return response.ok({ body: { ok: true, response: res } });
+        }
+      } catch (error) {
+        console.error('Unable to create snapshot repository: ', error);
+        const errorBody = error.body || error.meta?.body;
+        return response.ok({
+          body: {
+            ok: false,
+            response: errorBody ? JSON.stringify(errorBody) : error.message,
+          },
         });
       }
     }

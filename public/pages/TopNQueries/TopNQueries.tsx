@@ -30,6 +30,9 @@ import {
   DEFAULT_EXPORTER_TYPE,
   DEFAULT_GROUP_BY,
   DEFAULT_METRIC_ENABLED,
+  DEFAULT_REMOTE_EXPORTER_ENABLED,
+  DEFAULT_REMOTE_EXPORTER_PATH,
+  DEFAULT_REMOTE_EXPORTER_REPOSITORY,
   DEFAULT_SHOW_LIVE_QUERIES_ON_ERROR,
   DEFAULT_TIME_UNIT,
   DEFAULT_TOP_N_SIZE,
@@ -65,6 +68,12 @@ export interface GroupBySettings {
 export interface DataRetentionSettings {
   exporterType: string;
   deleteAfterDays: string;
+}
+
+export interface RemoteExporterSettings {
+  enabled: boolean;
+  repository: string;
+  path: string;
 }
 
 export interface DataSourceContextType {
@@ -147,6 +156,12 @@ const TopNQueries = ({
   const [dataRetentionSettings, setDataRetentionSettings] = useState<DataRetentionSettings>({
     deleteAfterDays: '',
     exporterType: EXPORTER_TYPE.none,
+  });
+
+  const [remoteExporterSettings, setRemoteExporterSettings] = useState<RemoteExporterSettings>({
+    enabled: DEFAULT_REMOTE_EXPORTER_ENABLED,
+    repository: DEFAULT_REMOTE_EXPORTER_REPOSITORY,
+    path: DEFAULT_REMOTE_EXPORTER_PATH,
   });
 
   const setMetricSettings = (metricType: string, updates: Partial<MetricSettings>) => {
@@ -301,7 +316,10 @@ const TopNQueries = ({
       newTimeUnit: string = '',
       newExporterType: string = '',
       newGroupBy: string = '',
-      newDeleteAfterDays: string = ''
+      newDeleteAfterDays: string = '',
+      newRemoteEnabled: boolean = false,
+      newRemoteRepository: string = '',
+      newRemotePath: string = ''
     ) => {
       if (get) {
         try {
@@ -370,6 +388,25 @@ const TopNQueries = ({
             DEFAULT_EXPORTER_TYPE
           );
           setDataRetentionSettings({ deleteAfterDays, exporterType });
+
+          const remoteEnabled =
+            persistentSettings?.exporter?.remote?.enabled === 'true' ||
+            transientSettings?.exporter?.remote?.enabled === 'true';
+          const remoteRepository = getMergedStringSettings(
+            persistentSettings?.exporter?.remote?.repository,
+            transientSettings?.exporter?.remote?.repository,
+            DEFAULT_REMOTE_EXPORTER_REPOSITORY
+          );
+          const remotePath = getMergedStringSettings(
+            persistentSettings?.exporter?.remote?.path,
+            transientSettings?.exporter?.remote?.path,
+            DEFAULT_REMOTE_EXPORTER_PATH
+          );
+          setRemoteExporterSettings({
+            enabled: remoteEnabled,
+            repository: remoteRepository,
+            path: remotePath,
+          });
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
@@ -386,6 +423,11 @@ const TopNQueries = ({
             deleteAfterDays: newDeleteAfterDays,
             exporterType: newExporterType,
           });
+          setRemoteExporterSettings({
+            enabled: newRemoteEnabled,
+            repository: newRemoteRepository,
+            path: newRemotePath,
+          });
           const queryParams: Record<string, any> = {
             metric,
             enabled,
@@ -393,6 +435,9 @@ const TopNQueries = ({
             exporterType: newExporterType,
             group_by: newGroupBy,
             delete_after_days: newDeleteAfterDays,
+            remote_enabled: newRemoteEnabled,
+            remote_repository: newRemoteRepository,
+            remote_path: newRemotePath,
             dataSourceId: getDataSourceFromUrl().id,
           };
           if (newTimeUnit === 'MINUTES') {
@@ -547,6 +592,7 @@ const TopNQueries = ({
               memorySettings={memorySettings}
               groupBySettings={groupBySettings}
               dataRetentionSettings={dataRetentionSettings}
+              remoteExporterSettings={remoteExporterSettings}
               configInfo={retrieveConfigInfo}
               core={core}
               depsStart={depsStart}
