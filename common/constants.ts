@@ -61,6 +61,9 @@ export const EXPORTER_TYPES_LIST = [
   { value: EXPORTER_TYPE.localIndex, text: 'Local Index' },
   { value: EXPORTER_TYPE.none, text: 'None' },
 ];
+export const DEFAULT_REMOTE_EXPORTER_ENABLED = false;
+export const DEFAULT_REMOTE_EXPORTER_REPOSITORY = '';
+export const DEFAULT_REMOTE_EXPORTER_PATH = 'query-insights';
 export const DEFAULT_METRIC_ENABLED = true;
 export const DEFAULT_TOP_N_SIZE = '10';
 export const DEFAULT_WINDOW_SIZE = '5';

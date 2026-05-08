@@ -7,7 +7,7 @@ on:
     branches:
       - "*"
 env:
-  GRADLE_VERSION: '7.6.1'
+  GRADLE_VERSION: '9.4.1'
   CYPRESS_VIDEO: true
   CYPRESS_SCREENSHOT_ON_RUN_FAILURE: true
 
