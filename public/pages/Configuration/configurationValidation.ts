@@ -45,11 +45,16 @@ export const validateConfiguration = (
   windowSize: string,
   timeUnit: string,
   deleteAfterDays: string,
-  exporterType: string
+  exporterType: string,
+  remoteEnabled?: boolean,
+  remoteRepository?: string
 ): boolean => {
+  const isRemoteValid =
+    !remoteEnabled || (remoteRepository !== undefined && remoteRepository.trim() !== '');
   return (
     validateTopNSize(topNSize) &&
     validateWindowSize(windowSize, timeUnit) &&
-    validateDeleteAfterDays(deleteAfterDays, exporterType)
+    validateDeleteAfterDays(deleteAfterDays, exporterType) &&
+    isRemoteValid
   );
 };
