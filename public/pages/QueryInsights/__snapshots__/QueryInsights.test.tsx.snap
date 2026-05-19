@@ -6,72 +6,36 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     class="euiSpacer euiSpacer--m"
   />
   <div
-    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow"
+    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsFlexStart euiFlexGroup--directionRow euiFlexGroup--responsive"
   >
     <div
       class="euiFlexItem"
-      style="min-width: 0;"
     >
       <div
-        class="euiFormControlLayout euiFormControlLayout--fullWidth euiFormControlLayout--compressed"
+        style="position: relative; min-width: 400px;"
       >
         <div
-          class="euiFormControlLayout__childrenWrapper"
-        >
-          <input
-            class="euiFieldSearch euiFieldSearch--fullWidth euiFieldSearch--compressed"
-            placeholder="Search queries"
-            type="search"
-            value=""
-          />
-          <div
-            class="euiFormControlLayoutIcons"
-          >
-            <span
-              class="euiFormControlLayoutCustomIcon"
-            >
-              <svg
-                aria-hidden="true"
-                class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
-                focusable="false"
-                height="16"
-                role="img"
-                viewBox="0 0 16 16"
-                width="16"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="m11.271 11.978 3.872 3.873a.502.502 0 0 0 .708 0 .502.502 0 0 0 0-.708l-3.565-3.564c2.38-2.747 2.267-6.923-.342-9.532-2.73-2.73-7.17-2.73-9.898 0-2.728 2.729-2.728 7.17 0 9.9a6.955 6.955 0 0 0 4.949 2.05.5.5 0 0 0 0-1 5.96 5.96 0 0 1-4.242-1.757 6.01 6.01 0 0 1 0-8.486c2.337-2.34 6.143-2.34 8.484 0a6.01 6.01 0 0 1 0 8.486.5.5 0 0 0 .034.738Z"
-                />
-              </svg>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      class="euiFlexItem euiFlexItem--flexGrowZero"
-      style="min-width: 0; overflow: auto;"
-    >
-      <div
-        class="euiFilterGroup"
-      >
-        <div
-          class="euiPopover euiPopover--anchorDownCenter"
+          class="euiFormControlLayout euiFormControlLayout--fullWidth"
         >
           <div
-            class="euiPopover__anchor"
+            class="euiFormControlLayout__childrenWrapper"
           >
-            <button
-              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-              type="button"
+            <input
+              aria-label="Dynamic search bar"
+              class="euiFieldSearch euiFieldSearch--fullWidth"
+              placeholder="e.g. latency >= 100 AND type = query"
+              type="search"
+              value=""
+            />
+            <div
+              class="euiFormControlLayoutIcons"
             >
               <span
-                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                class="euiFormControlLayoutCustomIcon"
               >
                 <svg
                   aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                  class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
                   focusable="false"
                   height="16"
                   role="img"
@@ -80,152 +44,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                    fill-rule="non-zero"
+                    d="m11.271 11.978 3.872 3.873a.502.502 0 0 0 .708 0 .502.502 0 0 0 0-.708l-3.565-3.564c2.38-2.747 2.267-6.923-.342-9.532-2.73-2.73-7.17-2.73-9.898 0-2.728 2.729-2.728 7.17 0 9.9a6.955 6.955 0 0 0 4.949 2.05.5.5 0 0 0 0-1 5.96 5.96 0 0 1-4.242-1.757 6.01 6.01 0 0 1 0-8.486c2.337-2.34 6.143-2.34 8.484 0a6.01 6.01 0 0 1 0 8.486.5.5 0 0 0 .034.738Z"
                   />
                 </svg>
-                <span
-                  class="euiButtonEmpty__text"
-                >
-                  <span
-                    class="euiFilterButton__textShift"
-                    data-text="Type"
-                    title="Type"
-                  >
-                    Type
-                  </span>
-                </span>
               </span>
-            </button>
-          </div>
-        </div>
-        <div
-          class="euiPopover euiPopover--anchorDownCenter"
-        >
-          <div
-            class="euiPopover__anchor"
-          >
-            <button
-              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-              type="button"
-            >
-              <span
-                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                    fill-rule="non-zero"
-                  />
-                </svg>
-                <span
-                  class="euiButtonEmpty__text"
-                >
-                  <span
-                    class="euiFilterButton__textShift"
-                    data-text="Indices"
-                    title="Indices"
-                  >
-                    Indices
-                  </span>
-                </span>
-              </span>
-            </button>
-          </div>
-        </div>
-        <div
-          class="euiPopover euiPopover--anchorDownCenter"
-        >
-          <div
-            class="euiPopover__anchor"
-          >
-            <button
-              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-              type="button"
-            >
-              <span
-                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                    fill-rule="non-zero"
-                  />
-                </svg>
-                <span
-                  class="euiButtonEmpty__text"
-                >
-                  <span
-                    class="euiFilterButton__textShift"
-                    data-text="Search Type"
-                    title="Search Type"
-                  >
-                    Search Type
-                  </span>
-                </span>
-              </span>
-            </button>
-          </div>
-        </div>
-        <div
-          class="euiPopover euiPopover--anchorDownCenter"
-        >
-          <div
-            class="euiPopover__anchor"
-          >
-            <button
-              class="euiButtonEmpty euiButtonEmpty--text euiFilterButton euiFilterButton--hasIcon"
-              type="button"
-            >
-              <span
-                class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
-              >
-                <svg
-                  aria-hidden="true"
-                  class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
-                  focusable="false"
-                  height="16"
-                  role="img"
-                  viewBox="0 0 16 16"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
-                    fill-rule="non-zero"
-                  />
-                </svg>
-                <span
-                  class="euiButtonEmpty__text"
-                >
-                  <span
-                    class="euiFilterButton__textShift"
-                    data-text="Coordinator Node ID"
-                    title="Coordinator Node ID"
-                  >
-                    Coordinator Node ID
-                  </span>
-                </span>
-              </span>
-            </button>
+            </div>
           </div>
         </div>
       </div>

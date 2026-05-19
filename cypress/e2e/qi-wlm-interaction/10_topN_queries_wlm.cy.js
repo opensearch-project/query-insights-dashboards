@@ -5,16 +5,16 @@
 
 describe('Top N Queries - WLM Available', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/top_queries/latency**', {
+    cy.intercept('GET', '**/api/top_queries/latency**', {
       fixture: 'stub_top_queries_query_only.json',
     }).as('latency');
-    cy.intercept('GET', '/api/top_queries/cpu**', {
+    cy.intercept('GET', '**/api/top_queries/cpu**', {
       fixture: 'stub_top_queries_query_only.json',
     }).as('cpu');
-    cy.intercept('GET', '/api/top_queries/memory**', {
+    cy.intercept('GET', '**/api/top_queries/memory**', {
       fixture: 'stub_top_queries_query_only.json',
     }).as('memory');
-    cy.intercept('GET', '/api/_wlm/workload_group', {
+    cy.intercept('GET', '**/api/_wlm/workload_group**', {
       statusCode: 200,
       body: {
         workload_groups: [
@@ -33,7 +33,8 @@ describe('Top N Queries - WLM Available', () => {
   });
 
   it('shows WLM Group column with correct values', () => {
-    cy.contains('WLM Group').should('be.visible');
+    // WLM Group column exists in the table
+    cy.get('.euiBasicTable').last().should('contain.text', 'WLM Group');
     cy.get('.euiBasicTable')
       .last()
       .find('tbody tr')
@@ -43,22 +44,16 @@ describe('Top N Queries - WLM Available', () => {
     cy.get('.euiBasicTable').last().find('tbody tr').eq(2).should('contain', 'Search Team');
   });
 
-  it('has WLM group filter button with options', () => {
-    cy.contains('button.euiFilterButton', 'WLM Group').should('be.visible').click({ force: true });
-    cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
-    cy.contains('.euiSelectableListItem', 'DEFAULT_WORKLOAD_GROUP').should('be.visible');
-    cy.contains('.euiSelectableListItem', 'Analytics Team').should('be.visible');
-    cy.contains('.euiSelectableListItem', 'Search Team').should('be.visible');
-    cy.get('body').click(0, 0);
-  });
-
-  it('filters by DEFAULT_WORKLOAD_GROUP', () => {
-    cy.contains('button.euiFilterButton', 'WLM Group').should('be.visible').click({ force: true });
-    cy.get('.euiSelectableListItem', { timeout: 10000 }).should('exist');
-    cy.contains('.euiSelectableListItem', 'DEFAULT_WORKLOAD_GROUP').click({ force: true });
-    cy.get('body').click(0, 0);
+  it('filters by WLM group using search bar', () => {
+    const searchInput = 'input[placeholder="e.g. latency >= 100 AND type = query"]';
+    cy.get(searchInput).clear({ force: true }).type('wlm_group_id = DEFAULT_WORKLOAD_GROUP');
     cy.wait(300);
     cy.get('.euiBasicTable').last().find('tbody tr').should('have.length', 1);
+    cy.get('.euiBasicTable')
+      .last()
+      .find('tbody tr')
+      .eq(0)
+      .should('contain', 'DEFAULT_WORKLOAD_GROUP');
   });
 
   it('shows WLM group links when mapped', () => {
@@ -81,8 +76,9 @@ describe('Top N Queries - WLM Available', () => {
       .find('button')
       .should('contain', 'Search Team');
   });
+
   it('shows dash for group type records', () => {
-    cy.intercept('GET', '/api/top_queries/latency**', {
+    cy.intercept('GET', '**/api/top_queries/latency**', {
       body: {
         ok: true,
         response: {
@@ -97,7 +93,7 @@ describe('Top N Queries - WLM Available', () => {
         },
       },
     }).as('groupData');
-    cy.intercept('GET', '/api/_wlm/workload_group', {
+    cy.intercept('GET', '**/api/_wlm/workload_group**', {
       statusCode: 200,
       body: { workload_groups: [] },
     }).as('wlmGroups2');
@@ -107,7 +103,7 @@ describe('Top N Queries - WLM Available', () => {
   });
 
   it('shows dash for unmapped wlm_group_id', () => {
-    cy.intercept('GET', '/api/_wlm/workload_group', {
+    cy.intercept('GET', '**/api/_wlm/workload_group**', {
       statusCode: 200,
       body: { workload_groups: [] },
     }).as('wlmGroups3');

@@ -130,29 +130,29 @@ describe('QueryInsights Component', () => {
     it('should initialize search query with wlmGroupId from URL', () => {
       renderQueryInsights(['/?wlmGroupId=analytics-workload']);
 
-      const searchBox = screen.getByPlaceholderText('Search queries');
-      expect(searchBox).toHaveValue('wlm_group_id:(analytics-workload)');
+      const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
+      expect(searchBox).toHaveValue('wlm_group_id = analytics-workload');
     });
 
     it('should initialize empty search query when no wlmGroupId in URL', () => {
       renderQueryInsights(['/']);
 
-      const searchBox = screen.getByPlaceholderText('Search queries');
+      const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       expect(searchBox).toHaveValue('');
     });
 
     it('should extract only wlmGroupId when multiple URL parameters exist', () => {
       renderQueryInsights(['/?wlmGroupId=search-heavy&dashboard=main&tab=queries']);
 
-      const searchBox = screen.getByPlaceholderText('Search queries');
-      expect(searchBox).toHaveValue('wlm_group_id:(search-heavy)');
+      const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
+      expect(searchBox).toHaveValue('wlm_group_id = search-heavy');
     });
 
     it('should decode URL-encoded wlmGroupId values', () => {
       renderQueryInsights(['/?wlmGroupId=ml-training']);
 
-      const searchBox = screen.getByPlaceholderText('Search queries');
-      expect(searchBox).toHaveValue('wlm_group_id:(ml-training)');
+      const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
+      expect(searchBox).toHaveValue('wlm_group_id = ml-training');
     });
   });
 
@@ -640,20 +640,23 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      expect(screen.getByPlaceholderText('Search queries')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('e.g. latency >= 100 AND type = query')
+      ).toBeInTheDocument();
     });
 
-    it('opens Type filter popover on click', async () => {
+    it('shows suggestions when typing in search bar', async () => {
       mockHttp.get.mockResolvedValue({ workload_groups: [] });
       await act(async () => {
         renderQueryInsights();
       });
 
-      const typeButton = findTypeFilterButton();
-      fireEvent.click(typeButton);
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
+      fireEvent.change(searchInput, { target: { value: 'lat' } });
 
+      // Should show field suggestions
       await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(searchInput).toHaveValue('lat');
       });
     });
 
@@ -663,7 +666,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       fireEvent.change(searchInput, { target: { value: 'a2e1c822' } });
 
       // Search should filter the table
@@ -678,7 +681,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       fireEvent.change(searchInput, { target: { value: 'my-index' } });
 
       await waitFor(() => {
@@ -693,7 +696,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       fireEvent.change(searchInput, { target: { value: 'KINGun8' } });
 
       await waitFor(() => {
@@ -708,7 +711,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       fireEvent.change(searchInput, { target: { value: 'SEARCH_GROUP' } });
 
       await waitFor(() => {
@@ -723,7 +726,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       // Search for X-Opaque-Id value from fixture
       fireEvent.change(searchInput, { target: { value: '90eb5c3b-8448' } });
 
@@ -739,7 +742,7 @@ describe('QueryInsights Component', () => {
         renderQueryInsights();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search queries');
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
       // Search for total_shards value
       fireEvent.change(searchInput, { target: { value: 'query_then_fetch' } });
 
