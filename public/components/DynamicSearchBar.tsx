@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { EuiFieldSearch, EuiText, EuiBadge } from '@elastic/eui';
+import { EuiFieldSearch, EuiText, EuiBadge, EuiPanel } from '@elastic/eui';
 import { SearchQueryRecord } from '../../types/types';
 
 // --- Field definitions ---
@@ -176,7 +176,7 @@ function compareValues(
     const target = targetStr.toLowerCase();
     if (operator === '=') return arr.some((v: any) => String(v).toLowerCase() === target);
     if (operator === '!=') return !arr.some((v: any) => String(v).toLowerCase() === target);
-    return true;
+    return false;
   }
 
   if (fieldType === 'number') {
@@ -212,7 +212,7 @@ function compareValues(
         return false;
       }
       default:
-        return true;
+        return false;
     }
   }
 
@@ -223,7 +223,7 @@ function compareValues(
       targetStr.toLowerCase() === 'true' || targetStr.toLowerCase() === 'completed';
     if (operator === '=') return boolVal === boolTarget;
     if (operator === '!=') return boolVal !== boolTarget;
-    return true;
+    return false;
   }
 
   // string comparison
@@ -234,7 +234,7 @@ function compareValues(
   if (operator === 'starts_with') return strVal.startsWith(strTarget);
   if (operator === 'ends_with') return strVal.endsWith(strTarget);
   if (operator === 'contains') return strVal.includes(strTarget);
-  return true;
+  return false;
 }
 
 // --- Autocomplete state machine ---
@@ -508,7 +508,6 @@ export const DynamicSearchBar: React.FC<DynamicSearchBarProps> = ({
         onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        compressed
         fullWidth
         aria-label="Dynamic search bar"
       />
@@ -524,26 +523,37 @@ export const DynamicSearchBar: React.FC<DynamicSearchBarProps> = ({
                 iconType="cross"
                 iconSide="right"
                 iconOnClick={() => {
-                  // Remove this condition from the expression
+                  // Remove this condition and its adjacent conjunction from the expression.
+                  // Split into alternating [cond, conj, cond, conj, cond, ...] tokens.
                   const parts = value.split(/\s+(AND|OR)\s+/i);
-                  const newParts: string[] = [];
-                  let condIdx = 0;
+                  const conditions: string[] = [];
+                  const conjunctions: string[] = [];
                   for (const part of parts) {
                     if (/^(AND|OR)$/i.test(part)) {
-                      newParts.push(part);
+                      conjunctions.push(part);
                     } else {
-                      if (condIdx !== i) newParts.push(part);
-                      condIdx++;
+                      conditions.push(part);
                     }
                   }
-                  // Clean up dangling conjunctions
-                  const cleaned = newParts.filter((p, idx) => {
-                    if (/^(AND|OR)$/i.test(p)) {
-                      return idx > 0 && idx < newParts.length - 1;
+                  // Remove the condition at index i
+                  conditions.splice(i, 1);
+                  // Remove the adjacent conjunction:
+                  // - If removing a middle/last condition, remove the conjunction before it
+                  // - If removing the first condition, remove the conjunction after it
+                  if (i > 0) {
+                    conjunctions.splice(i - 1, 1);
+                  } else if (conjunctions.length > 0) {
+                    conjunctions.splice(0, 1);
+                  }
+                  // Rebuild: interleave conditions with conjunctions
+                  const result: string[] = [];
+                  conditions.forEach((cond, idx) => {
+                    if (idx > 0 && conjunctions[idx - 1]) {
+                      result.push(conjunctions[idx - 1]);
                     }
-                    return true;
+                    result.push(cond);
                   });
-                  onChange(cleaned.join(' ').trim());
+                  onChange(result.join(' ').trim());
                 }}
                 iconOnClickAriaLabel={`Remove filter ${c.field} ${c.operator} ${c.value}`}
               >
@@ -561,19 +571,16 @@ export const DynamicSearchBar: React.FC<DynamicSearchBarProps> = ({
         </div>
       )}
       {isOpen && suggestions.length > 0 && (
-        <div
+        <EuiPanel
+          paddingSize="none"
           style={{
             position: 'absolute',
             top: '100%',
             left: 0,
             right: 0,
             zIndex: 9999,
-            background: '#fff',
-            border: '1px solid #D4DAE5',
-            borderRadius: 4,
             maxHeight: 200,
             overflowY: 'auto',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
         >
           {suggestions.map((s, idx) => (
@@ -585,7 +592,6 @@ export const DynamicSearchBar: React.FC<DynamicSearchBarProps> = ({
               style={{
                 padding: '6px 12px',
                 cursor: 'pointer',
-                borderBottom: idx < suggestions.length - 1 ? '1px solid #f0f0f0' : 'none',
               }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -598,14 +604,14 @@ export const DynamicSearchBar: React.FC<DynamicSearchBarProps> = ({
               <EuiText size="s">
                 <span>{s.label}</span>
                 {s.description && (
-                  <span style={{ color: '#98A2B3', marginLeft: 8, fontSize: '0.85em' }}>
+                  <EuiText size="xs" color="subdued" component="span" style={{ marginLeft: 8 }}>
                     {s.description}
-                  </span>
+                  </EuiText>
                 )}
               </EuiText>
             </div>
           ))}
-        </div>
+        </EuiPanel>
       )}
     </div>
   );

@@ -131,7 +131,7 @@ describe('QueryInsights Component', () => {
       renderQueryInsights(['/?wlmGroupId=analytics-workload']);
 
       const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
-      expect(searchBox).toHaveValue('wlm_group_id:(analytics-workload)');
+      expect(searchBox).toHaveValue('wlm_group_id = analytics-workload');
     });
 
     it('should initialize empty search query when no wlmGroupId in URL', () => {
@@ -145,14 +145,14 @@ describe('QueryInsights Component', () => {
       renderQueryInsights(['/?wlmGroupId=search-heavy&dashboard=main&tab=queries']);
 
       const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
-      expect(searchBox).toHaveValue('wlm_group_id:(search-heavy)');
+      expect(searchBox).toHaveValue('wlm_group_id = search-heavy');
     });
 
     it('should decode URL-encoded wlmGroupId values', () => {
       renderQueryInsights(['/?wlmGroupId=ml-training']);
 
       const searchBox = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
-      expect(searchBox).toHaveValue('wlm_group_id:(ml-training)');
+      expect(searchBox).toHaveValue('wlm_group_id = ml-training');
     });
   });
 

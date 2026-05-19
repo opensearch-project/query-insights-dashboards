@@ -81,7 +81,6 @@ const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const WLM_GROUP_FIELD = 'wlm_group_id';
 const METRIC_DEFAULT_MSG = 'Not enabled';
-const _GROUP_BY_FIELD = 'group_by';
 
 /**
  * QueryInsights component
@@ -129,7 +128,7 @@ const QueryInsights = ({
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
   const [searchQuery, setSearchQuery] = useState<string>(
-    wlmGroupIdFromUrl ? `${WLM_GROUP_FIELD}:(${wlmGroupIdFromUrl})` : ''
+    wlmGroupIdFromUrl ? `wlm_group_id = ${wlmGroupIdFromUrl}` : ''
   );
   const [chartGroupBy, setChartGroupBy] = useState<'node' | 'index' | 'username' | 'wlm'>('node');
   const [performanceMetric, setPerformanceMetric] = useState<
@@ -1017,7 +1016,7 @@ const QueryInsights = ({
       {!loading && (
         <>
           <EuiSpacer size="m" />
-          <EuiFlexGroup alignItems="center" gutterSize="m">
+          <EuiFlexGroup alignItems="flexStart" gutterSize="m">
             <EuiFlexItem grow>
               <DynamicSearchBar
                 fields={searchFields}

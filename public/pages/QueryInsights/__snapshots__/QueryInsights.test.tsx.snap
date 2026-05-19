@@ -6,7 +6,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
     class="euiSpacer euiSpacer--m"
   />
   <div
-    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsCenter euiFlexGroup--directionRow euiFlexGroup--responsive"
+    class="euiFlexGroup euiFlexGroup--gutterMedium euiFlexGroup--alignItemsFlexStart euiFlexGroup--directionRow euiFlexGroup--responsive"
   >
     <div
       class="euiFlexItem"
@@ -15,14 +15,14 @@ exports[`QueryInsights Component renders the table with the correct columns and 
         style="position: relative; min-width: 400px;"
       >
         <div
-          class="euiFormControlLayout euiFormControlLayout--fullWidth euiFormControlLayout--compressed"
+          class="euiFormControlLayout euiFormControlLayout--fullWidth"
         >
           <div
             class="euiFormControlLayout__childrenWrapper"
           >
             <input
               aria-label="Dynamic search bar"
-              class="euiFieldSearch euiFieldSearch--fullWidth euiFieldSearch--compressed"
+              class="euiFieldSearch euiFieldSearch--fullWidth"
               placeholder="e.g. latency >= 100 AND type = query"
               type="search"
               value=""
@@ -35,7 +35,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               >
                 <svg
                   aria-hidden="true"
-                  class="euiIcon euiIcon--small euiFormControlLayoutCustomIcon__icon"
+                  class="euiIcon euiIcon--medium euiFormControlLayoutCustomIcon__icon"
                   focusable="false"
                   height="16"
                   role="img"

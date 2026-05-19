@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
@@ -176,7 +176,6 @@ describe('InflightQueries', () => {
     await waitFor(
       () => {
         expect(screen.getByText('Active queries')).toBeInTheDocument();
-        expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
@@ -415,7 +414,7 @@ describe('InflightQueries', () => {
     await waitFor(
       () => {
         expect(retrieveLiveQueries).toHaveBeenCalled();
-        expect(screen.getByLabelText('Workload group selector')).toBeInTheDocument();
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
       },
       { timeout: 1000 }
     );
@@ -674,8 +673,8 @@ describe('InflightQueries', () => {
       { timeout: 5000 }
     );
 
-    // Should not show WLM selector
-    expect(screen.queryByLabelText('Workload group selector')).not.toBeInTheDocument();
+    // Should not show WLM selector or WLM Group column
+    expect(screen.queryByText('WLM Group')).not.toBeInTheDocument();
   });
 });
 
@@ -1260,6 +1259,295 @@ describe('InflightQueries - additional coverage', () => {
       // Should show coordinator and shard tasks from old format
       expect(screen.getAllByText('Coordinator Task').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('Query Source')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('InflightQueries - DynamicSearchBar filtering', () => {
+  const multiQueryPayload = {
+    ok: true,
+    response: {
+      live_queries: [
+        {
+          id: 'task-node1:100',
+          timestamp: 1640995200000,
+          node_id: 'nodeAlpha',
+          description: 'indices[orders-2024] search_type[query_then_fetch]',
+          measurements: {
+            latency: { number: 5e9 },
+            cpu: { number: 2e6 },
+            memory: { number: 4096 },
+          },
+          is_cancelled: false,
+          wlm_group_id: 'ANALYTICS_GROUP',
+        },
+        {
+          id: 'task-node2:200',
+          timestamp: 1640995201000,
+          node_id: 'nodeBeta',
+          description: 'indices[logs-2024] search_type[dfs_query_then_fetch]',
+          measurements: {
+            latency: { number: 10e9 },
+            cpu: { number: 5e6 },
+            memory: { number: 8192 },
+          },
+          is_cancelled: false,
+          wlm_group_id: 'SEARCH_GROUP',
+        },
+        {
+          id: 'task-node1:300',
+          timestamp: 1640995202000,
+          node_id: 'nodeAlpha',
+          description: 'indices[orders-2024] search_type[query_then_fetch]',
+          measurements: {
+            latency: { number: 1e9 },
+            cpu: { number: 1e6 },
+            memory: { number: 2048 },
+          },
+          is_cancelled: true,
+          wlm_group_id: 'ANALYTICS_GROUP',
+        },
+      ],
+    },
+  };
+
+  it('filters by task ID using the search bar', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('task-node1:100')).toBeInTheDocument();
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'id = task-node2:200' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node2:200').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+      expect(screen.queryByText('task-node1:300')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters by index in free-text search', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:100').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'logs-2024' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node2:200').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters by status', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:100').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    // Use structured id search to filter to a specific task
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'id = task-node1:300' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:300').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters by coordinator node', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:100').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'nodeBeta' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node2:200').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters by wlm_group', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:100').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    await act(async () => {
+      fireEvent.change(searchInput, { target: { value: 'SEARCH_GROUP' } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node2:200').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters with compound expression (AND)', async () => {
+    const core = makeCore();
+    mockLiveQueries(multiQueryPayload);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node1:100').length).toBeGreaterThanOrEqual(1);
+    });
+
+    const searchInput = screen.getByLabelText('Dynamic search bar');
+
+    // Use free-text AND: both terms must appear in the stringified row
+    await act(async () => {
+      fireEvent.change(searchInput, {
+        target: { value: 'id = task-node2:200 AND search_type = dfs query then fetch' },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText('task-node2:200').length).toBeGreaterThanOrEqual(1);
+      expect(screen.queryByText('task-node1:100')).not.toBeInTheDocument();
+      expect(screen.queryByText('task-node1:300')).not.toBeInTheDocument();
     });
   });
 });

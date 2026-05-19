@@ -45,10 +45,9 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       });
   });
 
-  it('calls different API when WLM group selection changes', () => {
-    cy.get('[aria-label="Workload group selector"]').select('ANALYTICS_WORKLOAD_GROUP');
+  it('filters by WLM group using the dynamic search bar', () => {
+    cy.get('[aria-label="Dynamic search bar"]').type('ANALYTICS_WORKLOAD_GROUP');
     cy.wait('@liveQueries');
-    cy.wait('@wlmStats');
   });
 
   it('displays finished query stats panels', () => {
@@ -72,9 +71,27 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
       });
   });
 
-  it('shows workload group selector with mapped names', () => {
-    cy.contains('.euiBadge', 'Workload group').should('be.visible');
-    cy.get('[aria-label="Workload group selector"]').should('be.visible');
+  it('shows dynamic search bar for filtering', () => {
+    cy.get('[aria-label="Dynamic search bar"]').should('be.visible');
+  });
+
+  it('filters by WLM group using structured expression', () => {
+    cy.get('[aria-label="Dynamic search bar"]')
+      .clear()
+      .type('wlm_group = ANALYTICS_WORKLOAD_GROUP');
+    cy.get('tbody tr').each(($row) => {
+      cy.wrap($row).should('contain.text', 'ANALYTICS_WORKLOAD_GROUP');
+    });
+  });
+
+  it('WLM group column links navigate to WLM details', () => {
+    cy.get('table tbody tr')
+      .first()
+      .within(() => {
+        cy.get('button')
+          .contains(/ANALYTICS_WORKLOAD_GROUP|SEARCH_WORKLOAD_GROUP/)
+          .should('exist');
+      });
   });
 
   it('displays status badges in the table', () => {
