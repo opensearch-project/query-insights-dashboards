@@ -202,13 +202,13 @@ describe('Inflight Queries Dashboard', () => {
     cy.contains('p', 'Active Queries by Node')
       .closest('.euiPanel')
       .within(() => {
-        cy.contains('No data available').should('be.visible');
+        cy.contains('No Visualization Available').should('be.visible');
       });
 
     cy.contains('p', 'Active Queries by Index')
       .closest('.euiPanel')
       .within(() => {
-        cy.contains('No data available').should('be.visible');
+        cy.contains('No Visualization Available').should('be.visible');
       });
   });
 
@@ -235,9 +235,8 @@ describe('Inflight Queries Dashboard', () => {
     });
   });
 
-  it('filters table to show only "opensearch" index queries', () => {
-    cy.contains('button', 'Index').click();
-    cy.contains('[role="option"]', 'opensearch').click();
+  it('filters table using the dynamic search bar', () => {
+    cy.get('[aria-label="Dynamic search bar"]').type('opensearch');
     cy.get('tbody tr').should('have.length', 1);
     cy.get('tbody tr')
       .first()
@@ -246,13 +245,75 @@ describe('Inflight Queries Dashboard', () => {
       });
   });
 
-  it('shows a grey "Workload group" badge with a dropdown next to it', () => {
-    cy.contains('.euiBadge', 'Workload group').should('be.visible');
-    cy.contains('.euiBadge', 'Workload group')
-      .parent()
-      .next()
-      .find('select, .euiSelect')
-      .should('exist');
+  it('filters table by task ID using structured expression', () => {
+    cy.fixture('stub_live_queries.json').then((data) => {
+      const firstRunningQuery = data.response.live_queries.find((q) => !q.is_cancelled);
+      cy.get('[aria-label="Dynamic search bar"]').clear().type(`id = ${firstRunningQuery.id}`);
+      cy.get('tbody tr').should('have.length', 1);
+      cy.get('tbody tr').first().contains(firstRunningQuery.id);
+    });
+  });
+
+  it('renders the search bar with correct placeholder', () => {
+    cy.get('input[placeholder="e.g. latency >= 1 AND status = Running"]').should('be.visible');
+  });
+
+  it('shows field suggestions when search bar is focused', () => {
+    cy.get('[aria-label="Dynamic search bar"]').click();
+    cy.get('[role="option"]').should('have.length.greaterThan', 0);
+    cy.get('[role="option"]').first().should('contain.text', 'id');
+  });
+
+  it('shows operator suggestions after typing a field name and space', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('latency ');
+    cy.get('[role="option"]').should('have.length.greaterThan', 0);
+    cy.get('[role="option"]').should('contain.text', '=');
+    cy.get('[role="option"]').should('contain.text', '>=');
+    cy.get('[role="option"]').should('contain.text', 'between');
+  });
+
+  it('shows string operators for string fields', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('search_type ');
+    cy.get('[role="option"]').should('contain.text', '=');
+    cy.get('[role="option"]').should('contain.text', 'starts_with');
+    cy.get('[role="option"]').should('contain.text', 'contains');
+  });
+
+  it('shows value suggestions after typing field and operator', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('search_type = ');
+    cy.get('[role="option"]').should('have.length.greaterThan', 0);
+  });
+
+  it('shows conjunction suggestions after a complete condition', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('id = somevalue ');
+    cy.get('[role="option"]').should('contain.text', 'AND');
+    cy.get('[role="option"]').should('contain.text', 'OR');
+  });
+
+  it('shows filter badges for active conditions', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('status = Running ');
+    cy.get('.euiBadge').contains('status').should('exist');
+  });
+
+  it('removes filter when badge X is clicked', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('status = Running ');
+    cy.get('.euiBadge')
+      .contains('status')
+      .closest('.euiBadge')
+      .find('button, [role="img"], svg')
+      .last()
+      .click({ force: true });
+    cy.get('[aria-label="Dynamic search bar"]').should('have.value', '');
+  });
+
+  it('auto-formats between expression with parentheses', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('latency between 1 10 ');
+    cy.get('[aria-label="Dynamic search bar"]').should('have.value', 'latency between (1, 10) ');
+  });
+
+  it('shows no items when filter matches nothing', () => {
+    cy.get('[aria-label="Dynamic search bar"]').clear().type('id = nonexistent_xyz_123');
+    cy.contains('No items found').should('be.visible');
   });
 
   it('displays WLM group as text when WLM is disabled', () => {
