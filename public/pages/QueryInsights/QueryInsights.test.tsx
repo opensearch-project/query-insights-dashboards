@@ -253,8 +253,11 @@ describe('QueryInsights Component', () => {
           'Indices',
           'Search Type',
           'Coordinator Node ID',
+          'Username',
+          'User Roles',
           'WLM Group',
           'Total Shards',
+          'Application ID',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       },
@@ -308,6 +311,8 @@ describe('QueryInsights Component', () => {
           'Indices',
           'Search Type',
           'Coordinator Node ID',
+          'Username',
+          'User Roles',
           'WLM Group',
           'Total Shards',
         ];
@@ -341,6 +346,8 @@ describe('QueryInsights Component', () => {
           'Indices',
           'Search Type',
           'Coordinator Node ID',
+          'Username',
+          'User Roles',
           'WLM Group',
           'Total Shards',
         ];

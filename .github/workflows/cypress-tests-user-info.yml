@@ -1,0 +1,221 @@
+name: Cypress e2e tests for User Info columns with security
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+env:
+  OS_BRANCH: "main"
+  SECURITY_ENABLED: "true"
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: "myStrongPassword123!"
+jobs:
+  tests:
+    name: Run Cypress E2E tests for User Info with security
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            cypress_cache_folder: ~/.cache/Cypress
+    runs-on: ${{ matrix.os }}
+    env:
+      CI: 1
+      TERM: xterm
+      NODE_OPTIONS: '--max-old-space-size=6144 --dns-result-order=ipv4first'
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: 'myStrongPassword123!'
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 21
+
+      - name: Checkout OpenSearch
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Get OpenSearch version
+        id: get-version
+        run: |
+          cd OpenSearch
+          VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}' | sed 's/-SNAPSHOT//')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build Query Insights plugin
+        run: |
+          cd OpenSearch
+          ./gradlew :plugins:query-insights:assemble --no-daemon -x test
+          cp plugins/query-insights/build/distributions/query-insights-*.zip "$GITHUB_WORKSPACE/query-insights.zip"
+
+      - name: Download Security plugin
+        run: |
+          VERSION=${{ steps.get-version.outputs.VERSION }}
+          REPO="https://ci.opensearch.org/ci/dbc/snapshots/maven/org/opensearch/plugin/opensearch-security/${VERSION}.0-SNAPSHOT"
+          METADATA=$(curl -s "${REPO}/maven-metadata.xml")
+          SNAPSHOT_VER=$(echo "$METADATA" | grep -oP '(?<=<value>)[^<]+' | head -1)
+          curl -sL "${REPO}/opensearch-security-${SNAPSHOT_VER}.zip" -o "$GITHUB_WORKSPACE/security.zip"
+
+      - name: Run OpenSearch with plugins
+        uses: derek-ho/start-opensearch@v9
+        with:
+          opensearch-version: ${{ steps.get-version.outputs.VERSION }}
+          plugins: "file:$GITHUB_WORKSPACE/query-insights.zip,file:$GITHUB_WORKSPACE/security.zip"
+          security-enabled: true
+          admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          jdk-version: 21
+
+      - name: Enable Query Insights and create test users
+        run: |
+          # Enable query insights
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_cluster/settings" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "persistent": {
+                "search.insights.top_queries.latency.enabled": true,
+                "search.insights.top_queries.latency.window_size": "1m",
+                "search.insights.top_queries.latency.top_n_size": 100
+              }
+            }'
+
+          # Create test user
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_plugins/_security/api/internalusers/testuser_alice" \
+            -H "Content-Type: application/json" \
+            -d '{"password":"TestP@ssw0rd!2026","backend_roles":["analyst"]}'
+
+          # Map user to all_access
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_plugins/_security/api/rolesmapping/all_access" \
+            -H "Content-Type: application/json" \
+            -d '{"users":["admin","testuser_alice"],"backend_roles":["admin"]}'
+
+          # Create test index and run queries
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X POST "https://localhost:9200/test-user-info/_doc" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"test","value":42}'
+
+          # Run queries as different users
+          for i in $(seq 1 10); do
+            curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+              -X POST "https://localhost:9200/test-user-info/_search" \
+              -H "Content-Type: application/json" \
+              -H "X-Opaque-Id: admin-console" \
+              -d '{"query":{"match_all":{}}}' > /dev/null
+            curl -ksu testuser_alice:TestP@ssw0rd!2026 \
+              -X POST "https://localhost:9200/test-user-info/_search" \
+              -H "Content-Type: application/json" \
+              -H "X-Opaque-Id: analytics-app" \
+              -d '{"query":{"match_all":{}}}' > /dev/null
+          done
+
+          # Wait for window
+          sleep 65
+
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          path: OpenSearch-Dashboards
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Configure OpenSearch Dashboards
+        run: |
+          FILE="OpenSearch-Dashboards/config/opensearch_dashboards.yml"
+          printf '%s\n' 'server.host: "0.0.0.0"' >> "$FILE"
+          printf '%s\n' 'opensearch.hosts: ["https://localhost:9200"]' >> "$FILE"
+          printf '%s\n' 'opensearch.ssl.verificationMode: none' >> "$FILE"
+          printf '%s\n' 'opensearch.username: "admin"' >> "$FILE"
+          printf '%s\n' "opensearch.password: \"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\"" >> "$FILE"
+
+      - name: Checkout Query Insights Dashboards plugin
+        uses: actions/checkout@v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          npm i -g yarn@$YARN_VERSION
+
+      - name: Bootstrap
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
+
+      - name: Run OpenSearch-Dashboards server
+        run: |
+          cd OpenSearch-Dashboards
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+
+      - name: Wait for Dashboards
+        run: |
+          cd OpenSearch-Dashboards
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Dashboards ready"
+              break
+            fi
+            attempt=$((attempt + 1))
+            sleep 10
+          done
+
+      - name: Wait for bundles
+        run: |
+          cd OpenSearch-Dashboards
+          max_wait=1200
+          elapsed=0
+          while [ $elapsed -lt $max_wait ]; do
+            if grep -qE "bundles? compiled successfully" dashboards.log 2>/dev/null; then
+              echo "Bundles ready"
+              sleep 20
+              break
+            fi
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+      - name: Install Cypress
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          npx cypress install
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v5
+        with:
+          working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
+          command: yarn run cypress run --config defaultCommandTimeout=120000,pageLoadTimeout=180000 --spec cypress/e2e/qi/8_user_info_security.cy.js
+          browser: chrome
+        env:
+          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CI: true
+          CYPRESS_openSearchUrl: https://localhost:9200
+          CYPRESS_SECURITY_ENABLED: true
+          CYPRESS_OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+        timeout-minutes: 30
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-user-info-${{ matrix.os }}
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards/cypress/screenshots

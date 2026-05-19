@@ -1682,7 +1682,57 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_total_shards_10"
+              data-test-subj="tableHeaderCell_username_10"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Username"
+                  >
+                    Username
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_user_roles_11"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="User Roles"
+                  >
+                    User Roles
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_total_shards_12"
               role="columnheader"
               scope="col"
             >
@@ -1699,6 +1749,31 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                     title="Total Shards"
                   >
                     Total Shards
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_Application ID_13"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Application ID"
+                  >
+                    Application ID
                   </span>
                 </span>
               </button>
@@ -1894,6 +1969,42 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  admin
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  all_access, analyst
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
               </div>
               <div
@@ -1903,6 +2014,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   1
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  analytics-dashboard
                 </span>
               </div>
             </td>
@@ -2095,7 +2224,61 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
               </div>
               <div
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
@@ -2296,6 +2479,42 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  search_user
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  readall
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
               </div>
               <div
@@ -2305,6 +2524,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   1
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  search-service
                 </span>
               </div>
             </td>
@@ -2497,6 +2734,42 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  admin
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  all_access
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
               </div>
               <div
@@ -2506,6 +2779,24 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   1
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  8a936346-8d19-409c-9fe6-8b890eca1f7c
                 </span>
               </div>
             </td>
@@ -2698,7 +2989,61 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
               </div>
               <div
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
@@ -2899,7 +3244,61 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
               </div>
               <div
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
@@ -3100,7 +3499,61 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
               </div>
               <div
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
@@ -3301,7 +3754,61 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Total Shards
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Application ID
               </div>
               <div
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"

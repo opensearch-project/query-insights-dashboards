@@ -18,6 +18,10 @@ import {
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  APPLICATION_ID,
+  APPLICATION_ID_LABEL_KEY,
+  USERNAME,
+  USER_ROLES,
 } from '../../../../common/constants';
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -54,6 +58,9 @@ export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
     search_type: searchType,
     node_id: nodeId,
     total_shards: totalShards,
+    labels,
+    username,
+    user_roles: userRoles,
   } = query;
   return (
     <EuiPanel>
@@ -67,6 +74,13 @@ export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
         <PanelItem label={SEARCH_TYPE} value={searchType.replace(/_/g, ' ')} />
         <PanelItem label={NODE_ID} value={nodeId} />
         <PanelItem label={TOTAL_SHARDS} value={totalShards} />
+        {labels?.[APPLICATION_ID_LABEL_KEY] && (
+          <PanelItem label={APPLICATION_ID} value={labels[APPLICATION_ID_LABEL_KEY]} />
+        )}
+        {username && <PanelItem label={USERNAME} value={username} />}
+        {userRoles && userRoles.length > 0 && (
+          <PanelItem label={USER_ROLES} value={userRoles.join(', ')} />
+        )}
       </EuiFlexGrid>
     </EuiPanel>
   );

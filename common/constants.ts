@@ -15,6 +15,9 @@ export const SEARCH_TYPE = 'Search Type';
 export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
 export const WLM_GROUP = 'WLM Group';
+export const APPLICATION_ID = 'Application ID';
+export const USERNAME = 'Username';
+export const USER_ROLES = 'User Roles';
 export const GROUP_BY = 'Group by';
 export const QUERY_GROUP_HASHCODE = 'Query Group Hashcode';
 export const AVERAGE_LATENCY = 'Average Latency';
@@ -122,3 +125,6 @@ const DEFAULT_CONFIG: ConfigSchema = {
 };
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
+
+// Label keys matching backend header names
+export const APPLICATION_ID_LABEL_KEY = 'X-QI-Application-Id';
