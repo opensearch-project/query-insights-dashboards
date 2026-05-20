@@ -37,7 +37,7 @@ export class QueryInsightsDashboardsPlugin
       title: 'Query Profiler',
       enableRouting: false,
       mount: async (params) => {
-        const { renderProfiler, setCoreStart } = await import('./pages/Profiler/Profiler');
+        const { renderProfiler, setCoreStart } = await import('./pages/QueryProfiler/Profiler');
         const [coreStart] = await core.getStartServices();
         setCoreStart(coreStart);
         return renderProfiler(params.element, (params as any).dataSourceId);

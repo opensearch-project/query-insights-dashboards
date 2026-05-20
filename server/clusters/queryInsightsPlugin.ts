@@ -176,6 +176,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
   queryInsights.getLiveQueries = ca({
     url: {
       fmt: `/_insights/live_queries`,
+      params: {
+        verbose: { type: 'boolean' },
+        use_finished_cache: { type: 'boolean' },
+      },
     },
     method: 'GET',
   });
@@ -185,6 +189,10 @@ export const QueryInsightsPlugin = function (Client, config, components) {
       fmt: `/_insights/live_queries?wlmGroupId=<%=wlmGroupId%>`,
       req: {
         wlmGroupId: { type: 'string', required: true },
+      },
+      params: {
+        verbose: { type: 'boolean' },
+        use_finished_cache: { type: 'boolean' },
       },
     },
     method: 'GET',
@@ -201,5 +209,46 @@ export const QueryInsightsPlugin = function (Client, config, components) {
       },
     },
     method: 'POST',
+  });
+
+  queryInsights.createSnapshotRepository = ca({
+    url: {
+      fmt: `/_snapshot/<%=repository%>`,
+      req: {
+        repository: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'PUT',
+    needBody: true,
+  });
+
+  queryInsights.getSnapshotRepositories = ca({
+    url: {
+      fmt: `/_snapshot/_all`,
+    },
+    method: 'GET',
+  });
+
+  queryInsights.deleteSnapshotRepository = ca({
+    url: {
+      fmt: `/_snapshot/<%=repository%>`,
+      req: {
+        repository: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+    method: 'DELETE',
+  });
+
+  queryInsights.getCatPlugins = ca({
+    url: {
+      fmt: `/_cat/plugins?format=json`,
+    },
+    method: 'GET',
   });
 };

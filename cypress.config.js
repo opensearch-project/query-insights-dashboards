@@ -1,4 +1,4 @@
-const { defineConfig } = require('cypress')
+const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
   video: false,
@@ -13,7 +13,7 @@ module.exports = defineConfig({
   // Retry configuration for flaky tests
   retries: {
     runMode: 2,
-    openMode: 0
+    openMode: 0,
   },
   env: {
     openSearchUrl: 'http://localhost:9200',
@@ -32,10 +32,10 @@ module.exports = defineConfig({
         config.responseTimeout = 90000;
         config.pageLoadTimeout = 180000;
       }
-      return require('./cypress/plugins/index.js')(on, config)
+      return require('./cypress/plugins/index.js')(on, config);
     },
     baseUrl: 'http://localhost:5601',
     // Slow down tests slightly to reduce race conditions
     slowTestThreshold: 30000,
   },
-})
+});

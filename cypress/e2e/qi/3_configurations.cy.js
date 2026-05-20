@@ -37,8 +37,8 @@ describe('Query Insights Configurations Page', () => {
     cy.contains('button', 'Live queries').should('be.visible');
     cy.contains('button', 'Configuration').should('have.class', 'euiTab-isSelected');
     // Validate the panels
-    // 6 panels: Settings, Status, Group Settings, Group Status, Delete After Settings, Delete After Status
-    cy.get('.euiPanel').should('have.length', 6);
+    // 8 panels: Settings, Status, Group Settings, Group Status, Export Settings, Export Status, Remote Exporter Settings, Remote Exporter Status
+    cy.get('.euiPanel').should('have.length', 8);
   });
 
   /**

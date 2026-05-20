@@ -183,7 +183,7 @@ export const WorkloadManagementMain = ({
       const hasValidStructure =
         res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries);
       setIsQueryInsightsAvailable(hasValidStructure);
-    } catch (error) {
+    } catch (_error) {
       setQueryInsightWlmNavigationSupported(false);
       setIsQueryInsightsAvailable(false);
     }

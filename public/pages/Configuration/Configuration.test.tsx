@@ -22,6 +22,9 @@ const mockCoreStart = {
   chrome: {
     setBreadcrumbs: jest.fn(),
   },
+  http: {
+    get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
+  },
 };
 
 const defaultLatencySettings = {
@@ -52,6 +55,12 @@ const dataRetentionSettings = {
   deleteAfterDays: '179',
 };
 
+const remoteExporterSettings = {
+  enabled: false,
+  repository: '',
+  path: 'query-insights',
+};
+
 const dataSourceMenuMock = jest.fn(() => <div>Mock DataSourceMenu</div>);
 
 const dataSourceManagementMock = {
@@ -75,6 +84,7 @@ const renderConfiguration = (overrides = {}) =>
           groupBySettings={groupBySettings}
           configInfo={mockConfigInfo}
           dataRetentionSettings={dataRetentionSettings}
+          remoteExporterSettings={remoteExporterSettings}
           core={mockCoreStart}
           depsStart={{ navigation: {} }}
           params={{} as any}
@@ -86,7 +96,10 @@ const renderConfiguration = (overrides = {}) =>
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
 const getTopNSizeConfiguration = () => screen.getAllByRole('spinbutton');
-const getEnableToggle = () => screen.getByRole('switch');
+const getEnableToggle = () => {
+  const toggles = screen.getAllByRole('switch');
+  return toggles[0]; // First switch is the top-n-metric toggle
+};
 
 describe('Configuration Component', () => {
   beforeEach(() => {
@@ -141,7 +154,10 @@ describe('Configuration Component', () => {
         'MINUTES',
         'local_index',
         'SIMILARITY',
-        '179'
+        '179',
+        false,
+        '',
+        'query-insights'
       );
     });
   });
@@ -329,6 +345,262 @@ describe('Configuration Component', () => {
           false
         );
       });
+
+      it('should return false when remote is enabled but repository is empty', () => {
+        expect(
+          validateConfiguration('50', '5', 'MINUTES', '30', EXPORTER_TYPE.localIndex, true, '')
+        ).toBe(false);
+      });
+
+      it('should return true when remote is enabled with a repository', () => {
+        expect(
+          validateConfiguration(
+            '50',
+            '5',
+            'MINUTES',
+            '30',
+            EXPORTER_TYPE.localIndex,
+            true,
+            'my-repo'
+          )
+        ).toBe(true);
+      });
+
+      it('should return true when remote is disabled regardless of repository', () => {
+        expect(
+          validateConfiguration('50', '5', 'MINUTES', '30', EXPORTER_TYPE.localIndex, false, '')
+        ).toBe(true);
+      });
+    });
+  });
+
+  describe('Remote Repository Exporter', () => {
+    const getRemoteToggle = () => {
+      const toggles = screen.getAllByRole('switch');
+      return toggles[toggles.length - 1]; // Last switch is the remote exporter toggle
+    };
+
+    it('should show remote exporter toggle in disabled state by default', () => {
+      renderConfiguration();
+      const remoteToggle = getRemoteToggle();
+      expect(remoteToggle).not.toBeChecked();
+    });
+
+    it('should not show repository fields when remote exporter is disabled', () => {
+      renderConfiguration();
+      expect(screen.queryByText('exporter.remote.repository')).not.toBeInTheDocument();
+      expect(screen.queryByText('exporter.remote.path')).not.toBeInTheDocument();
+    });
+
+    it('should check plugin when remote toggle is enabled', async () => {
+      mockCoreStart.http.get.mockResolvedValue({ ok: true, response: {} });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith(
+          '/api/cat/plugins',
+          expect.objectContaining({ query: { dataSourceId: 'test' } })
+        );
+      });
+    });
+
+    it('should show plugin not installed error when plugin is missing', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'other-plugin' }] });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('The repository-s3 plugin is not installed')).toBeInTheDocument();
+      });
+    });
+
+    it('should show repository fields when plugin check fails (optimistic fallback)', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.reject(new Error('Network error'));
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+    });
+
+    it('should show repository fields when plugin is installed', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        if (url === '/api/snapshot/repositories') {
+          return Promise.resolve({ ok: true, response: { 'my-repo': { type: 's3' } } });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+    });
+
+    it('should show repository fields on load when remote exporter is already enabled', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        if (url === '/api/snapshot/repositories') {
+          return Promise.resolve({ ok: true, response: { 'my-repo': { type: 's3' } } });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      render(
+        <MemoryRouter>
+          <DataSourceContext.Provider value={mockDataSourceContext}>
+            <Configuration
+              latencySettings={defaultLatencySettings}
+              cpuSettings={defaultCpuSettings}
+              memorySettings={defaultMemorySettings}
+              groupBySettings={groupBySettings}
+              configInfo={mockConfigInfo}
+              dataRetentionSettings={dataRetentionSettings}
+              remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
+              core={mockCoreStart}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+    });
+
+    it('should show remote exporter status as Disabled in status panel', () => {
+      renderConfiguration();
+      expect(screen.getByText('Remote Exporter')).toBeInTheDocument();
+    });
+
+    it('should not show Save when remote is enabled but no repository selected', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('Save')).not.toBeInTheDocument();
+    });
+
+    it('should open register repository flyout when Register new is clicked', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByText('Register new'));
+      await waitFor(() => {
+        expect(screen.getByText('Register S3 repository')).toBeInTheDocument();
+      });
+    });
+
+    it('should hide fields when toggle is turned off after being on', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+      fireEvent.click(getRemoteToggle());
+      expect(screen.queryByText('Register new')).not.toBeInTheDocument();
+    });
+
+    it('should only show S3 type repositories in dropdown', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        if (url === '/api/snapshot/repositories') {
+          return Promise.resolve({
+            ok: true,
+            response: {
+              's3-repo': { type: 's3' },
+              'fs-repo': { type: 'fs' },
+              'another-s3': { type: 's3' },
+            },
+          });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+      // EuiComboBox renders options as data attributes or in dropdown
+      // The repoOptions state should only contain s3 repos
+      expect(screen.queryByText('fs-repo')).not.toBeInTheDocument();
+    });
+
+    it('should reset remote fields on Cancel', async () => {
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      render(
+        <MemoryRouter>
+          <DataSourceContext.Provider value={mockDataSourceContext}>
+            <Configuration
+              latencySettings={defaultLatencySettings}
+              cpuSettings={defaultCpuSettings}
+              memorySettings={defaultMemorySettings}
+              groupBySettings={groupBySettings}
+              configInfo={mockConfigInfo}
+              dataRetentionSettings={dataRetentionSettings}
+              remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
+              core={mockCoreStart}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Register new')).toBeInTheDocument();
+      });
+      // Change the path
+      const pathInput = screen.getByDisplayValue('insights');
+      fireEvent.change(pathInput, { target: { value: 'new-path' } });
+      expect(screen.getByDisplayValue('new-path')).toBeInTheDocument();
+      // Click Cancel
+      fireEvent.click(screen.getByText('Cancel'));
+      // Should reset to original value
+      expect(screen.getByDisplayValue('insights')).toBeInTheDocument();
     });
   });
 });

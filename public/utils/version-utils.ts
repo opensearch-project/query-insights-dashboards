@@ -51,6 +51,11 @@ export const isVersion36OrHigher = (version: string | undefined): boolean => {
   return cleanedVersion ? semver.gte(cleanedVersion, '3.6.0') : false;
 };
 
+export const isVersion37OrHigher = (version: string | undefined): boolean => {
+  const cleanedVersion = cleanVersion(version);
+  return cleanedVersion ? semver.gte(cleanedVersion, '3.7.0') : false;
+};
+
 export const isVersion219 = (version: string | undefined): boolean => {
   const cleanedVersion = cleanVersion(version);
   return cleanedVersion

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useRef, useCallback, useContext } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useContext, useMemo } from 'react';
 import {
   EuiFlexGroup,
   EuiFlexItem,
@@ -18,9 +18,9 @@ import {
   EuiInMemoryTable,
   EuiButton,
   EuiLink,
-  EuiFormRow,
   EuiSelect,
   EuiBadge,
+  EuiAccordion,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -35,22 +35,33 @@ import { Duration } from 'luxon';
 import { filesize } from 'filesize';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
   DEFAULT_REFRESH_INTERVAL,
   TOP_N_DISPLAY_LIMIT,
   WLM_GROUP_ID_PARAM,
-  ALL_WORKLOAD_GROUPS_TEXT,
   CHART_COLORS,
   REFRESH_INTERVAL_OPTIONS,
 } from '../../../common/constants';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { getVersionOnce, isVersion33OrHigher } from '../../utils/version-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion37OrHigher,
+} from '../../utils/version-utils';
+import {
+  DynamicSearchBar,
+  FieldDef,
+  parseExpression,
+  evaluateExpression,
+} from '../../components/DynamicSearchBar';
+import { SearchQueryRecord } from '../../../types/types';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -98,17 +109,18 @@ export const InflightQueries = ({
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [showFinishedQueries, setShowFinishedQueries] = useState(true);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
   const location = useLocation();
+  const history = useHistory();
   const urlSearchParams = new URLSearchParams(location.search);
   const initialWlmGroup = urlSearchParams.get(WLM_GROUP_ID_PARAM) || '';
 
-  const [wlmGroupId, setWlmGroupId] = useState<string | undefined>(
-    initialWlmGroup !== '' ? initialWlmGroup : undefined
-  );
+  const wlmGroupId = initialWlmGroup !== '' ? initialWlmGroup : undefined;
   const wlmIdToNameMap = React.useMemo(
     () => Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name])),
     [wlmGroupOptions]
@@ -118,6 +130,7 @@ export const InflightQueries = ({
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
     boolean
   >(false);
+  const [taskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -146,6 +159,7 @@ export const InflightQueries = ({
         const version = await getVersionOnce(dataSource?.id || '');
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
+        setTaskDetailSupported(isVersion37OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -157,6 +171,7 @@ export const InflightQueries = ({
       } catch (e) {
         console.warn('Failed to check version for WLM groups support', e);
         setQueryInsightWlmNavigationSupported(false);
+        setTaskDetailSupported(false);
         setWlmAvailable(false);
       }
     };
@@ -164,11 +179,19 @@ export const InflightQueries = ({
     checkWlmSupport();
   }, [detectWlm, dataSource?.id]);
 
-  const [workloadGroupStats, setWorkloadGroupStats] = useState<{
+  // Clean URL after extracting wlmGroupId
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get(WLM_GROUP_ID_PARAM)) {
+      history.replace(location.pathname);
+    }
+  }, [location.search, history, location.pathname]);
+
+  const [finishedQueryStats, setFinishedQueryStats] = useState<{
     total_completions: number;
     total_cancellations: number;
-    total_rejections: number;
-  }>({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
+    total_failures: number;
+  }>({ total_completions: 0, total_cancellations: 0, total_failures: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
     const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
@@ -178,15 +201,11 @@ export const InflightQueries = ({
       statsBody = statsRes as WlmStatsBody;
     } catch (e) {
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
-      setWorkloadGroupStats({ total_completions: 0, total_cancellations: 0, total_rejections: 0 });
       setWlmGroupOptions([]);
       return {};
     }
 
     const activeGroupIds = new Set<string>();
-    let completions = 0;
-    let cancellations = 0;
-    let rejections = 0;
 
     // Sample WLM stats response:
     // {
@@ -216,22 +235,10 @@ export const InflightQueries = ({
       if (key === '_nodes' || key === 'cluster_name') continue;
       const nodeStats = maybeNode as WlmNodeStats;
       const workloadGroups = nodeStats.workload_groups ?? {};
-      for (const [groupId, groupStats] of Object.entries(workloadGroups)) {
+      for (const [groupId] of Object.entries(workloadGroups)) {
         activeGroupIds.add(groupId);
-        if (!wlmGroupId || wlmGroupId === groupId) {
-          const s = groupStats;
-          completions += s.total_completions ?? 0;
-          cancellations += s.total_cancellations ?? 0;
-          rejections += s.total_rejections ?? 0;
-        }
       }
     }
-
-    setWorkloadGroupStats({
-      total_completions: completions,
-      total_cancellations: cancellations,
-      total_rejections: rejections,
-    });
 
     // fetch group NAMES only if plugin exists and version supported
     const idToNameMap: Record<string, string> = {};
@@ -268,7 +275,12 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = await retrieveLiveQueries(core, dataSource?.id, wlmGroupId);
+      const retrieved = await retrieveLiveQueries(
+        core,
+        dataSource?.id,
+        wlmGroupId,
+        taskDetailSupported && showFinishedQueries
+      );
 
       if (retrieved?.response?.live_queries) {
         const mapFromOptions: Record<string, string> = Object.fromEntries(
@@ -280,25 +292,101 @@ export const InflightQueries = ({
         const indexCount: Record<string, number> = {};
 
         const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
-          const indexMatch = q.description?.match(/indices\[(.*?)\]/);
-          const searchTypeMatch = q.description?.match(/search_type\[(.*?)\]/);
+          const desc = (q as any).coordinator_task?.description || (q as any).description || '';
+          const indexMatch = desc.match(/indices\[(.*?)\]/);
+          const searchTypeMatch = desc.match(/search_type\[(.*?)\]/);
+          const nodeId = (q as any).coordinator_task?.node_id || (q as any).node_id || '';
 
           const wlmDisplay =
             typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
               ? idToName[q.wlm_group_id] ?? q.wlm_group_id
               : 'N/A';
 
+          // Normalize measurements for both old and new API formats
+          // For running queries, top-level totals may be 0 — sum from shard tasks instead
+          const shards = (q as any).shard_tasks || [];
+          const shardCpuTotal = shards.reduce((sum: number, s: any) => sum + (s.cpu_nanos || 0), 0);
+          const shardMemTotal = shards.reduce(
+            (sum: number, s: any) => sum + (s.memory_bytes || 0),
+            0
+          );
+          const measurements = (q as any).measurements || {
+            latency: { number: ((q as any).total_latency_millis || 0) * 1e6 },
+            cpu: { number: (q as any).total_cpu_nanos || shardCpuTotal || 0 },
+            memory: { number: (q as any).total_memory_bytes || shardMemTotal || 0 },
+          };
+
           return {
             ...q,
+            timestamp: (q as any).timestamp || (q as any).start_time,
+            description: desc,
+            node_id: nodeId,
+            measurements,
+            is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
             index: indexMatch ? indexMatch[1] : 'N/A',
-            search_type: searchTypeMatch ? searchTypeMatch[1] : 'N/A',
-            coordinator_node: q.node_id,
-            node_label: q.node_id,
+            search_type: searchTypeMatch
+              ? searchTypeMatch[1].replace(/_/g, ' ')
+              : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
+            coordinator_node: nodeId,
+            node_label: nodeId,
             wlm_group: wlmDisplay,
           };
         });
 
         setQuery({ ...retrieved, response: { live_queries: parsed } });
+
+        // Merge finished queries if available
+        const finishedQueries = (retrieved.response as any).finished_queries || [];
+        if (showFinishedQueries && finishedQueries.length > 0) {
+          let completions = 0;
+          let cancellations = 0;
+          let failures = 0;
+          const finishedRows: LiveQueryRow[] = finishedQueries.map((fq: any) => {
+            const wlmDisplay =
+              typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
+                ? idToName[fq.wlm_group_id] ?? fq.wlm_group_id
+                : 'N/A';
+            const status = fq.status || (fq.failed ? 'Failed' : 'Completed');
+            const lowerStatus = status.toLowerCase();
+            if (lowerStatus === 'failed') failures++;
+            else if (lowerStatus === 'cancelled') cancellations++;
+            else completions++;
+            return {
+              ...fq,
+              id: fq.id,
+              timestamp: fq.timestamp,
+              node_id: fq.node_id || '-',
+              description: '',
+              is_cancelled: fq.failed || false,
+              measurements: fq.measurements || {
+                latency: { number: 0 },
+                cpu: { number: 0 },
+                memory: { number: 0 },
+              },
+              index: fq.indices?.join(', ') || '-',
+              search_type: fq.search_type || '-',
+              coordinator_node: fq.node_id || '-',
+              node_label: fq.node_id || '-',
+              wlm_group: wlmDisplay,
+              _finished: true,
+              _topNId: fq.top_n_id,
+              _status: status,
+            };
+          });
+          setFinishedQueryStats({
+            total_completions: completions,
+            total_cancellations: cancellations + parsed.filter((p) => p.is_cancelled).length,
+            total_failures: failures,
+          });
+          const allRows = [...parsed, ...finishedRows];
+          setQuery({ ...retrieved, response: { live_queries: allRows } });
+        } else {
+          setFinishedQueryStats({
+            total_completions: 0,
+            total_cancellations: parsed.filter((p) => p.is_cancelled).length,
+            total_failures: 0,
+          });
+        }
 
         parsed.forEach((liveQuery) => {
           const nodeId = liveQuery.node_id;
@@ -331,7 +419,7 @@ export const InflightQueries = ({
       }
     },
     // deps for react-hooks/exhaustive-deps
-    [core, dataSource?.id, wlmGroupId, wlmGroupOptions]
+    [core, dataSource?.id, wlmGroupId, wlmGroupOptions, showFinishedQueries, taskDetailSupported]
   );
 
   function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -387,10 +475,92 @@ export const InflightQueries = ({
   ]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
-  const [tableQuery, setTableQuery] = useState('');
-  const [_tableFilters, setTableFilters] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // --- Field definitions for DynamicSearchBar ---
+  const searchFields = useMemo<FieldDef[]>(() => {
+    const fields: FieldDef[] = [
+      { label: 'Task ID', key: 'id', accessor: (q) => (q as any).id, type: 'string' },
+      { label: 'Index', key: 'index', accessor: (q) => (q as any).index, type: 'string' },
+      {
+        label: 'Search Type',
+        key: 'search_type',
+        accessor: (q) => (q as any).search_type,
+        type: 'string',
+      },
+      {
+        label: 'Coordinator Node',
+        key: 'coordinator_node',
+        accessor: (q) => (q as any).coordinator_node,
+        type: 'string',
+      },
+      {
+        label: 'Latency',
+        key: 'latency',
+        accessor: (q) => {
+          const val = (q as any).measurements?.latency?.number;
+          return val != null ? val / 1e9 : undefined;
+        },
+        type: 'number',
+        unit: 's',
+      },
+      {
+        label: 'CPU',
+        key: 'cpu',
+        accessor: (q) => {
+          const val = (q as any).measurements?.cpu?.number;
+          return val != null ? val / 1e9 : undefined;
+        },
+        type: 'number',
+        unit: 's',
+      },
+      {
+        label: 'Memory',
+        key: 'memory',
+        accessor: (q) => (q as any).measurements?.memory?.number,
+        type: 'number',
+        unit: 'B',
+      },
+      {
+        label: 'Status',
+        key: 'status',
+        accessor: (q) => {
+          if ((q as any)._finished) return (q as any)._status || 'Completed';
+          if ((q as any).is_cancelled) return 'Cancelled';
+          return 'Running';
+        },
+        type: 'string',
+      },
+      {
+        label: 'WLM Group',
+        key: 'wlm_group',
+        accessor: (q) => (q as any).wlm_group,
+        type: 'string',
+      },
+    ];
+    return fields;
+  }, []);
+
+  const fieldMap = useMemo(() => {
+    const map = new Map<string, FieldDef>();
+    searchFields.forEach((f) => {
+      map.set(f.key.toLowerCase(), f);
+      map.set(f.label.toLowerCase(), f);
+    });
+    return map;
+  }, [searchFields]);
+
+  // Filter live queries based on the dynamic search expression
+  const filteredQueries = useMemo(() => {
+    if (!searchQuery.trim()) return liveQueries;
+    const parsed = parseExpression(searchQuery);
+    return liveQueries.filter((q) =>
+      evaluateExpression((q as unknown) as SearchQueryRecord, parsed, fieldMap)
+    );
+  }, [liveQueries, searchQuery, fieldMap]);
 
   const formatTime = (seconds: number): string => {
+    if (isNaN(seconds) || seconds == null) return '-';
     if (seconds < 1e-3) return `${(seconds * 1e6).toFixed(2)} µs`;
     if (seconds < 1) return `${(seconds * 1e3).toFixed(2)} ms`;
 
@@ -433,7 +603,7 @@ export const InflightQueries = ({
   const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
   const selection = {
-    selectable: (item: any) => item.is_cancelled !== true,
+    selectable: (item: any) => item.is_cancelled !== true && !item._finished,
     onSelectionChange: (selected: any[]) => {
       setSelectedItems(selected);
     },
@@ -463,7 +633,11 @@ export const InflightQueries = ({
   const metrics = React.useMemo(() => {
     if (!query || !query.response?.live_queries?.length) return null;
 
-    const queries = query.response.live_queries;
+    const queries = query.response.live_queries.filter(
+      (q) => !(q as any)._finished && !q.is_cancelled
+    );
+
+    if (queries.length === 0) return null;
 
     const activeQueries = queries.length;
     let totalLatency = 0;
@@ -523,66 +697,50 @@ export const InflightQueries = ({
         dataSourcePickerReadOnly={false}
       />
       <EuiSpacer size="m" />
-      <EuiFlexGroup alignItems="center" gutterSize="m" justifyContent="spaceBetween">
-        {/* LEFT: WLM status + optional selector */}
-        {queryInsightWlmNavigationSupported ? (
-          <EuiFlexGroup gutterSize="none" alignItems="center">
-            <EuiBadge
-              color="default"
-              style={{
-                padding: '6px 12px',
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                fontWeight: 'bold',
-              }}
-            >
-              Workload group
-            </EuiBadge>
-            <EuiFlexItem grow={false}>
-              <EuiSelect
-                id="wlm-group-select"
-                options={[
-                  { value: '', text: ALL_WORKLOAD_GROUPS_TEXT },
-                  ...wlmGroupOptions.map((g) => ({ value: g.id, text: g.name })),
-                ]}
-                value={wlmGroupId ?? ''}
-                onChange={(e) => {
-                  const value = e.target.value || undefined;
-                  setWlmGroupId(value);
-                }}
-                aria-label="Workload group selector"
-                compressed
-              />
-            </EuiFlexItem>
-          </EuiFlexGroup>
-        ) : (
-          <EuiFlexItem />
-        )}
-
-        {/* RIGHT: refresh / auto-refresh */}
+      <EuiFlexGroup alignItems="flexStart" gutterSize="m">
+        <EuiFlexItem grow>
+          <DynamicSearchBar
+            fields={searchFields}
+            queries={(liveQueries as unknown) as SearchQueryRecord[]}
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="e.g. latency >= 1 AND status = Running"
+          />
+        </EuiFlexItem>
         <EuiFlexItem grow={false}>
-          <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+          <EuiFlexGroup
+            alignItems="center"
+            gutterSize="s"
+            responsive={false}
+            style={{ minHeight: 40 }}
+          >
+            {taskDetailSupported && (
+              <EuiFlexItem grow={false}>
+                <EuiSwitch
+                  label={<span style={{ fontSize: '16px' }}>Show finished queries</span>}
+                  checked={showFinishedQueries}
+                  onChange={(e) => setShowFinishedQueries(e.target.checked)}
+                  data-test-subj="live-queries-show-finished-toggle"
+                />
+              </EuiFlexItem>
+            )}
             <EuiFlexItem grow={false}>
               <EuiSwitch
-                label="Auto-refresh"
+                label={<span style={{ fontSize: '16px' }}>Auto-refresh</span>}
                 checked={autoRefreshEnabled}
                 onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
                 data-test-subj="live-queries-autorefresh-toggle"
               />
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
-              <EuiFormRow display="columnCompressed">
-                <EuiSelect
-                  value={String(refreshInterval)}
-                  onChange={(e) => setRefreshInterval(parseInt(e.target.value, 10))}
-                  options={REFRESH_INTERVAL_OPTIONS}
-                  disabled={!autoRefreshEnabled}
-                  data-test-subj="live-queries-refresh-interval"
-                  compressed
-                  style={{ minWidth: 140 }}
-                />
-              </EuiFormRow>
+              <EuiSelect
+                value={String(refreshInterval)}
+                onChange={(e) => setRefreshInterval(parseInt(e.target.value, 10))}
+                options={REFRESH_INTERVAL_OPTIONS}
+                disabled={!autoRefreshEnabled}
+                data-test-subj="live-queries-refresh-interval"
+                style={{ minWidth: 140 }}
+              />
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiButton
@@ -600,401 +758,385 @@ export const InflightQueries = ({
       </EuiFlexGroup>
       <EuiSpacer size="m" />
 
-      <EuiFlexGroup>
-        {/* Active Queries */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m" data-test-subj="panel-active-queries">
+      <EuiPanel>
+        <EuiAccordion
+          id="live-queries-visualizations"
+          buttonContent={
+            <EuiTitle size="s">
+              <h3>Stats & Visualizations</h3>
+            </EuiTitle>
+          }
+          initialIsOpen={true}
+        >
+          <EuiSpacer size="m" />
+          <EuiFlexGroup>
+            {/* Active Queries */}
             <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Active queries</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>
-                    <b>{metrics?.activeQueries ?? 0}</b>
-                  </h2>
-                </EuiTitle>
-                <EuiIcon type="visGauge" />
-              </EuiTextAlign>
+              <EuiPanel paddingSize="m" data-test-subj="panel-active-queries">
+                <EuiFlexItem>
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Active queries</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>
+                        <b>{metrics?.activeQueries ?? 0}</b>
+                      </h2>
+                    </EuiTitle>
+                    <EuiIcon type="visGauge" />
+                  </EuiTextAlign>
+                </EuiFlexItem>
+              </EuiPanel>
             </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
 
-        {/* Avg. elapsed time */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m" data-test-subj="panel-avg-elapsed-time">
+            {/* Avg. elapsed time */}
             <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Avg. elapsed time</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>
-                    <b>{metrics ? formatTime(metrics.avgElapsedSec) : 0}</b>
-                  </h2>
-                </EuiTitle>
-                <EuiText size="s">
-                  <p>(Avg. across {metrics?.activeQueries ?? 0})</p>
-                </EuiText>
-              </EuiTextAlign>
+              <EuiPanel paddingSize="m" data-test-subj="panel-avg-elapsed-time">
+                <EuiFlexItem>
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Avg. elapsed time</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>
+                        <b>{metrics ? formatTime(metrics.avgElapsedSec) : 0}</b>
+                      </h2>
+                    </EuiTitle>
+                    <EuiText size="s">
+                      <p>(Avg. across {metrics?.activeQueries ?? 0} active queries)</p>
+                    </EuiText>
+                  </EuiTextAlign>
+                </EuiFlexItem>
+              </EuiPanel>
             </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
 
-        {/* Longest running query */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m" data-test-subj="panel-longest-query">
+            {/* Longest running query */}
             <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Longest running query</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>
-                    <b>{metrics ? formatTime(metrics.longestElapsedSec) : 0}</b>
-                  </h2>
-                </EuiTitle>
-                {metrics?.longestQueryId && (
-                  <EuiText size="s">
-                    <p>ID: {metrics.longestQueryId}</p>
-                  </EuiText>
+              <EuiPanel paddingSize="m" data-test-subj="panel-longest-query">
+                <EuiFlexItem>
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Longest running query</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>
+                        <b>{metrics ? formatTime(metrics.longestElapsedSec) : 0}</b>
+                      </h2>
+                    </EuiTitle>
+                    {metrics?.longestQueryId && (
+                      <EuiText size="s">
+                        <p>
+                          ID:{' '}
+                          {taskDetailSupported ? (
+                            <EuiLink onClick={() => setSelectedTaskId(metrics.longestQueryId)}>
+                              {metrics.longestQueryId}
+                            </EuiLink>
+                          ) : (
+                            metrics.longestQueryId
+                          )}
+                        </p>
+                      </EuiText>
+                    )}
+                  </EuiTextAlign>
+                </EuiFlexItem>
+              </EuiPanel>
+            </EuiFlexItem>
+
+            {/* Total CPU usage */}
+            <EuiFlexItem>
+              <EuiPanel paddingSize="m" data-test-subj="panel-total-cpu">
+                <EuiFlexItem>
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Total CPU usage</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>
+                        <b>{metrics ? formatTime(metrics.totalCPUSec) : 0}</b>
+                      </h2>
+                    </EuiTitle>
+                    <EuiText size="s">
+                      <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
+                    </EuiText>
+                  </EuiTextAlign>
+                </EuiFlexItem>
+              </EuiPanel>
+            </EuiFlexItem>
+
+            {/* Total memory usage */}
+            <EuiFlexItem>
+              <EuiPanel paddingSize="m" data-test-subj="panel-total-memory">
+                <EuiFlexItem>
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Total memory usage</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>
+                        <b>{metrics ? formatMemory(metrics.totalMemoryBytes) : 0}</b>
+                      </h2>
+                    </EuiTitle>
+                    <EuiText size="s">
+                      <p>(Sum across {metrics?.activeQueries ?? 0} active queries)</p>
+                    </EuiText>
+                  </EuiTextAlign>
+                </EuiFlexItem>
+              </EuiPanel>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+          <EuiFlexGroup>
+            {/* Queries by Node */}
+            <EuiFlexItem>
+              <EuiPanel paddingSize="m">
+                <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                  <EuiTitle size="xs">
+                    <p>Active Queries by Node</p>
+                  </EuiTitle>
+                  <EuiButtonGroup
+                    legend="Chart Type"
+                    options={chartOptions}
+                    idSelected={selectedChartIdByNode}
+                    onChange={onChartChangeByNode}
+                    color="primary"
+                  />
+                </EuiFlexGroup>
+                <EuiSpacer size="l" />
+                {Object.keys(nodeCounts).length > 0 ? (
+                  selectedChartIdByNode === 'donut' ? (
+                    <>
+                      <RadialChart
+                        data={getReactVisChartData(nodeCounts)}
+                        width={300}
+                        height={300}
+                        innerRadius={80}
+                        radius={140}
+                        colorType="literal"
+                        data-test-subj="chart-node-donut"
+                      />
+                      <EuiSpacer size="s" />
+                      <Legend data={nodeCounts} />
+                    </>
+                  ) : (
+                    <XYPlot
+                      yType="ordinal"
+                      width={400}
+                      height={300}
+                      margin={{ left: 180 }}
+                      colorType="literal"
+                      data-test-subj="chart-node-bar"
+                    >
+                      <HorizontalGridLines />
+                      <XAxis />
+                      <YAxis />
+                      <HorizontalBarSeries
+                        data={getReactVisChartData(nodeCounts)}
+                        getColor={(d) => d.color}
+                      />
+                    </XYPlot>
+                  )
+                ) : (
+                  <EuiTextAlign textAlign="center">
+                    <EuiSpacer size="xl" />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" />
+                    <EuiSpacer size="s" />
+                    <EuiTitle size="s">
+                      <h3>No Visualization Available</h3>
+                    </EuiTitle>
+                    <EuiText color="subdued" size="s">
+                      <p>No active queries to display</p>
+                    </EuiText>
+                    <EuiSpacer size="xl" />
+                  </EuiTextAlign>
                 )}
-              </EuiTextAlign>
+              </EuiPanel>
             </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
 
-        {/* Total CPU usage */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m" data-test-subj="panel-total-cpu">
+            {/* Queries by Index */}
             <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Total CPU usage</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>
-                    <b>{metrics ? formatTime(metrics.totalCPUSec) : 0}</b>
-                  </h2>
-                </EuiTitle>
-                <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
-                </EuiText>
-              </EuiTextAlign>
+              <EuiPanel paddingSize="m">
+                <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+                  <EuiTitle size="xs">
+                    <p>Active Queries by Index</p>
+                  </EuiTitle>
+                  <EuiButtonGroup
+                    legend="Chart Type"
+                    options={chartOptions}
+                    idSelected={selectedChartIdByIndex}
+                    onChange={onChartChangeByIndex}
+                    color="primary"
+                  />
+                </EuiFlexGroup>
+                <EuiSpacer size="l" />
+                {Object.keys(indexCounts).length > 0 ? (
+                  selectedChartIdByIndex === 'donut' ? (
+                    <>
+                      <RadialChart
+                        data={getReactVisChartData(indexCounts)}
+                        width={300}
+                        height={300}
+                        innerRadius={80}
+                        radius={140}
+                        colorType="literal"
+                        data-test-subj="chart-index-donut"
+                      />
+                      <EuiSpacer size="s" />
+                      <Legend data={indexCounts} />
+                    </>
+                  ) : (
+                    <XYPlot
+                      yType="ordinal"
+                      width={500}
+                      height={300}
+                      margin={{ left: 180 }}
+                      data-test-subj="chart-index-bar"
+                    >
+                      <HorizontalGridLines />
+                      <XAxis />
+                      <YAxis />
+                      <HorizontalBarSeries
+                        data={getReactVisChartData(indexCounts)}
+                        colorType="literal"
+                        getColor={(d) => d.color}
+                      />
+                    </XYPlot>
+                  )
+                ) : (
+                  <EuiTextAlign textAlign="center">
+                    <EuiSpacer size="xl" />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" />
+                    <EuiSpacer size="s" />
+                    <EuiTitle size="s">
+                      <h3>No Visualization Available</h3>
+                    </EuiTitle>
+                    <EuiText color="subdued" size="s">
+                      <p>No index data to display</p>
+                    </EuiText>
+                    <EuiSpacer size="xl" />
+                  </EuiTextAlign>
+                )}
+              </EuiPanel>
             </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
+          </EuiFlexGroup>
+          {taskDetailSupported && showFinishedQueries && (
+            <EuiFlexGroup>
+              {/* Finished Query Stats Panels */}
+              <EuiFlexItem>
+                <EuiPanel paddingSize="m">
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Total completions</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>{finishedQueryStats.total_completions}</h2>
+                    </EuiTitle>
+                  </EuiTextAlign>
+                </EuiPanel>
+              </EuiFlexItem>
 
-        {/* Total memory usage */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m" data-test-subj="panel-total-memory">
-            <EuiFlexItem>
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Total memory usage</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>
-                    <b>{metrics ? formatMemory(metrics.totalMemoryBytes) : 0}</b>
-                  </h2>
-                </EuiTitle>
-                <EuiText size="s">
-                  <p>(Sum across {metrics?.activeQueries ?? 0})</p>
-                </EuiText>
-              </EuiTextAlign>
-            </EuiFlexItem>
-          </EuiPanel>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-      <EuiFlexGroup>
-        {/* Queries by Node */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
-              <EuiTitle size="xs">
-                <p>Queries by Node</p>
-              </EuiTitle>
-              <EuiButtonGroup
-                legend="Chart Type"
-                options={chartOptions}
-                idSelected={selectedChartIdByNode}
-                onChange={onChartChangeByNode}
-                color="primary"
-              />
+              <EuiFlexItem>
+                <EuiPanel paddingSize="m">
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Total cancellations</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>{finishedQueryStats.total_cancellations}</h2>
+                    </EuiTitle>
+                  </EuiTextAlign>
+                </EuiPanel>
+              </EuiFlexItem>
+
+              <EuiFlexItem>
+                <EuiPanel paddingSize="m">
+                  <EuiTextAlign textAlign="center">
+                    <EuiText size="s">
+                      <p>Total failures</p>
+                    </EuiText>
+                    <EuiTitle size="l">
+                      <h2>{finishedQueryStats.total_failures}</h2>
+                    </EuiTitle>
+                  </EuiTextAlign>
+                </EuiPanel>
+              </EuiFlexItem>
             </EuiFlexGroup>
-            <EuiSpacer size="l" />
-            {Object.keys(nodeCounts).length > 0 ? (
-              selectedChartIdByNode === 'donut' ? (
-                <>
-                  <RadialChart
-                    data={getReactVisChartData(nodeCounts)}
-                    width={300}
-                    height={300}
-                    innerRadius={80}
-                    radius={140}
-                    colorType="literal"
-                    data-test-subj="chart-node-donut"
-                  />
-                  <EuiSpacer size="s" />
-                  <Legend data={nodeCounts} />
-                </>
-              ) : (
-                <XYPlot
-                  yType="ordinal"
-                  width={400}
-                  height={300}
-                  margin={{ left: 180 }}
-                  colorType="literal"
-                  data-test-subj="chart-node-bar"
-                >
-                  <HorizontalGridLines />
-                  <XAxis />
-                  <YAxis />
-                  <HorizontalBarSeries
-                    data={getReactVisChartData(nodeCounts)}
-                    getColor={(d) => d.color}
-                  />
-                </XYPlot>
-              )
-            ) : (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="subdued">
-                  <p>No data available</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
-            )}
-          </EuiPanel>
-        </EuiFlexItem>
-
-        {/* Queries by Index */}
-        <EuiFlexItem>
-          <EuiPanel paddingSize="m">
-            <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
-              <EuiTitle size="xs">
-                <p>Queries by Index</p>
-              </EuiTitle>
-              <EuiButtonGroup
-                legend="Chart Type"
-                options={chartOptions}
-                idSelected={selectedChartIdByIndex}
-                onChange={onChartChangeByIndex}
-                color="primary"
-              />
-            </EuiFlexGroup>
-            <EuiSpacer size="l" />
-            {Object.keys(indexCounts).length > 0 ? (
-              selectedChartIdByIndex === 'donut' ? (
-                <>
-                  <RadialChart
-                    data={getReactVisChartData(indexCounts)}
-                    width={300}
-                    height={300}
-                    innerRadius={80}
-                    radius={140}
-                    colorType="literal"
-                    data-test-subj="chart-index-donut"
-                  />
-                  <EuiSpacer size="s" />
-                  <Legend data={indexCounts} />
-                </>
-              ) : (
-                <XYPlot
-                  yType="ordinal"
-                  width={500}
-                  height={300}
-                  margin={{ left: 180 }}
-                  data-test-subj="chart-index-bar"
-                >
-                  <HorizontalGridLines />
-                  <XAxis />
-                  <YAxis />
-                  <HorizontalBarSeries
-                    data={getReactVisChartData(indexCounts)}
-                    colorType="literal"
-                    getColor={(d) => d.color}
-                  />
-                </XYPlot>
-              )
-            ) : (
-              <EuiTextAlign textAlign="center">
-                <EuiSpacer size="xl" />
-                <EuiText color="subdued">
-                  <p>No data available</p>
-                </EuiText>
-                <EuiSpacer size="xl" />
-              </EuiTextAlign>
-            )}
-          </EuiPanel>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-      {queryInsightWlmNavigationSupported && (
-        <EuiFlexGroup>
-          {/* WLM Group Stats Panels */}
-          <EuiFlexItem>
-            <EuiPanel paddingSize="m">
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Total completions</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_completions}</h2>
-                </EuiTitle>
-              </EuiTextAlign>
-            </EuiPanel>
-          </EuiFlexItem>
-
-          <EuiFlexItem>
-            <EuiPanel paddingSize="m">
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Total cancellations</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_cancellations}</h2>
-                </EuiTitle>
-              </EuiTextAlign>
-            </EuiPanel>
-          </EuiFlexItem>
-
-          <EuiFlexItem>
-            <EuiPanel paddingSize="m">
-              <EuiTextAlign textAlign="center">
-                <EuiText size="s">
-                  <p>Total rejections</p>
-                </EuiText>
-                <EuiTitle size="l">
-                  <h2>{workloadGroupStats.total_rejections}</h2>
-                </EuiTitle>
-              </EuiTextAlign>
-            </EuiPanel>
-          </EuiFlexItem>
-        </EuiFlexGroup>
-      )}
+          )}
+        </EuiAccordion>
+      </EuiPanel>
 
       <EuiSpacer size="m" />
       <EuiPanel paddingSize="m">
-        <EuiInMemoryTable
-          items={liveQueries}
-          search={{
-            query: tableQuery,
-            onChange: ({ queryText }) => {
-              setTableQuery(queryText || '');
-            },
-            box: {
-              placeholder: 'Search queries',
-              schema: false,
-            },
-            toolsLeft:
-              selectedItems.length > 0
-                ? [
-                    <EuiButton
-                      key="delete-button"
-                      color="danger"
-                      iconType="trash"
-                      disabled={selectedItems.length === 0}
-                      onClick={async () => {
-                        const httpClient = dataSource?.id
-                          ? depsStart.data.dataSources.get(dataSource.id)
-                          : core.http;
+        {selectedItems.length > 0 && (
+          <>
+            <EuiFlexGroup alignItems="center" gutterSize="m">
+              <EuiFlexItem grow={false}>
+                <EuiButton
+                  color="danger"
+                  iconType="trash"
+                  onClick={async () => {
+                    const httpClient = dataSource?.id
+                      ? depsStart.data.dataSources.get(dataSource.id)
+                      : core.http;
 
-                        await Promise.allSettled(
-                          selectedItems.map((item) =>
-                            httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
-                              () => ({ status: 'fulfilled', id: item.id }),
-                              (err) => ({ status: 'rejected', id: item.id, error: err })
-                            )
-                          )
-                        );
-                        setSelectedItems([]);
-                      }}
-                    >
-                      Cancel {selectedItems.length}{' '}
-                      {selectedItems.length !== 1 ? 'queries' : 'query'}
-                    </EuiButton>,
-                  ]
-                : undefined,
-            toolsRight: [
-              <EuiButton
-                key="refresh-button"
-                iconType="refresh"
-                onClick={async () => {
-                  await fetchLiveQueriesSafe();
-                }}
-              >
-                Refresh
-              </EuiButton>,
-            ],
-            filters: [
-              {
-                type: 'field_value_selection',
-                field: 'index',
-                name: 'Index',
-                multiSelect: 'or',
-                options: [...new Set(liveQueries.map((q) => q.index))].map((val) => ({
-                  value: val,
-                  name: val,
-                  view: val,
-                })),
-              },
-              {
-                type: 'field_value_selection',
-                field: 'search_type',
-                name: 'Search type',
-                multiSelect: 'or',
-                options: [...new Set(liveQueries.map((q) => q.search_type))].map((val) => ({
-                  value: val,
-                  name: val,
-                  view: val,
-                })),
-              },
-              {
-                type: 'field_value_selection',
-                field: 'coordinator_node',
-                name: 'Coordinator Node ID',
-                multiSelect: 'or',
-                options: [...new Set(liveQueries.map((q) => q.node_id))].map((val) => ({
-                  value: val,
-                  name: val,
-                  view: val,
-                })),
-              },
-            ],
-            onFiltersChange: (filters) => {
-              setTableFilters(filters);
-            },
-          }}
+                    await Promise.allSettled(
+                      selectedItems.map((item) =>
+                        httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id)).then(
+                          () => ({ status: 'fulfilled', id: item.id }),
+                          (err: any) => ({ status: 'rejected', id: item.id, error: err })
+                        )
+                      )
+                    );
+                    setSelectedItems([]);
+                  }}
+                >
+                  Cancel {selectedItems.length} {selectedItems.length !== 1 ? 'queries' : 'query'}
+                </EuiButton>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+            <EuiSpacer size="m" />
+          </>
+        )}
+        <EuiInMemoryTable
+          items={filteredQueries}
           columns={[
-            { name: 'Timestamp', render: (item) => convertTime(item.timestamp) },
-            { field: 'id', name: 'Task ID' },
+            { name: 'Timestamp', render: (item: any) => convertTime(item.timestamp) },
+            {
+              field: 'id',
+              name: 'Task ID',
+              render: taskDetailSupported
+                ? (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
+                : undefined,
+            },
             { field: 'index', name: 'Index' },
             { field: 'coordinator_node', name: 'Coordinator node' },
             {
               name: 'Time elapsed',
-              render: (item) => formatTime(item.measurements?.latency?.number / 1e9),
+              render: (item: any) => formatTime(item.measurements?.latency?.number / 1e9),
             },
             {
               name: 'CPU usage',
-              render: (item) => formatTime(item.measurements?.cpu?.number / 1e9),
+              render: (item: any) => formatTime(item.measurements?.cpu?.number / 1e9),
             },
             {
               name: 'Memory usage',
-              render: (item) => formatMemory(item.measurements?.memory?.number),
+              render: (item: any) => formatMemory(item.measurements?.memory?.number),
             },
             { field: 'search_type', name: 'Search type' },
 
             {
               name: 'Status',
-              render: (item) =>
-                item.is_cancelled === true ? (
-                  <EuiText color="danger">
-                    <b>Cancelled</b>
-                  </EuiText>
+              render: (item: any) =>
+                (item as any)._finished ? (
+                  <EuiBadge
+                    color={
+                      item.is_cancelled || (item as any)._status === 'Failed' ? 'danger' : 'success'
+                    }
+                  >
+                    {(item as any)._status || 'Completed'}
+                  </EuiBadge>
+                ) : item.is_cancelled === true ? (
+                  <EuiBadge color="danger">Cancelled</EuiBadge>
                 ) : (
-                  <EuiText style={{ color: '#0073e6' }}>
-                    <b>Running</b>
-                  </EuiText>
+                  <EuiBadge color="primary">Running</EuiBadge>
                 ),
             },
 
@@ -1043,7 +1185,7 @@ export const InflightQueries = ({
                   icon: 'trash',
                   color: 'danger',
                   type: 'icon',
-                  available: (item) => item.is_cancelled !== true,
+                  available: (item) => item.is_cancelled !== true && !(item as any)._finished,
                   onClick: async (item) => {
                     try {
                       const httpClient = dataSource?.id
@@ -1074,6 +1216,74 @@ export const InflightQueries = ({
           loading={!query}
         />
       </EuiPanel>
+
+      {/* Task Detail Flyout */}
+      {taskDetailSupported &&
+        selectedTaskId &&
+        (() => {
+          const flyoutQueries = query?.response?.live_queries || [];
+          const selectedItem = flyoutQueries.find((q) => q.id === selectedTaskId);
+          if (!selectedItem) return null;
+          // Build a RichLiveQueryRecord-compatible object from the row
+          const richTask = {
+            id: selectedItem.id,
+            status: (selectedItem as any)._finished
+              ? (selectedItem as any)._status || 'completed'
+              : selectedItem.is_cancelled
+              ? 'cancelled'
+              : 'running',
+            start_time: selectedItem.timestamp || (selectedItem as any).start_time,
+            wlm_group_id: selectedItem.wlm_group_id,
+            total_latency_millis: (selectedItem.measurements?.latency?.number || 0) / 1e6,
+            total_cpu_nanos: selectedItem.measurements?.cpu?.number || 0,
+            total_memory_bytes: selectedItem.measurements?.memory?.number || 0,
+            coordinator_task: (selectedItem as any).coordinator_task || null,
+            shard_tasks: (selectedItem as any).shard_tasks || [],
+            _topNId: (selectedItem as any)._topNId,
+            // Direct fields for finished queries
+            _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
+            _searchType: (selectedItem as any).search_type || selectedItem.search_type,
+            _nodeId: (selectedItem as any).node_id || selectedItem.coordinator_node,
+            _totalShards: (selectedItem as any).total_shards,
+            _source: (selectedItem as any).source,
+            _taskResourceUsages: (selectedItem as any).task_resource_usages,
+          };
+          return (
+            <TaskDetailFlyout
+              task={richTask as any}
+              onClose={() => setSelectedTaskId(null)}
+              onRefresh={async () => {
+                await fetchLiveQueries();
+              }}
+              onKillQuery={
+                richTask.status === 'running'
+                  ? async () => {
+                      try {
+                        await core.http.post(API_ENDPOINTS.CANCEL_TASK(selectedTaskId));
+                        await fetchLiveQueries();
+                      } catch (e) {
+                        console.error('Failed to cancel task:', e);
+                      }
+                    }
+                  : undefined
+              }
+              onViewTopN={
+                richTask._topNId || richTask.status !== 'running'
+                  ? (_topNId) => {
+                      const id = richTask._topNId || selectedTaskId;
+                      const now = new Date().toISOString();
+                      const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+                      history.push(
+                        `/query-details?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+                          now
+                        )}&id=${encodeURIComponent(id)}&verbose=true`
+                      );
+                    }
+                  : undefined
+              }
+            />
+          );
+        })()}
     </div>
   );
 };
