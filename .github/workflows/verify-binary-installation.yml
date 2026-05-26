@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           path: plugin-source
 
@@ -40,14 +40,14 @@ jobs:
         shell: bash
 
       - name: Run OpenSearch
-        uses: derek-ho/start-opensearch@v6
+        uses: derek-ho/start-opensearch@e9060d3df24b30cdbfac62d749fec3367dade572 # v6
         with:
           opensearch-version: ${{ env.OPENSEARCH_VERSION }}
           security-enabled: false
           jdk-version: 21
 
       - name: Checkout OpenSearch-Dashboards
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           path: OpenSearch-Dashboards
           repository: opensearch-project/OpenSearch-Dashboards
@@ -66,12 +66,12 @@ jobs:
         working-directory: OpenSearch-Dashboards
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
         with:
           node-version: ${{ steps.tool-versions.outputs.node_version }}
 
       - name: Setup Yarn
-        uses: Wandalen/wretry.action@master
+        uses: Wandalen/wretry.action@e94c43bf2e865e7dbbd90b0c1061053f5888932a # master
         with:
           attempts: 3
           command: |
@@ -82,7 +82,7 @@ jobs:
           current_path: OpenSearch-Dashboards
 
       - name: Bootstrap OpenSearch Dashboards
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2
         with:
           timeout_minutes: 20
           max_attempts: 2
@@ -93,7 +93,7 @@ jobs:
         working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
 
       - name: Download OpenSearch Dashboards binary
-        uses: peternied/download-file@v2
+        uses: peternied/download-file@6a5025a112bb8811a2eb5ee6dd3417acf6d928e4 # v2
         with:
           url: https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{ env.OPENSEARCH_VERSION }}/latest/linux/x64/tar/builds/opensearch-dashboards/dist/opensearch-dashboards-min-${{ env.OPENSEARCH_VERSION }}-linux-x64.tar.gz
 
