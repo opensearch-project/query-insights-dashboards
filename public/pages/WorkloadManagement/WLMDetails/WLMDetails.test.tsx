@@ -195,7 +195,7 @@ describe('WLMDetails Component', () => {
     renderComponent();
 
     expect(screen.getByText(/Workload group name/i)).toBeInTheDocument();
-    expect(screen.getByText(/Description/i)).toBeInTheDocument();
+    expect(screen.getByText(/Resiliency mode/i)).toBeInTheDocument();
     expect(screen.getByText(/CPU usage limit/i)).toBeInTheDocument();
     expect(screen.getByText(/Memory usage limit/i)).toBeInTheDocument();
   });
@@ -520,7 +520,7 @@ describe('WLMDetails Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('System default workload group')).toBeInTheDocument();
+      expect(screen.getAllByText('DEFAULT_WORKLOAD_GROUP').length).toBeGreaterThan(0);
       expect(screen.getByText('soft')).toBeInTheDocument();
     });
   });
@@ -725,7 +725,7 @@ describe('WLMDetails Component', () => {
       );
       const body = JSON.parse(options.body);
       expect(body).toEqual({
-        description: '-',
+        description: 'd',
         index_pattern: ['keep-updated-*'],
         workload_group: 'wg-123',
       });
@@ -778,7 +778,7 @@ describe('WLMDetails Component', () => {
     // Make unsaved change -> isSaved = false stops interval
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
     await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
-    fireEvent.change(screen.getByPlaceholderText(/Describe the workload group/i), {
+    fireEvent.change(screen.getAllByPlaceholderText(/Describe the rule/i)[0], {
       target: { value: 'changed' },
     });
 
