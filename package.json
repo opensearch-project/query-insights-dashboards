@@ -31,7 +31,7 @@
     "@babel/helpers": "^7.22.9",
     "@babel/runtime": "^7.26.10",
     "@babel/runtime-corejs3": "^7.22.9",
-    "echarts": "^6.0.0",
+    "echarts": "6.1.0",
     "echarts-for-react": "3.0.6",
     "filesize": "^10.1.6",
     "form-data": "4.0.4",
