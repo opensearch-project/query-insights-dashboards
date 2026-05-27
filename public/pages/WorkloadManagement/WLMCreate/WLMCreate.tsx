@@ -8,7 +8,6 @@ import {
   EuiTitle,
   EuiSpacer,
   EuiFieldText,
-  EuiTextArea,
   EuiFormRow,
   EuiButton,
   EuiPanel,
@@ -16,6 +15,8 @@ import {
   EuiFieldNumber,
   EuiText,
   EuiButtonIcon,
+  EuiFlexGroup,
+  EuiFlexItem,
 } from '@elastic/eui';
 import { useHistory } from 'react-router-dom';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
@@ -29,11 +30,13 @@ import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
 } from '../../../utils/datasource-utils';
+import { AutoSizeTextArea } from '../auto_size_text_area';
 
 interface Rule {
   index: string;
   username: string;
   role: string;
+  description: string;
 }
 
 export const WLMCreate = ({
@@ -50,11 +53,12 @@ export const WLMCreate = ({
   const history = useHistory();
 
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [resiliencyMode, setResiliencyMode] = useState<'soft' | 'enforced'>();
   const [cpuThreshold, setCpuThreshold] = useState<number | undefined>();
   const [memThreshold, setMemThreshold] = useState<number | undefined>();
-  const [rules, setRules] = useState<Rule[]>([{ index: '', username: '', role: '' }]);
+  const [rules, setRules] = useState<Rule[]>([
+    { index: '', username: '', role: '', description: '' },
+  ]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [usernameErrors, setUsernameErrors] = useState<Array<string | null>>([]);
   const [roleErrors, setRoleErrors] = useState<Array<string | null>>([]);
@@ -158,7 +162,7 @@ export const WLMCreate = ({
           if (!hasIndexes && !hasUsernames && !hasRoles) return null;
 
           return {
-            description: (description || '-').trim(),
+            description: (rule.description || '-').trim(),
             ...(hasUsernames || hasRoles
               ? {
                   principal: {
@@ -288,22 +292,6 @@ export const WLMCreate = ({
             />
           </>
         </EuiFormRow>
-
-        <EuiFormRow>
-          <>
-            <EuiText size="m" style={{ fontWeight: 600 }}>
-              Description – Optional
-            </EuiText>
-            <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-              Describe the purpose of the workload group.
-            </EuiText>
-            <EuiTextArea
-              placeholder="Describe the workload group"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </>
-        </EuiFormRow>
       </EuiPanel>
 
       <EuiSpacer size="l" />
@@ -345,90 +333,35 @@ export const WLMCreate = ({
               <p>Define your rule using any combination of username, role, or index.</p>
             </EuiText>
 
-            <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
-              <>
-                {/* ---- Username / Role (gated by showSecurity) ---- */}
-                <div>
-                  <EuiText size="m" style={{ fontWeight: 600 }}>
-                    Username
-                  </EuiText>
-                  <EuiFormRow
-                    fullWidth
-                    isInvalid={Boolean(usernameErrors[idx])}
-                    error={usernameErrors[idx] || undefined}
-                  >
-                    <EuiTextArea
-                      data-testid={`username-input-${idx}`}
-                      placeholder="Enter username"
-                      value={rule.username}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        const updatedRules = [...rules];
-                        const updatedErrors = [...usernameErrors];
-
-                        updatedRules[idx].username = value;
-                        updatedErrors[idx] =
-                          value.length > 100 ? 'Maximum total length is 100 characters.' : null;
-
-                        setRules(updatedRules);
-                        setUsernameErrors(updatedErrors);
-                      }}
-                      disabled={!showSecurity}
-                      isInvalid={Boolean(usernameErrors[idx])}
-                    />
-                  </EuiFormRow>
-                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    {!showSecurity
-                      ? 'Username rules require data source ≥ 3.3.'
-                      : 'You can use (,) to add multiple usernames.'}
-                  </EuiText>
-                </div>
-
-                <div style={{ marginTop: 16 }}>
-                  <EuiText size="m" style={{ fontWeight: 600 }}>
-                    Role
-                  </EuiText>
-                  <EuiFormRow
-                    fullWidth
-                    isInvalid={Boolean(roleErrors[idx])}
-                    error={roleErrors[idx] || undefined}
-                  >
-                    <EuiTextArea
-                      data-testid={`role-input-${idx}`}
-                      placeholder="Enter role"
-                      value={rule.role}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        const updatedRules = [...rules];
-                        const updatedErrors = [...roleErrors];
-
-                        updatedRules[idx].role = value;
-                        updatedErrors[idx] =
-                          value.length > 100 ? 'Maximum total length is 100 characters.' : null;
-
-                        setRules(updatedRules);
-                        setRoleErrors(updatedErrors);
-                      }}
-                      disabled={!showSecurity}
-                      isInvalid={Boolean(roleErrors[idx])}
-                    />
-                  </EuiFormRow>
-                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    {!showSecurity
-                      ? 'Role rules require data source ≥ 3.3.'
-                      : 'You can use (,) to add multiple roles.'}
-                  </EuiText>
-                </div>
-
-                {/* ---- Index (always available) ---- */}
-                <div style={{ marginTop: 16 }}>
-                  <EuiText size="m" style={{ fontWeight: 600 }}>
-                    Index wildcard
-                  </EuiText>
-                  <EuiSpacer size="s" />
-                  <EuiTextArea
+            <EuiFlexGroup gutterSize="m">
+              <EuiFlexItem>
+                {/* ---- Description (per-rule) ---- */}
+                <EuiText size="m" style={{ fontWeight: 600 }}>
+                  Description – Optional
+                </EuiText>
+                <AutoSizeTextArea
+                  data-testid={`description-input-${idx}`}
+                  placeholder="Describe the rule"
+                  value={rule.description}
+                  onChange={(e) => {
+                    const updatedRules = [...rules];
+                    updatedRules[idx].description = e.target.value;
+                    setRules(updatedRules);
+                  }}
+                />
+              </EuiFlexItem>
+              <EuiFlexItem>
+                {/* ---- Index wildcard ---- */}
+                <EuiText size="m" style={{ fontWeight: 600 }}>
+                  Index wildcard
+                </EuiText>
+                <EuiFormRow
+                  fullWidth
+                  isInvalid={Boolean(indexErrors[idx])}
+                  error={indexErrors[idx] || undefined}
+                  helpText="You can use (,) to add multiple indexes."
+                >
+                  <AutoSizeTextArea
                     data-testid="indexInput"
                     placeholder="Enter index"
                     value={rule.index}
@@ -448,12 +381,88 @@ export const WLMCreate = ({
                     }}
                     isInvalid={Boolean(indexErrors[idx])}
                   />
-                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    You can use (,) to add multiple indexes.
-                  </EuiText>
-                </div>
-              </>
-            </EuiFormRow>
+                </EuiFormRow>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+
+            <EuiSpacer size="m" />
+
+            <EuiFlexGroup gutterSize="m">
+              <EuiFlexItem>
+                {/* ---- Username (gated by showSecurity) ---- */}
+                <EuiText size="m" style={{ fontWeight: 600 }}>
+                  Username
+                </EuiText>
+                <EuiFormRow
+                  fullWidth
+                  isInvalid={Boolean(usernameErrors[idx])}
+                  error={usernameErrors[idx] || undefined}
+                  helpText={
+                    !showSecurity
+                      ? 'Username rules require data source ≥ 3.3.'
+                      : 'You can use (,) to add multiple usernames.'
+                  }
+                >
+                  <AutoSizeTextArea
+                    data-testid={`username-input-${idx}`}
+                    placeholder="Enter username"
+                    value={rule.username}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      const updatedRules = [...rules];
+                      const updatedErrors = [...usernameErrors];
+
+                      updatedRules[idx].username = value;
+                      updatedErrors[idx] =
+                        value.length > 100 ? 'Maximum total length is 100 characters.' : null;
+
+                      setRules(updatedRules);
+                      setUsernameErrors(updatedErrors);
+                    }}
+                    disabled={!showSecurity}
+                    isInvalid={Boolean(usernameErrors[idx])}
+                  />
+                </EuiFormRow>
+              </EuiFlexItem>
+              <EuiFlexItem>
+                {/* ---- Role (gated by showSecurity) ---- */}
+                <EuiText size="m" style={{ fontWeight: 600 }}>
+                  Role
+                </EuiText>
+                <EuiFormRow
+                  fullWidth
+                  isInvalid={Boolean(roleErrors[idx])}
+                  error={roleErrors[idx] || undefined}
+                  helpText={
+                    !showSecurity
+                      ? 'Role rules require data source ≥ 3.3.'
+                      : 'You can use (,) to add multiple roles.'
+                  }
+                >
+                  <AutoSizeTextArea
+                    data-testid={`role-input-${idx}`}
+                    placeholder="Enter role"
+                    value={rule.role}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      const updatedRules = [...rules];
+                      const updatedErrors = [...roleErrors];
+
+                      updatedRules[idx].role = value;
+                      updatedErrors[idx] =
+                        value.length > 100 ? 'Maximum total length is 100 characters.' : null;
+
+                      setRules(updatedRules);
+                      setRoleErrors(updatedErrors);
+                    }}
+                    disabled={!showSecurity}
+                    isInvalid={Boolean(roleErrors[idx])}
+                  />
+                </EuiFormRow>
+              </EuiFlexItem>
+            </EuiFlexGroup>
 
             <EuiSpacer size="s" />
 
@@ -469,7 +478,7 @@ export const WLMCreate = ({
 
         <EuiButton
           onClick={() => {
-            setRules((prev) => [...prev, { index: '', username: '', role: '' }]);
+            setRules((prev) => [...prev, { index: '', username: '', role: '', description: '' }]);
             setIndexErrors((prev) => [...prev, null]);
           }}
           disabled={rules.length >= 5}

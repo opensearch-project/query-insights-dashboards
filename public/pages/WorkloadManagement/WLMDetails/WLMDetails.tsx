@@ -23,7 +23,6 @@ import {
   EuiRadioGroup,
   EuiFieldNumber,
   EuiConfirmModal,
-  EuiTextArea,
   EuiButtonIcon,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -38,6 +37,7 @@ import {
   isSecurityAttributesSupported,
 } from '../../../utils/datasource-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
+import { AutoSizeTextArea } from '../auto_size_text_area';
 
 // === Constants & Types ===
 const DEFAULT_RESOURCE_LIMIT = 100;
@@ -124,6 +124,7 @@ interface Rule {
   indexId: string;
   role: string;
   username: string;
+  description: string;
 }
 
 // === Main Component ===
@@ -152,10 +153,11 @@ export const WLMDetails = ({
   const [memoryLimit, setMemoryLimit] = useState<number | undefined>();
   const [originalCpuLimit, setOriginalCpuLimit] = useState<number | undefined>(undefined);
   const [originalMemoryLimit, setOriginalMemoryLimit] = useState<number | undefined>(undefined);
-  const [description, setDescription] = useState<string>();
-  const [rules, setRules] = useState<Rule[]>([{ index: '', indexId: '', role: '', username: '' }]);
+  const [rules, setRules] = useState<Rule[]>([
+    { index: '', indexId: '', role: '', username: '', description: '' },
+  ]);
   const [existingRules, setExistingRules] = useState<Rule[]>([
-    { index: '', indexId: '', role: '', username: '' },
+    { index: '', indexId: '', role: '', username: '', description: '' },
   ]);
   const [indexErrors, setIndexErrors] = useState<Array<string | null>>([]);
   const [isSaved, setIsSaved] = useState(true);
@@ -331,31 +333,19 @@ export const WLMDetails = ({
         const allRules = rulesRes?.rules ?? [];
 
         const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
-        setRules(
-          matchedRules.map((rule: any) => ({
-            index: (rule?.index_pattern ?? []).join(','),
-            indexId: rule.id,
-            role: (rule?.principal?.role ?? []).join(','),
-            username: (rule?.principal?.username ?? []).join(','),
-          }))
-        );
-
-        setExistingRules(
-          matchedRules.map((rule: any) => ({
-            index: (rule?.index_pattern ?? []).join(','),
-            indexId: rule.id,
-            role: (rule?.principal?.role ?? []).join(','),
-            username: (rule?.principal?.username ?? []).join(','),
-          }))
-        );
-
-        extractDescriptionFromRules(rulesRes, groupId);
+        const toRule = (rule: any): Rule => ({
+          index: (rule?.index_pattern ?? []).join(','),
+          indexId: rule.id,
+          role: (rule?.principal?.role ?? []).join(','),
+          username: (rule?.principal?.username ?? []).join(','),
+          description: rule?.description ?? '',
+        });
+        setRules(matchedRules.map(toRule));
+        setExistingRules(matchedRules.map(toRule));
       } catch (err) {
         console.error('Failed to fetch group stats', err);
         core.notifications.toasts.addDanger('Could not load rules.', err);
       }
-    } else {
-      setDescription('System default workload group');
     }
 
     try {
@@ -390,14 +380,6 @@ export const WLMDetails = ({
     }
   };
 
-  const extractDescriptionFromRules = (rulesRes: any, groupId: string) => {
-    const allRules = rulesRes?.body?.rules ?? [];
-
-    const matchedRule = allRules.find((rule: any) => rule.workload_group === groupId);
-
-    setDescription(matchedRule?.description ?? '-');
-  };
-
   // === Actions ===
   const splitCSV = (v?: string | null) =>
     (v ?? '')
@@ -414,8 +396,12 @@ export const WLMDetails = ({
 
   const buildRulePayload = (
     currentGroupId: string,
-    rule: { index?: string | null; username?: string | null; role?: string | null },
-    currentDescription?: string | null
+    rule: {
+      index?: string | null;
+      username?: string | null;
+      role?: string | null;
+      description?: string | null;
+    }
   ): RulePayload | null => {
     const indexPattern = splitCSV(rule.index);
     const usernames = showSecurity ? splitCSV(rule.username) : [];
@@ -428,7 +414,7 @@ export const WLMDetails = ({
     if (!hasIndexes && !hasUsernames && !hasRoles) return null; // skip blank rule
 
     return {
-      description: (currentDescription || '-').trim(),
+      description: (rule.description || '-').trim(),
       ...(hasUsernames || hasRoles
         ? {
             principal: {
@@ -493,7 +479,7 @@ export const WLMDetails = ({
       }
 
       for (const rule of rulesToCreate) {
-        const response = buildRulePayload(currentId!, rule, description);
+        const response = buildRulePayload(currentId!, rule);
         if (!response) continue;
 
         await core.http.put(`/api/_rules/workload_group`, {
@@ -504,7 +490,7 @@ export const WLMDetails = ({
       }
 
       for (const rule of rulesToUpdate) {
-        const response = buildRulePayload(currentId!, rule, description);
+        const response = buildRulePayload(currentId!, rule);
         if (!response) continue;
 
         await core.http.put(`/api/_rules/workload_group/${rule.indexId}`, {
@@ -659,12 +645,6 @@ export const WLMDetails = ({
               <strong>Workload group name</strong>
             </EuiText>
             <EuiText size="m">{workloadGroup.name}</EuiText>
-          </EuiFlexItem>
-          <EuiFlexItem>
-            <EuiText size="s">
-              <strong>Description</strong>
-            </EuiText>
-            <EuiText size="s">{description}</EuiText>
           </EuiFlexItem>
           <EuiFlexItem>
             <EuiText size="s">
@@ -836,25 +816,6 @@ export const WLMDetails = ({
               </EuiTitle>
               <EuiHorizontalRule />
 
-              <EuiFormRow>
-                <>
-                  <EuiText size="m" style={{ fontWeight: 600 }}>
-                    Description – Optional
-                  </EuiText>
-                  <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                    Describe the purpose of the workload group.
-                  </EuiText>
-                  <EuiTextArea
-                    placeholder="Describe the workload group"
-                    value={description}
-                    onChange={(e) => {
-                      setDescription(e.target.value);
-                      setIsSaved(false);
-                    }}
-                  />
-                </>
-              </EuiFormRow>
-
               {/* Resiliency Mode */}
               <EuiFormRow>
                 <>
@@ -891,159 +852,193 @@ export const WLMDetails = ({
                   <EuiText size="s" style={{ marginTop: 8, marginBottom: 16 }}>
                     Define your rule using any combination of username, role, or index.
                   </EuiText>
-                  <div style={{ marginTop: 16 }}>
-                    <div>
+
+                  <EuiFlexGroup gutterSize="m">
+                    <EuiFlexItem>
                       <EuiText size="m" style={{ fontWeight: 600 }}>
-                        Username
+                        Description – Optional
                       </EuiText>
-                      <EuiTextArea
-                        placeholder="Enter username"
-                        value={rule.username}
+                      <AutoSizeTextArea
+                        data-testid={`description-input-${idx}`}
+                        placeholder="Describe the rule"
+                        value={rule.description}
                         onChange={(e) => {
                           const updated = [...rules];
-                          updated[idx].username = e.target.value;
+                          updated[idx].description = e.target.value;
                           setRules(updated);
                           setIsSaved(false);
                         }}
-                        onBlur={(e) => {
-                          const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
-                          const nowEmpty =
-                            (e.target.value ?? '')
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean).length === 0;
-
-                          if (originallyNonEmpty && nowEmpty) {
-                            // revert to original and warn
-                            setRules((prev) => {
-                              const next = [...prev];
-                              next[idx] = {
-                                ...next[idx],
-                                username: existingRules[idx]?.username ?? '',
-                              };
-                              return next;
-                            });
-                            core.notifications.toasts.addWarning(
-                              'Username cannot be cleared once set.'
-                            );
-                          }
-                        }}
-                        disabled={!showSecurity}
                       />
-                      <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                        {!showSecurity
-                          ? 'Username rules require data source ≥ 3.3.'
-                          : 'You can use (,) to add multiple usernames.'}
-                      </EuiText>
-                    </div>
-
-                    <EuiSpacer size="s" />
-
-                    <EuiText size="m" style={{ fontWeight: 600 }}>
-                      Role
-                    </EuiText>
-                    <EuiTextArea
-                      placeholder="Enter role"
-                      value={rule.role}
-                      onChange={(e) => {
-                        const updated = [...rules];
-                        updated[idx].role = e.target.value;
-                        setRules(updated);
-                        setIsSaved(false);
-                      }}
-                      onBlur={(e) => {
-                        const originallyNonEmpty = !!existingRules[idx]?.role?.trim();
-                        const nowEmpty =
-                          (e.target.value ?? '')
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean).length === 0;
-
-                        if (originallyNonEmpty && nowEmpty) {
-                          // revert to original and warn
-                          setRules((prev) => {
-                            const next = [...prev];
-                            next[idx] = { ...next[idx], role: existingRules[idx]?.role ?? '' };
-                            return next;
-                          });
-                          core.notifications.toasts.addWarning('Role cannot be cleared once set.');
-                        }
-                      }}
-                      disabled={!showSecurity}
-                    />
-                    <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                      {!showSecurity
-                        ? 'Role rules require data source ≥ 3.3.'
-                        : 'You can use (,) to add multiple roles.'}
-                    </EuiText>
-                  </div>
-
-                  <EuiSpacer size="s" />
-
-                  {/* Index */}
-                  <EuiFormRow isInvalid={Boolean(indexErrors[idx])} error={indexErrors[idx]}>
-                    <>
+                    </EuiFlexItem>
+                    <EuiFlexItem>
                       <EuiText size="m" style={{ fontWeight: 600 }}>
                         Index wildcard
                       </EuiText>
-                      <EuiSpacer size="s" />
-                      <EuiTextArea
-                        data-testid="indexInput"
-                        placeholder="Enter Index"
-                        value={rule.index}
-                        onChange={(e) => {
-                          const value = e.target.value;
-
-                          const updatedRules = [...rules];
-                          const updatedErrors = [...indexErrors];
-                          updatedRules[idx].index = value;
-
-                          let error: string | null = null;
-
-                          // split on commas, trim each segment
-                          const items = value.split(',').map((s) => s.trim());
-
-                          // 1) Any item too long?
-                          if (items.some((item) => item.length > 100)) {
-                            error = 'Index names must be 100 characters or fewer.';
-                          }
-                          // 2) Too many items?
-                          else if (items.length > 10) {
-                            error = 'You can specify at most 10 indexes per rule.';
-                          }
-
-                          updatedErrors[idx] = error;
-                          setRules(updatedRules);
-                          setIndexErrors(updatedErrors);
-                          setIsSaved(false);
-                        }}
-                        onBlur={(e) => {
-                          const originallyNonEmpty = !!existingRules[idx]?.index?.trim();
-                          const nowEmpty =
-                            (e.target.value ?? '')
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean).length === 0;
-
-                          if (originallyNonEmpty && nowEmpty) {
-                            // revert to original and warn
-                            setRules((prev) => {
-                              const next = [...prev];
-                              next[idx] = { ...next[idx], index: existingRules[idx]?.index ?? '' };
-                              return next;
-                            });
-                            core.notifications.toasts.addWarning(
-                              'Index cannot be cleared once set.'
-                            );
-                          }
-                        }}
+                      <EuiFormRow
+                        fullWidth
                         isInvalid={Boolean(indexErrors[idx])}
-                      />
-                      <EuiText size="xs" color="subdued" style={{ marginBottom: 4 }}>
-                        You can use (,) to add multiple indexes.
+                        error={indexErrors[idx] || undefined}
+                        helpText="You can use (,) to add multiple indexes."
+                      >
+                        <AutoSizeTextArea
+                          data-testid="indexInput"
+                          placeholder="Enter Index"
+                          value={rule.index}
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            const updatedRules = [...rules];
+                            const updatedErrors = [...indexErrors];
+                            updatedRules[idx].index = value;
+
+                            let error: string | null = null;
+
+                            // split on commas, trim each segment
+                            const items = value.split(',').map((s) => s.trim());
+
+                            // 1) Any item too long?
+                            if (items.some((item) => item.length > 100)) {
+                              error = 'Index names must be 100 characters or fewer.';
+                            }
+                            // 2) Too many items?
+                            else if (items.length > 10) {
+                              error = 'You can specify at most 10 indexes per rule.';
+                            }
+
+                            updatedErrors[idx] = error;
+                            setRules(updatedRules);
+                            setIndexErrors(updatedErrors);
+                            setIsSaved(false);
+                          }}
+                          onBlur={(e) => {
+                            const originallyNonEmpty = !!existingRules[idx]?.index?.trim();
+                            const nowEmpty =
+                              (e.target.value ?? '')
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean).length === 0;
+
+                            if (originallyNonEmpty && nowEmpty) {
+                              // revert to original and warn
+                              setRules((prev) => {
+                                const next = [...prev];
+                                next[idx] = {
+                                  ...next[idx],
+                                  index: existingRules[idx]?.index ?? '',
+                                };
+                                return next;
+                              });
+                              core.notifications.toasts.addWarning(
+                                'Index cannot be cleared once set.'
+                              );
+                            }
+                          }}
+                          isInvalid={Boolean(indexErrors[idx])}
+                        />
+                      </EuiFormRow>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+
+                  <EuiSpacer size="m" />
+
+                  <EuiFlexGroup gutterSize="m">
+                    <EuiFlexItem>
+                      <EuiText size="m" style={{ fontWeight: 600 }}>
+                        Username
                       </EuiText>
-                    </>
-                  </EuiFormRow>
+                      <EuiFormRow
+                        fullWidth
+                        helpText={
+                          !showSecurity
+                            ? 'Username rules require data source ≥ 3.3.'
+                            : 'You can use (,) to add multiple usernames.'
+                        }
+                      >
+                        <AutoSizeTextArea
+                          placeholder="Enter username"
+                          value={rule.username}
+                          onChange={(e) => {
+                            const updated = [...rules];
+                            updated[idx].username = e.target.value;
+                            setRules(updated);
+                            setIsSaved(false);
+                          }}
+                          onBlur={(e) => {
+                            const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
+                            const nowEmpty =
+                              (e.target.value ?? '')
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean).length === 0;
+
+                            if (originallyNonEmpty && nowEmpty) {
+                              // revert to original and warn
+                              setRules((prev) => {
+                                const next = [...prev];
+                                next[idx] = {
+                                  ...next[idx],
+                                  username: existingRules[idx]?.username ?? '',
+                                };
+                                return next;
+                              });
+                              core.notifications.toasts.addWarning(
+                                'Username cannot be cleared once set.'
+                              );
+                            }
+                          }}
+                          disabled={!showSecurity}
+                        />
+                      </EuiFormRow>
+                    </EuiFlexItem>
+                    <EuiFlexItem>
+                      <EuiText size="m" style={{ fontWeight: 600 }}>
+                        Role
+                      </EuiText>
+                      <EuiFormRow
+                        fullWidth
+                        helpText={
+                          !showSecurity
+                            ? 'Role rules require data source ≥ 3.3.'
+                            : 'You can use (,) to add multiple roles.'
+                        }
+                      >
+                        <AutoSizeTextArea
+                          placeholder="Enter role"
+                          value={rule.role}
+                          onChange={(e) => {
+                            const updated = [...rules];
+                            updated[idx].role = e.target.value;
+                            setRules(updated);
+                            setIsSaved(false);
+                          }}
+                          onBlur={(e) => {
+                            const originallyNonEmpty = !!existingRules[idx]?.role?.trim();
+                            const nowEmpty =
+                              (e.target.value ?? '')
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean).length === 0;
+
+                            if (originallyNonEmpty && nowEmpty) {
+                              // revert to original and warn
+                              setRules((prev) => {
+                                const next = [...prev];
+                                next[idx] = {
+                                  ...next[idx],
+                                  role: existingRules[idx]?.role ?? '',
+                                };
+                                return next;
+                              });
+                              core.notifications.toasts.addWarning(
+                                'Role cannot be cleared once set.'
+                              );
+                            }
+                          }}
+                          disabled={!showSecurity}
+                        />
+                      </EuiFormRow>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
 
                   <EuiSpacer size="s" />
 
@@ -1064,7 +1059,10 @@ export const WLMDetails = ({
               ))}
               <EuiButton
                 onClick={() => {
-                  setRules([...rules, { index: '', indexId: '', role: '', username: '' }]);
+                  setRules([
+                    ...rules,
+                    { index: '', indexId: '', role: '', username: '', description: '' },
+                  ]);
                   setIndexErrors([...indexErrors, null]);
                   setIsSaved(false);
                 }}

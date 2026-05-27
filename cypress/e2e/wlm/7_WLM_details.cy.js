@@ -77,9 +77,9 @@ describe('WLM Details Page', () => {
     cy.get('[data-testid="wlm-tab-settings"]').click();
     cy.contains('+ Add another rule').click();
 
-    cy.get('textarea[placeholder="Enter username"]').last().type(u1);
-    cy.get('textarea[placeholder="Enter role"]').last().type(r1);
-    cy.get('textarea[data-testid="indexInput"]').last().type(i1);
+    cy.get('[placeholder="Enter username"]').last().type(u1);
+    cy.get('[placeholder="Enter role"]').last().type(r1);
+    cy.get('[data-testid="indexInput"]').last().type(i1);
 
     cy.contains('button', /^Apply Changes$/)
       .should('not.be.disabled')
@@ -90,25 +90,22 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(u1, { timeout: 20000 }).should('exist');
-    cy.contains(r1, { timeout: 20000 }).should('exist');
-    cy.contains(i1, { timeout: 20000 }).should('exist');
+    cy.get('[placeholder="Enter username"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(u1);
+    });
+    cy.get('[placeholder="Enter role"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(r1);
+    });
+    cy.get('[data-testid="indexInput"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(i1);
+    });
 
-    cy.get('textarea[placeholder="Enter username"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(u2)
-      .blur();
-    cy.get('textarea[placeholder="Enter role"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(r2)
-      .blur();
-    cy.get('textarea[data-testid="indexInput"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(i2)
-      .blur();
+    cy.get('[placeholder="Enter username"]').last().type('{selectAll}{backspace}').type(u2).blur();
+    cy.get('[placeholder="Enter role"]').last().type('{selectAll}{backspace}').type(r2).blur();
+    cy.get('[data-testid="indexInput"]').last().type('{selectAll}{backspace}').type(i2).blur();
 
     cy.contains('button', /^Apply Changes$/)
       .should('not.be.disabled')
@@ -119,12 +116,21 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(u2, { timeout: 20000 }).should('exist');
-    cy.contains(r2, { timeout: 20000 }).should('exist');
-    cy.contains(i2, { timeout: 20000 }).should('exist');
-    cy.contains(u1).should('not.exist');
-    cy.contains(r1).should('not.exist');
-    cy.contains(i1).should('not.exist');
+    cy.get('[placeholder="Enter username"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(u2);
+      expect(values).to.not.include(u1);
+    });
+    cy.get('[placeholder="Enter role"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(r2);
+      expect(values).to.not.include(r1);
+    });
+    cy.get('[data-testid="indexInput"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(i2);
+      expect(values).to.not.include(i1);
+    });
 
     cy.get('button[aria-label="Delete rule"]', { timeout: 20000 }).last().click({ force: true });
 
@@ -137,15 +143,15 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.get('textarea[placeholder="Enter username"]').should(($areas) => {
+    cy.get('[placeholder="Enter username"]').should(($areas) => {
       const values = Array.from($areas, (el) => (el.value || '').trim());
       expect(values).to.not.include(u2);
     });
-    cy.get('textarea[placeholder="Enter role"]').should(($areas) => {
+    cy.get('[placeholder="Enter role"]').should(($areas) => {
       const values = Array.from($areas, (el) => (el.value || '').trim());
       expect(values).to.not.include(r2);
     });
-    cy.get('textarea[data-testid="indexInput"]').should(($areas) => {
+    cy.get('[data-testid="indexInput"]').should(($areas) => {
       const values = Array.from($areas, (el) => (el.value || '').trim());
       expect(values).to.not.include(i2);
     });

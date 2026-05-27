@@ -81,7 +81,7 @@ describe('WLM Details Page', () => {
     cy.get('[data-testid="wlm-tab-settings"]').click();
     cy.contains('+ Add another rule').click();
 
-    cy.get('textarea[data-testid="indexInput"]').last().type(i1);
+    cy.get('[data-testid="indexInput"]').last().type(i1);
 
     cy.contains('button', /^Apply Changes$/)
       .should('not.be.disabled')
@@ -92,13 +92,12 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(i1, { timeout: 20000 }).should('exist');
+    cy.get('[data-testid="indexInput"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(i1);
+    });
 
-    cy.get('textarea[data-testid="indexInput"]')
-      .last()
-      .type('{selectAll}{backspace}')
-      .type(i2)
-      .blur();
+    cy.get('[data-testid="indexInput"]').last().type('{selectAll}{backspace}').type(i2).blur();
 
     cy.contains('button', /^Apply Changes$/)
       .should('not.be.disabled')
@@ -109,8 +108,11 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.contains(i2, { timeout: 20000 }).should('exist');
-    cy.contains(i1).should('not.exist');
+    cy.get('[data-testid="indexInput"]', { timeout: 20000 }).should(($els) => {
+      const values = Array.from($els, (el) => (el.value || '').trim());
+      expect(values).to.include(i2);
+      expect(values).to.not.include(i1);
+    });
 
     cy.get('button[aria-label="Delete rule"]', { timeout: 20000 }).last().click({ force: true });
 
@@ -123,7 +125,7 @@ describe('WLM Details Page', () => {
     cy.wait('@listRules');
     cy.get('[data-testid="wlm-tab-settings"]').click();
 
-    cy.get('textarea[data-testid="indexInput"]').should(($areas) => {
+    cy.get('[data-testid="indexInput"]').should(($areas) => {
       const values = Array.from($areas, (el) => (el.value || '').trim());
       expect(values).to.not.include(i2);
     });
