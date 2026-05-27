@@ -37,6 +37,7 @@ import {
   isSecurityAttributesSupported,
 } from '../../../utils/datasource-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
+import { AutoSizeTextArea } from '../auto_size_text_area';
 
 // === Constants & Types ===
 const DEFAULT_RESOURCE_LIMIT = 100;
@@ -857,7 +858,7 @@ export const WLMDetails = ({
                       <EuiText size="m" style={{ fontWeight: 600 }}>
                         Description – Optional
                       </EuiText>
-                      <EuiFieldText
+                      <AutoSizeTextArea
                         data-testid={`description-input-${idx}`}
                         placeholder="Describe the rule"
                         value={rule.description}
@@ -879,7 +880,7 @@ export const WLMDetails = ({
                         error={indexErrors[idx] || undefined}
                         helpText="You can use (,) to add multiple indexes."
                       >
-                        <EuiFieldText
+                        <AutoSizeTextArea
                           data-testid="indexInput"
                           placeholder="Enter Index"
                           value={rule.index}
@@ -953,7 +954,7 @@ export const WLMDetails = ({
                             : 'You can use (,) to add multiple usernames.'
                         }
                       >
-                        <EuiFieldText
+                        <AutoSizeTextArea
                           placeholder="Enter username"
                           value={rule.username}
                           onChange={(e) => {
@@ -1001,7 +1002,7 @@ export const WLMDetails = ({
                             : 'You can use (,) to add multiple roles.'
                         }
                       >
-                        <EuiFieldText
+                        <AutoSizeTextArea
                           placeholder="Enter role"
                           value={rule.role}
                           onChange={(e) => {

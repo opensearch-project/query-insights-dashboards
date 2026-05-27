@@ -30,6 +30,7 @@ import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
 } from '../../../utils/datasource-utils';
+import { AutoSizeTextArea } from '../auto_size_text_area';
 
 interface Rule {
   index: string;
@@ -338,7 +339,7 @@ export const WLMCreate = ({
                 <EuiText size="m" style={{ fontWeight: 600 }}>
                   Description – Optional
                 </EuiText>
-                <EuiFieldText
+                <AutoSizeTextArea
                   data-testid={`description-input-${idx}`}
                   placeholder="Describe the rule"
                   value={rule.description}
@@ -360,7 +361,7 @@ export const WLMCreate = ({
                   error={indexErrors[idx] || undefined}
                   helpText="You can use (,) to add multiple indexes."
                 >
-                  <EuiFieldText
+                  <AutoSizeTextArea
                     data-testid="indexInput"
                     placeholder="Enter index"
                     value={rule.index}
@@ -402,7 +403,7 @@ export const WLMCreate = ({
                       : 'You can use (,) to add multiple usernames.'
                   }
                 >
-                  <EuiFieldText
+                  <AutoSizeTextArea
                     data-testid={`username-input-${idx}`}
                     placeholder="Enter username"
                     value={rule.username}
@@ -439,7 +440,7 @@ export const WLMCreate = ({
                       : 'You can use (,) to add multiple roles.'
                   }
                 >
-                  <EuiFieldText
+                  <AutoSizeTextArea
                     data-testid={`role-input-${idx}`}
                     placeholder="Enter role"
                     value={rule.role}
