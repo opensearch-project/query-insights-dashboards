@@ -6,6 +6,26 @@
 import { schema } from '@osd/config-schema';
 import { IRouter } from '../../../../src/core/server';
 
+const wlmSettingsBodySchema = schema.maybe(
+  schema.recordOf(
+    schema.string(),
+    schema.nullable(schema.oneOf([schema.string(), schema.number(), schema.boolean()]))
+  )
+);
+
+const extractErrorStatus = (e: any): number =>
+  e?.meta?.statusCode ?? e?.statusCode ?? e?.status ?? 500;
+
+const extractErrorMessage = (e: any, prefix: string): string => {
+  const reason =
+    e?.meta?.body?.error?.reason ??
+    e?.meta?.body?.message ??
+    e?.body?.message ??
+    e?.message ??
+    'Unexpected error';
+  return `${prefix}: ${reason}`;
+};
+
 export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
   // Get WLM stats across all nodes in the cluster
   router.get(
@@ -151,10 +171,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         body: schema.object({
           name: schema.string(),
           resiliency_mode: schema.string(),
-          resource_limits: schema.object({
-            cpu: schema.maybe(schema.number()),
-            memory: schema.maybe(schema.number()),
-          }),
+          resource_limits: schema.maybe(
+            schema.object({
+              cpu: schema.maybe(schema.number()),
+              memory: schema.maybe(schema.number()),
+            })
+          ),
+          settings: wlmSettingsBodySchema,
         }),
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
@@ -175,8 +198,9 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to create workload group:', e);
-        return response.internalError({
-          body: { message: `Failed to create workload group: ${e.message}` },
+        return response.customError({
+          statusCode: extractErrorStatus(e),
+          body: { message: extractErrorMessage(e, 'Failed to create workload group') },
         });
       }
     }
@@ -192,10 +216,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }),
         body: schema.object({
           resiliency_mode: schema.string(),
-          resource_limits: schema.object({
-            cpu: schema.maybe(schema.number()),
-            memory: schema.maybe(schema.number()),
-          }),
+          resource_limits: schema.maybe(
+            schema.object({
+              cpu: schema.maybe(schema.number()),
+              memory: schema.maybe(schema.number()),
+            })
+          ),
+          settings: wlmSettingsBodySchema,
         }),
         query: schema.object({
           dataSourceId: schema.maybe(schema.string()),
@@ -217,8 +244,9 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to update workload group:', e);
-        return response.internalError({
-          body: { message: `Failed to update workload group: ${e.message}` },
+        return response.customError({
+          statusCode: extractErrorStatus(e),
+          body: { message: extractErrorMessage(e, 'Failed to update workload group') },
         });
       }
     }
@@ -251,9 +279,13 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (e: any) {
         console.error(`Failed to delete workload group '${request.params.name}':`, e);
-        return response.internalError({
+        return response.customError({
+          statusCode: extractErrorStatus(e),
           body: {
-            message: `Failed to delete workload group '${request.params.name}': ${e.message}`,
+            message: extractErrorMessage(
+              e,
+              `Failed to delete workload group '${request.params.name}'`
+            ),
           },
         });
       }
@@ -366,8 +398,9 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (e: any) {
         console.error('Failed to fetch rules:', e);
-        return response.internalError({
-          body: { message: `Failed to fetch rules: ${e.message}` },
+        return response.customError({
+          statusCode: extractErrorStatus(e),
+          body: { message: extractErrorMessage(e, 'Failed to fetch rules') },
         });
       }
     }
@@ -400,8 +433,11 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         return response.ok({ body: result });
       } catch (e: any) {
         console.error(`Failed to delete index rule ${ruleId}:`, e);
-        return response.internalError({
-          body: { message: `Failed to delete index rule ${ruleId}: ${e.message}` },
+        return response.customError({
+          statusCode: extractErrorStatus(e),
+          body: {
+            message: extractErrorMessage(e, `Failed to delete index rule ${ruleId}`),
+          },
         });
       }
     }

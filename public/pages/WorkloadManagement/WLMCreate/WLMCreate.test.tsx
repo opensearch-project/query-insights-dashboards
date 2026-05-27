@@ -617,3 +617,93 @@ describe('WLMCreate – rollback and created-rule cleanup', () => {
     });
   });
 });
+
+describe('WLMCreate – group settings', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
+  });
+
+  const renderWithVersion = (version: string) => {
+    coreMock.savedObjects.client.get = jest
+      .fn()
+      .mockResolvedValue({ attributes: { dataSourceVersion: version } });
+    const ds = { id: 'ds-x', name: 'ds-x', dataSourceVersion: version } as any;
+    return render(
+      <MemoryRouter>
+        <DataSourceContext.Provider value={{ dataSource: ds, setDataSource: jest.fn() }}>
+          <WLMCreate
+            core={coreMock as any}
+            depsStart={depsMock as any}
+            params={mockParams}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+  };
+
+  it('hides the group settings panel on a < 3.7 cluster', async () => {
+    renderWithVersion('3.6.0');
+    await waitFor(() => expect(screen.getByTestId('name-input')).toBeInTheDocument());
+    expect(screen.queryByTestId('wlm-setting-toggle-search.max_buckets')).not.toBeInTheDocument();
+  });
+
+  it('shows the group settings panel on a >= 3.7 cluster', async () => {
+    renderWithVersion('3.7.0');
+    await waitFor(() =>
+      expect(screen.getByTestId('wlm-setting-toggle-search.max_buckets')).toBeInTheDocument()
+    );
+  });
+
+  it('includes the settings field in the create PUT body when toggled', async () => {
+    coreMock.http.put.mockResolvedValueOnce({ _id: 'g-1', name: 'g-1' });
+    renderWithVersion('3.7.0');
+    await waitFor(() =>
+      expect(screen.getByTestId('wlm-setting-toggle-search.max_buckets')).toBeInTheDocument()
+    );
+
+    await userEvent.type(screen.getByTestId('name-input'), 'g-1');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), { target: { value: '50' } });
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+
+    fireEvent.click(screen.getByTestId('wlm-setting-toggle-search.max_buckets'));
+    fireEvent.change(screen.getByTestId('wlm-setting-input-search.max_buckets'), {
+      target: { value: '5000' },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+    await waitFor(() => {
+      const createCall = coreMock.http.put.mock.calls.find(
+        ([url]: [string]) => url === '/api/_wlm/workload_group'
+      );
+      expect(createCall).toBeDefined();
+      const sentBody = JSON.parse(createCall[1].body);
+      expect(sentBody.settings).toEqual({ 'search.max_buckets': 5000 });
+    });
+  });
+
+  it('omits settings from the body when no toggle is set', async () => {
+    coreMock.http.put.mockResolvedValueOnce({ _id: 'g-2', name: 'g-2' });
+    renderWithVersion('3.7.0');
+    await waitFor(() =>
+      expect(screen.getByTestId('wlm-setting-toggle-search.max_buckets')).toBeInTheDocument()
+    );
+
+    await userEvent.type(screen.getByTestId('name-input'), 'g-2');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), { target: { value: '50' } });
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+
+    await userEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+    await waitFor(() => {
+      const createCall = coreMock.http.put.mock.calls.find(
+        ([url]: [string]) => url === '/api/_wlm/workload_group'
+      );
+      expect(createCall).toBeDefined();
+      const sentBody = JSON.parse(createCall[1].body);
+      expect(sentBody.settings).toBeUndefined();
+    });
+  });
+});
