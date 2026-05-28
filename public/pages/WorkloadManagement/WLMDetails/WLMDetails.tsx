@@ -35,6 +35,9 @@ import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
+  getSecurityPluginStatus,
+  describeRuleSaveError,
+  SecurityPluginStatus,
 } from '../../../utils/datasource-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 import { AutoSizeTextArea } from '../auto_size_text_area';
@@ -175,8 +178,17 @@ export const WLMDetails = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
-  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const versionSupportsSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const securityPluginMissing = securityStatus === 'unavailable';
+  const showSecurity = versionSupportsSecurity && !securityPluginMissing;
+  const securityDisabledHelpText = !versionSupportsSecurity
+    ? 'Username rules require data source ≥ 3.3.'
+    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
+  const securityRoleDisabledHelpText = !versionSupportsSecurity
+    ? 'Role rules require data source ≥ 3.3.'
+    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
 
   // === Helpers ===
   const resiliencyOptions = [
@@ -222,6 +234,17 @@ export const WLMDetails = ({
     (async () => {
       const v = await resolveDataSourceVersion(core, dataSource);
       if (!cancelled) setDsVersion(v);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core, dataSource?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) setSecurityStatus(status);
     })();
     return () => {
       cancelled = true;
@@ -513,8 +536,7 @@ export const WLMDetails = ({
         window.location.reload();
       }, 1000);
     } catch (err) {
-      const errorMessage = err?.body?.message || err?.message || String(err);
-      core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);
+      core.notifications.toasts.addDanger(`Failed to save changes: ${describeRuleSaveError(err)}`);
     }
   };
 
@@ -950,7 +972,7 @@ export const WLMDetails = ({
                         fullWidth
                         helpText={
                           !showSecurity
-                            ? 'Username rules require data source ≥ 3.3.'
+                            ? securityDisabledHelpText
                             : 'You can use (,) to add multiple usernames.'
                         }
                       >
@@ -998,7 +1020,7 @@ export const WLMDetails = ({
                         fullWidth
                         helpText={
                           !showSecurity
-                            ? 'Role rules require data source ≥ 3.3.'
+                            ? securityRoleDisabledHelpText
                             : 'You can use (,) to add multiple roles.'
                         }
                       >

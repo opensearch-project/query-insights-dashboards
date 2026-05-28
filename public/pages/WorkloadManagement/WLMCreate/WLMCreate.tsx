@@ -29,6 +29,9 @@ import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
+  getSecurityPluginStatus,
+  describeRuleSaveError,
+  SecurityPluginStatus,
 } from '../../../utils/datasource-utils';
 import { AutoSizeTextArea } from '../auto_size_text_area';
 
@@ -67,8 +70,17 @@ export const WLMCreate = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const isMounted = useRef(true);
   const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
-  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const versionSupportsSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const securityPluginMissing = securityStatus === 'unavailable';
+  const showSecurity = versionSupportsSecurity && !securityPluginMissing;
+  const securityDisabledHelpText = !versionSupportsSecurity
+    ? 'Username rules require data source ≥ 3.3.'
+    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
+  const securityRoleDisabledHelpText = !versionSupportsSecurity
+    ? 'Role rules require data source ≥ 3.3.'
+    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
 
   const isFormValid =
     name.trim() !== '' &&
@@ -102,6 +114,17 @@ export const WLMCreate = ({
     (async () => {
       const v = await resolveDataSourceVersion(core, dataSource);
       if (!cancelled) setDsVersion(v);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core, dataSource?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) setSecurityStatus(status);
     })();
     return () => {
       cancelled = true;
@@ -153,8 +176,8 @@ export const WLMCreate = ({
       const payloads = (rules ?? [])
         .map((rule) => {
           const indexPattern = splitCSV(rule.index);
-          const usernames = splitCSV(rule.username);
-          const roles = splitCSV(rule.role);
+          const usernames = showSecurity ? splitCSV(rule.username) : [];
+          const roles = showSecurity ? splitCSV(rule.role) : [];
 
           const hasIndexes = indexPattern.length > 0;
           const hasUsernames = usernames.length > 0;
@@ -223,8 +246,7 @@ export const WLMCreate = ({
 
         core.notifications.toasts.addDanger({
           title: 'Rule creation failed',
-          text:
-            ruleErr?.body?.message || ruleErr?.message || 'Rolled back created rules and group.',
+          text: describeRuleSaveError(ruleErr) || 'Rolled back created rules and group.',
         });
         return;
       }
@@ -232,7 +254,7 @@ export const WLMCreate = ({
       console.error(err);
       core.notifications.toasts.addDanger({
         title: 'Failed to create workload group and rules',
-        text: err?.body?.message || err?.message || 'Something went wrong',
+        text: describeRuleSaveError(err) || 'Something went wrong',
       });
     } finally {
       if (isMounted.current) setLoading(false);
@@ -399,7 +421,7 @@ export const WLMCreate = ({
                   error={usernameErrors[idx] || undefined}
                   helpText={
                     !showSecurity
-                      ? 'Username rules require data source ≥ 3.3.'
+                      ? securityDisabledHelpText
                       : 'You can use (,) to add multiple usernames.'
                   }
                 >
@@ -436,7 +458,7 @@ export const WLMCreate = ({
                   error={roleErrors[idx] || undefined}
                   helpText={
                     !showSecurity
-                      ? 'Role rules require data source ≥ 3.3.'
+                      ? securityRoleDisabledHelpText
                       : 'You can use (,) to add multiple roles.'
                   }
                 >

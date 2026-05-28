@@ -138,3 +138,81 @@ export function isSecurityAttributesSupported(version?: string): boolean {
   const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
   return !!v && semver.gte(v, '3.3.0');
 }
+
+/**
+ * Result of probing the cluster for the opensearch-security plugin:
+ * - 'available': plugin is installed and active (or its auth is intercepting requests)
+ * - 'unavailable': plugin is not installed, or installed but disabled
+ * - 'unknown': probe failed for an unrelated reason (network, etc.) — let user proceed
+ */
+export type SecurityPluginStatus = 'available' | 'unavailable' | 'unknown';
+
+const SECURITY_PLUGIN_COMPONENTS = ['opensearch-security'];
+
+/**
+ * Detect whether the opensearch-security plugin is installed AND active on the
+ * target cluster. Combines two probes:
+ *   1. /_cat/plugins — confirms the plugin is installed somewhere in the cluster.
+ *   2. /_plugins/_security/health — confirms the plugin is enabled and responding.
+ *
+ * Both probes must succeed for the plugin to be considered available. If either
+ * probe fails for an inconclusive reason we return 'unknown' so the UI does not
+ * over-block the user.
+ */
+export async function getSecurityPluginStatus(
+  http: { get: (path: string, options?: any) => Promise<any> },
+  dataSourceId?: string
+): Promise<SecurityPluginStatus> {
+  const query = { dataSourceId: dataSourceId ?? '' };
+
+  let pluginListed: boolean | undefined;
+  try {
+    const pluginsResp = await http.get('/api/cat/plugins', { query });
+    if (pluginsResp?.ok && Array.isArray(pluginsResp.response)) {
+      pluginListed = pluginsResp.response.some(
+        (p: { component?: string }) =>
+          !!p?.component && SECURITY_PLUGIN_COMPONENTS.includes(p.component)
+      );
+    }
+  } catch (err) {
+    console.warn('Failed to list cluster plugins:', err);
+  }
+
+  if (pluginListed === false) {
+    return 'unavailable';
+  }
+
+  try {
+    const healthResp = await http.get('/api/_plugins/_security/health', { query });
+    if (healthResp?.ok) {
+      return healthResp.available ? 'available' : 'unavailable';
+    }
+  } catch (err) {
+    console.warn('Failed to probe security plugin health:', err);
+  }
+
+  // _cat/plugins says it's installed but health probe was inconclusive — assume available.
+  if (pluginListed === true) {
+    return 'available';
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Convert a save error into a clearer message when the cluster rejects
+ * principal-based rule attributes because the security plugin isn't active.
+ *
+ * The cluster surfaces this as:
+ *   "[x_content_parse_exception] principal is not a valid attribute within the workload_group feature."
+ * which is technically correct but unactionable. Detect that exact shape and replace it.
+ */
+export function describeRuleSaveError(err: unknown): string {
+  const raw =
+    (err as any)?.body?.message ?? (err as any)?.message ?? (err == null ? '' : String(err));
+  const message = typeof raw === 'string' ? raw : String(raw);
+  if (/principal is not a valid attribute/i.test(message)) {
+    return 'Workload group rules with username or role require the OpenSearch Security plugin to be installed and enabled on this cluster.';
+  }
+  return message;
+}

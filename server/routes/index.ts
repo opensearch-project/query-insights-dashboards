@@ -626,6 +626,45 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     }
   );
 
+  router.get(
+    {
+      path: '/api/_plugins/_security/health',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      try {
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          const res = await client('queryInsights.getSecurityHealth');
+          return response.ok({ body: { ok: true, available: true, response: res } });
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          const res = await client.callAPI('queryInsights.getSecurityHealth', {});
+          return response.ok({ body: { ok: true, available: true, response: res } });
+        }
+      } catch (error) {
+        // 401/403 indicates the Security plugin is intercepting the request, so it is active.
+        // 400/404 means OpenSearch has no handler registered for this URI — the plugin is
+        // not installed or disabled.
+        const statusCode = error?.statusCode ?? error?.status;
+        if (statusCode === 401 || statusCode === 403) {
+          return response.ok({ body: { ok: true, available: true } });
+        }
+        if (statusCode === 400 || statusCode === 404) {
+          return response.ok({ body: { ok: true, available: false } });
+        }
+        return response.ok({ body: { ok: false, error: error?.message ?? String(error) } });
+      }
+    }
+  );
+
   router.delete(
     {
       path: '/api/snapshot/repository/{repository}',
