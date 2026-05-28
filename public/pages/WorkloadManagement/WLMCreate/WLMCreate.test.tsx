@@ -734,29 +734,31 @@ describe('WLMCreate – security plugin gating', () => {
     });
   });
 
-  it('rewrites the cryptic principal save error to point at the Security plugin', async () => {
-    setSecurityProbe((path) => {
-      if (path === '/api/cat/plugins') {
-        return Promise.resolve({ ok: true, response: [{ component: 'workload-management' }] });
-      }
-      return Promise.resolve({});
-    });
+  it('rewrites the cryptic principal save error from the rule PUT to point at the Security plugin', async () => {
+    // The cluster only emits the "principal is not a valid attribute" error from
+    // /_rules/workload_group, never from the workload_group create itself. Simulate
+    // that realistic flow: the group create succeeds, the rule PUT rejects.
+    setSecurityProbe(() => Promise.reject(new Error('network'))); // probe inconclusive → form stays open
 
+    coreMock.http.put.mockResolvedValueOnce({ _id: 'gid-realistic', name: 'gid-realistic' });
     coreMock.http.put.mockRejectedValueOnce({
       body: {
         message:
           '[x_content_parse_exception] principal is not a valid attribute within the workload_group feature.',
       },
     });
+    coreMock.http.delete.mockResolvedValue({ ok: true });
 
     renderWith();
     await fillRequiredFields();
+    // Type a username so the rule actually has a principal payload
+    await userEvent.type(screen.getByPlaceholderText(/username/i), 'alice');
 
     fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
 
     await waitFor(() => {
       expect(mockAddDanger).toHaveBeenCalledWith({
-        title: 'Failed to create workload group and rules',
+        title: 'Rule creation failed',
         text: expect.stringMatching(/OpenSearch Security plugin/i),
       });
     });

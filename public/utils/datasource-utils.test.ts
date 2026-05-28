@@ -370,5 +370,13 @@ describe('Tests datasource utils', () => {
       expect(describeRuleSaveError(null)).toBe('');
       expect(describeRuleSaveError({})).toBe('[object Object]');
     });
+
+    it('falls through empty body.message to err.message and String(err)', () => {
+      // Regression: ?? would short-circuit on '' and surface a blank toast tail.
+      expect(describeRuleSaveError({ body: { message: '' }, message: 'fallback' })).toBe(
+        'fallback'
+      );
+      expect(describeRuleSaveError({ body: { message: '' } })).toBe('[object Object]');
+    });
   });
 });

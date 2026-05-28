@@ -208,8 +208,11 @@ export async function getSecurityPluginStatus(
  * which is technically correct but unactionable. Detect that exact shape and replace it.
  */
 export function describeRuleSaveError(err: unknown): string {
+  // Use || rather than ?? so empty body.message falls through to err.message and
+  // String(err) — otherwise an err = { body: { message: '' } } produces an empty
+  // toast tail like "Failed to save changes: ".
   const raw =
-    (err as any)?.body?.message ?? (err as any)?.message ?? (err == null ? '' : String(err));
+    (err as any)?.body?.message || (err as any)?.message || (err == null ? '' : String(err));
   const message = typeof raw === 'string' ? raw : String(raw);
   if (/principal is not a valid attribute/i.test(message)) {
     return 'Workload group rules with username or role require the OpenSearch Security plugin to be installed and enabled on this cluster.';

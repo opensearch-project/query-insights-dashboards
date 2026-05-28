@@ -636,19 +636,33 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
       },
     },
     async (context, request, response) => {
+      // The /_plugins/_security/health response shape:
+      //   { message: string|null, mode: 'strict'|'disabled'|..., status: 'UP'|'DOWN' }
+      // Treat the plugin as available only if status is UP and mode is not 'disabled'.
+      const isHealthBodyAvailable = (body: any): boolean => {
+        if (!body || typeof body !== 'object') return true; // unknown shape — assume up
+        const mode = typeof body.mode === 'string' ? body.mode.toLowerCase() : undefined;
+        const status = typeof body.status === 'string' ? body.status.toUpperCase() : undefined;
+        if (mode === 'disabled') return false;
+        if (status && status !== 'UP') return false;
+        return true;
+      };
+
       try {
+        let res: any;
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
           const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
             .callAsCurrentUser;
-          const res = await client('queryInsights.getSecurityHealth');
-          return response.ok({ body: { ok: true, available: true, response: res } });
+          res = await client('queryInsights.getSecurityHealth');
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
-          const res = await client.callAPI('queryInsights.getSecurityHealth', {});
-          return response.ok({ body: { ok: true, available: true, response: res } });
+          res = await client.callAPI('queryInsights.getSecurityHealth', {});
         }
+        return response.ok({
+          body: { ok: true, available: isHealthBodyAvailable(res), response: res },
+        });
       } catch (error) {
         // 401/403 indicates the Security plugin is intercepting the request, so it is active.
         // 400/404 means OpenSearch has no handler registered for this URI — the plugin is

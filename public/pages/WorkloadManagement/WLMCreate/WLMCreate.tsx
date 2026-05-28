@@ -122,6 +122,9 @@ export const WLMCreate = ({
 
   useEffect(() => {
     let cancelled = false;
+    // Reset to 'unknown' on dataSource change so a previous cluster's 'available'
+    // result doesn't carry over and leave the form fail-open while the new probe runs.
+    setSecurityStatus('unknown');
     (async () => {
       const status = await getSecurityPluginStatus(core.http, dataSource?.id);
       if (!cancelled) setSecurityStatus(status);
@@ -176,8 +179,11 @@ export const WLMCreate = ({
       const payloads = (rules ?? [])
         .map((rule) => {
           const indexPattern = splitCSV(rule.index);
-          const usernames = showSecurity ? splitCSV(rule.username) : [];
-          const roles = showSecurity ? splitCSV(rule.role) : [];
+          // Always include what the user typed: dropping principal data based on a
+          // racing probe result would silently lose work. If the cluster ultimately
+          // rejects the principal, describeRuleSaveError humanizes the response.
+          const usernames = splitCSV(rule.username);
+          const roles = splitCSV(rule.role);
 
           const hasIndexes = indexPattern.length > 0;
           const hasUsernames = usernames.length > 0;
@@ -240,7 +246,7 @@ export const WLMCreate = ({
         } catch (cleanupErr: any) {
           core.notifications.toasts.addDanger({
             title: 'Rule creation failed; group rollback also failed',
-            text: cleanupErr?.body?.message || cleanupErr?.message || 'Check server logs.',
+            text: describeRuleSaveError(cleanupErr) || 'Check server logs.',
           });
         }
 

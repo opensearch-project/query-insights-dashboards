@@ -242,6 +242,9 @@ export const WLMDetails = ({
 
   useEffect(() => {
     let cancelled = false;
+    // Reset to 'unknown' on dataSource change so a previous cluster's 'available'
+    // result doesn't carry over and leave the form fail-open while the new probe runs.
+    setSecurityStatus('unknown');
     (async () => {
       const status = await getSecurityPluginStatus(core.http, dataSource?.id);
       if (!cancelled) setSecurityStatus(status);
@@ -427,8 +430,12 @@ export const WLMDetails = ({
     }
   ): RulePayload | null => {
     const indexPattern = splitCSV(rule.index);
-    const usernames = showSecurity ? splitCSV(rule.username) : [];
-    const roles = showSecurity ? splitCSV(rule.role) : [];
+    // Always include any existing principal values: stripping them silently when the
+    // probe says 'unavailable' would discard data the user (or a previous edit) loaded
+    // from the cluster. If the cluster genuinely rejects the principal, the friendlier
+    // describeRuleSaveError surfaces that to the user.
+    const usernames = splitCSV(rule.username);
+    const roles = splitCSV(rule.role);
 
     const hasIndexes = indexPattern.length > 0;
     const hasUsernames = usernames.length > 0;
@@ -536,7 +543,10 @@ export const WLMDetails = ({
         window.location.reload();
       }, 1000);
     } catch (err) {
-      core.notifications.toasts.addDanger(`Failed to save changes: ${describeRuleSaveError(err)}`);
+      core.notifications.toasts.addDanger({
+        title: 'Failed to save changes',
+        text: describeRuleSaveError(err) || 'Something went wrong',
+      });
     }
   };
 

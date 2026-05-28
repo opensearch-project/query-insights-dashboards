@@ -100,7 +100,18 @@ const setRouting = (core: CoreStart, securityImpl: (path: string) => Promise<any
       });
     }
     if (path.startsWith('/api/_wlm/stats')) {
-      return Promise.resolve({ body: {} });
+      // Match the real stats shape ({ [nodeId]: { workload_groups: { ... } } })
+      // so updateStats() iterates cleanly without throwing.
+      return Promise.resolve({
+        'node-1': {
+          workload_groups: {
+            'wg-123': {
+              cpu: { current_usage: 0 },
+              memory: { current_usage: 0 },
+            },
+          },
+        },
+      });
     }
     return Promise.resolve({ body: {} });
   });
@@ -196,7 +207,10 @@ describe('WLMDetails — security plugin gating', () => {
     });
   });
 
-  it('rewrites the cryptic principal save error to point at the Security plugin', async () => {
+  it('rewrites the cryptic principal save error from the rule PUT to point at the Security plugin', async () => {
+    // The cluster only emits the principal error from /_rules/workload_group, not from
+    // the group settings PUT. Simulate that realistic flow: group PUT succeeds, rule
+    // PUT (the second http.put) rejects with the cryptic message.
     const core = buildCore();
     setRouting(core, (path) => {
       if (path === '/api/cat/plugins') {
@@ -205,12 +219,14 @@ describe('WLMDetails — security plugin gating', () => {
       return undefined;
     });
 
-    (core.http.put as jest.Mock).mockRejectedValueOnce({
-      body: {
-        message:
-          '[x_content_parse_exception] principal is not a valid attribute within the workload_group feature.',
-      },
-    });
+    (core.http.put as jest.Mock)
+      .mockResolvedValueOnce({}) // group settings PUT succeeds
+      .mockRejectedValueOnce({
+        body: {
+          message:
+            '[x_content_parse_exception] principal is not a valid attribute within the workload_group feature.',
+        },
+      });
 
     renderWith(core);
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
@@ -220,13 +236,20 @@ describe('WLMDetails — security plugin gating', () => {
       fireEvent.click(screen.getByLabelText('Enforced'));
     });
 
+    // Modify the rule's index so saveChanges actually issues a rule PUT (rulesToUpdate path).
+    const indexInput = await screen.findByPlaceholderText('Enter Index');
+    fireEvent.change(indexInput, { target: { value: 'updated-*' } });
+
     const applyButton = await screen.findByRole('button', { name: /apply changes/i });
     await waitFor(() => expect(applyButton).not.toBeDisabled());
     fireEvent.click(applyButton);
 
     await waitFor(() => {
       expect(core.notifications.toasts.addDanger).toHaveBeenCalledWith(
-        expect.stringMatching(/OpenSearch Security plugin/i)
+        expect.objectContaining({
+          title: 'Failed to save changes',
+          text: expect.stringMatching(/OpenSearch Security plugin/i),
+        })
       );
     });
   });
