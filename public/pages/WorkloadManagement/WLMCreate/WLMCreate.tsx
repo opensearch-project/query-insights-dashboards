@@ -31,6 +31,7 @@ import {
   isSecurityAttributesSupported,
   getSecurityPluginStatus,
   describeRuleSaveError,
+  getSecurityFieldDisabledHelpText,
   SecurityPluginStatus,
 } from '../../../utils/datasource-utils';
 import { AutoSizeTextArea } from '../auto_size_text_area';
@@ -75,12 +76,14 @@ export const WLMCreate = ({
   const versionSupportsSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
   const securityPluginMissing = securityStatus === 'unavailable';
   const showSecurity = versionSupportsSecurity && !securityPluginMissing;
-  const securityDisabledHelpText = !versionSupportsSecurity
-    ? 'Username rules require data source ≥ 3.3.'
-    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
-  const securityRoleDisabledHelpText = !versionSupportsSecurity
-    ? 'Role rules require data source ≥ 3.3.'
-    : 'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
+  const securityDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'username',
+    versionSupportsSecurity
+  );
+  const securityRoleDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'role',
+    versionSupportsSecurity
+  );
 
   const isFormValid =
     name.trim() !== '' &&

@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { CoreStart } from 'opensearch-dashboards/public';
@@ -208,13 +208,16 @@ describe('WLMDetails — security plugin gating', () => {
   });
 
   it('rewrites the cryptic principal save error from the rule PUT to point at the Security plugin', async () => {
-    // The cluster only emits the principal error from /_rules/workload_group, not from
-    // the group settings PUT. Simulate that realistic flow: group PUT succeeds, rule
-    // PUT (the second http.put) rejects with the cryptic message.
+    // The cluster only emits the principal error from /_rules/workload_group, and only
+    // when the payload actually contains principal data. Simulate the realistic flow:
+    //   1. probe is inconclusive ('unknown') so the form does not over-block
+    //   2. user types a username on a rule
+    //   3. group settings PUT succeeds, rule PUT rejects with the cryptic message
     const core = buildCore();
     setRouting(core, (path) => {
-      if (path === '/api/cat/plugins') {
-        return Promise.resolve({ ok: true, response: [{ component: 'workload-management' }] });
+      if (path === '/api/cat/plugins') return Promise.reject(new Error('inconclusive'));
+      if (path === '/api/_plugins/_security/health') {
+        return Promise.reject(new Error('inconclusive'));
       }
       return undefined;
     });
@@ -232,13 +235,11 @@ describe('WLMDetails — security plugin gating', () => {
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));
     await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
 
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText('Enforced'));
-    });
-
-    // Modify the rule's index so saveChanges actually issues a rule PUT (rulesToUpdate path).
-    const indexInput = await screen.findByPlaceholderText('Enter Index');
-    fireEvent.change(indexInput, { target: { value: 'updated-*' } });
+    // Probe is 'unknown' → fields stay enabled. Populate principal so the rule PUT
+    // payload actually carries one.
+    const usernameInput = await screen.findByPlaceholderText('Enter username');
+    await waitFor(() => expect(usernameInput).not.toBeDisabled());
+    fireEvent.change(usernameInput, { target: { value: 'alice' } });
 
     const applyButton = await screen.findByRole('button', { name: /apply changes/i });
     await waitFor(() => expect(applyButton).not.toBeDisabled());
@@ -252,5 +253,14 @@ describe('WLMDetails — security plugin gating', () => {
         })
       );
     });
+
+    // The rule PUT body must include principal.username — proving the test exercises
+    // the documented intent rather than passing on an empty payload.
+    const ruleCalls = (core.http.put as jest.Mock).mock.calls.filter(
+      ([url]) => url === '/api/_rules/workload_group/r1'
+    );
+    expect(ruleCalls.length).toBeGreaterThan(0);
+    const body = JSON.parse(ruleCalls[0][1].body);
+    expect(body.principal).toEqual(expect.objectContaining({ username: ['alice'] }));
   });
 });

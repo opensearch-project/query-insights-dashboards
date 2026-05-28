@@ -147,7 +147,26 @@ export function isSecurityAttributesSupported(version?: string): boolean {
  */
 export type SecurityPluginStatus = 'available' | 'unavailable' | 'unknown';
 
-const SECURITY_PLUGIN_COMPONENTS = ['opensearch-security'];
+const SECURITY_PLUGIN_COMPONENT = 'opensearch-security';
+
+const SECURITY_PLUGIN_REQUIRED_HELP_TEXT =
+  'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
+
+/**
+ * Helper text shown beneath a disabled Username or Role input. Picks the most
+ * relevant blocker (version gate first, then security plugin gate).
+ */
+export function getSecurityFieldDisabledHelpText(
+  field: 'username' | 'role',
+  versionSupportsSecurity: boolean
+): string {
+  if (!versionSupportsSecurity) {
+    return field === 'username'
+      ? 'Username rules require data source ≥ 3.3.'
+      : 'Role rules require data source ≥ 3.3.';
+  }
+  return SECURITY_PLUGIN_REQUIRED_HELP_TEXT;
+}
 
 /**
  * Detect whether the opensearch-security plugin is installed AND active on the
@@ -170,8 +189,7 @@ export async function getSecurityPluginStatus(
     const pluginsResp = await http.get('/api/cat/plugins', { query });
     if (pluginsResp?.ok && Array.isArray(pluginsResp.response)) {
       pluginListed = pluginsResp.response.some(
-        (p: { component?: string }) =>
-          !!p?.component && SECURITY_PLUGIN_COMPONENTS.includes(p.component)
+        (p: { component?: string }) => p?.component === SECURITY_PLUGIN_COMPONENT
       );
     }
   } catch (err) {
@@ -213,7 +231,10 @@ export function describeRuleSaveError(err: unknown): string {
   // toast tail like "Failed to save changes: ".
   const raw =
     (err as any)?.body?.message || (err as any)?.message || (err == null ? '' : String(err));
-  const message = typeof raw === 'string' ? raw : String(raw);
+  let message = typeof raw === 'string' ? raw : String(raw);
+  // String({}) is "[object Object]"; surface an empty string so callers' fallback
+  // ("Something went wrong" / "Check server logs.") wins instead of showing junk.
+  if (message === '[object Object]') message = '';
   if (/principal is not a valid attribute/i.test(message)) {
     return 'Workload group rules with username or role require the OpenSearch Security plugin to be installed and enabled on this cluster.';
   }

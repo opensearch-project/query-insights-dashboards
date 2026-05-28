@@ -365,18 +365,20 @@ describe('Tests datasource utils', () => {
       );
     });
 
-    it('handles nullish/odd inputs without throwing', () => {
+    it('returns empty string for nullish or plain-object inputs (caller fallback wins)', () => {
+      // Empty string lets the call-site `|| 'Something went wrong'` produce a generic
+      // toast instead of leaking '[object Object]' to the user.
       expect(describeRuleSaveError(undefined)).toBe('');
       expect(describeRuleSaveError(null)).toBe('');
-      expect(describeRuleSaveError({})).toBe('[object Object]');
+      expect(describeRuleSaveError({})).toBe('');
+      expect(describeRuleSaveError({ body: { message: '' } })).toBe('');
     });
 
-    it('falls through empty body.message to err.message and String(err)', () => {
+    it('falls through empty body.message to err.message', () => {
       // Regression: ?? would short-circuit on '' and surface a blank toast tail.
       expect(describeRuleSaveError({ body: { message: '' }, message: 'fallback' })).toBe(
         'fallback'
       );
-      expect(describeRuleSaveError({ body: { message: '' } })).toBe('[object Object]');
     });
   });
 });

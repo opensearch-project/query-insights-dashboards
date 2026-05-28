@@ -638,14 +638,19 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     async (context, request, response) => {
       // The /_plugins/_security/health response shape:
       //   { message: string|null, mode: 'strict'|'disabled'|..., status: 'UP'|'DOWN' }
-      // Treat the plugin as available only if status is UP and mode is not 'disabled'.
+      // The plugin is "available" only when we have positive evidence:
+      //   - explicit status UP, or
+      //   - status absent but mode is a non-disabled string
+      // Empty / non-object responses (proxy returns 200 with no JSON, etc.) are
+      // treated as unavailable to avoid masking misconfigurations.
       const isHealthBodyAvailable = (body: any): boolean => {
-        if (!body || typeof body !== 'object') return true; // unknown shape — assume up
+        if (!body || typeof body !== 'object') return false;
         const mode = typeof body.mode === 'string' ? body.mode.toLowerCase() : undefined;
         const status = typeof body.status === 'string' ? body.status.toUpperCase() : undefined;
         if (mode === 'disabled') return false;
-        if (status && status !== 'UP') return false;
-        return true;
+        if (status === 'UP') return true;
+        if (status) return false;
+        return mode !== undefined;
       };
 
       try {
