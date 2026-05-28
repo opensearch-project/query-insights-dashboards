@@ -36,6 +36,10 @@ import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
   isWlmGroupSettingsSupported,
+  getSecurityPluginStatus,
+  describeRuleSaveError,
+  getSecurityFieldDisabledHelpText,
+  SecurityPluginStatus,
 } from '../../../utils/datasource-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 import { AutoSizeTextArea } from '../auto_size_text_area';
@@ -189,11 +193,22 @@ export const WLMDetails = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
-  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const versionSupportsSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const securityPluginMissing = securityStatus === 'unavailable';
+  const showSecurity = versionSupportsSecurity && !securityPluginMissing;
   const showGroupSettings = !dataSourceEnabled || isWlmGroupSettingsSupported(dsVersion);
   const [, setOriginalSettings] = useState<WlmGroupSettings>({});
   const [settingsDraft, setSettingsDraft] = useState<WlmGroupSettingsDraft>(emptyDraft());
+  const securityDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'username',
+    versionSupportsSecurity
+  );
+  const securityRoleDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'role',
+    versionSupportsSecurity
+  );
 
   // Discards stale fetch responses that resolve after newer fetches or after
   // the user has started editing — without this guard, a slow GET that lands
@@ -262,6 +277,25 @@ export const WLMDetails = ({
     };
   }, [core, dataSource?.id]);
 
+  useEffect(() => {
+    // No groupName means fetchGroupDetails will redirect away — skip the probe.
+    if (!groupName) return;
+    let cancelled = false;
+    // Reset to 'unknown' on dataSource change so a previous cluster's 'available'
+    // result doesn't carry over and leave the form fail-open while the new probe runs.
+    // Note: deps intentionally exclude `groupName` — navigating between groups on the
+    // same cluster should not flicker the security gate.
+    setSecurityStatus('unknown');
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) setSecurityStatus(status);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [core, dataSource?.id]);
+
   // Do the initial fetch when inputs change
   useEffect(() => {
     fetchGroupDetails();
@@ -275,10 +309,20 @@ export const WLMDetails = ({
     const interval = setInterval(() => {
       fetchGroupDetails();
       updateStats();
+      // Refresh the security plugin gate too so a long-lived form reflects cluster
+      // changes (admin enables/disables the plugin) instead of staying stale.
+      let cancelled = false;
+      (async () => {
+        const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+        if (!cancelled) setSecurityStatus(status);
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [isSaved, groupName, dataSource]);
+  }, [isSaved, groupName, dataSource, core]);
 
   // === Data Fetching ===
   const fetchDefaultGroupDetails = () => {
@@ -454,8 +498,12 @@ export const WLMDetails = ({
     }
   ): RulePayload | null => {
     const indexPattern = splitCSV(rule.index);
-    const usernames = showSecurity ? splitCSV(rule.username) : [];
-    const roles = showSecurity ? splitCSV(rule.role) : [];
+    // Always include any existing principal values: stripping them silently when the
+    // probe says 'unavailable' would discard data the user (or a previous edit) loaded
+    // from the cluster. If the cluster genuinely rejects the principal, the friendlier
+    // describeRuleSaveError surfaces that to the user.
+    const usernames = splitCSV(rule.username);
+    const roles = splitCSV(rule.role);
 
     const hasIndexes = indexPattern.length > 0;
     const hasUsernames = usernames.length > 0;
@@ -589,8 +637,11 @@ export const WLMDetails = ({
       await fetchGroupDetails();
       await updateStats();
     } catch (err) {
-      const errorMessage = err?.body?.message || err?.message || String(err);
-      core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);
+      console.error(err);
+      core.notifications.toasts.addDanger({
+        title: 'Failed to save changes',
+        text: describeRuleSaveError(err) || 'Something went wrong',
+      });
     }
   };
 
@@ -603,9 +654,10 @@ export const WLMDetails = ({
       history.push(WLM_MAIN);
     } catch (err) {
       console.error('Failed to delete group:', err);
-      core.notifications.toasts.addDanger(
-        `Failed to delete group: ${err.body?.message || err.message}`
-      );
+      core.notifications.toasts.addDanger({
+        title: 'Failed to delete group',
+        text: describeRuleSaveError(err) || 'Something went wrong',
+      });
     }
   };
 
@@ -1026,7 +1078,7 @@ export const WLMDetails = ({
                         fullWidth
                         helpText={
                           !showSecurity
-                            ? 'Username rules require data source ≥ 3.3.'
+                            ? securityDisabledHelpText
                             : 'You can use (,) to add multiple usernames.'
                         }
                       >
@@ -1062,7 +1114,9 @@ export const WLMDetails = ({
                               );
                             }
                           }}
-                          disabled={!showSecurity}
+                          // Stay editable if the rule already has a username so the user
+                          // can clear it after the probe flips to 'unavailable'.
+                          disabled={!showSecurity && !rule.username}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>
@@ -1074,7 +1128,7 @@ export const WLMDetails = ({
                         fullWidth
                         helpText={
                           !showSecurity
-                            ? 'Role rules require data source ≥ 3.3.'
+                            ? securityRoleDisabledHelpText
                             : 'You can use (,) to add multiple roles.'
                         }
                       >
@@ -1110,7 +1164,7 @@ export const WLMDetails = ({
                               );
                             }
                           }}
-                          disabled={!showSecurity}
+                          disabled={!showSecurity && !rule.role}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>

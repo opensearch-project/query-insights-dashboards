@@ -92,8 +92,12 @@ describe('WLM Create Page', () => {
     cy.get('[data-testid="name-input"]').type(groupName);
     cy.contains('Soft').click();
     cy.get('[data-testid="indexInput"]').type(' , , , ');
-    cy.get('[placeholder="Enter username"]').type(' , , ');
-    cy.get('[placeholder="Enter role"]').type(' , ');
+    // Username/Role inputs are gated off when the OpenSearch Security plugin is
+    // not installed (the case for this no-security suite). Use { force: true } so
+    // we still exercise the "commas-only payload not sent" path that is the
+    // actual subject of this test.
+    cy.get('[placeholder="Enter username"]').type(' , , ', { force: true });
+    cy.get('[placeholder="Enter role"]').type(' , ', { force: true });
     cy.get('[data-testid="memory-threshold-input"]').clear().type('1');
     cy.get('button').contains('Create workload group').click();
     cy.wait('@createGroup');

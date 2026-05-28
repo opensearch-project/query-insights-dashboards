@@ -251,4 +251,11 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     },
     method: 'GET',
   });
+
+  queryInsights.getSecurityHealth = ca({
+    url: {
+      fmt: `/_plugins/_security/health`,
+    },
+    method: 'GET',
+  });
 };
