@@ -451,7 +451,9 @@ export const WLMCreate = ({
                       setRules(updatedRules);
                       setUsernameErrors(updatedErrors);
                     }}
-                    disabled={!showSecurity}
+                    // Stay editable if the user has already typed something so they can clear
+                    // it after a probe flips to 'unavailable' mid-flight.
+                    disabled={!showSecurity && !rule.username}
                     isInvalid={Boolean(usernameErrors[idx])}
                   />
                 </EuiFormRow>
@@ -488,7 +490,7 @@ export const WLMCreate = ({
                       setRules(updatedRules);
                       setRoleErrors(updatedErrors);
                     }}
-                    disabled={!showSecurity}
+                    disabled={!showSecurity && !rule.role}
                     isInvalid={Boolean(roleErrors[idx])}
                   />
                 </EuiFormRow>

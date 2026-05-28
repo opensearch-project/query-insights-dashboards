@@ -637,8 +637,16 @@ describe('WLMCreate – security plugin gating', () => {
     await userEvent.click(screen.getByLabelText(/Soft/i));
   };
 
+  // setSecurityProbe permanently replaces coreMock.http.get; restore the original
+  // reference afterward so subsequent describes don't pick up our impl.
+  const originalHttpGet = coreMock.http.get;
+
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    (coreMock.http as any).get = originalHttpGet;
   });
 
   const setSecurityProbe = (impl: (path: string) => Promise<any>) => {

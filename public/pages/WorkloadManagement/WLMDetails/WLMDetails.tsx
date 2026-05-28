@@ -249,6 +249,8 @@ export const WLMDetails = ({
     let cancelled = false;
     // Reset to 'unknown' on dataSource change so a previous cluster's 'available'
     // result doesn't carry over and leave the form fail-open while the new probe runs.
+    // Note: deps intentionally exclude `groupName` — navigating between groups on the
+    // same cluster should not flicker the security gate.
     setSecurityStatus('unknown');
     (async () => {
       const status = await getSecurityPluginStatus(core.http, dataSource?.id);
@@ -257,7 +259,8 @@ export const WLMDetails = ({
     return () => {
       cancelled = true;
     };
-  }, [core, dataSource?.id, groupName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [core, dataSource?.id]);
 
   // Do the initial fetch when inputs change
   useEffect(() => {
@@ -272,10 +275,20 @@ export const WLMDetails = ({
     const interval = setInterval(() => {
       fetchGroupDetails();
       updateStats();
+      // Refresh the security plugin gate too so a long-lived form reflects cluster
+      // changes (admin enables/disables the plugin) instead of staying stale.
+      let cancelled = false;
+      (async () => {
+        const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+        if (!cancelled) setSecurityStatus(status);
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [isSaved, groupName, dataSource]);
+  }, [isSaved, groupName, dataSource, core]);
 
   // === Data Fetching ===
   const fetchDefaultGroupDetails = () => {
@@ -487,11 +500,6 @@ export const WLMDetails = ({
     }
 
     try {
-      await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
-        query: { dataSourceId: dataSource.id },
-        body: JSON.stringify(body),
-      });
-
       const existingRuleMap = new Map(existingRules.map((r) => [r.indexId, r]));
       const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
 
@@ -513,6 +521,10 @@ export const WLMDetails = ({
         }
       }
 
+      // Run rule mutations BEFORE the group settings PUT. The rule endpoint is more
+      // likely to reject (principal validation, etc.), and we'd rather skip a benign
+      // group settings change than half-commit and confuse the user with a stale
+      // resource_limits update.
       for (const rule of rulesToCreate) {
         const response = buildRulePayload(currentId!, rule);
         if (!response) continue;
@@ -541,6 +553,11 @@ export const WLMDetails = ({
         });
       }
 
+      await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
+        query: { dataSourceId: dataSource.id },
+        body: JSON.stringify(body),
+      });
+
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
 
@@ -565,9 +582,10 @@ export const WLMDetails = ({
       history.push(WLM_MAIN);
     } catch (err) {
       console.error('Failed to delete group:', err);
-      core.notifications.toasts.addDanger(
-        `Failed to delete group: ${err.body?.message || err.message}`
-      );
+      core.notifications.toasts.addDanger({
+        title: 'Failed to delete group',
+        text: describeRuleSaveError(err) || 'Something went wrong',
+      });
     }
   };
 
@@ -1024,7 +1042,9 @@ export const WLMDetails = ({
                               );
                             }
                           }}
-                          disabled={!showSecurity}
+                          // Stay editable if the rule already has a username so the user
+                          // can clear it after the probe flips to 'unavailable'.
+                          disabled={!showSecurity && !rule.username}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>
@@ -1072,7 +1092,7 @@ export const WLMDetails = ({
                               );
                             }
                           }}
-                          disabled={!showSecurity}
+                          disabled={!showSecurity && !rule.role}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>

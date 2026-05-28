@@ -203,7 +203,12 @@ export async function getSecurityPluginStatus(
   try {
     const healthResp = await http.get('/api/_plugins/_security/health', { query });
     if (healthResp?.ok) {
-      return healthResp.available ? 'available' : 'unavailable';
+      // Only trust 'unavailable' from health when we have a positive plugin signal
+      // from /_cat/plugins. Otherwise a transient cat/plugins blip + a 400/404 from
+      // some upstream proxy could cause a permanent false 'unavailable'.
+      if (healthResp.available) return 'available';
+      if (pluginListed === true) return 'unavailable';
+      return 'unknown';
     }
   } catch (err) {
     console.warn('Failed to probe security plugin health:', err);

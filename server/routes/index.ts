@@ -671,13 +671,22 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
       } catch (error) {
         // 401/403 indicates the Security plugin is intercepting the request, so it is active.
         // 400/404 means OpenSearch has no handler registered for this URI — the plugin is
-        // not installed or disabled.
+        // not installed or disabled. 503 typically means the plugin is installed but
+        // hasn't initialized (e.g. strict mode without securityconfig loaded).
         const statusCode = error?.statusCode ?? error?.status;
         if (statusCode === 401 || statusCode === 403) {
           return response.ok({ body: { ok: true, available: true } });
         }
-        if (statusCode === 400 || statusCode === 404) {
+        if (statusCode === 400 || statusCode === 404 || statusCode === 503) {
           return response.ok({ body: { ok: true, available: false } });
+        }
+        // Some upstream errors carry the plugin's health body even on non-2xx; if so,
+        // classify based on body contents rather than only the status code.
+        const errorBody = error?.body ?? error?.meta?.body;
+        if (errorBody && typeof errorBody === 'object') {
+          return response.ok({
+            body: { ok: true, available: isHealthBodyAvailable(errorBody), response: errorBody },
+          });
         }
         return response.ok({ body: { ok: false, error: error?.message ?? String(error) } });
       }
