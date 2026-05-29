@@ -626,6 +626,73 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     }
   );
 
+  router.get(
+    {
+      path: '/api/_plugins/_security/health',
+      validate: {
+        query: schema.object({
+          dataSourceId: schema.maybe(schema.string()),
+        }),
+      },
+    },
+    async (context, request, response) => {
+      // The /_plugins/_security/health response shape:
+      //   { message: string|null, mode: 'strict'|'disabled'|..., status: 'UP'|'DOWN' }
+      // The plugin is "available" only when we have positive evidence:
+      //   - explicit status UP, or
+      //   - status absent but mode is a non-disabled string
+      // Empty / non-object responses (proxy returns 200 with no JSON, etc.) are
+      // treated as unavailable to avoid masking misconfigurations.
+      const isHealthBodyAvailable = (body: any): boolean => {
+        if (!body || typeof body !== 'object') return false;
+        const mode = typeof body.mode === 'string' ? body.mode.toLowerCase() : undefined;
+        const status = typeof body.status === 'string' ? body.status.toUpperCase() : undefined;
+        if (mode === 'disabled') return false;
+        if (status === 'UP') return true;
+        if (status) return false;
+        return mode !== undefined;
+      };
+
+      try {
+        let res: any;
+        if (!dataSourceEnabled || !request.query?.dataSourceId) {
+          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
+            .callAsCurrentUser;
+          res = await client('queryInsights.getSecurityHealth');
+        } else {
+          const client = context.dataSource.opensearch.legacy.getClient(
+            request.query?.dataSourceId
+          );
+          res = await client.callAPI('queryInsights.getSecurityHealth', {});
+        }
+        return response.ok({
+          body: { ok: true, available: isHealthBodyAvailable(res), response: res },
+        });
+      } catch (error) {
+        // 401/403 indicates the Security plugin is intercepting the request, so it is active.
+        // 400/404 means OpenSearch has no handler registered for this URI — the plugin is
+        // not installed or disabled. 503 typically means the plugin is installed but
+        // hasn't initialized (e.g. strict mode without securityconfig loaded).
+        const statusCode = error?.statusCode ?? error?.status;
+        if (statusCode === 401 || statusCode === 403) {
+          return response.ok({ body: { ok: true, available: true } });
+        }
+        if (statusCode === 400 || statusCode === 404 || statusCode === 503) {
+          return response.ok({ body: { ok: true, available: false } });
+        }
+        // Some upstream errors carry the plugin's health body even on non-2xx; if so,
+        // classify based on body contents rather than only the status code.
+        const errorBody = error?.body ?? error?.meta?.body;
+        if (errorBody && typeof errorBody === 'object') {
+          return response.ok({
+            body: { ok: true, available: isHealthBodyAvailable(errorBody), response: errorBody },
+          });
+        }
+        return response.ok({ body: { ok: false, error: error?.message ?? String(error) } });
+      }
+    }
+  );
+
   router.delete(
     {
       path: '/api/snapshot/repository/{repository}',

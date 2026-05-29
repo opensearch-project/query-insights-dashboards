@@ -138,3 +138,110 @@ export function isSecurityAttributesSupported(version?: string): boolean {
   const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
   return !!v && semver.gte(v, '3.3.0');
 }
+
+/**
+ * Result of probing the cluster for the opensearch-security plugin:
+ * - 'available': plugin is installed and active (or its auth is intercepting requests)
+ * - 'unavailable': plugin is not installed, or installed but disabled
+ * - 'unknown': probe failed for an unrelated reason (network, etc.) — let user proceed
+ */
+export type SecurityPluginStatus = 'available' | 'unavailable' | 'unknown';
+
+const SECURITY_PLUGIN_COMPONENT = 'opensearch-security';
+
+const SECURITY_PLUGIN_REQUIRED_HELP_TEXT =
+  'Requires the OpenSearch Security plugin to be installed and enabled on this cluster.';
+
+/**
+ * Helper text shown beneath a disabled Username or Role input. Picks the most
+ * relevant blocker (version gate first, then security plugin gate).
+ */
+export function getSecurityFieldDisabledHelpText(
+  field: 'username' | 'role',
+  versionSupportsSecurity: boolean
+): string {
+  if (!versionSupportsSecurity) {
+    return field === 'username'
+      ? 'Username rules require data source ≥ 3.3.'
+      : 'Role rules require data source ≥ 3.3.';
+  }
+  return SECURITY_PLUGIN_REQUIRED_HELP_TEXT;
+}
+
+/**
+ * Detect whether the opensearch-security plugin is installed AND active on the
+ * target cluster. Combines two probes:
+ *   1. /_cat/plugins — confirms the plugin is installed somewhere in the cluster.
+ *   2. /_plugins/_security/health — confirms the plugin is enabled and responding.
+ *
+ * Both probes must succeed for the plugin to be considered available. If either
+ * probe fails for an inconclusive reason we return 'unknown' so the UI does not
+ * over-block the user.
+ */
+export async function getSecurityPluginStatus(
+  http: { get: (path: string, options?: any) => Promise<any> },
+  dataSourceId?: string
+): Promise<SecurityPluginStatus> {
+  const query = { dataSourceId: dataSourceId ?? '' };
+
+  let pluginListed: boolean | undefined;
+  try {
+    const pluginsResp = await http.get('/api/cat/plugins', { query });
+    if (pluginsResp?.ok && Array.isArray(pluginsResp.response)) {
+      pluginListed = pluginsResp.response.some(
+        (p: { component?: string }) => p?.component === SECURITY_PLUGIN_COMPONENT
+      );
+    }
+  } catch (err) {
+    console.warn('Failed to list cluster plugins:', err);
+  }
+
+  if (pluginListed === false) {
+    return 'unavailable';
+  }
+
+  try {
+    const healthResp = await http.get('/api/_plugins/_security/health', { query });
+    if (healthResp?.ok) {
+      // Only trust 'unavailable' from health when we have a positive plugin signal
+      // from /_cat/plugins. Otherwise a transient cat/plugins blip + a 400/404 from
+      // some upstream proxy could cause a permanent false 'unavailable'.
+      if (healthResp.available) return 'available';
+      if (pluginListed === true) return 'unavailable';
+      return 'unknown';
+    }
+  } catch (err) {
+    console.warn('Failed to probe security plugin health:', err);
+  }
+
+  // _cat/plugins says it's installed but health probe was inconclusive — assume available.
+  if (pluginListed === true) {
+    return 'available';
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Convert a save error into a clearer message when the cluster rejects
+ * principal-based rule attributes because the security plugin isn't active.
+ *
+ * The cluster surfaces this as:
+ *   "[x_content_parse_exception] principal is not a valid attribute within the workload_group feature."
+ * which is technically correct but unactionable. Detect that exact shape and replace it.
+ */
+export function describeRuleSaveError(err: unknown): string {
+  // Use || rather than ?? so empty body.message falls through to err.message and
+  // String(err) — otherwise an err = { body: { message: '' } } produces an empty
+  // toast tail like "Failed to save changes: ".
+  const raw =
+    (err as any)?.body?.message || (err as any)?.message || (err == null ? '' : String(err));
+  let message = typeof raw === 'string' ? raw : String(raw);
+  // String({}) is "[object Object]"; surface an empty string so callers' fallback
+  // ("Something went wrong" / "Check server logs.") wins instead of showing junk.
+  if (message === '[object Object]') message = '';
+  if (/principal is not a valid attribute/i.test(message)) {
+    return 'Workload group rules with username or role require the OpenSearch Security plugin to be installed and enabled on this cluster.';
+  }
+  return message;
+}
