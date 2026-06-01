@@ -1124,4 +1124,125 @@ describe('WLMDetails Component', () => {
       );
     });
   });
+
+  describe('Group settings tab', () => {
+    const renderWithVersion = (version: string, name = 'test-group') => {
+      (mockCore.savedObjects.client.get as jest.Mock).mockResolvedValue({
+        attributes: { dataSourceVersion: version },
+      });
+      const ds = { id: 'ds-x', name: 'ds-x', dataSourceVersion: version } as any;
+      render(
+        <MemoryRouter initialEntries={[`/wlm-details?name=${name}`]}>
+          <DataSourceContext.Provider value={{ dataSource: ds, setDataSource: jest.fn() }}>
+            <WLMDetails
+              core={mockCore}
+              depsStart={{ dataSource: { dataSourceEnabled: true } } as any}
+              params={mockParams}
+              dataSourceManagement={mockDataSourceManagement}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+    };
+
+    it('hides the group settings section on a < 3.7 cluster', async () => {
+      await act(async () => {
+        renderWithVersion('3.6.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      await waitFor(() => expect(screen.getByText(/Workload group name/i)).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+      expect(screen.queryByTestId('wlm-setting-toggle-search.max_buckets')).not.toBeInTheDocument();
+    });
+
+    it('shows the group settings section on a >= 3.7 cluster', async () => {
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+      await waitFor(() =>
+        expect(screen.getByTestId('wlm-setting-toggle-search.max_buckets')).toBeInTheDocument()
+      );
+    });
+
+    it('parses settings from GET response and populates the form', async () => {
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          return Promise.resolve({
+            workload_groups: [
+              {
+                _id: 'wg-123',
+                name: 'test-group',
+                resource_limits: { cpu: 0.5, memory: 0.5 },
+                resiliency_mode: 'SOFT',
+                settings: { 'search.max_buckets': '10000' },
+              },
+            ],
+          });
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+      await waitFor(() => {
+        const toggle = screen.getByTestId('wlm-setting-toggle-search.max_buckets');
+        const isOn =
+          (toggle as HTMLInputElement).checked || toggle.getAttribute('aria-checked') === 'true';
+        expect(isOn).toBe(true);
+      });
+      const input = screen.getByTestId('wlm-setting-input-search.max_buckets') as HTMLInputElement;
+      expect(input.value).toBe('10000');
+    });
+
+    it('sends serialized settings on Apply Changes', async () => {
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          return Promise.resolve({
+            workload_groups: [
+              {
+                _id: 'wg-123',
+                name: 'test-group',
+                resource_limits: { cpu: 0.5, memory: 0.5 },
+                resiliency_mode: 'SOFT',
+              },
+            ],
+          });
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+      (mockCore.http.put as jest.Mock).mockResolvedValue({});
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      const toggle = await screen.findByTestId('wlm-setting-toggle-search.max_buckets');
+      fireEvent.click(toggle);
+      const input = screen.getByTestId('wlm-setting-input-search.max_buckets');
+      fireEvent.change(input, { target: { value: '5000' } });
+
+      fireEvent.click(screen.getByRole('button', { name: /apply changes/i }));
+
+      await waitFor(() => {
+        const putCalls = (mockCore.http.put as jest.Mock).mock.calls;
+        const updateCall = putCalls.find(
+          ([url]: [string]) => url === '/api/_wlm/workload_group/test-group'
+        );
+        expect(updateCall).toBeDefined();
+        const sentBody = JSON.parse(updateCall![1].body);
+        expect(sentBody.settings).toEqual({ 'search.max_buckets': 5000 });
+      });
+    });
+  });
 });

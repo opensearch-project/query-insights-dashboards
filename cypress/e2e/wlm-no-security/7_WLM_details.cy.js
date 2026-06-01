@@ -131,6 +131,94 @@ describe('WLM Details Page', () => {
     });
   });
 
+  it('persists a group setting via PUT and reflects it after reload', () => {
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveGroup');
+
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+
+    cy.get('[data-testid="wlm-setting-toggle-search.max_buckets"]').click();
+    cy.get('[data-testid="wlm-setting-input-search.max_buckets"]').clear().type('5000');
+
+    cy.contains('button', /^Apply Changes$/)
+      .should('not.be.disabled')
+      .click();
+
+    cy.wait('@saveGroup')
+      .its('request.body.settings')
+      .should('deep.equal', { 'search.max_buckets': 5000 });
+
+    cy.reload();
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+    cy.get('[data-testid="wlm-setting-input-search.max_buckets"]').should('have.value', '5000');
+  });
+
+  it('toggling off a previously-set key sends null', () => {
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveGroupRemove');
+
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+    cy.get('[data-testid="wlm-setting-toggle-search.max_buckets"]').click();
+
+    cy.contains('button', /^Apply Changes$/)
+      .should('not.be.disabled')
+      .click();
+
+    cy.wait('@saveGroupRemove')
+      .its('request.body.settings')
+      .should('deep.equal', { 'search.max_buckets': null });
+  });
+
+  it('persists override_request_values and clears it on toggle off', () => {
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveOverride');
+
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+    cy.get('[data-testid="wlm-setting-toggle-override_request_values"]').click();
+
+    cy.contains('button', /^Apply Changes$/)
+      .should('not.be.disabled')
+      .click();
+
+    cy.wait('@saveOverride')
+      .its('request.body.settings')
+      .should('deep.equal', { override_request_values: true });
+
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveOverrideRemove');
+    cy.get('[data-testid="wlm-setting-toggle-override_request_values"]').click();
+
+    cy.contains('button', /^Apply Changes$/)
+      .should('not.be.disabled')
+      .click();
+
+    cy.wait('@saveOverrideRemove')
+      .its('request.body.settings')
+      .should('deep.equal', { override_request_values: null });
+  });
+
+  it('keeps Apply Changes disabled while a settings row has an invalid value', () => {
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+
+    cy.get('[data-testid="wlm-setting-toggle-search.batched_reduce_size"]').click();
+    cy.get('[data-testid="wlm-setting-input-search.batched_reduce_size"]').clear().type('1');
+
+    cy.contains('button', /^Apply Changes$/).should('be.disabled');
+
+    cy.get('[data-testid="wlm-setting-input-search.batched_reduce_size"]').clear().type('512');
+    cy.contains('button', /^Apply Changes$/).should('not.be.disabled');
+  });
+
+  it('omits the settings field entirely when no toggle is on', () => {
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveNoSettings');
+
+    cy.get('[data-testid="wlm-tab-settings"]').click();
+
+    // touch resiliency to enable the Apply Changes button without altering settings
+    cy.contains('label', 'Enforced').click();
+    cy.contains('button', /^Apply Changes$/)
+      .should('not.be.disabled')
+      .click();
+
+    cy.wait('@saveNoSettings').its('request.body.settings').should('be.undefined');
+  });
+
   it('should delete the workload group successfully', () => {
     cy.contains('Delete').click();
     cy.get('input[placeholder="delete"]').type('delete');

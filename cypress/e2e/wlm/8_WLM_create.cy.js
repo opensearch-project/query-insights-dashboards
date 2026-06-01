@@ -210,4 +210,22 @@ describe('WLM Create Page', () => {
     cy.get('button').contains('Cancel').click();
     cy.url().should('include', '/workloadManagement');
   });
+
+  it('includes group settings in the create PUT body when configured', () => {
+    const groupName = `wlm_gs_${Date.now()}`;
+    cy.intercept('PUT', '/api/_wlm/workload_group').as('createGroup');
+
+    cy.get('[data-testid="name-input"]').type(groupName);
+    cy.contains('Soft').click();
+    cy.get('[data-testid="memory-threshold-input"]').clear().type('1');
+
+    cy.get('[data-testid="wlm-setting-toggle-search.cancel_after_time_interval"]').click();
+    cy.get('[data-testid="wlm-setting-input-search.cancel_after_time_interval"]').type('1m');
+
+    cy.get('button').contains('Create workload group').click();
+
+    cy.wait('@createGroup')
+      .its('request.body.settings')
+      .should('deep.equal', { 'search.cancel_after_time_interval': '1m' });
+  });
 });
