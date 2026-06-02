@@ -313,6 +313,27 @@ describe.each<[boolean]>([[true], [false]])(
       expectNoMeta(payload);
     });
 
+    test('PUT /api/_wlm/workload_group forwards settings field', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall } = makeCtx();
+      const res = makeRes();
+      const bodyIn = {
+        name: 'g',
+        resiliency_mode: 'soft',
+        settings: {
+          'search.max_buckets': 5000,
+          'search.default_search_timeout': '30s',
+          override_request_values: true,
+        },
+      };
+
+      mockWlmCall.mockResolvedValue({ acknowledged: true, id: 'g' });
+
+      await handler(ctx, { body: bodyIn, query: {} }, res);
+
+      expect(mockWlmCall.mock.calls).toEqual([['wlm.createWorkloadGroup', { body: bodyIn }]]);
+    });
+
     //
     // 6) PUT /api/_wlm/workload_group/{name}
     //
@@ -365,6 +386,58 @@ describe.each<[boolean]>([[true], [false]])(
       const payload = res.ok.mock.calls[0][0].body;
       expect(payload).toEqual({ updated: true });
       expectNoMeta(payload);
+    });
+
+    test('PUT /api/_wlm/workload_group/{name} forwards settings with null removals', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group/{name}'];
+      const { ctx, mockWlmCall } = makeCtx();
+      const res = makeRes();
+      const params = { name: 'g' };
+      const bodyIn = {
+        resiliency_mode: 'soft',
+        settings: {
+          'search.max_buckets': 9999,
+          'search.batched_reduce_size': null,
+        },
+      };
+
+      mockWlmCall.mockResolvedValue({ updated: true });
+
+      await handler(ctx, { params, body: bodyIn, query: {} }, res);
+
+      expect(mockWlmCall.mock.calls).toEqual([
+        ['wlm.updateWorkloadGroup', { name: 'g', body: bodyIn }],
+      ]);
+    });
+
+    test('PUT /api/_wlm/workload_group forwards core status code on validation errors', async () => {
+      const handler = REG['PUT /api/_wlm/workload_group'];
+      const { ctx, mockWlmCall } = makeCtx();
+      const res = makeRes();
+      const err = Object.assign(new Error('Invalid value'), {
+        meta: {
+          statusCode: 400,
+          body: { error: { reason: "Invalid value '-1' for search.max_buckets" } },
+        },
+      });
+      mockWlmCall.mockRejectedValue(err);
+
+      await handler(
+        ctx,
+        {
+          body: { name: 'g', resiliency_mode: 'soft', settings: { 'search.max_buckets': -1 } },
+          query: {},
+        },
+        res
+      );
+
+      expect(res.customError).toHaveBeenCalledWith({
+        statusCode: 400,
+        body: {
+          message: expect.stringContaining("Invalid value '-1' for search.max_buckets"),
+        },
+      });
+      expect(res.internalError).not.toHaveBeenCalled();
     });
 
     //

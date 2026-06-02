@@ -29,8 +29,16 @@ import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
+  isWlmGroupSettingsSupported,
 } from '../../../utils/datasource-utils';
 import { AutoSizeTextArea } from '../auto_size_text_area';
+import { WLMSettingsForm } from '../WLMSettings/wlm_settings_form';
+import {
+  WlmGroupSettingsDraft,
+  emptyDraft,
+  hasInvalidSettings,
+  serializeDraft,
+} from '../WLMSettings/wlm_settings_types';
 
 interface Rule {
   index: string;
@@ -69,13 +77,16 @@ export const WLMCreate = ({
   const [dsVersion, setDsVersion] = useState<string | undefined>();
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
   const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const showGroupSettings = !dataSourceEnabled || isWlmGroupSettingsSupported(dsVersion);
+  const [settingsDraft, setSettingsDraft] = useState<WlmGroupSettingsDraft>(emptyDraft());
 
   const isFormValid =
     name.trim() !== '' &&
     resiliencyMode !== undefined &&
     ((cpuThreshold != null && cpuThreshold > 0 && cpuThreshold <= 100) ||
       (memThreshold != null && memThreshold > 0 && memThreshold <= 100)) &&
-    indexErrors.every((error) => error === null);
+    indexErrors.every((error) => error === null) &&
+    !hasInvalidSettings(settingsDraft);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -137,6 +148,11 @@ export const WLMCreate = ({
 
       if (Object.keys(resourceLimits).length > 0) {
         body.resource_limits = resourceLimits;
+      }
+
+      const settingsPayload = serializeDraft(settingsDraft);
+      if (settingsPayload !== undefined) {
+        body.settings = settingsPayload;
       }
 
       const res = await core.http.put('/api/_wlm/workload_group', {
@@ -551,6 +567,32 @@ export const WLMCreate = ({
           </>
         </EuiFormRow>
       </EuiPanel>
+
+      {showGroupSettings && (
+        <>
+          <EuiSpacer size="l" />
+          <EuiPanel paddingSize="l">
+            <EuiTitle size="m">
+              <h2>Group settings</h2>
+            </EuiTitle>
+            <EuiText size="xs" color="subdued">
+              <p>
+                Optional per-group overrides applied to every request routed to this workload group.
+                If the same setting is defined in multiple places, the default precedence (most
+                specific first) is: request parameter &gt; WLM group setting &gt; cluster setting.
+                Turn on <code>override_request_values</code> to make the group setting win over the
+                request parameter.
+              </p>
+            </EuiText>
+            <EuiSpacer size="m" />
+            <WLMSettingsForm
+              initialSettings={undefined}
+              draft={settingsDraft}
+              onChange={setSettingsDraft}
+            />
+          </EuiPanel>
+        </>
+      )}
 
       <EuiSpacer size="l" />
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>

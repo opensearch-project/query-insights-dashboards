@@ -35,9 +35,20 @@ import { getDataSourceEnabledUrl } from '../../../utils/datasource-utils';
 import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
+  isWlmGroupSettingsSupported,
 } from '../../../utils/datasource-utils';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 import { AutoSizeTextArea } from '../auto_size_text_area';
+import { WLMSettingsForm } from '../WLMSettings/wlm_settings_form';
+import {
+  WlmGroupSettings,
+  WlmGroupSettingsDraft,
+  emptyDraft,
+  hasInvalidSettings,
+  parseRawSettings,
+  serializeDraft,
+  toDraft,
+} from '../WLMSettings/wlm_settings_types';
 
 // === Constants & Types ===
 const DEFAULT_RESOURCE_LIMIT = 100;
@@ -85,6 +96,7 @@ interface WorkloadGroup {
     memory?: number;
   };
   resiliency_mode?: string;
+  settings?: Record<string, unknown>;
 }
 
 interface WorkloadGroupByNameResponse {
@@ -177,6 +189,9 @@ export const WLMDetails = ({
   const [dsVersion, setDsVersion] = useState<string | undefined>();
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
   const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const showGroupSettings = !dataSourceEnabled || isWlmGroupSettingsSupported(dsVersion);
+  const [, setOriginalSettings] = useState<WlmGroupSettings>({});
+  const [settingsDraft, setSettingsDraft] = useState<WlmGroupSettingsDraft>(emptyDraft());
 
   // === Helpers ===
   const resiliencyOptions = [
@@ -288,6 +303,9 @@ export const WLMDetails = ({
         setOriginalMemoryLimit(formatLimit(workload.resource_limits?.memory));
         setCpuLimit(formatLimit(workload.resource_limits?.cpu));
         setMemoryLimit(formatLimit(workload.resource_limits?.memory));
+        const parsed = parseRawSettings(workload.settings);
+        setOriginalSettings(parsed);
+        setSettingsDraft(toDraft(parsed));
       }
     } catch (err) {
       console.error('Failed to fetch workload group details:', err);
@@ -451,6 +469,11 @@ export const WLMDetails = ({
       body.resource_limits = resourceLimits;
     }
 
+    const settingsPayload = serializeDraft(settingsDraft);
+    if (settingsPayload !== undefined) {
+      body.settings = settingsPayload;
+    }
+
     try {
       await core.http.put(`/api/_wlm/workload_group/${groupName}`, {
         query: { dataSourceId: dataSource.id },
@@ -509,9 +532,8 @@ export const WLMDetails = ({
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
 
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      await fetchGroupDetails();
+      await updateStats();
     } catch (err) {
       const errorMessage = err?.body?.message || err?.message || String(err);
       core.notifications.toasts.addDanger(`Failed to save changes: ${errorMessage}`);
@@ -1175,10 +1197,44 @@ export const WLMDetails = ({
                 </>
               </EuiFormRow>
 
+              {showGroupSettings && (
+                <>
+                  <EuiSpacer size="l" />
+
+                  <EuiTitle size="s">
+                    <h2>Group settings</h2>
+                  </EuiTitle>
+                  <EuiText size="xs" color="subdued">
+                    <p>
+                      Optional per-group overrides applied to every request routed to this workload
+                      group. If the same setting is defined in multiple places, the default
+                      precedence (most specific first) is: request parameter &gt; WLM group setting
+                      &gt; cluster setting. Turn on <code>override_request_values</code> to make the
+                      group setting win over the request parameter.
+                    </p>
+                  </EuiText>
+
+                  <EuiSpacer size="s" />
+
+                  <WLMSettingsForm
+                    initialSettings={undefined}
+                    draft={settingsDraft}
+                    onChange={(next) => {
+                      setSettingsDraft(next);
+                      setIsSaved(false);
+                    }}
+                  />
+                </>
+              )}
+
               <EuiSpacer size="m" />
 
               {/* Apply Changes Button */}
-              <EuiButton onClick={saveChanges} color="primary" isDisabled={isSaved || isInvalid}>
+              <EuiButton
+                onClick={saveChanges}
+                color="primary"
+                isDisabled={isSaved || isInvalid || hasInvalidSettings(settingsDraft)}
+              >
                 Apply Changes
               </EuiButton>
             </>

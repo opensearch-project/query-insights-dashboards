@@ -138,3 +138,9 @@ export function isSecurityAttributesSupported(version?: string): boolean {
   const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
   return !!v && semver.gte(v, '3.3.0');
 }
+
+/** Whether per-workload-group settings are supported (>= 3.7.0). */
+export function isWlmGroupSettingsSupported(version?: string): boolean {
+  const v = version && semver.valid(version) ? version : semver.coerce(version || '')?.version;
+  return !!v && semver.gte(v, '3.7.0');
+}
