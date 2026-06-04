@@ -25,6 +25,14 @@ const mockCore = ({
   uiSettings: {
     get: jest.fn().mockReturnValue(false),
   },
+  notifications: {
+    toasts: {
+      addDanger: jest.fn(),
+      addSuccess: jest.fn(),
+      addWarning: jest.fn(),
+      addError: jest.fn(),
+    },
+  },
 } as unknown) as CoreStart;
 
 const setUpDefaultEnabledSettings = () => {
@@ -576,6 +584,81 @@ describe('TopNQueries Component', () => {
       // Verify the component renders successfully
       expect(screen.getByText('Mocked QueryInsights')).toBeInTheDocument();
       expect(container).toMatchSnapshot();
+    });
+  });
+
+  describe('Error handling', () => {
+    it('show a danger toast when a top queries fails', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'false' },
+                  memory: { enabled: 'false' },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      const fetchError = {
+        body: { message: 'no handler found for uri [/_insights/top_queries] and method [GET]' },
+      };
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        if (endpoint === '/api/top_queries/latency') return Promise.reject(fetchError);
+        return Promise.resolve({ response: { top_queries: [] } });
+      });
+
+      renderTopNQueries(QUERY_INSIGHTS);
+
+      await waitFor(() => {
+        expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Failed to retrieve top queries',
+            text: expect.stringContaining('no handler found'),
+          })
+        );
+      });
+    });
+
+    it('use error.message when error.body.message is absent', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'false' },
+                  memory: { enabled: 'false' },
+                },
+              },
+            },
+          },
+        },
+      };
+      const plainError = new Error('network down');
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        if (endpoint === '/api/top_queries/latency') return Promise.reject(plainError);
+        return Promise.resolve({ response: { top_queries: [] } });
+      });
+
+      renderTopNQueries(QUERY_INSIGHTS);
+
+      await waitFor(() => {
+        expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Failed to retrieve top queries',
+            text: 'network down',
+          })
+        );
+      });
     });
   });
 });

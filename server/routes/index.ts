@@ -43,10 +43,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get top queries: ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -100,10 +100,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get top queries (latency): ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -158,10 +158,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get top queries (cpu): ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -215,10 +215,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get top queries (memory): ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -260,10 +260,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get top queries: ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -348,10 +348,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to set settings: ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -482,10 +482,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         });
       } catch (error) {
         console.error('Unable to get cluster version: ', error);
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            error: error.message,
+            message: error.message || 'Internal server error',
           },
         });
       }
@@ -591,7 +591,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get snapshot repositories: ', error);
-        return response.ok({ body: { ok: false, response: error.message } });
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
       }
     }
   );
@@ -621,7 +624,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to get cat plugins: ', error);
-        return response.ok({ body: { ok: false, response: error.message } });
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
       }
     }
   );
@@ -655,7 +661,10 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         }
       } catch (error) {
         console.error('Unable to delete snapshot repository: ', error);
-        return response.ok({ body: { ok: false, response: error.message } });
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
+          body: { message: error.message || 'Internal server error' },
+        });
       }
     }
   );
@@ -696,10 +705,12 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
       } catch (error) {
         console.error('Unable to create snapshot repository: ', error);
         const errorBody = error.body || error.meta?.body;
-        return response.ok({
+        return response.customError({
+          statusCode: error.statusCode ?? 500,
           body: {
-            ok: false,
-            response: errorBody ? JSON.stringify(errorBody) : error.message,
+            message: errorBody
+              ? JSON.stringify(errorBody)
+              : error.message || 'Internal server error',
           },
         });
       }

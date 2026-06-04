@@ -259,7 +259,14 @@ const TopNQueries = ({
                 : [],
             },
           };
-        } catch {
+        } catch (error) {
+          core.notifications.toasts.addDanger({
+            title: 'Failed to retrieve top queries',
+            text:
+              error?.body?.message ??
+              error?.message ??
+              'An unknown error occurred while fetching top queries.',
+          });
           return nullResponse;
         }
       };
