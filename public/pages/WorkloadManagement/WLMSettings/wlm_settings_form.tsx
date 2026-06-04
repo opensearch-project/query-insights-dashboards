@@ -27,18 +27,14 @@ import {
 export interface WLMSettingsFormProps {
   initialSettings: WlmGroupSettings | undefined;
   draft: WlmGroupSettingsDraft;
-  onChange: (next: WlmGroupSettingsDraft) => void;
+  // Callers must merge this patch into the latest draft, ideally via a
+  // functional state updater. Passing a fully-built next-draft from inside the
+  // form would race with any other pending setSettingsDraft updater (e.g. the
+  // post-save mark-as-saved write) — the caller would close over a stale draft
+  // prop and silently overwrite the queued update.
+  onChange: (key: WlmGroupSettingsKey, patch: Partial<WlmGroupSettingsDraftEntry>) => void;
   disabled?: boolean;
 }
-
-const updateEntry = (
-  draft: WlmGroupSettingsDraft,
-  key: WlmGroupSettingsKey,
-  patch: Partial<WlmGroupSettingsDraftEntry>
-): WlmGroupSettingsDraft => ({
-  ...draft,
-  [key]: { ...draft[key], ...patch },
-});
 
 const renderInput = (
   def: WlmSettingDef,
@@ -90,14 +86,12 @@ export const WLMSettingsForm: React.FC<WLMSettingsFormProps> = ({
 
         const onToggle = (checked: boolean) => {
           if (isBoolean) {
-            onChange(
-              updateEntry(draft, def.key, {
-                enabled: checked,
-                value: checked ? 'true' : 'false',
-              })
-            );
+            onChange(def.key, {
+              enabled: checked,
+              value: checked ? 'true' : 'false',
+            });
           } else {
-            onChange(updateEntry(draft, def.key, { enabled: checked }));
+            onChange(def.key, { enabled: checked });
           }
         };
 
@@ -127,9 +121,7 @@ export const WLMSettingsForm: React.FC<WLMSettingsFormProps> = ({
                   {!isBoolean && (
                     <EuiFlexItem>
                       <EuiFormRow isInvalid={Boolean(error)} error={error || undefined} fullWidth>
-                        {renderInput(def, entry, disabled, (value) =>
-                          onChange(updateEntry(draft, def.key, { value }))
-                        )}
+                        {renderInput(def, entry, disabled, (value) => onChange(def.key, { value }))}
                       </EuiFormRow>
                     </EuiFlexItem>
                   )}

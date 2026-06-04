@@ -47,20 +47,18 @@ describe('WLMSettingsForm', () => {
     const toggle = screen.getByTestId('wlm-setting-toggle-search.max_buckets');
     fireEvent.click(toggle);
     expect(onChange).toHaveBeenCalledTimes(1);
-    const next = onChange.mock.calls[0][0];
-    expect(next['search.max_buckets'].enabled).toBe(true);
+    const [key, patch] = onChange.mock.calls[0];
+    expect(key).toBe('search.max_buckets');
+    expect(patch.enabled).toBe(true);
   });
 
   it('fires onChange flipping override_request_values value when toggled', () => {
     const { onChange } = renderForm();
     const toggle = screen.getByTestId('wlm-setting-toggle-override_request_values');
     fireEvent.click(toggle);
-    const next = onChange.mock.calls[0][0];
-    expect(next.override_request_values).toEqual({
-      enabled: true,
-      value: 'true',
-      wasSetOnServer: false,
-    });
+    const [key, patch] = onChange.mock.calls[0];
+    expect(key).toBe('override_request_values');
+    expect(patch).toEqual({ enabled: true, value: 'true' });
   });
 
   it('shows a validation error when an enabled int row has an invalid value', () => {
@@ -78,7 +76,8 @@ describe('WLMSettingsForm', () => {
     const { onChange } = renderForm(draftOverride);
     const input = screen.getByTestId('wlm-setting-input-search.max_buckets');
     fireEvent.change(input, { target: { value: '5000' } });
-    const next = onChange.mock.calls[0][0];
-    expect(next['search.max_buckets'].value).toBe('5000');
+    const [key, patch] = onChange.mock.calls[0];
+    expect(key).toBe('search.max_buckets');
+    expect(patch.value).toBe('5000');
   });
 });

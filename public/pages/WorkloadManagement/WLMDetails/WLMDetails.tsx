@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import {
   EuiButton,
   EuiFlexGroup,
@@ -41,11 +41,13 @@ import { DEFAULT_WORKLOAD_GROUP } from '../../../../common/constants';
 import { AutoSizeTextArea } from '../auto_size_text_area';
 import { WLMSettingsForm } from '../WLMSettings/wlm_settings_form';
 import {
+  WLM_SETTING_DEFS,
   WlmGroupSettings,
   WlmGroupSettingsDraft,
   emptyDraft,
   hasInvalidSettings,
   parseRawSettings,
+  patchDraftEntry,
   serializeDraft,
   toDraft,
 } from '../WLMSettings/wlm_settings_types';
@@ -193,6 +195,23 @@ export const WLMDetails = ({
   const [, setOriginalSettings] = useState<WlmGroupSettings>({});
   const [settingsDraft, setSettingsDraft] = useState<WlmGroupSettingsDraft>(emptyDraft());
 
+  // Discards stale fetch responses that resolve after newer fetches or after
+  // the user has started editing — without this guard, a slow GET that lands
+  // post-save can clobber the next test/user's in-flight toggle change.
+  const fetchSeqRef = useRef(0);
+  const isSavedRef = useRef(true);
+  // Keeps isSavedRef in lockstep with state across renders. Direct ref writes in
+  // event handlers and saveChanges cover the synchronous gap before this fires.
+  useEffect(() => {
+    isSavedRef.current = isSaved;
+  }, [isSaved]);
+  // Use this in user-edit handlers so an in-flight GET sees the dirty state
+  // immediately, not on the next render after setIsSaved commits.
+  const markDirty = () => {
+    isSavedRef.current = false;
+    setIsSaved(false);
+  };
+
   // === Helpers ===
   const resiliencyOptions = [
     { id: ResiliencyMode.SOFT, label: 'Soft' },
@@ -286,10 +305,17 @@ export const WLMDetails = ({
       return;
     }
 
+    const seq = ++fetchSeqRef.current;
+    const wasSavedAtStart = isSavedRef.current;
+
     try {
       const response = await core.http.get(`/api/_wlm/workload_group/${groupName}`, {
         query: { dataSourceId: dataSource.id },
       });
+      // Drop the response if a newer fetch has started or the user began editing
+      // mid-flight — applying it would silently revert their pending changes.
+      if (seq !== fetchSeqRef.current) return;
+      if (wasSavedAtStart && !isSavedRef.current) return;
       const workload = response?.workload_groups?.[0];
       if (workload) {
         setGroupDetails({
@@ -308,6 +334,7 @@ export const WLMDetails = ({
         setSettingsDraft(toDraft(parsed));
       }
     } catch (err) {
+      if (seq !== fetchSeqRef.current) return;
       console.error('Failed to fetch workload group details:', err);
       setGroupDetails(null);
       history.push(WLM_MAIN);
@@ -318,6 +345,7 @@ export const WLMDetails = ({
   const updateStats = async () => {
     if (!groupName) return;
 
+    const wasSavedAtStart = isSavedRef.current;
     let groupId: string = DEFAULT_WORKLOAD_GROUP;
 
     if (groupName !== DEFAULT_WORKLOAD_GROUP) {
@@ -358,8 +386,12 @@ export const WLMDetails = ({
           username: (rule?.principal?.username ?? []).join(','),
           description: rule?.description ?? '',
         });
-        setRules(matchedRules.map(toRule));
-        setExistingRules(matchedRules.map(toRule));
+        // Don't clobber in-progress rule edits if the user started editing while
+        // this fetch was in flight.
+        if (!(wasSavedAtStart && !isSavedRef.current)) {
+          setRules(matchedRules.map(toRule));
+          setExistingRules(matchedRules.map(toRule));
+        }
       } catch (err) {
         console.error('Failed to fetch group stats', err);
         core.notifications.toasts.addDanger('Could not load rules.', err);
@@ -480,6 +512,25 @@ export const WLMDetails = ({
         body: JSON.stringify(body),
       });
 
+      // Mark each setting we just persisted as `wasSetOnServer` so a subsequent
+      // toggle-off correctly serializes to `null` (instructing the server to
+      // unset it) instead of being skipped. The post-save fetchGroupDetails
+      // would normally do this for us by re-hydrating from the server, but the
+      // skip-stale guard in fetchGroupDetails will drop that response if the
+      // user starts editing again before it returns. Tracking it here keeps the
+      // draft consistent regardless of fetch timing.
+      if (settingsPayload !== undefined) {
+        setSettingsDraft((curr) => {
+          const next = { ...curr };
+          for (const def of WLM_SETTING_DEFS) {
+            if (!(def.key in settingsPayload)) continue;
+            const value = settingsPayload[def.key];
+            next[def.key] = { ...next[def.key], wasSetOnServer: value !== null };
+          }
+          return next;
+        });
+      }
+
       const existingRuleMap = new Map(existingRules.map((r) => [r.indexId, r]));
       const newRuleIds = new Set(rules.map((r) => r.indexId).filter(Boolean));
 
@@ -529,6 +580,9 @@ export const WLMDetails = ({
         });
       }
 
+      // Sync ref alongside state so fetchGroupDetails below sees `wasSavedAtStart=true`
+      // and is allowed to overwrite the draft with fresh server state.
+      isSavedRef.current = true;
       setIsSaved(true);
       core.notifications.toasts.addSuccess(`Saved changes for "${groupName}"`);
 
@@ -852,7 +906,7 @@ export const WLMDetails = ({
                     idSelected={resiliencyMode}
                     onChange={(id) => {
                       setResiliencyMode(id as ResiliencyMode);
-                      setIsSaved(false);
+                      markDirty();
                     }}
                   />
                 </>
@@ -888,7 +942,7 @@ export const WLMDetails = ({
                           const updated = [...rules];
                           updated[idx].description = e.target.value;
                           setRules(updated);
-                          setIsSaved(false);
+                          markDirty();
                         }}
                       />
                     </EuiFlexItem>
@@ -930,7 +984,7 @@ export const WLMDetails = ({
                             updatedErrors[idx] = error;
                             setRules(updatedRules);
                             setIndexErrors(updatedErrors);
-                            setIsSaved(false);
+                            markDirty();
                           }}
                           onBlur={(e) => {
                             const originallyNonEmpty = !!existingRules[idx]?.index?.trim();
@@ -983,7 +1037,7 @@ export const WLMDetails = ({
                             const updated = [...rules];
                             updated[idx].username = e.target.value;
                             setRules(updated);
-                            setIsSaved(false);
+                            markDirty();
                           }}
                           onBlur={(e) => {
                             const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
@@ -1031,7 +1085,7 @@ export const WLMDetails = ({
                             const updated = [...rules];
                             updated[idx].role = e.target.value;
                             setRules(updated);
-                            setIsSaved(false);
+                            markDirty();
                           }}
                           onBlur={(e) => {
                             const originallyNonEmpty = !!existingRules[idx]?.role?.trim();
@@ -1073,7 +1127,7 @@ export const WLMDetails = ({
                       const errors = indexErrors.filter((_, i) => i !== idx);
                       setRules(updated);
                       setIndexErrors(errors);
-                      setIsSaved(false);
+                      markDirty();
                     }}
                     style={{ position: 'absolute', top: 12, right: 12 }}
                   />
@@ -1086,7 +1140,7 @@ export const WLMDetails = ({
                     { index: '', indexId: '', role: '', username: '', description: '' },
                   ]);
                   setIndexErrors([...indexErrors, null]);
-                  setIsSaved(false);
+                  markDirty();
                 }}
                 disabled={rules.length >= 5}
               >
@@ -1121,7 +1175,7 @@ export const WLMDetails = ({
                       const val = e.target.value;
                       const newVal = val === '' ? undefined : Number(val);
                       setCpuLimit(newVal);
-                      setIsSaved(false);
+                      markDirty();
                     }}
                     onBlur={(e) => {
                       const val = e.target.value;
@@ -1170,7 +1224,7 @@ export const WLMDetails = ({
                       const val = e.target.value;
                       const newVal = val === '' ? undefined : Number(val);
                       setMemoryLimit(newVal);
-                      setIsSaved(false);
+                      markDirty();
                     }}
                     onBlur={(e) => {
                       const val = e.target.value;
@@ -1219,9 +1273,12 @@ export const WLMDetails = ({
                   <WLMSettingsForm
                     initialSettings={undefined}
                     draft={settingsDraft}
-                    onChange={(next) => {
-                      setSettingsDraft(next);
-                      setIsSaved(false);
+                    onChange={(key, patch) => {
+                      // Functional updater so we always merge into the latest
+                      // committed draft, even if a previous setSettingsDraft
+                      // (e.g. the post-save mark-as-saved) is still queued.
+                      setSettingsDraft((curr) => patchDraftEntry(curr, key, patch));
+                      markDirty();
                     }}
                   />
                 </>
