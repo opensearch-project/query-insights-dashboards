@@ -32,6 +32,28 @@ describe('WLM Details Page', () => {
   });
 
   beforeEach(() => {
+    // Reset the group's resiliency / settings on the server before each test so
+    // tests don't inherit state from prior tests or prior retry attempts. With
+    // runMode retries=2, an attempt that mutates the group then fails leaves
+    // that mutation behind for the next attempt — without this reset, tests
+    // that assume a clean baseline see stale state and fail in confusing ways.
+    api({
+      method: 'PUT',
+      url: `/api/_wlm/workload_group/${groupName}`,
+      body: {
+        resiliency_mode: 'soft',
+        resource_limits: { cpu: 0.01, memory: 0.01 },
+        settings: {
+          'search.default_search_timeout': null,
+          'search.cancel_after_time_interval': null,
+          'search.max_concurrent_shard_requests': null,
+          'search.batched_reduce_size': null,
+          'search.max_buckets': null,
+          override_request_values: null,
+        },
+      },
+    });
+
     cy.visit(`/app/workload-management#/wlm-details?name=${groupName}`, { auth: WLM_AUTH });
     cy.contains(groupName).should('exist');
   });
@@ -179,9 +201,23 @@ describe('WLM Details Page', () => {
   });
 
   it('toggling off a previously-set key sends null', () => {
-    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveGroupRemove');
-
+    // Pre-set the key on the server, then reload the page so the form picks up
+    // the existing value. We can't rely on the previous test having left this
+    // value behind — beforeEach resets the group between tests.
+    api({
+      method: 'PUT',
+      url: `/api/_wlm/workload_group/${groupName}`,
+      body: {
+        resiliency_mode: 'soft',
+        resource_limits: { cpu: 0.01, memory: 0.01 },
+        settings: { 'search.max_buckets': 5000 },
+      },
+    });
+    cy.reload();
     cy.get('[data-testid="wlm-tab-settings"]').click();
+    cy.get('[data-testid="wlm-setting-input-search.max_buckets"]').should('have.value', '5000');
+
+    cy.intercept('PUT', '**/api/_wlm/workload_group/*').as('saveGroupRemove');
     cy.get('[data-testid="wlm-setting-toggle-search.max_buckets"]').click();
 
     cy.contains('button', /^Apply Changes$/)

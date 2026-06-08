@@ -1244,5 +1244,406 @@ describe('WLMDetails Component', () => {
         expect(sentBody.settings).toEqual({ 'search.max_buckets': 5000 });
       });
     });
+
+    // Regression for the CI-only failures in
+    // cypress/e2e/wlm-no-security/7_WLM_details.cy.js: when the post-save GET
+    // resolves AFTER the user has started a second edit, the response must NOT
+    // be applied — otherwise it overwrites the in-progress draft and the next
+    // Apply Changes click sends a stale body (e.g. `override_request_values:true`
+    // when the user just toggled it OFF).
+    it('does not clobber in-progress edits when a stale GET resolves late', async () => {
+      let resolveSecondGet: ((value: unknown) => void) | undefined;
+      let getCallCount = 0;
+      const groupResponseWithOverrideTrue = {
+        workload_groups: [
+          {
+            _id: 'wg-123',
+            name: 'test-group',
+            resource_limits: { cpu: 0.5, memory: 0.5 },
+            resiliency_mode: 'SOFT',
+            settings: { override_request_values: 'true' },
+          },
+        ],
+      };
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          getCallCount += 1;
+          // First call (initial mount) resolves with override=true.
+          if (getCallCount === 1) return Promise.resolve(groupResponseWithOverrideTrue);
+          // Second call (post-save fetch) is held — we resolve it AFTER the
+          // user clicks the toggle to OFF, simulating the CI race.
+          return new Promise((resolve) => {
+            resolveSecondGet = resolve;
+          });
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+      (mockCore.http.put as jest.Mock).mockResolvedValue({});
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      // Read the EuiSwitch state — the visible element exposes either `checked`
+      // (input) or `aria-checked` (button) depending on EUI version.
+      const isToggleOn = (el: HTMLElement) =>
+        (el as HTMLInputElement).checked || el.getAttribute('aria-checked') === 'true';
+
+      // Confirm the page initialized with override toggle ON.
+      const toggle = await screen.findByTestId('wlm-setting-toggle-override_request_values');
+      await waitFor(() => expect(isToggleOn(toggle)).toBe(true));
+
+      // First save: we don't need to mutate the override; we just need a save
+      // to fire so a post-save GET goes in-flight. Touch resiliency to enable
+      // Apply Changes without changing the toggle's draft entry.
+      const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+      fireEvent.click(screen.getByText(/^Enforced$/));
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+
+      // Wait for the post-save fetchGroupDetails GET to be in flight.
+      await waitFor(() => expect(resolveSecondGet).toBeDefined());
+
+      // User toggles override OFF before that GET resolves.
+      fireEvent.click(toggle);
+      expect(isToggleOn(toggle)).toBe(false);
+
+      // Stale GET response lands now. With the fix, this is dropped because
+      // the user has unsaved edits; without the fix, it overwrites the draft
+      // and flips the toggle back to ON.
+      await act(async () => {
+        resolveSecondGet!(groupResponseWithOverrideTrue);
+        await new Promise((r) => setTimeout(r, 0));
+      });
+
+      expect(isToggleOn(toggle)).toBe(false);
+
+      // The next Apply must therefore send `override_request_values: null`,
+      // matching what the user actually requested.
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      (mockCore.http.put as jest.Mock).mockClear();
+      fireEvent.click(applyBtn);
+
+      await waitFor(() => {
+        const groupPut = (mockCore.http.put as jest.Mock).mock.calls.find(
+          ([url]: [string]) => url === '/api/_wlm/workload_group/test-group'
+        );
+        expect(groupPut).toBeDefined();
+        expect(JSON.parse(groupPut![1].body).settings).toEqual({
+          override_request_values: null,
+        });
+      });
+    });
+
+    // Same race as the override test, but exercising the CPU input — proves the
+    // guard covers fetchGroupDetails' setCpuLimit/setMemoryLimit/setResiliencyMode
+    // writes, not just settingsDraft.
+    it('does not clobber CPU/memory/resiliency edits when a stale GET resolves late', async () => {
+      let resolveSecondGet: ((value: unknown) => void) | undefined;
+      let getCallCount = 0;
+      const initialResponse = {
+        workload_groups: [
+          {
+            _id: 'wg-123',
+            name: 'test-group',
+            resource_limits: { cpu: 0.5, memory: 0.5 },
+            resiliency_mode: 'SOFT',
+          },
+        ],
+      };
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          getCallCount += 1;
+          if (getCallCount === 1) return Promise.resolve(initialResponse);
+          return new Promise((resolve) => {
+            resolveSecondGet = resolve;
+          });
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+      (mockCore.http.put as jest.Mock).mockResolvedValue({});
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+      // First save: change resiliency to dirty, click Apply, kick off post-save GET.
+      fireEvent.click(screen.getByText(/^Enforced$/));
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+      await waitFor(() => expect(resolveSecondGet).toBeDefined());
+
+      // User edits CPU before the GET resolves.
+      const cpuInput = screen.getByTestId('cpu-threshold-input') as HTMLInputElement;
+      fireEvent.change(cpuInput, { target: { value: '77' } });
+      expect(cpuInput.value).toBe('77');
+
+      // Stale GET lands. Without the fix, setCpuLimit(50) would overwrite 77.
+      await act(async () => {
+        resolveSecondGet!(initialResponse);
+        await new Promise((r) => setTimeout(r, 0));
+      });
+
+      expect(cpuInput.value).toBe('77');
+
+      // Save and verify the PUT body uses the user's value, not the stale 50.
+      (mockCore.http.put as jest.Mock).mockClear();
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+      await waitFor(() => {
+        const groupPut = (mockCore.http.put as jest.Mock).mock.calls.find(
+          ([url]: [string]) => url === '/api/_wlm/workload_group/test-group'
+        );
+        expect(groupPut).toBeDefined();
+        expect(JSON.parse(groupPut![1].body).resource_limits.cpu).toBeCloseTo(0.77);
+      });
+    });
+
+    // updateStats issues its own GETs that hydrate the rules array. A late
+    // response there must not clobber a row the user is editing.
+    it('does not clobber in-progress rule edits when updateStats resolves late', async () => {
+      let resolveLateRules: ((value: unknown) => void) | undefined;
+      let rulesCallCount = 0;
+      const ruleListResponse = {
+        rules: [
+          {
+            id: 'rule-1',
+            description: 'd',
+            index_pattern: ['original-*'],
+            workload_group: 'wg-123',
+          },
+        ],
+      };
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          return Promise.resolve({
+            workload_groups: [
+              {
+                _id: 'wg-123',
+                name: 'test-group',
+                resource_limits: { cpu: 0.5, memory: 0.5 },
+                resiliency_mode: 'SOFT',
+              },
+            ],
+          });
+        }
+        if (path === '/api/_rules/workload_group') {
+          rulesCallCount += 1;
+          if (rulesCallCount === 1) return Promise.resolve(ruleListResponse);
+          // Subsequent GETs (post-save updateStats refresh) are held open.
+          return new Promise((resolve) => {
+            resolveLateRules = resolve;
+          });
+        }
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+      (mockCore.http.put as jest.Mock).mockResolvedValue({});
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      // Save once to put updateStats' rules GET in flight.
+      const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+      fireEvent.click(screen.getByText(/^Enforced$/));
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+      await waitFor(() => expect(resolveLateRules).toBeDefined());
+
+      // User edits the existing rule's index pattern.
+      const indexInputs = await screen.findAllByTestId('indexInput');
+      fireEvent.change(indexInputs[0], { target: { value: 'edited-*' } });
+      expect((indexInputs[0] as HTMLTextAreaElement).value).toBe('edited-*');
+
+      // Stale rules GET lands — without the fix, setRules(...) would revert
+      // the textarea back to 'original-*'.
+      await act(async () => {
+        resolveLateRules!(ruleListResponse);
+        await new Promise((r) => setTimeout(r, 0));
+      });
+
+      expect((indexInputs[0] as HTMLTextAreaElement).value).toBe('edited-*');
+    });
+
+    // After a save succeeds, every settings entry that was just persisted must
+    // be marked `wasSetOnServer: true` even if the post-save GET is dropped by
+    // the skip-stale guard. Otherwise, toggling off a freshly-saved boolean
+    // would serialize to `undefined` instead of `null`, and the next save would
+    // omit the settings field entirely instead of telling the server to unset
+    // it. This is the exact failure mode of the cypress test
+    // `persists override_request_values and clears it on toggle off`.
+    it('marks wasSetOnServer after a successful save so toggle-off sends null', async () => {
+      let resolveSecondGet: ((value: unknown) => void) | undefined;
+      let getCallCount = 0;
+      const cleanGroupResponse = {
+        workload_groups: [
+          {
+            _id: 'wg-123',
+            name: 'test-group',
+            resource_limits: { cpu: 0.5, memory: 0.5 },
+            resiliency_mode: 'SOFT',
+          },
+        ],
+      };
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          getCallCount += 1;
+          // Initial mount — no settings on the group.
+          if (getCallCount === 1) return Promise.resolve(cleanGroupResponse);
+          // Hold the post-save GET so the skip-stale guard kicks in.
+          return new Promise((resolve) => {
+            resolveSecondGet = resolve;
+          });
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+      (mockCore.http.put as jest.Mock).mockResolvedValue({});
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      // First save: toggle override ON, click Apply.
+      const toggle = await screen.findByTestId('wlm-setting-toggle-override_request_values');
+      fireEvent.click(toggle);
+      const applyBtn = screen.getByRole('button', { name: /apply changes/i });
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+
+      // First PUT body has settings.override=true.
+      await waitFor(() => {
+        const firstPut = (mockCore.http.put as jest.Mock).mock.calls.find(
+          ([url]: [string]) => url === '/api/_wlm/workload_group/test-group'
+        );
+        expect(firstPut).toBeDefined();
+        expect(JSON.parse(firstPut![1].body).settings).toEqual({
+          override_request_values: true,
+        });
+      });
+
+      // The post-save GET is now in flight — wait for it.
+      await waitFor(() => expect(resolveSecondGet).toBeDefined());
+
+      // User toggles OFF before the GET resolves; the guard will drop that GET.
+      fireEvent.click(toggle);
+
+      // Stale GET resolves now; skip-stale guard discards it.
+      await act(async () => {
+        resolveSecondGet!(cleanGroupResponse);
+        await new Promise((r) => setTimeout(r, 0));
+      });
+
+      (mockCore.http.put as jest.Mock).mockClear();
+      await waitFor(() => expect(applyBtn).not.toBeDisabled());
+      fireEvent.click(applyBtn);
+
+      // Critical assertion: the second PUT must include
+      // `settings: {override_request_values: null}` — not `settings: undefined`.
+      // Without the post-PUT wasSetOnServer update, serializeDraft sees
+      // `enabled:false, wasSetOnServer:false` and omits the entry entirely,
+      // causing `body.settings` to be undefined and the test to fail with
+      // "property request.body.settings does not exist".
+      await waitFor(() => {
+        const secondPut = (mockCore.http.put as jest.Mock).mock.calls.find(
+          ([url]: [string]) => url === '/api/_wlm/workload_group/test-group'
+        );
+        expect(secondPut).toBeDefined();
+        expect(JSON.parse(secondPut![1].body).settings).toEqual({
+          override_request_values: null,
+        });
+      });
+    });
+
+    // If two GETs are in flight (e.g. user clicks Refresh during an auto-refresh)
+    // and the older one resolves last, its response must be dropped — otherwise
+    // the UI shows stale data even when nothing was being edited.
+    it('drops an out-of-order fetch response in favor of the newer one', async () => {
+      // Both fetchGroupDetails and updateStats GET the same workload_group URL,
+      // so we track per-Refresh-click pairs: the first GET of each pair is the
+      // one that hydrates CPU/memory; we hold those open to force out-of-order
+      // resolution and let updateStats' echo of the same path resolve normally.
+      const heldGets: Array<{
+        cpu: number;
+        resolve: (value: unknown) => void;
+      }> = [];
+      let pairToggle = 0;
+      const responseWithCpu = (cpu: number) => ({
+        workload_groups: [
+          {
+            _id: 'wg-123',
+            name: 'test-group',
+            resource_limits: { cpu, memory: 0.5 },
+            resiliency_mode: 'SOFT',
+          },
+        ],
+      });
+      // Initial mount is allowed to settle, then subsequent calls alternate
+      // hold (fetchGroupDetails) / resolve immediately (updateStats).
+      let initialCalls = 2;
+      (mockCore.http.get as jest.Mock).mockImplementation((path: string) => {
+        if (path.startsWith('/api/_wlm/workload_group/test-group')) {
+          if (initialCalls > 0) {
+            initialCalls -= 1;
+            return Promise.resolve(responseWithCpu(0.5));
+          }
+          pairToggle = (pairToggle + 1) % 2;
+          if (pairToggle === 1) {
+            // First call of a Refresh pair → fetchGroupDetails. Hold it.
+            return new Promise<unknown>((resolve) => {
+              heldGets.push({ cpu: -1, resolve });
+            });
+          }
+          // Second call of pair → updateStats. Resolve immediately.
+          return Promise.resolve(responseWithCpu(0.5));
+        }
+        if (path === '/api/_rules/workload_group') return Promise.resolve({ rules: [] });
+        if (path.startsWith('/api/_wlm/stats')) return Promise.resolve({});
+        return Promise.resolve({ body: {} });
+      });
+
+      await act(async () => {
+        renderWithVersion('3.7.0');
+        await new Promise((r) => setTimeout(r, 50));
+      });
+      fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+
+      const refreshBtn = screen.getByRole('button', { name: /refresh/i });
+      // Two consecutive Refresh clicks — both fetchGroupDetails calls are now
+      // held in heldGets[0] (older) and heldGets[1] (newer).
+      fireEvent.click(refreshBtn);
+      await waitFor(() => expect(heldGets.length).toBe(1));
+      fireEvent.click(refreshBtn);
+      await waitFor(() => expect(heldGets.length).toBe(2));
+
+      // Resolve newer first (cpu=80), then the stale one (cpu=10).
+      await act(async () => {
+        heldGets[1].resolve(responseWithCpu(0.8));
+        await new Promise((r) => setTimeout(r, 0));
+      });
+      expect((screen.getByTestId('cpu-threshold-input') as HTMLInputElement).value).toBe('80');
+
+      await act(async () => {
+        heldGets[0].resolve(responseWithCpu(0.1));
+        await new Promise((r) => setTimeout(r, 0));
+      });
+      // Stale response must not overwrite the newer one's value.
+      expect((screen.getByTestId('cpu-threshold-input') as HTMLInputElement).value).toBe('80');
+    });
   });
 });

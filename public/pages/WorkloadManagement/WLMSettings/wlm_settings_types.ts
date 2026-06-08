@@ -99,6 +99,21 @@ export function emptyDraft(): WlmGroupSettingsDraft {
   }, {} as WlmGroupSettingsDraft);
 }
 
+// Shallow-merges a single entry's fields into a draft. Always create the next
+// draft from the *latest* current draft (e.g. inside a setSettingsDraft
+// updater) — operating on a stale closed-over draft will silently drop other
+// pending updates batched in the same render.
+export function patchDraftEntry(
+  draft: WlmGroupSettingsDraft,
+  key: WlmGroupSettingsKey,
+  patch: Partial<WlmGroupSettingsDraftEntry>
+): WlmGroupSettingsDraft {
+  return {
+    ...draft,
+    [key]: { ...draft[key], ...patch },
+  };
+}
+
 const TIME_VALUE_REGEX = /^\d+(?:\.\d+)?(ms|s|m|h|d)$/;
 
 function parseBoolean(raw: unknown): boolean {

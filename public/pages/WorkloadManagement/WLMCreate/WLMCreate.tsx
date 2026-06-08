@@ -37,6 +37,7 @@ import {
   WlmGroupSettingsDraft,
   emptyDraft,
   hasInvalidSettings,
+  patchDraftEntry,
   serializeDraft,
 } from '../WLMSettings/wlm_settings_types';
 
@@ -588,7 +589,9 @@ export const WLMCreate = ({
             <WLMSettingsForm
               initialSettings={undefined}
               draft={settingsDraft}
-              onChange={setSettingsDraft}
+              onChange={(key, patch) =>
+                setSettingsDraft((curr) => patchDraftEntry(curr, key, patch))
+              }
             />
           </EuiPanel>
         </>
