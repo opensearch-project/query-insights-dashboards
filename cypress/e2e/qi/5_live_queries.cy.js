@@ -122,7 +122,12 @@ describe('Inflight Queries Dashboard', () => {
 
   it('navigates to next page in table pagination', () => {
     cy.get('.euiPagination').should('be.visible');
-    cy.get('[data-test-subj="pagination-button-1"]').should('be.visible').click();
+    // Break chain and force the click — the EuiPagination button can briefly
+    // re-render between visibility check and click on slow CI; aliasing then
+    // forcing avoids the 'page updated while this command was executing' race.
+    cy.get('[data-test-subj="pagination-button-1"]').as('nextPage');
+    cy.get('@nextPage').should('be.visible');
+    cy.get('@nextPage').click({ force: true });
     cy.get('[data-test-subj="pagination-button-1"]').should('have.attr', 'aria-current', 'true');
     cy.get('tbody tr').should('exist');
   });
