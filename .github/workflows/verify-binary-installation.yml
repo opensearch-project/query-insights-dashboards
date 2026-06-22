@@ -4,7 +4,6 @@ on: [push, pull_request]
 env:
   OPENSEARCH_VERSION: '2.19.0'
   CI: 1
-  # avoid warnings like "tput: No value for $TERM and no -T specified"
   TERM: xterm
   OPENSEARCH_INITIAL_ADMIN_PASSWORD: myStrongPassword123!
 
@@ -15,11 +14,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        # TODO: add windows support when OSD core is stable on windows
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set env
         run: |
@@ -29,27 +27,78 @@ jobs:
           echo "PLUGIN_VERSION=$plugin_version" >> $GITHUB_ENV
         shell: bash
 
-      - name: Run OpenSearch
-        uses: derek-ho/start-opensearch@v6
+      - name: Set up JDK
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
-          opensearch-version: ${{ env.OPENSEARCH_VERSION }}
-          security-enabled: false
+          distribution: temurin
+          java-version: 21
 
-      - name: Run Dashboard
-        id: setup-dashboards
-        uses: derek-ho/setup-opensearch-dashboards@v1
-        with:
-          plugin_name: query-insights-dashboards
-          built_plugin_name: queryInsightsDashboards
-          install_zip: true
-
-      - name: Start the binary
+      - name: Download and Start OpenSearch
         run: |
-          nohup ./bin/opensearch-dashboards &
-        working-directory: ${{ steps.setup-dashboards.outputs.dashboards-binary-directory }}
+          curl -SLO https://artifacts.opensearch.org/snapshots/core/opensearch/${{ env.OPENSEARCH_VERSION }}-SNAPSHOT/opensearch-min-${{ env.OPENSEARCH_VERSION }}-SNAPSHOT-linux-x64-latest.tar.gz
+          tar -xzf opensearch-*.tar.gz && mv opensearch-${{ env.OPENSEARCH_VERSION }}-SNAPSHOT opensearch
+          rm -f opensearch-*.tar.gz
+          echo "cluster.routing.allocation.disk.threshold_enabled: false" >> ./opensearch/config/opensearch.yml
+          ./opensearch/bin/opensearch &
+          sleep 45
+          curl http://localhost:9200/_cat/plugins -v
+        shell: bash
+
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          ref: '2.19'
+          path: OpenSearch-Dashboards
+
+      - name: Checkout plugin
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          echo "Installing yarn@$YARN_VERSION"
+          npm i -g yarn@$YARN_VERSION
+        shell: bash
+
+      - name: Bootstrap
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
+        shell: bash
+
+      - name: Build plugin
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn build
+        shell: bash
+
+      - name: Download OSD min binary
+        run: |
+          curl -SLO https://ci.opensearch.org/ci/dbc/distribution-build-opensearch-dashboards/${{ env.OPENSEARCH_VERSION }}/latest/linux/x64/tar/builds/opensearch-dashboards/dist/opensearch-dashboards-min-${{ env.OPENSEARCH_VERSION }}-linux-x64.tar.gz
+          tar -xzf opensearch-dashboards-*.tar.gz
+          rm -f opensearch-dashboards-*.tar.gz
+        shell: bash
+
+      - name: Install plugin into binary
+        run: |
+          ./opensearch-dashboards-${{ env.OPENSEARCH_VERSION }}-linux-x64/bin/opensearch-dashboards-plugin install file:$(pwd)/OpenSearch-Dashboards/plugins/query-insights-dashboards/build/queryInsightsDashboards-${{ env.PLUGIN_VERSION }}.zip
+        shell: bash
+
+      - name: Start Dashboards
+        run: |
+          nohup ./opensearch-dashboards-${{ env.OPENSEARCH_VERSION }}-linux-x64/bin/opensearch-dashboards &
         shell: bash
 
       - name: Health check
         run: |
-          timeout 300 bash -c 'while [[ "$(curl -u admin:${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }} -k http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
+          timeout 300 bash -c 'while [[ "$(curl -k http://localhost:5601/api/status | jq -r '.status.overall.state')" != "green" ]]; do sleep 5; done'
         shell: bash
