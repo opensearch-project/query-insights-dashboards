@@ -7,6 +7,10 @@ env:
   # avoid warnings like "tput: No value for $TERM and no -T specified"
   TERM: xterm
   OPENSEARCH_INITIAL_ADMIN_PASSWORD: myStrongPassword123!
+  # OpenSearch-Dashboards 2.19 pins Node 18.19.0, but newer transitive deps
+  # (e.g. @wdio/logger) now require node >=18.20.0, breaking `yarn add` during
+  # binary setup. Skip the engine check since it does not affect the build.
+  YARN_IGNORE_ENGINES: true
 
 jobs:
   verify-binary-installation:
