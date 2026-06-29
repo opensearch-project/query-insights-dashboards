@@ -2,4 +2,18 @@
 
 Compatible with OpenSearch and OpenSearch Dashboards version 2.19.6
 
-No changes were included in this release. The only commit was an automated version increment.
+### Enhancements
+
+* Onboard new backport-pr reusable GitHub workflow ([#547](https://github.com/opensearch-project/query-insights-dashboards/pull/547))
+
+### Bug Fixes
+
+* Address CVEs in transitive dependencies (lodash, serialize-javascript, minimatch, picomatch, brace-expansion, yaml) ([#541](https://github.com/opensearch-project/query-insights-dashboards/pull/541))
+
+### Infrastructure
+
+* Pin GitHub Actions to commit SHAs to prevent supply chain attacks ([#543](https://github.com/opensearch-project/query-insights-dashboards/pull/543))
+
+### Maintenance
+
+* Add release notes for 2.19.6 ([#546](https://github.com/opensearch-project/query-insights-dashboards/pull/546))
