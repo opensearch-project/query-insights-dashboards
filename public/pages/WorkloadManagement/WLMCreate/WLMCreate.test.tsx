@@ -17,6 +17,18 @@ const mockAddDanger = jest.fn();
 
 const coreMock = {
   http: {
+    get: jest.fn().mockImplementation((path: string) => {
+      if (path === '/api/cat/plugins') {
+        return Promise.resolve({
+          ok: true,
+          response: [{ component: 'opensearch-security' }, { component: 'workload-management' }],
+        });
+      }
+      if (path === '/api/_plugins/_security/health') {
+        return Promise.resolve({ ok: true, available: true });
+      }
+      return Promise.resolve({});
+    }),
     put: jest.fn(),
     delete: jest.fn(),
   },
@@ -704,6 +716,149 @@ describe('WLMCreate – group settings', () => {
       expect(createCall).toBeDefined();
       const sentBody = JSON.parse(createCall[1].body);
       expect(sentBody.settings).toBeUndefined();
+    });
+  });
+});
+
+describe('WLMCreate – security plugin gating', () => {
+  const fillRequiredFields = async () => {
+    await userEvent.type(screen.getByTestId('name-input'), 'MyGroup');
+    fireEvent.change(screen.getByTestId('cpu-threshold-input'), { target: { value: '50' } });
+    await userEvent.click(screen.getByLabelText(/Soft/i));
+  };
+
+  // setSecurityProbe permanently replaces coreMock.http.get; restore the original
+  // reference afterward so subsequent describes don't pick up our impl.
+  const originalHttpGet = coreMock.http.get;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    (coreMock.http as any).get = originalHttpGet;
+  });
+
+  const setSecurityProbe = (impl: (path: string) => Promise<any>) => {
+    (coreMock.http as any).get = jest.fn(impl);
+  };
+
+  const renderWith = () =>
+    render(
+      <MemoryRouter>
+        <DataSourceContext.Provider
+          value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}
+        >
+          <WLMCreate
+            core={coreMock as any}
+            depsStart={depsMock as any}
+            params={mockParams}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+  it('disables Username and Role inputs and shows helper text when Security plugin is missing', async () => {
+    setSecurityProbe((path) => {
+      if (path === '/api/cat/plugins') {
+        return Promise.resolve({ ok: true, response: [{ component: 'workload-management' }] });
+      }
+      return Promise.resolve({});
+    });
+
+    renderWith();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/username/i)).toBeDisabled();
+      expect(screen.getByPlaceholderText(/^enter role$/i)).toBeDisabled();
+    });
+    expect(screen.getAllByText(/Requires the OpenSearch Security plugin/i).length).toBeGreaterThan(
+      0
+    );
+  });
+
+  it('disables Username and Role inputs when Security plugin is installed but disabled', async () => {
+    setSecurityProbe((path) => {
+      if (path === '/api/cat/plugins') {
+        return Promise.resolve({
+          ok: true,
+          response: [{ component: 'opensearch-security' }],
+        });
+      }
+      if (path === '/api/_plugins/_security/health') {
+        return Promise.resolve({ ok: true, available: false });
+      }
+      return Promise.resolve({});
+    });
+
+    renderWith();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/username/i)).toBeDisabled();
+    });
+  });
+
+  it('keeps Username and Role enabled when Security plugin is active', async () => {
+    setSecurityProbe((path) => {
+      if (path === '/api/cat/plugins') {
+        return Promise.resolve({
+          ok: true,
+          response: [{ component: 'opensearch-security' }],
+        });
+      }
+      if (path === '/api/_plugins/_security/health') {
+        return Promise.resolve({ ok: true, available: true });
+      }
+      return Promise.resolve({});
+    });
+
+    renderWith();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/username/i)).not.toBeDisabled();
+      expect(screen.getByPlaceholderText(/^enter role$/i)).not.toBeDisabled();
+    });
+  });
+
+  it('does not disable Username/Role when the probe is inconclusive (status: unknown)', async () => {
+    setSecurityProbe(() => Promise.reject(new Error('network')));
+
+    renderWith();
+
+    // Stays enabled — better than over-blocking.
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/username/i)).not.toBeDisabled();
+    });
+  });
+
+  it('rewrites the cryptic principal save error from the rule PUT to point at the Security plugin', async () => {
+    // The cluster only emits the "principal is not a valid attribute" error from
+    // /_rules/workload_group, never from the workload_group create itself. Simulate
+    // that realistic flow: the group create succeeds, the rule PUT rejects.
+    setSecurityProbe(() => Promise.reject(new Error('network'))); // probe inconclusive → form stays open
+
+    coreMock.http.put.mockResolvedValueOnce({ _id: 'gid-realistic', name: 'gid-realistic' });
+    coreMock.http.put.mockRejectedValueOnce({
+      body: {
+        message:
+          '[x_content_parse_exception] principal is not a valid attribute within the workload_group feature.',
+      },
+    });
+    coreMock.http.delete.mockResolvedValue({ ok: true });
+
+    renderWith();
+    await fillRequiredFields();
+    // Type a username so the rule actually has a principal payload
+    await userEvent.type(screen.getByPlaceholderText(/username/i), 'alice');
+
+    fireEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+    await waitFor(() => {
+      expect(mockAddDanger).toHaveBeenCalledWith({
+        title: 'Rule creation failed',
+        text: expect.stringMatching(/OpenSearch Security plugin/i),
+      });
     });
   });
 });
