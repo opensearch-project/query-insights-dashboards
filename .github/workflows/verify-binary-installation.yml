@@ -40,7 +40,7 @@ jobs:
         shell: bash
 
       - name: Run OpenSearch
-        uses: derek-ho/start-opensearch@e9060d3df24b30cdbfac62d749fec3367dade572 # v6
+        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@643b632712710159088d5f0798de7e91c1f2b8f7
         with:
           opensearch-version: ${{ env.OPENSEARCH_VERSION }}
           security-enabled: false
