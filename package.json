@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@babel/helpers": "^7.22.9",
-    "@babel/runtime": "^7.26.10",
+    "@babel/runtime": "^7.29.7",
     "@babel/runtime-corejs3": "^7.22.9",
     "echarts": "^6.0.0",
     "echarts-for-react": "3.0.6",
@@ -56,7 +56,7 @@
     "serialize-javascript": "7.0.5",
     "glob-parent": "^6.0.0",
     "@babel/helpers": "^7.22.9",
-    "@babel/runtime": "^7.26.10",
+    "@babel/runtime": "^7.29.7",
     "@babel/runtime-corejs3": "^7.22.9",
     "pbkdf2": "3.1.5",
     "form-data": "4.0.4",
