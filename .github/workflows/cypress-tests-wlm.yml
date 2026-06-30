@@ -93,16 +93,14 @@ jobs:
           tar -xzf opensearch-*.tar.gz && mv "opensearch-${VERSION}-SNAPSHOT" opensearch
           rm -f opensearch-*.tar.gz
 
-          # Install the WLM and Security plugins
+          # Install the WLM and Security plugins (--batch auto-accepts prompts)
           chmod +x ./opensearch/bin/opensearch-plugin
-          yes | ./opensearch/bin/opensearch-plugin install "file:$GITHUB_WORKSPACE/wlm.zip"
-          yes | ./opensearch/bin/opensearch-plugin install "file:$GITHUB_WORKSPACE/security.zip"
+          ./opensearch/bin/opensearch-plugin install --batch "file:$GITHUB_WORKSPACE/wlm.zip"
+          ./opensearch/bin/opensearch-plugin install --batch "file:$GITHUB_WORKSPACE/security.zip"
 
-          # Run the security demo configuration (-t is required for OpenSearch >= 2.12)
-          export OPENSEARCH_INITIAL_ADMIN_PASSWORD="${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          # Run the security demo configuration (-y: assume yes, -i: init security, -t: test env for OpenSearch >= 2.12)
           chmod +x ./opensearch/plugins/opensearch-security/tools/install_demo_configuration.sh
-          yes | ./opensearch/plugins/opensearch-security/tools/install_demo_configuration.sh -t
-          echo "plugins.security.unsupported.restapi.allow_securityconfig_modification: true" >> ./opensearch/config/opensearch.yml
+          ./opensearch/plugins/opensearch-security/tools/install_demo_configuration.sh -y -i -t
           echo "cluster.routing.allocation.disk.threshold_enabled: false" >> ./opensearch/config/opensearch.yml
 
           # Start OpenSearch and wait for it to come up
