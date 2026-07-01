@@ -84,7 +84,7 @@ jobs:
           ls -lh "$GITHUB_WORKSPACE/wlm.zip"
 
       - name: Run OpenSearch with WLM and Security plugins
-        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@main
+        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@15d4a8960ca11210dc1a2aec01c85a3840405085 # main
         with:
           opensearch-version: ${{ steps.get-version.outputs.VERSION }}
           plugins: "file:$GITHUB_WORKSPACE/wlm.zip,file:$GITHUB_WORKSPACE/security.zip"
