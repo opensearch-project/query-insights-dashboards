@@ -84,30 +84,13 @@ jobs:
           ls -lh "$GITHUB_WORKSPACE/wlm.zip"
 
       - name: Run OpenSearch with WLM and Security plugins
-        run: |
-          set -e
-          VERSION=${{ steps.get-version.outputs.VERSION }}
-
-          # Download and extract the OpenSearch core snapshot
-          curl -SLO "https://artifacts.opensearch.org/snapshots/core/opensearch/${VERSION}-SNAPSHOT/opensearch-min-${VERSION}-SNAPSHOT-linux-x64-latest.tar.gz"
-          tar -xzf opensearch-*.tar.gz && mv "opensearch-${VERSION}-SNAPSHOT" opensearch
-          rm -f opensearch-*.tar.gz
-
-          # Install the WLM and Security plugins (--batch auto-accepts prompts)
-          chmod +x ./opensearch/bin/opensearch-plugin
-          ./opensearch/bin/opensearch-plugin install --batch "file:$GITHUB_WORKSPACE/wlm.zip"
-          ./opensearch/bin/opensearch-plugin install --batch "file:$GITHUB_WORKSPACE/security.zip"
-
-          # Run the security demo configuration (-y: assume yes, -i: init security, -t: test env for OpenSearch >= 2.12)
-          chmod +x ./opensearch/plugins/opensearch-security/tools/install_demo_configuration.sh
-          ./opensearch/plugins/opensearch-security/tools/install_demo_configuration.sh -y -i -t
-          echo "cluster.routing.allocation.disk.threshold_enabled: false" >> ./opensearch/config/opensearch.yml
-
-          # Start OpenSearch and wait for it to come up
-          ./opensearch/bin/opensearch &
-          sleep 30
-          curl https://localhost:9200/_cat/plugins -u "admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" -k -v --fail-with-body
-        shell: bash
+        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@main
+        with:
+          opensearch-version: ${{ steps.get-version.outputs.VERSION }}
+          plugins: "file:$GITHUB_WORKSPACE/wlm.zip,file:$GITHUB_WORKSPACE/security.zip"
+          security-enabled: true
+          admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          jdk-version: 21
 
       - name: Enable WLM (with or without Security) and verify
         run: |
