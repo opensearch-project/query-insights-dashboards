@@ -32,22 +32,12 @@ jobs:
         working-directory: plugin-source
         shell: bash
 
-      - name: Set up JDK
-        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+      - name: Run OpenSearch
+        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@15d4a8960ca11210dc1a2aec01c85a3840405085 # main
         with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Download and Start OpenSearch
-        run: |
-          curl -SLO https://artifacts.opensearch.org/snapshots/core/opensearch/${{ env.OPENSEARCH_VERSION }}-SNAPSHOT/opensearch-min-${{ env.OPENSEARCH_VERSION }}-SNAPSHOT-linux-x64-latest.tar.gz
-          tar -xzf opensearch-*.tar.gz && mv opensearch-${{ env.OPENSEARCH_VERSION }}-SNAPSHOT opensearch
-          rm -f opensearch-*.tar.gz
-          echo "cluster.routing.allocation.disk.threshold_enabled: false" >> ./opensearch/config/opensearch.yml
-          ./opensearch/bin/opensearch &
-          sleep 45
-          curl http://localhost:9200/_cat/plugins -v
-        shell: bash
+          opensearch-version: ${{ env.OPENSEARCH_VERSION }}
+          security-enabled: false
+          jdk-version: 21
 
       - name: Checkout OpenSearch-Dashboards
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
