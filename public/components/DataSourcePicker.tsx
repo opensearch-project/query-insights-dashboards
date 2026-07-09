@@ -48,6 +48,7 @@ export const DataSourceMenu = React.memo(
     const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
     const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
+      if (!dataSources || !dataSources[0]) return;
       window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
       setDataSource(dataSources[0]);
       onSelectedDataSource();
@@ -74,7 +75,7 @@ export const DataSourceMenu = React.memo(
     ) : null;
   },
   (prevProps, newProps) =>
-    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
+    prevProps.selectedDataSource?.id === newProps.selectedDataSource?.id &&
     prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
 );
 
