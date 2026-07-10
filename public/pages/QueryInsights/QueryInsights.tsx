@@ -577,7 +577,7 @@ const QueryInsights = ({
                     }}
                     color="primary"
                   >
-                    {displayName} <EuiIcon type="popout" size="s" aria-hidden={true} />
+                    {displayName} <EuiIcon type="popout" size="s" />
                   </EuiLink>
                 );
               }
@@ -1073,7 +1073,7 @@ const QueryInsights = ({
                     <EuiSpacer size="xxl" />
                     <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                       <EuiFlexItem grow={false}>
-                        <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
+                        <EuiIcon type="visLine" size="xxl" color="subdued" />
                       </EuiFlexItem>
                       <EuiFlexItem grow={false}>
                         <EuiTitle size="s">
@@ -1297,7 +1297,7 @@ const QueryInsights = ({
                                     responsive={false}
                                   >
                                     <EuiFlexItem grow={false}>
-                                      <EuiIcon type="dot" color={item.color} aria-hidden={true} />
+                                      <EuiIcon type="dot" color={item.color} />
                                     </EuiFlexItem>
                                     <EuiFlexItem>{name}</EuiFlexItem>
                                   </EuiFlexGroup>
@@ -1494,7 +1494,7 @@ const QueryInsights = ({
                   <EuiSpacer size="xxl" />
                   <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                     <EuiFlexItem grow={false}>
-                      <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
+                      <EuiIcon type="visLine" size="xxl" color="subdued" />
                     </EuiFlexItem>
                     <EuiFlexItem grow={false}>
                       <EuiTitle size="s">

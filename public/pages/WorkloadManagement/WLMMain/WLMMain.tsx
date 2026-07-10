@@ -606,7 +606,7 @@ export const WorkloadManagementMain = ({
                   </EuiLink>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                  <EuiIcon type="popout" size="s" aria-hidden={true} />
+                  <EuiIcon type="popout" size="s" />
                 </EuiFlexItem>
               </EuiFlexGroup>
             ),
@@ -630,7 +630,7 @@ export const WorkloadManagementMain = ({
                   </EuiLink>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                  <EuiIcon type="popout" size="s" aria-hidden={true} />
+                  <EuiIcon type="popout" size="s" />
                 </EuiFlexItem>
               </EuiFlexGroup>
             ),

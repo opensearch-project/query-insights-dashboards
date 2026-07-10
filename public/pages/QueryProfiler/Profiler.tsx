@@ -94,7 +94,7 @@ const ImportFlyout: React.FC<{
       <EuiFlyoutBody>
         {error && (
           <>
-            <EuiCallOut announceOnMount title="Sorry, there was an error" color="danger">
+            <EuiCallOut title="Sorry, there was an error" color="danger">
               <p>{error}</p>
             </EuiCallOut>
             <EuiSpacer size="s" />
@@ -375,7 +375,7 @@ export const ProfilerEditor: React.FC<{
             }}
           >
             <EuiToolTip content="Show query editor">
-              <EuiIcon type="plus" aria-hidden={true} />
+              <EuiIcon type="plus" />
             </EuiToolTip>
           </div>
         )}
@@ -403,7 +403,7 @@ export const ProfilerEditor: React.FC<{
                     lineHeight: 'inherit',
                   }}
                 >
-                  <EuiIcon type="play" aria-hidden={true} />
+                  <EuiIcon type="play" />
                 </button>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -417,7 +417,7 @@ export const ProfilerEditor: React.FC<{
                     className="conApp__editorActionButton conApp__editorActionButton--success"
                     style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
                   >
-                    <EuiIcon type="refresh" aria-hidden={true} />
+                    <EuiIcon type="refresh" />
                   </button>
                 </EuiToolTip>
               </EuiFlexItem>

@@ -709,7 +709,6 @@ const Configuration = ({
               {remoteEnabled && isS3PluginInstalled === false && (
                 <EuiFlexItem>
                   <EuiCallOut
-                    announceOnMount
                     title="The repository-s3 plugin is not installed"
                     color="danger"
                     iconType="alert"

@@ -782,7 +782,7 @@ export const InflightQueries = ({
                         <b>{metrics?.activeQueries ?? 0}</b>
                       </h2>
                     </EuiTitle>
-                    <EuiIcon type="visGauge" aria-hidden={true} />
+                    <EuiIcon type="visGauge" />
                   </EuiTextAlign>
                 </EuiFlexItem>
               </EuiPanel>
@@ -936,7 +936,7 @@ export const InflightQueries = ({
                 ) : (
                   <EuiTextAlign textAlign="center">
                     <EuiSpacer size="xl" />
-                    <EuiIcon type="visPie" size="xxl" color="subdued" aria-hidden={true} />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" />
                     <EuiSpacer size="s" />
                     <EuiTitle size="s">
                       <h3>No Visualization Available</h3>
@@ -1002,7 +1002,7 @@ export const InflightQueries = ({
                 ) : (
                   <EuiTextAlign textAlign="center">
                     <EuiSpacer size="xl" />
-                    <EuiIcon type="visPie" size="xxl" color="subdued" aria-hidden={true} />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" />
                     <EuiSpacer size="s" />
                     <EuiTitle size="s">
                       <h3>No Visualization Available</h3>
@@ -1163,7 +1163,7 @@ export const InflightQueries = ({
                             }}
                             color="primary"
                           >
-                            {displayName} <EuiIcon type="popout" size="s" aria-hidden={true} />
+                            {displayName} <EuiIcon type="popout" size="s" />
                           </EuiLink>
                         );
                       }
