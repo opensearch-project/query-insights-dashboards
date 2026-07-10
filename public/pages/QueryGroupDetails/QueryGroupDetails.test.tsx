@@ -41,14 +41,14 @@ const mockDataSourceContext = {
 const mockQuery = mockQueries[0];
 
 describe('QueryGroupDetails', () => {
-  const coreMock = ({
+  const coreMock = {
     chrome: {
       setBreadcrumbs: jest.fn(),
     },
     uiSettings: {
       get: jest.fn().mockReturnValue(false),
     },
-  } as unknown) as CoreStart;
+  } as unknown as CoreStart;
 
   beforeEach(() => {
     jest.clearAllMocks();

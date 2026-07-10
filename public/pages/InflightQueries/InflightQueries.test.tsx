@@ -53,7 +53,7 @@ jest.mock('react-vis', () => ({
  * Helpers
  */
 const makeCore = (): CoreStart =>
-  (({
+  ({
     http: {
       get: jest.fn(),
       post: jest.fn(),
@@ -67,7 +67,7 @@ const makeCore = (): CoreStart =>
         addError: jest.fn(),
       },
     },
-  } as unknown) as CoreStart);
+  }) as unknown as CoreStart;
 
 const withDataSource = (ui: React.ReactNode) => (
   <MemoryRouter>

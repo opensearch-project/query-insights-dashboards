@@ -158,7 +158,7 @@ describe('Query Insights Dashboard', () => {
     cy.get('body').should('not.contain', 'No items found');
     // Click the Timestamp column header in main table to sort
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-    // eslint-disable-next-line jest/valid-expect-in-promise
+
     cy.get('.euiBasicTable')
       .last()
       .find('.euiTableRow')
@@ -167,7 +167,7 @@ describe('Query Insights Dashboard', () => {
       .then((firstRowAfterSort) => {
         const firstTimestamp = firstRowAfterSort.trim();
         cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-        // eslint-disable-next-line jest/valid-expect-in-promise
+
         cy.get('.euiBasicTable')
           .last()
           .find('.euiTableRow')
@@ -269,8 +269,9 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
 
-    const queryOnlyCount = mixedRows.filter((r) => String(r.group_by).toUpperCase() === 'NONE')
-      .length;
+    const queryOnlyCount = mixedRows.filter(
+      (r) => String(r.group_by).toUpperCase() === 'NONE'
+    ).length;
     assertRowCountEquals(queryOnlyCount);
 
     expectSortedBy('Timestamp');
@@ -291,8 +292,9 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
 
-    const groupOnlyCount = mixedRows.filter((r) => String(r.group_by).toUpperCase() !== 'NONE')
-      .length;
+    const groupOnlyCount = mixedRows.filter(
+      (r) => String(r.group_by).toUpperCase() !== 'NONE'
+    ).length;
     assertRowCountEquals(groupOnlyCount);
 
     expectSortedBy('Query Count');

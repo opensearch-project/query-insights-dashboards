@@ -22,7 +22,7 @@ jest.mock('react-router-dom', () => ({
   useHistory: jest.fn(),
 }));
 
-const mockCore = ({
+const mockCore = {
   http: {
     get: jest.fn(),
     put: jest.fn(),
@@ -47,7 +47,7 @@ const mockCore = ({
       get: jest.fn().mockResolvedValue({ attributes: { dataSourceVersion: '3.3.0' } }),
     },
   },
-} as unknown) as CoreStart;
+} as unknown as CoreStart;
 
 const mockDeps = {
   dataSource: {
@@ -842,7 +842,7 @@ describe('WLMDetails Component', () => {
     });
 
     const warnSpy = jest.fn();
-    ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
+    (mockCore.notifications.toasts.addWarning as unknown as jest.Mock) = warnSpy;
 
     renderComponent('test-group');
 
@@ -899,7 +899,7 @@ describe('WLMDetails Component', () => {
     });
 
     const warnSpy = jest.fn();
-    ((mockCore.notifications.toasts.addWarning as unknown) as jest.Mock) = warnSpy;
+    (mockCore.notifications.toasts.addWarning as unknown as jest.Mock) = warnSpy;
 
     renderComponent('test-group');
 
@@ -971,7 +971,7 @@ describe('WLMDetails Component', () => {
 
   it('blocks saving when resiliency mode missing and both resource limits invalid', async () => {
     const dangerSpy = jest.fn();
-    ((mockCore.notifications.toasts.addDanger as unknown) as jest.Mock) = dangerSpy;
+    (mockCore.notifications.toasts.addDanger as unknown as jest.Mock) = dangerSpy;
 
     renderComponent('test-group');
     fireEvent.click(screen.getByTestId('wlm-tab-settings'));

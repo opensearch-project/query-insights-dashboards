@@ -17,7 +17,7 @@ jest.mock('../Configuration/Configuration', () => () => <div>Mocked Configuratio
 jest.mock('../QueryDetails/QueryDetails', () => () => <div>Mocked QueryDetails</div>);
 jest.mock('../../utils/version-utils');
 
-const mockCore = ({
+const mockCore = {
   http: {
     get: jest.fn(),
     put: jest.fn(),
@@ -33,7 +33,7 @@ const mockCore = ({
       addError: jest.fn(),
     },
   },
-} as unknown) as CoreStart;
+} as unknown as CoreStart;
 
 const setUpDefaultEnabledSettings = () => {
   const mockLatencyResponse = { response: { top_queries: [{ id: '1' }, { id: '2' }] } };

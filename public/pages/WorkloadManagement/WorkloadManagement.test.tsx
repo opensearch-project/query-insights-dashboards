@@ -12,7 +12,7 @@ import { CoreStart } from 'opensearch-dashboards/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { DataSourceContext } from './WorkloadManagement';
 
-const mockCore = ({
+const mockCore = {
   http: {
     get: jest.fn(),
     put: jest.fn(),
@@ -32,7 +32,7 @@ const mockCore = ({
   savedObjects: {
     client: {},
   },
-} as unknown) as CoreStart;
+} as unknown as CoreStart;
 
 const mockDepsStart = {
   dataSource: {

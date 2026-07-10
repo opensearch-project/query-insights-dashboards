@@ -17,7 +17,7 @@ jest.mock('../../../components/PageHeader', () => ({
   PageHeader: () => <div>Mocked PageHeader</div>,
 }));
 
-const mockCore = ({
+const mockCore = {
   http: {
     get: jest.fn(),
   },
@@ -33,7 +33,7 @@ const mockCore = ({
   savedObjects: {
     client: {},
   },
-} as unknown) as CoreStart;
+} as unknown as CoreStart;
 
 const mockDepsStart = {
   dataSource: {

@@ -176,8 +176,8 @@ export const TaskDetailFlyout: React.FC<Props> = ({
                           task.status === 'failed' || task.status === 'cancelled'
                             ? 'danger'
                             : task.status === 'completed'
-                            ? 'success'
-                            : 'primary'
+                              ? 'success'
+                              : 'primary'
                         }
                       >
                         {task.status}

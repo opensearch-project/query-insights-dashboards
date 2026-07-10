@@ -108,11 +108,11 @@ describe('formatQueryDisplay', () => {
       measurements: {},
       total_shards: 1,
       node_id: 'node1',
-      source: ({
+      source: {
         query: {
           match: { title: 'opensearch' },
         },
-      } as unknown) as ISearchSource,
+      } as unknown as ISearchSource,
       source_truncated: false,
       labels: {},
       search_type: 'query_then_fetch',
@@ -149,7 +149,7 @@ describe('formatQueryDisplay', () => {
       measurements: {},
       total_shards: 1,
       node_id: 'node1',
-      source: ({} as unknown) as ISearchSource,
+      source: {} as unknown as ISearchSource,
       source_truncated: false,
       labels: {},
       search_type: 'query_then_fetch',

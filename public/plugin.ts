@@ -19,14 +19,12 @@ import {
 import { PLUGIN_NAME } from '../common';
 import { WLM_CONFIG } from '../common/constants';
 
-export class QueryInsightsDashboardsPlugin
-  implements
-    Plugin<
-      QueryInsightsDashboardsPluginSetup,
-      QueryInsightsDashboardsPluginStart,
-      {},
-      QueryInsightsDashboardsPluginStartDependencies
-    > {
+export class QueryInsightsDashboardsPlugin implements Plugin<
+  QueryInsightsDashboardsPluginSetup,
+  QueryInsightsDashboardsPluginStart,
+  {},
+  QueryInsightsDashboardsPluginStartDependencies
+> {
   public setup(
     core: CoreSetup,
     deps: QueryInsightsDashboardsPluginSetupDependencies

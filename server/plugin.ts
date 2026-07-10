@@ -23,8 +23,10 @@ export interface QueryInsightsDashboardsPluginSetupDependencies {
   dataSource: DataSourcePluginSetup;
 }
 
-export class QueryInsightsDashboardsPlugin
-  implements Plugin<QueryInsightsDashboardsPluginSetup, QueryInsightsDashboardsPluginStart> {
+export class QueryInsightsDashboardsPlugin implements Plugin<
+  QueryInsightsDashboardsPluginSetup,
+  QueryInsightsDashboardsPluginStart
+> {
   private readonly logger: Logger;
 
   constructor(initializerContext: PluginInitializerContext) {

@@ -272,8 +272,8 @@ export const ShardTable: React.FC<ShardTableProps> = ({
       {sortField === 'searchTime'
         ? 'Search time'
         : sortField === 'aggTime'
-        ? 'Aggregation time'
-        : 'Shard ID'}
+          ? 'Aggregation time'
+          : 'Shard ID'}
     </EuiButtonEmpty>
   );
 

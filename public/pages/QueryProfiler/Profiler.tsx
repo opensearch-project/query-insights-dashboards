@@ -94,7 +94,7 @@ const ImportFlyout: React.FC<{
       <EuiFlyoutBody>
         {error && (
           <>
-            <EuiCallOut title="Sorry, there was an error" color="danger">
+            <EuiCallOut announceOnMount title="Sorry, there was an error" color="danger">
               <p>{error}</p>
             </EuiCallOut>
             <EuiSpacer size="s" />
@@ -267,9 +267,9 @@ export const ProfilerEditor: React.FC<{
   }, []);
 
   useEffect(() => {
-    inputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
+    inputEditorInstance.current?.setFontSize(fontSize as unknown as string);
     inputEditorInstance.current?.session.setUseWrapMode(wrapMode);
-    outputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
+    outputEditorInstance.current?.setFontSize(fontSize as unknown as string);
     outputEditorInstance.current?.session.setUseWrapMode(wrapMode);
   }, [fontSize, wrapMode]);
 
@@ -375,7 +375,7 @@ export const ProfilerEditor: React.FC<{
             }}
           >
             <EuiToolTip content="Show query editor">
-              <EuiIcon type="plus" />
+              <EuiIcon type="plus" aria-hidden={true} />
             </EuiToolTip>
           </div>
         )}
@@ -403,7 +403,7 @@ export const ProfilerEditor: React.FC<{
                     lineHeight: 'inherit',
                   }}
                 >
-                  <EuiIcon type="play" />
+                  <EuiIcon type="play" aria-hidden={true} />
                 </button>
               </EuiFlexItem>
               <EuiFlexItem>
@@ -417,7 +417,7 @@ export const ProfilerEditor: React.FC<{
                     className="conApp__editorActionButton conApp__editorActionButton--success"
                     style={{ padding: '0 8px', cursor: 'pointer', lineHeight: 'inherit' }}
                   >
-                    <EuiIcon type="refresh" />
+                    <EuiIcon type="refresh" aria-hidden={true} />
                   </button>
                 </EuiToolTip>
               </EuiFlexItem>
