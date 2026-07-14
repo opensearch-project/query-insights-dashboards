@@ -22,35 +22,28 @@ export const [getCore, setCore] = createGetterSetter<CoreStart>('Core');
 
 export const [getRouteService, setRouteService] = createGetterSetter<RouteService>('RouteService');
 
-export const [getSavedObjectsClient, setSavedObjectsClient] = createGetterSetter<
-  CoreStart['savedObjects']['client']
->('SavedObjectsClient');
+export const [getSavedObjectsClient, setSavedObjectsClient] =
+  createGetterSetter<CoreStart['savedObjects']['client']>('SavedObjectsClient');
 
-export const [getDataSourceManagementPlugin, setDataSourceManagementPlugin] = createGetterSetter<
-  DataSourceManagementPluginSetup
->('DataSourceManagement');
+export const [getDataSourceManagementPlugin, setDataSourceManagementPlugin] =
+  createGetterSetter<DataSourceManagementPluginSetup>('DataSourceManagement');
 
-export const [getDataSourceEnabled, setDataSourceEnabled] = createGetterSetter<DataSourceEnabled>(
-  'DataSourceEnabled'
-);
+export const [getDataSourceEnabled, setDataSourceEnabled] =
+  createGetterSetter<DataSourceEnabled>('DataSourceEnabled');
 
-export const [getNotifications, setNotifications] = createGetterSetter<NotificationsStart>(
-  'Notifications'
-);
+export const [getNotifications, setNotifications] =
+  createGetterSetter<NotificationsStart>('Notifications');
 
 export const [getUISettings, setUISettings] = createGetterSetter<IUiSettingsClient>('UISettings');
 
-export const [getApplication, setApplication] = createGetterSetter<CoreStart['application']>(
-  'Application'
-);
+export const [getApplication, setApplication] =
+  createGetterSetter<CoreStart['application']>('Application');
 
-export const [getNavigationUI, setNavigationUI] = createGetterSetter<
-  NavigationPublicPluginStart['ui']
->('Navigation');
+export const [getNavigationUI, setNavigationUI] =
+  createGetterSetter<NavigationPublicPluginStart['ui']>('Navigation');
 
-export const [getHeaderActionMenu, setHeaderActionMenu] = createGetterSetter<
-  AppMountParameters['setHeaderActionMenu']
->('SetHeaderActionMenu');
+export const [getHeaderActionMenu, setHeaderActionMenu] =
+  createGetterSetter<AppMountParameters['setHeaderActionMenu']>('SetHeaderActionMenu');
 
 export function setStartServices(coreStart: CoreStart) {
   setCore(coreStart);

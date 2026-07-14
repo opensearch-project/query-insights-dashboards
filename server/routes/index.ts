@@ -20,8 +20,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     async (context, request, response) => {
       try {
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getTopNQueries');
           return response.ok({
             body: {
@@ -71,8 +71,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         const { from, to, id, verbose } = request.query;
         const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res =
             id != null
               ? await client('queryInsights.getTopNQueriesLatencyForId', params)
@@ -129,8 +129,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         const params = { from, to, id, verbose };
 
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res =
             id != null
               ? await client('queryInsights.getTopNQueriesCpuForId', params)
@@ -186,8 +186,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         const { from, to, id, verbose } = request.query;
         const params = { from, to, id, verbose };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res =
             id != null
               ? await client('queryInsights.getTopNQueriesMemoryForId', params)
@@ -237,8 +237,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     async (context, request, response) => {
       try {
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getSettings', { include_defaults: true });
           return response.ok({
             body: {
@@ -325,8 +325,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             query.remote_path;
         }
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.setSettings', params);
           return response.ok({
             body: {
@@ -387,8 +387,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         let res;
 
         if (!dataSourceEnabled || !dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           res = hasGroup
             ? await client('queryInsights.getLiveQueriesWLMGroup', {
                 wlmGroupId: wlmGroup,
@@ -578,8 +578,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     async (context, request, response) => {
       try {
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getSnapshotRepositories');
           return response.ok({ body: { ok: true, response: res } });
         } else {
@@ -611,8 +611,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
     async (context, request, response) => {
       try {
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getCatPlugins');
           return response.ok({ body: { ok: true, response: res } });
         } else {
@@ -648,8 +648,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
       try {
         const params = { repository: request.params.repository };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.deleteSnapshotRepository', params);
           return response.ok({ body: { ok: true, response: res } });
         } else {
@@ -691,8 +691,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           body: { type, settings },
         };
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.createSnapshotRepository', params);
           return response.ok({ body: { ok: true, response: res } });
         } else {

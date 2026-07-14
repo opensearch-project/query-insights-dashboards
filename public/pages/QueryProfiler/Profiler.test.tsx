@@ -41,7 +41,7 @@ const mockHttp = {
   get: jest.fn(),
 };
 
-const mockCoreStart = ({ http: mockHttp } as unknown) as CoreStart;
+const mockCoreStart = { http: mockHttp } as unknown as CoreStart;
 
 beforeAll(() => {
   setCoreStart(mockCoreStart);
@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 const renderEditor = (props: { dataSourceId?: string; initialQuery?: string } = {}) =>
-  render(<ProfilerEditor http={(mockHttp as unknown) as CoreStart['http']} {...props} />);
+  render(<ProfilerEditor http={mockHttp as unknown as CoreStart['http']} {...props} />);
 
 describe('ProfilerEditor', () => {
   it('renders all tabs', () => {
@@ -122,7 +122,7 @@ describe('ProfilerEditor', () => {
     const appendSpy = jest.spyOn(document.body, 'appendChild');
     const removeSpy = jest
       .spyOn(document.body, 'removeChild')
-      .mockImplementation(() => ({} as ChildNode));
+      .mockImplementation(() => ({}) as ChildNode);
     act(() => fireEvent.click(getByText('Export JSON')));
     expect(appendSpy).toHaveBeenCalled();
     act(() => jest.runAllTimers());

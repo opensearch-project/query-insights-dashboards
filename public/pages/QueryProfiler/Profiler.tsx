@@ -267,9 +267,9 @@ export const ProfilerEditor: React.FC<{
   }, []);
 
   useEffect(() => {
-    inputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
+    inputEditorInstance.current?.setFontSize(fontSize as unknown as string);
     inputEditorInstance.current?.session.setUseWrapMode(wrapMode);
-    outputEditorInstance.current?.setFontSize((fontSize as unknown) as string);
+    outputEditorInstance.current?.setFontSize(fontSize as unknown as string);
     outputEditorInstance.current?.session.setUseWrapMode(wrapMode);
   }, [fontSize, wrapMode]);
 

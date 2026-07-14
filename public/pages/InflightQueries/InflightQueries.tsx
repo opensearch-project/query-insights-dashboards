@@ -127,9 +127,8 @@ export const InflightQueries = ({
   );
 
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
-  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
-    boolean
-  >(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
+    useState<boolean>(false);
   const [taskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
@@ -299,7 +298,7 @@ export const InflightQueries = ({
 
           const wlmDisplay =
             typeof q.wlm_group_id === 'string' && q.wlm_group_id.trim() !== ''
-              ? idToName[q.wlm_group_id] ?? q.wlm_group_id
+              ? (idToName[q.wlm_group_id] ?? q.wlm_group_id)
               : 'N/A';
 
           // Normalize measurements for both old and new API formats
@@ -344,7 +343,7 @@ export const InflightQueries = ({
           const finishedRows: LiveQueryRow[] = finishedQueries.map((fq: any) => {
             const wlmDisplay =
               typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
-                ? idToName[fq.wlm_group_id] ?? fq.wlm_group_id
+                ? (idToName[fq.wlm_group_id] ?? fq.wlm_group_id)
                 : 'N/A';
             const status = fq.status || (fq.failed ? 'Failed' : 'Completed');
             const lowerStatus = status.toLowerCase();
@@ -555,7 +554,7 @@ export const InflightQueries = ({
     if (!searchQuery.trim()) return liveQueries;
     const parsed = parseExpression(searchQuery);
     return liveQueries.filter((q) =>
-      evaluateExpression((q as unknown) as SearchQueryRecord, parsed, fieldMap)
+      evaluateExpression(q as unknown as SearchQueryRecord, parsed, fieldMap)
     );
   }, [liveQueries, searchQuery, fieldMap]);
 
@@ -701,7 +700,7 @@ export const InflightQueries = ({
         <EuiFlexItem grow>
           <DynamicSearchBar
             fields={searchFields}
-            queries={(liveQueries as unknown) as SearchQueryRecord[]}
+            queries={liveQueries as unknown as SearchQueryRecord[]}
             value={searchQuery}
             onChange={setSearchQuery}
             placeholder="e.g. latency >= 1 AND status = Running"
@@ -1230,8 +1229,8 @@ export const InflightQueries = ({
             status: (selectedItem as any)._finished
               ? (selectedItem as any)._status || 'completed'
               : selectedItem.is_cancelled
-              ? 'cancelled'
-              : 'running',
+                ? 'cancelled'
+                : 'running',
             start_time: selectedItem.timestamp || (selectedItem as any).start_time,
             wlm_group_id: selectedItem.wlm_group_id,
             total_latency_millis: (selectedItem.measurements?.latency?.number || 0) / 1e6,

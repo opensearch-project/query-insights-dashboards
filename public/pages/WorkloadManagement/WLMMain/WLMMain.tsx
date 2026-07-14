@@ -131,9 +131,8 @@ export const WorkloadManagementMain = ({
     [SUMMARY_STATS_KEYS.groupsExceedingLimits]: '-' as string | number,
   });
   const [isQueryInsightsAvailable, setIsQueryInsightsAvailable] = useState(false);
-  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
-    boolean
-  >(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
+    useState<boolean>(false);
 
   // === Table Sorting / Pagination ===
   const pagination = {

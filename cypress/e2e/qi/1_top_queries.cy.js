@@ -269,8 +269,9 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
 
-    const queryOnlyCount = mixedRows.filter((r) => String(r.group_by).toUpperCase() === 'NONE')
-      .length;
+    const queryOnlyCount = mixedRows.filter(
+      (r) => String(r.group_by).toUpperCase() === 'NONE'
+    ).length;
     assertRowCountEquals(queryOnlyCount);
 
     expectSortedBy('Timestamp');
@@ -291,8 +292,9 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     ];
     getHeaders().should('deep.equal', expected);
 
-    const groupOnlyCount = mixedRows.filter((r) => String(r.group_by).toUpperCase() !== 'NONE')
-      .length;
+    const groupOnlyCount = mixedRows.filter(
+      (r) => String(r.group_by).toUpperCase() !== 'NONE'
+    ).length;
     assertRowCountEquals(groupOnlyCount);
 
     expectSortedBy('Query Count');

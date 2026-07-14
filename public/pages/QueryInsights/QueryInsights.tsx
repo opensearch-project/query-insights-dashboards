@@ -121,9 +121,8 @@ const QueryInsights = ({
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [statusSupported, setStatusSupported] = useState<boolean>(false);
-  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
-    boolean
-  >(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
+    useState<boolean>(false);
   // Initialize search query based on URL parameters
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
@@ -402,24 +401,24 @@ const QueryInsights = ({
     return effectiveView === 'mixed'
       ? `Avg ${LATENCY} / ${LATENCY}`
       : effectiveView === 'group'
-      ? `Average ${LATENCY}`
-      : `${LATENCY}`;
+        ? `Average ${LATENCY}`
+        : `${LATENCY}`;
   }, [effectiveView]);
 
   const cpuHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${CPU_TIME} / ${CPU_TIME}`
       : effectiveView === 'group'
-      ? `Average ${CPU_TIME}`
-      : `${CPU_TIME}`;
+        ? `Average ${CPU_TIME}`
+        : `${CPU_TIME}`;
   }, [effectiveView]);
 
   const memHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
       : effectiveView === 'group'
-      ? `Average ${MEMORY_USAGE}`
-      : MEMORY_USAGE;
+        ? `Average ${MEMORY_USAGE}`
+        : MEMORY_USAGE;
   }, [effectiveView]);
 
   const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
@@ -562,8 +561,8 @@ const QueryInsights = ({
                 groupId === DEFAULT_WORKLOAD_GROUP
                   ? DEFAULT_WORKLOAD_GROUP
                   : wlmAvailable
-                  ? wlmIdToNameMap[groupId] || '-'
-                  : '-';
+                    ? wlmIdToNameMap[groupId] || '-'
+                    : '-';
 
               if (wlmAvailable && displayName !== '-') {
                 return (
@@ -672,11 +671,10 @@ const QueryInsights = ({
       QueryTypeSpecificColumns,
     ]
   );
-  const groupTypeColumns = useMemo(() => [...baseColumns, ...querycountColumn, ...metricColumns], [
-    baseColumns,
-    querycountColumn,
-    metricColumns,
-  ]);
+  const groupTypeColumns = useMemo(
+    () => [...baseColumns, ...querycountColumn, ...metricColumns],
+    [baseColumns, querycountColumn, metricColumns]
+  );
 
   const queryTypeColumns = useMemo(
     () => [
@@ -967,8 +965,8 @@ const QueryInsights = ({
           performanceMetric === 'latency'
             ? 'Latency (ms)'
             : performanceMetric === 'cpu'
-            ? 'CPU Time (ms)'
-            : 'Memory (MB)',
+              ? 'CPU Time (ms)'
+              : 'Memory (MB)',
       },
       series: [
         {
@@ -1199,10 +1197,10 @@ const QueryInsights = ({
                               {chartGroupBy === 'node'
                                 ? 'Queries by Node'
                                 : chartGroupBy === 'index'
-                                ? 'Queries by Index'
-                                : chartGroupBy === 'username'
-                                ? 'Queries by Username'
-                                : 'Queries by WLM Group'}
+                                  ? 'Queries by Index'
+                                  : chartGroupBy === 'username'
+                                    ? 'Queries by Username'
+                                    : 'Queries by WLM Group'}
                             </h3>
                           </EuiTitle>
                         </EuiFlexItem>
@@ -1242,10 +1240,10 @@ const QueryInsights = ({
                                     chartGroupBy === 'node'
                                       ? 'Node'
                                       : chartGroupBy === 'index'
-                                      ? 'Index'
-                                      : chartGroupBy === 'username'
-                                      ? 'Username'
-                                      : 'WLM Group';
+                                        ? 'Index'
+                                        : chartGroupBy === 'username'
+                                          ? 'Username'
+                                          : 'WLM Group';
                                   return `${label}: ${pieParams.name}<br/>Query Count: ${pieParams.value}<br/>Percentage: ${pieParams.percent}%`;
                                 },
                               },
@@ -1287,12 +1285,12 @@ const QueryInsights = ({
                                   chartGroupBy === 'node'
                                     ? 'Node'
                                     : chartGroupBy === 'index'
-                                    ? 'Index'
-                                    : chartGroupBy === 'username'
-                                    ? 'Username'
-                                    : 'WLM Group',
+                                      ? 'Index'
+                                      : chartGroupBy === 'username'
+                                        ? 'Username'
+                                        : 'WLM Group',
                                 sortable: true,
-                                render: (name: string, item: typeof chartData[0]) => (
+                                render: (name: string, item: (typeof chartData)[0]) => (
                                   <EuiFlexGroup
                                     gutterSize="s"
                                     alignItems="center"
@@ -1316,7 +1314,7 @@ const QueryInsights = ({
                                 name: 'Percentage',
                                 render: (p: string) => `${p}%`,
                                 align: 'right',
-                                sortable: (item: typeof chartData[0]) =>
+                                sortable: (item: (typeof chartData)[0]) =>
                                   parseFloat(item.percentage),
                               },
                             ]}

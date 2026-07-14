@@ -260,7 +260,8 @@ function detectPhase(
   const relevantInput =
     lastConjIdx >= 0 ? input.substring(lastConjIdx).replace(/^\s*(AND|OR)\s+/i, '') : input;
 
-  const condPattern = /^(.+?)\s*(!=|>=|<=|>|<|=|starts_with|ends_with|contains|between)\s+(.+?)\s*$/i;
+  const condPattern =
+    /^(.+?)\s*(!=|>=|<=|>|<|=|starts_with|ends_with|contains|between)\s+(.+?)\s*$/i;
   const condMatch = condPattern.exec(relevantInput.trim());
   if (condMatch) {
     const val = condMatch[3].trim();
