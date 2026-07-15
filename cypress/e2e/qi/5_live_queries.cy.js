@@ -147,7 +147,7 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('manually refreshes data', () => {
-    cy.get('[data-test-subj="live-queries-refresh-button"]').click();
+    cy.get('[data-test-subj="live-queries-refresh-button"]').click({ force: true });
     cy.wait('@getLiveQueries');
   });
 

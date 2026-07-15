@@ -55,6 +55,6 @@ module.exports = {
     '^.+\\.(js|tsx?)$': '<rootDir>/../../src/dev/jest/babel_transform.js',
   },
   transformIgnorePatterns: [
-    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor|react-ace))[/\\\\].+\\.(js|ts|tsx)$',
+    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor|react-ace|query-string|decode-uri-component|split-on-first|filter-obj))[/\\\\].+\\.(js|ts|tsx)$',
   ],
 };
