@@ -19,7 +19,9 @@
  */
 
 import {
+  describeRuleSaveError,
   getDataSourceFromUrl,
+  getSecurityPluginStatus,
   isDataSourceCompatible,
   isWLMDataSourceCompatible,
 } from './datasource-utils';
@@ -261,6 +263,122 @@ describe('Tests datasource utils', () => {
           references: [],
         } as any)
       ).toBe(false);
+    });
+  });
+
+  describe('getSecurityPluginStatus', () => {
+    const makeHttp = (impl: (path: string, opts?: any) => Promise<any>) => ({
+      get: jest.fn(impl),
+    });
+
+    it('returns "available" when security is listed in /_cat/plugins and health is reachable', async () => {
+      const http = makeHttp((path) => {
+        if (path === '/api/cat/plugins') {
+          return Promise.resolve({
+            ok: true,
+            response: [{ component: 'opensearch-security' }, { component: 'workload-management' }],
+          });
+        }
+        if (path === '/api/_plugins/_security/health') {
+          return Promise.resolve({ ok: true, available: true });
+        }
+        return Promise.resolve({});
+      });
+      await expect(getSecurityPluginStatus(http, 'ds-1')).resolves.toBe('available');
+      expect(http.get).toHaveBeenCalledWith(
+        '/api/cat/plugins',
+        expect.objectContaining({ query: { dataSourceId: 'ds-1' } })
+      );
+    });
+
+    it('returns "unavailable" when security is not listed in /_cat/plugins (skips health probe)', async () => {
+      const http = makeHttp((path) => {
+        if (path === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'workload-management' }] });
+        }
+        return Promise.resolve({ ok: true, available: true });
+      });
+      await expect(getSecurityPluginStatus(http)).resolves.toBe('unavailable');
+      expect(http.get).toHaveBeenCalledTimes(1);
+      expect(http.get).toHaveBeenCalledWith(
+        '/api/cat/plugins',
+        expect.objectContaining({ query: { dataSourceId: '' } })
+      );
+    });
+
+    it('returns "unavailable" when security plugin is installed but health route reports unavailable (disabled)', async () => {
+      const http = makeHttp((path) => {
+        if (path === '/api/cat/plugins') {
+          return Promise.resolve({
+            ok: true,
+            response: [{ component: 'opensearch-security' }],
+          });
+        }
+        if (path === '/api/_plugins/_security/health') {
+          return Promise.resolve({ ok: true, available: false });
+        }
+        return Promise.resolve({});
+      });
+      await expect(getSecurityPluginStatus(http)).resolves.toBe('unavailable');
+    });
+
+    it('returns "available" when security plugin is listed but health probe is inconclusive', async () => {
+      const http = makeHttp((path) => {
+        if (path === '/api/cat/plugins') {
+          return Promise.resolve({
+            ok: true,
+            response: [{ component: 'opensearch-security' }],
+          });
+        }
+        return Promise.resolve({ ok: false, error: 'boom' });
+      });
+      await expect(getSecurityPluginStatus(http)).resolves.toBe('available');
+    });
+
+    it('returns "unknown" when /_cat/plugins fails completely', async () => {
+      const http = makeHttp((path) => {
+        if (path === '/api/cat/plugins') {
+          return Promise.reject(new Error('network down'));
+        }
+        return Promise.reject(new Error('network down'));
+      });
+      await expect(getSecurityPluginStatus(http)).resolves.toBe('unknown');
+    });
+  });
+
+  describe('describeRuleSaveError', () => {
+    it('rewrites the cryptic principal error to a security-plugin guidance message', () => {
+      expect(
+        describeRuleSaveError({
+          body: {
+            message:
+              '[x_content_parse_exception] principal is not a valid attribute within the workload_group feature.',
+          },
+        })
+      ).toMatch(/OpenSearch Security plugin/i);
+    });
+
+    it('passes through unrelated errors unchanged', () => {
+      expect(describeRuleSaveError(new Error('something else broke'))).toBe('something else broke');
+      expect(describeRuleSaveError({ body: { message: 'generic failure' } })).toBe(
+        'generic failure'
+      );
+    });
+
+    it('returns empty string for nullish or plain-object inputs (caller fallback wins)', () => {
+      // Empty string lets the call-site `|| 'Something went wrong'` produce a generic
+      // toast instead of leaking '[object Object]' to the user.
+      expect(describeRuleSaveError(undefined)).toBe('');
+      expect(describeRuleSaveError(null)).toBe('');
+      expect(describeRuleSaveError({})).toBe('');
+      expect(describeRuleSaveError({ body: { message: '' } })).toBe('');
+    });
+
+    it('falls through empty body.message to err.message', () => {
+      // Regression: ?? would short-circuit on '' and surface a blank toast tail.
+      expect(describeRuleSaveError({ body: { message: '' }, message: 'fallback' })).toBe(
+        'fallback'
+      );
     });
   });
 });

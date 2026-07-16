@@ -30,6 +30,10 @@ import {
   resolveDataSourceVersion,
   isSecurityAttributesSupported,
   isWlmGroupSettingsSupported,
+  getSecurityPluginStatus,
+  describeRuleSaveError,
+  getSecurityFieldDisabledHelpText,
+  SecurityPluginStatus,
 } from '../../../utils/datasource-utils';
 import { AutoSizeTextArea } from '../auto_size_text_area';
 import { WLMSettingsForm } from '../WLMSettings/wlm_settings_form';
@@ -76,10 +80,21 @@ export const WLMCreate = ({
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
   const isMounted = useRef(true);
   const [dsVersion, setDsVersion] = useState<string | undefined>();
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
   const dataSourceEnabled = !!depsStart?.dataSource?.dataSourceEnabled;
-  const showSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const versionSupportsSecurity = !dataSourceEnabled || isSecurityAttributesSupported(dsVersion);
+  const securityPluginMissing = securityStatus === 'unavailable';
+  const showSecurity = versionSupportsSecurity && !securityPluginMissing;
   const showGroupSettings = !dataSourceEnabled || isWlmGroupSettingsSupported(dsVersion);
   const [settingsDraft, setSettingsDraft] = useState<WlmGroupSettingsDraft>(emptyDraft());
+  const securityDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'username',
+    versionSupportsSecurity
+  );
+  const securityRoleDisabledHelpText = getSecurityFieldDisabledHelpText(
+    'role',
+    versionSupportsSecurity
+  );
 
   const isFormValid =
     name.trim() !== '' &&
@@ -114,6 +129,20 @@ export const WLMCreate = ({
     (async () => {
       const v = await resolveDataSourceVersion(core, dataSource);
       if (!cancelled) setDsVersion(v);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core, dataSource?.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Reset to 'unknown' on dataSource change so a previous cluster's 'available'
+    // result doesn't carry over and leave the form fail-open while the new probe runs.
+    setSecurityStatus('unknown');
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) setSecurityStatus(status);
     })();
     return () => {
       cancelled = true;
@@ -170,6 +199,9 @@ export const WLMCreate = ({
       const payloads = (rules ?? [])
         .map((rule) => {
           const indexPattern = splitCSV(rule.index);
+          // Always include what the user typed: dropping principal data based on a
+          // racing probe result would silently lose work. If the cluster ultimately
+          // rejects the principal, describeRuleSaveError humanizes the response.
           const usernames = splitCSV(rule.username);
           const roles = splitCSV(rule.role);
 
@@ -234,14 +266,13 @@ export const WLMCreate = ({
         } catch (cleanupErr: any) {
           core.notifications.toasts.addDanger({
             title: 'Rule creation failed; group rollback also failed',
-            text: cleanupErr?.body?.message || cleanupErr?.message || 'Check server logs.',
+            text: describeRuleSaveError(cleanupErr) || 'Check server logs.',
           });
         }
 
         core.notifications.toasts.addDanger({
           title: 'Rule creation failed',
-          text:
-            ruleErr?.body?.message || ruleErr?.message || 'Rolled back created rules and group.',
+          text: describeRuleSaveError(ruleErr) || 'Rolled back created rules and group.',
         });
         return;
       }
@@ -249,7 +280,7 @@ export const WLMCreate = ({
       console.error(err);
       core.notifications.toasts.addDanger({
         title: 'Failed to create workload group and rules',
-        text: err?.body?.message || err?.message || 'Something went wrong',
+        text: describeRuleSaveError(err) || 'Something went wrong',
       });
     } finally {
       if (isMounted.current) setLoading(false);
@@ -416,7 +447,7 @@ export const WLMCreate = ({
                   error={usernameErrors[idx] || undefined}
                   helpText={
                     !showSecurity
-                      ? 'Username rules require data source ≥ 3.3.'
+                      ? securityDisabledHelpText
                       : 'You can use (,) to add multiple usernames.'
                   }
                 >
@@ -437,7 +468,9 @@ export const WLMCreate = ({
                       setRules(updatedRules);
                       setUsernameErrors(updatedErrors);
                     }}
-                    disabled={!showSecurity}
+                    // Stay editable if the user has already typed something so they can clear
+                    // it after a probe flips to 'unavailable' mid-flight.
+                    disabled={!showSecurity && !rule.username}
                     isInvalid={Boolean(usernameErrors[idx])}
                   />
                 </EuiFormRow>
@@ -453,7 +486,7 @@ export const WLMCreate = ({
                   error={roleErrors[idx] || undefined}
                   helpText={
                     !showSecurity
-                      ? 'Role rules require data source ≥ 3.3.'
+                      ? securityRoleDisabledHelpText
                       : 'You can use (,) to add multiple roles.'
                   }
                 >
@@ -474,7 +507,7 @@ export const WLMCreate = ({
                       setRules(updatedRules);
                       setRoleErrors(updatedErrors);
                     }}
-                    disabled={!showSecurity}
+                    disabled={!showSecurity && !rule.role}
                     isInvalid={Boolean(roleErrors[idx])}
                   />
                 </EuiFormRow>
