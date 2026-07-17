@@ -44,34 +44,18 @@ export const ColumnVisibilityPopover: React.FC<ColumnVisibilityPopoverProps> = (
   }, []);
 
   const button = (
-    <button
+    <EuiButtonEmpty
       onClick={togglePopover}
       aria-label="Toggle column visibility"
       data-test-subj="column-visibility-button"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '0 12px',
-        height: 40,
-        cursor: 'pointer',
-        fontSize: 14,
-        color: '#017D73',
-        fontWeight: 400,
-        width: 'auto',
-        minWidth: 0,
-        textAlign: 'left',
-        border: '1px solid #D3DAE6',
-        borderRadius: 0,
-        background: 'transparent',
-        outline: 'none',
-        boxShadow: 'none',
-      }}
+      iconType="tableDensityExpanded"
+      iconSide="left"
+      size="s"
+      flush="both"
     >
-      <EuiIcon type="tableDensityExpanded" size="m" color="#017D73" />
       <span>Columns</span>
-      <EuiIcon type="arrowDown" size="s" color="#017D73" />
-    </button>
+      <EuiIcon type="arrowDown" size="s" style={{ marginLeft: 4 }} aria-hidden={true} />
+    </EuiButtonEmpty>
   );
 
   return (
@@ -115,8 +99,8 @@ export const ColumnVisibilityPopover: React.FC<ColumnVisibilityPopoverProps> = (
             const tooltipContent = isPinned
               ? 'This column cannot be hidden'
               : isUnavailable
-              ? 'Not applicable for aggregated data'
-              : '';
+                ? 'Not applicable for aggregated data'
+                : '';
 
             const checkbox = (
               <EuiCheckbox

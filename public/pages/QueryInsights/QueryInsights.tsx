@@ -763,11 +763,11 @@ const QueryInsights = ({
   );
 
   /**
-   * Decide which column set to show
-   * based on selected filters and presence of query/group rows,
-   * then filter through column visibility preferences.
+   * Decide which column set to show for the current view, based on selected
+   * filters and the presence of query/group rows. This is the superset of
+   * columns before any visibility preferences are applied.
    */
-  const columnsToShow = useMemo(() => {
+  const viewColumns = useMemo(() => {
     // Check if any non-type filter conditions exist in the expression
     const hasNonTypeFilter = parsedExpression.conditions.some(
       (c) => c.field.toLowerCase() !== 'type' && c.field.toLowerCase() !== 'group_by'
@@ -775,32 +775,20 @@ const QueryInsights = ({
     const hasFreeText = !!parsedExpression.freeText;
     const nonGroupActive = hasNonTypeFilter || hasFreeText;
 
-    let selectedColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }>;
-
     if (selectedGroupBy.length === 1) {
-      selectedColumns = selectedGroupBy[0] === 'SIMILARITY' ? groupTypeColumns : queryTypeColumns;
-    } else if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
-      selectedColumns = queryTypeColumns;
-    } else {
-      const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by === 'NONE');
-      const hasAnyGroup = items.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
-
-      if (items.length === 0) {
-        selectedColumns = defaultColumns;
-      } else if (hasAnyQuery && hasAnyGroup) {
-        selectedColumns = defaultColumns;
-      } else if (hasAnyGroup) {
-        selectedColumns = groupTypeColumns;
-      } else {
-        selectedColumns = queryTypeColumns;
-      }
+      return selectedGroupBy[0] === 'SIMILARITY' ? groupTypeColumns : queryTypeColumns;
+    }
+    if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
+      return queryTypeColumns;
     }
 
-    // Filter columns through visibility preferences, preserving original definition order
-    return selectedColumns.filter((col) => {
-      if (!col.id) return true; // columns without an id are always shown
-      return isColumnVisible(col.id);
-    });
+    const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by === 'NONE');
+    const hasAnyGroup = items.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
+
+    if (items.length === 0) return defaultColumns;
+    if (hasAnyQuery && hasAnyGroup) return defaultColumns;
+    if (hasAnyGroup) return groupTypeColumns;
+    return queryTypeColumns;
   }, [
     items,
     selectedGroupBy,
@@ -808,47 +796,26 @@ const QueryInsights = ({
     defaultColumns,
     groupTypeColumns,
     queryTypeColumns,
-    isColumnVisible,
   ]);
 
-  // Columns available in the current view (for the popover — only show toggles for columns in the active set)
+  /**
+   * Filter the view's columns through visibility preferences (preserving the
+   * original definition order) and strip the internal `id` marker so it does
+   * not leak onto the rendered table cells as an invalid duplicate DOM id.
+   */
+  const columnsToShow = useMemo(() => {
+    return viewColumns
+      .filter((col) => (col.id ? isColumnVisible(col.id) : true))
+      .map((col) => {
+        const { id: _id, ...rest } = col;
+        return rest;
+      });
+  }, [viewColumns, isColumnVisible]);
+
+  // Column ids available in the current view (the popover only shows toggles for these)
   const activeColumnIdsForPopover = useMemo(() => {
-    const hasNonTypeFilter = parsedExpression.conditions.some(
-      (c) => c.field.toLowerCase() !== 'type' && c.field.toLowerCase() !== 'group_by'
-    );
-    const hasFreeText = !!parsedExpression.freeText;
-    const nonGroupActive = hasNonTypeFilter || hasFreeText;
-
-    let selectedColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }>;
-
-    if (selectedGroupBy.length === 1) {
-      selectedColumns = selectedGroupBy[0] === 'SIMILARITY' ? groupTypeColumns : queryTypeColumns;
-    } else if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
-      selectedColumns = queryTypeColumns;
-    } else {
-      const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by === 'NONE');
-      const hasAnyGroup = items.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
-
-      if (items.length === 0) {
-        selectedColumns = defaultColumns;
-      } else if (hasAnyQuery && hasAnyGroup) {
-        selectedColumns = defaultColumns;
-      } else if (hasAnyGroup) {
-        selectedColumns = groupTypeColumns;
-      } else {
-        selectedColumns = queryTypeColumns;
-      }
-    }
-
-    return new Set(selectedColumns.map((col) => col.id).filter(Boolean));
-  }, [
-    items,
-    selectedGroupBy,
-    parsedExpression,
-    defaultColumns,
-    groupTypeColumns,
-    queryTypeColumns,
-  ]);
+    return new Set(viewColumns.map((col) => col.id).filter(Boolean));
+  }, [viewColumns]);
 
   const onSearchChange = (text: string) => {
     setSearchQuery(text);

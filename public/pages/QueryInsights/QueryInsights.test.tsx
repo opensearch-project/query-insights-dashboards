@@ -869,41 +869,24 @@ describe('QueryInsights - Column Visibility Integration', () => {
       expect(showAll).toBeInTheDocument();
     });
 
-    // Toggle a non-pinned column (e.g., "type" or "timestamp")
+    // "Type" is a non-pinned column present in every default view, so its
+    // toggle must exist. Assert unconditionally rather than silently passing.
     const typeToggle = document.querySelector(
       '[data-test-subj="column-toggle-type"]'
     ) as HTMLInputElement;
-    if (typeToggle) {
-      fireEvent.click(typeToggle);
+    expect(typeToggle).toBeInTheDocument();
 
-      // Close the popover by clicking the button again so aria-hidden is removed
-      fireEvent.click(columnsButton);
+    fireEvent.click(typeToggle);
 
-      // Verify column count decreased
-      await waitFor(() => {
-        const updatedTable = document.querySelectorAll('table');
-        const updatedMainTable = updatedTable[updatedTable.length - 1];
-        const updatedHeaders = updatedMainTable.querySelectorAll('th');
-        expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
-      });
-    } else {
-      // If type toggle is not available, try timestamp
-      const timestampToggle = document.querySelector(
-        '[data-test-subj="column-toggle-timestamp"]'
-      ) as HTMLInputElement;
-      if (timestampToggle) {
-        fireEvent.click(timestampToggle);
+    // Close the popover by clicking the button again so aria-hidden is removed
+    fireEvent.click(columnsButton);
 
-        // Close the popover
-        fireEvent.click(columnsButton);
-
-        await waitFor(() => {
-          const updatedTable = document.querySelectorAll('table');
-          const updatedMainTable = updatedTable[updatedTable.length - 1];
-          const updatedHeaders = updatedMainTable.querySelectorAll('th');
-          expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
-        });
-      }
-    }
+    // Verify column count decreased
+    await waitFor(() => {
+      const updatedTable = document.querySelectorAll('table');
+      const updatedMainTable = updatedTable[updatedTable.length - 1];
+      const updatedHeaders = updatedMainTable.querySelectorAll('th');
+      expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
+    });
   });
 });

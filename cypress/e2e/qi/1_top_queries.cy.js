@@ -684,18 +684,27 @@ describe('Query Insights — Column Visibility', () => {
     cy.get('body').click(0, 0);
   });
 
+  // Opens the popover and waits for its content to be rendered/visible,
+  // avoiding arbitrary fixed sleeps.
+  const openColumnPopover = () => {
+    cy.get('[data-test-subj="column-visibility-button"]').click();
+    cy.get('[data-test-subj="column-visibility-show-all"]').should('be.visible');
+  };
+
+  // Closes the popover and waits for its content to be removed from the DOM.
+  const closeColumnPopover = () => {
+    cy.get('[data-test-subj="column-visibility-button"]').click();
+    cy.get('[data-test-subj="column-visibility-show-all"]').should('not.exist');
+  };
+
   it('hides a column when unchecked', () => {
     // Verify Indices column is visible initially
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Indices').should('exist');
 
     // Open popover and toggle "Indices" column off
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
-
-    // Close popover
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
 
     // Verify "Indices" header is gone
     cy.get('.euiBasicTable')
@@ -707,11 +716,9 @@ describe('Query Insights — Column Visibility', () => {
 
   it('shows a column when checked', () => {
     // First hide Indices
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
     cy.get('.euiBasicTable')
       .last()
       .find('.euiTableHeaderCell')
@@ -719,30 +726,25 @@ describe('Query Insights — Column Visibility', () => {
       .should('not.exist');
 
     // Now show it again
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
 
     // Verify "Indices" header is back
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Indices').should('exist');
   });
 
   it('ID column checkbox is disabled (pinned)', () => {
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-toggle-id"]').should('be.disabled');
-    cy.get('[data-test-subj="column-visibility-button"]').click();
+    closeColumnPopover();
   });
 
   it('Show all makes all columns visible', () => {
     // First hide a column
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-toggle-type"]').click({ force: true });
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
     cy.get('.euiBasicTable')
       .last()
       .find('.euiTableHeaderCell')
@@ -750,22 +752,18 @@ describe('Query Insights — Column Visibility', () => {
       .should('not.exist');
 
     // Open popover and click Show all
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-visibility-show-all"]').click();
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
 
     // Verify Type column is back
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Type').should('exist');
   });
 
   it('Hide all keeps only pinned columns', () => {
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(500);
+    openColumnPopover();
     cy.get('[data-test-subj="column-visibility-hide-all"]').click();
-    cy.get('[data-test-subj="column-visibility-button"]').click();
-    cy.wait(300);
+    closeColumnPopover();
 
     // Only "Id" should remain (pinned)
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').should('have.length', 1);

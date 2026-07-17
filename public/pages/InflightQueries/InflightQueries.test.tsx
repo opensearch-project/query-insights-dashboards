@@ -1664,40 +1664,23 @@ describe('InflightQueries - Column Visibility Integration', () => {
       expect(showAll).toBeInTheDocument();
     });
 
-    // Toggle a non-pinned column (e.g., "timestamp" or "index")
+    // "Timestamp" is a non-pinned column always present in the live-queries
+    // table, so its toggle must exist. Assert unconditionally.
     const timestampToggle = document.querySelector(
       '[data-test-subj="column-toggle-timestamp"]'
     ) as HTMLInputElement;
-    if (timestampToggle) {
-      fireEvent.click(timestampToggle);
+    expect(timestampToggle).toBeInTheDocument();
 
-      // Close the popover so aria-hidden is removed from the table
-      fireEvent.click(columnsButton);
+    fireEvent.click(timestampToggle);
 
-      await waitFor(() => {
-        const updatedTables = document.querySelectorAll('table');
-        const updatedMainTable = updatedTables[updatedTables.length - 1];
-        const updatedHeaders = updatedMainTable.querySelectorAll('th');
-        expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
-      });
-    } else {
-      // Try another non-pinned column
-      const indexToggle = document.querySelector(
-        '[data-test-subj="column-toggle-index"]'
-      ) as HTMLInputElement;
-      if (indexToggle) {
-        fireEvent.click(indexToggle);
+    // Close the popover so aria-hidden is removed from the table
+    fireEvent.click(columnsButton);
 
-        // Close the popover
-        fireEvent.click(columnsButton);
-
-        await waitFor(() => {
-          const updatedTables = document.querySelectorAll('table');
-          const updatedMainTable = updatedTables[updatedTables.length - 1];
-          const updatedHeaders = updatedMainTable.querySelectorAll('th');
-          expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
-        });
-      }
-    }
+    await waitFor(() => {
+      const updatedTables = document.querySelectorAll('table');
+      const updatedMainTable = updatedTables[updatedTables.length - 1];
+      const updatedHeaders = updatedMainTable.querySelectorAll('th');
+      expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
+    });
   });
 });
