@@ -8,7 +8,7 @@ import React from 'react';
 import { mockQueries } from '../../../../test/mocks/mockQueries';
 import { MemoryRouter, Route } from 'react-router-dom';
 import { QueryGroupSampleQuerySummary } from './QueryGroupSampleQuerySummary';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 describe('QueryGroupSampleQuerySummary', () => {
   const expectedHash = '8c1e50c035663459d567fa11d8eb494d';
