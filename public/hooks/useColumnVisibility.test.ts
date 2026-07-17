@@ -163,8 +163,9 @@ describe('useColumnVisibility', () => {
       });
 
       // At least one column should remain visible
-      const visibleCount = noPinnedColumns.filter((col) => result.current.isColumnVisible(col.id))
-        .length;
+      const visibleCount = noPinnedColumns.filter((col) =>
+        result.current.isColumnVisible(col.id)
+      ).length;
       expect(visibleCount).toBeGreaterThanOrEqual(1);
     });
   });

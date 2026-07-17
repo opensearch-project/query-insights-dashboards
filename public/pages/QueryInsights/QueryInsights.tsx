@@ -123,9 +123,8 @@ const QueryInsights = ({
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [statusSupported, setStatusSupported] = useState<boolean>(false);
-  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] = useState<
-    boolean
-  >(false);
+  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
+    useState<boolean>(false);
   // Initialize search query based on URL parameters
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
@@ -436,24 +435,24 @@ const QueryInsights = ({
     return effectiveView === 'mixed'
       ? `Avg ${LATENCY} / ${LATENCY}`
       : effectiveView === 'group'
-      ? `Average ${LATENCY}`
-      : `${LATENCY}`;
+        ? `Average ${LATENCY}`
+        : `${LATENCY}`;
   }, [effectiveView]);
 
   const cpuHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${CPU_TIME} / ${CPU_TIME}`
       : effectiveView === 'group'
-      ? `Average ${CPU_TIME}`
-      : `${CPU_TIME}`;
+        ? `Average ${CPU_TIME}`
+        : `${CPU_TIME}`;
   }, [effectiveView]);
 
   const memHeader = useMemo(() => {
     return effectiveView === 'mixed'
       ? `Avg ${MEMORY_USAGE} / ${MEMORY_USAGE}`
       : effectiveView === 'group'
-      ? `Average ${MEMORY_USAGE}`
-      : MEMORY_USAGE;
+        ? `Average ${MEMORY_USAGE}`
+        : MEMORY_USAGE;
   }, [effectiveView]);
 
   const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
@@ -561,108 +560,107 @@ const QueryInsights = ({
   ];
 
   // columns shown only for query-type records
-  const QueryTypeSpecificColumns: Array<
-    EuiBasicTableColumn<SearchQueryRecord> & { id?: string }
-  > = [
-    {
-      id: 'indices',
-      field: INDICES_FIELD as keyof SearchQueryRecord,
-      name: INDICES,
-      render: (indices: string[] = [], q: SearchQueryRecord) => (
-        <span>
-          {q.group_by === 'SIMILARITY' ? (
-            <EuiBadge color="hollow">Aggregated</EuiBadge>
-          ) : (
-            Array.from(new Set(indices)).join(', ')
-          )}
-        </span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      id: 'search_type',
-      field: SEARCH_TYPE_FIELD as keyof SearchQueryRecord,
-      name: SEARCH_TYPE,
-      render: (st: string, q: SearchQueryRecord) => (
-        <span>
-          {q.group_by === 'SIMILARITY' ? (
-            <EuiBadge color="hollow">Aggregated</EuiBadge>
-          ) : (
-            (st || '').replaceAll('_', ' ')
-          )}
-        </span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      id: 'node_id',
-      field: NODE_ID_FIELD as keyof SearchQueryRecord,
-      name: NODE_ID,
-      render: (nid: string, q: SearchQueryRecord) => (
-        <span>
-          {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : nid}
-        </span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    ...(queryInsightWlmNavigationSupported
-      ? [
-          {
-            id: 'wlm_group',
-            field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
-            name: WLM_GROUP,
-            render: (wlmGroupId: string, q: SearchQueryRecord) => {
-              if (q.group_by === 'SIMILARITY')
-                return <EuiBadge color="hollow">Aggregated</EuiBadge>;
-              const groupId = wlmGroupId || DEFAULT_WORKLOAD_GROUP;
-              const displayName =
-                groupId === DEFAULT_WORKLOAD_GROUP
-                  ? DEFAULT_WORKLOAD_GROUP
-                  : wlmAvailable
-                  ? wlmIdToNameMap[groupId] || '-'
-                  : '-';
+  const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> =
+    [
+      {
+        id: 'indices',
+        field: INDICES_FIELD as keyof SearchQueryRecord,
+        name: INDICES,
+        render: (indices: string[] = [], q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? (
+              <EuiBadge color="hollow">Aggregated</EuiBadge>
+            ) : (
+              Array.from(new Set(indices)).join(', ')
+            )}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      {
+        id: 'search_type',
+        field: SEARCH_TYPE_FIELD as keyof SearchQueryRecord,
+        name: SEARCH_TYPE,
+        render: (st: string, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? (
+              <EuiBadge color="hollow">Aggregated</EuiBadge>
+            ) : (
+              (st || '').replaceAll('_', ' ')
+            )}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      {
+        id: 'node_id',
+        field: NODE_ID_FIELD as keyof SearchQueryRecord,
+        name: NODE_ID,
+        render: (nid: string, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : nid}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      ...(queryInsightWlmNavigationSupported
+        ? [
+            {
+              id: 'wlm_group',
+              field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
+              name: WLM_GROUP,
+              render: (wlmGroupId: string, q: SearchQueryRecord) => {
+                if (q.group_by === 'SIMILARITY')
+                  return <EuiBadge color="hollow">Aggregated</EuiBadge>;
+                const groupId = wlmGroupId || DEFAULT_WORKLOAD_GROUP;
+                const displayName =
+                  groupId === DEFAULT_WORKLOAD_GROUP
+                    ? DEFAULT_WORKLOAD_GROUP
+                    : wlmAvailable
+                      ? wlmIdToNameMap[groupId] || '-'
+                      : '-';
 
-              if (wlmAvailable && displayName !== '-') {
-                return (
-                  <EuiLink
-                    onClick={() => {
-                      const dsParam = dataSource?.id
-                        ? `&dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
-                        : '';
-                      core.application.navigateToApp('workloadManagement', {
-                        path: `#/wlm-details?name=${encodeURIComponent(displayName)}${dsParam}`,
-                      });
-                    }}
-                    color="primary"
-                  >
-                    {displayName} <EuiIcon type="popout" size="s" />
-                  </EuiLink>
-                );
-              }
+                if (wlmAvailable && displayName !== '-') {
+                  return (
+                    <EuiLink
+                      onClick={() => {
+                        const dsParam = dataSource?.id
+                          ? `&dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
+                          : '';
+                        core.application.navigateToApp('workloadManagement', {
+                          path: `#/wlm-details?name=${encodeURIComponent(displayName)}${dsParam}`,
+                        });
+                      }}
+                      color="primary"
+                    >
+                      {displayName} <EuiIcon type="popout" size="s" aria-hidden={true} />
+                    </EuiLink>
+                  );
+                }
 
-              return <span>{displayName}</span>;
+                return <span>{displayName}</span>;
+              },
+              sortable: true,
+              truncateText: true,
             },
-            sortable: true,
-            truncateText: true,
-          },
-        ]
-      : []),
-    {
-      id: 'total_shards',
-      field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
-      name: TOTAL_SHARDS,
-      render: (ts: number, q: SearchQueryRecord) => (
-        <span>
-          {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : ts}
-        </span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-  ];
+          ]
+        : []),
+      {
+        id: 'total_shards',
+        field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
+        name: TOTAL_SHARDS,
+        render: (ts: number, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : ts}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+    ];
 
   // metric columns (latency, cpu, memory)
   const metricColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = useMemo(
@@ -738,11 +736,10 @@ const QueryInsights = ({
       QueryTypeSpecificColumns,
     ]
   );
-  const groupTypeColumns = useMemo(() => [...baseColumns, ...querycountColumn, ...metricColumns], [
-    baseColumns,
-    querycountColumn,
-    metricColumns,
-  ]);
+  const groupTypeColumns = useMemo(
+    () => [...baseColumns, ...querycountColumn, ...metricColumns],
+    [baseColumns, querycountColumn, metricColumns]
+  );
 
   const queryTypeColumns = useMemo(
     () => [
@@ -1052,8 +1049,8 @@ const QueryInsights = ({
           performanceMetric === 'latency'
             ? 'Latency (ms)'
             : performanceMetric === 'cpu'
-            ? 'CPU Time (ms)'
-            : 'Memory (MB)',
+              ? 'CPU Time (ms)'
+              : 'Memory (MB)',
       },
       series: [
         {
@@ -1176,7 +1173,7 @@ const QueryInsights = ({
                     <EuiSpacer size="xxl" />
                     <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                       <EuiFlexItem grow={false}>
-                        <EuiIcon type="visLine" size="xxl" color="subdued" />
+                        <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
                       </EuiFlexItem>
                       <EuiFlexItem grow={false}>
                         <EuiTitle size="s">
@@ -1300,10 +1297,10 @@ const QueryInsights = ({
                               {chartGroupBy === 'node'
                                 ? 'Queries by Node'
                                 : chartGroupBy === 'index'
-                                ? 'Queries by Index'
-                                : chartGroupBy === 'username'
-                                ? 'Queries by Username'
-                                : 'Queries by WLM Group'}
+                                  ? 'Queries by Index'
+                                  : chartGroupBy === 'username'
+                                    ? 'Queries by Username'
+                                    : 'Queries by WLM Group'}
                             </h3>
                           </EuiTitle>
                         </EuiFlexItem>
@@ -1343,10 +1340,10 @@ const QueryInsights = ({
                                     chartGroupBy === 'node'
                                       ? 'Node'
                                       : chartGroupBy === 'index'
-                                      ? 'Index'
-                                      : chartGroupBy === 'username'
-                                      ? 'Username'
-                                      : 'WLM Group';
+                                        ? 'Index'
+                                        : chartGroupBy === 'username'
+                                          ? 'Username'
+                                          : 'WLM Group';
                                   return `${label}: ${pieParams.name}<br/>Query Count: ${pieParams.value}<br/>Percentage: ${pieParams.percent}%`;
                                 },
                               },
@@ -1388,19 +1385,19 @@ const QueryInsights = ({
                                   chartGroupBy === 'node'
                                     ? 'Node'
                                     : chartGroupBy === 'index'
-                                    ? 'Index'
-                                    : chartGroupBy === 'username'
-                                    ? 'Username'
-                                    : 'WLM Group',
+                                      ? 'Index'
+                                      : chartGroupBy === 'username'
+                                        ? 'Username'
+                                        : 'WLM Group',
                                 sortable: true,
-                                render: (name: string, item: typeof chartData[0]) => (
+                                render: (name: string, item: (typeof chartData)[0]) => (
                                   <EuiFlexGroup
                                     gutterSize="s"
                                     alignItems="center"
                                     responsive={false}
                                   >
                                     <EuiFlexItem grow={false}>
-                                      <EuiIcon type="dot" color={item.color} />
+                                      <EuiIcon type="dot" color={item.color} aria-hidden={true} />
                                     </EuiFlexItem>
                                     <EuiFlexItem>{name}</EuiFlexItem>
                                   </EuiFlexGroup>
@@ -1417,7 +1414,7 @@ const QueryInsights = ({
                                 name: 'Percentage',
                                 render: (p: string) => `${p}%`,
                                 align: 'right',
-                                sortable: (item: typeof chartData[0]) =>
+                                sortable: (item: (typeof chartData)[0]) =>
                                   parseFloat(item.percentage),
                               },
                             ]}
@@ -1597,7 +1594,7 @@ const QueryInsights = ({
                   <EuiSpacer size="xxl" />
                   <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                     <EuiFlexItem grow={false}>
-                      <EuiIcon type="visLine" size="xxl" color="subdued" />
+                      <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
                     </EuiFlexItem>
                     <EuiFlexItem grow={false}>
                       <EuiTitle size="s">
