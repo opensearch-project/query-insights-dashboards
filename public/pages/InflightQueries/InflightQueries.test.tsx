@@ -116,6 +116,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // jsdom 16 shared window state loosely across tests; under jsdom 26 + Jest 30 modern fake timers
+  // a still-pending interval/timeout from one test leaks into the next and perturbs its fetch
+  // sequencing. Clear any pending fake timers before switching back to real timers.
+  jest.clearAllTimers();
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
@@ -168,14 +172,15 @@ describe('InflightQueries', () => {
       )
     );
 
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
+    // NOTE (Jest 30 + modern fake timers): `await act(async () => { await Promise.resolve() })`
+    // deadlocks here because the component has a pending long setTimeout (its withTimeout guard)
+    // and React 18's async act flush cannot settle while that faked macrotask is queued.
+    // waitFor auto-advances the fake timers, so it settles the effects without the hang. It also
+    // waits for EUI's async icon loading to finish (icons otherwise stay in the isLoading state).
     await waitFor(
       () => {
         expect(screen.getByText('Active queries')).toBeInTheDocument();
+        expect(container.querySelectorAll('.euiIcon-isLoading').length).toBe(0);
       },
       { timeout: 5000 }
     );
@@ -270,27 +275,38 @@ describe('InflightQueries', () => {
       )
     );
 
+    // NOTE (Jest 30 + modern fake timers): the async version-check effect settles after mount and
+    // flips taskDetailSupported, which re-runs the fetch effect. Under jsdom 16 / Jest 27 this
+    // interleaved re-fetch was absorbed into the single initial call, but under Jest 30 it lands as
+    // a distinct call, so the absolute initial count is no longer exactly 1. Assert the periodic
+    // behaviour instead: each 30s interval tick issues exactly one additional fetch.
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1), { timeout: 5000 });
+    await waitFor(
+      () => expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBeGreaterThan(0),
+      {
+        timeout: 5000,
+      }
+    );
+    const baseline = (retrieveLiveQueries as jest.Mock).mock.calls.length;
 
     await act(async () => {
-      jest.advanceTimersByTime(30_000);
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(30_000);
     });
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2), { timeout: 5000 });
+    await waitFor(
+      () => expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBe(baseline + 1),
+      { timeout: 5000 }
+    );
 
     await act(async () => {
-      jest.advanceTimersByTime(30_000);
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(30_000);
     });
-    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(3), { timeout: 5000 });
+    await waitFor(
+      () => expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBe(baseline + 2),
+      { timeout: 5000 }
+    );
   });
 
   it('formats time values correctly (small numbers)', async () => {
@@ -328,9 +344,7 @@ describe('InflightQueries', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -361,9 +375,7 @@ describe('InflightQueries', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -404,19 +416,14 @@ describe('InflightQueries', () => {
       )
     );
 
-    // Flush all promises and advance timers
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
+    // NOTE (Jest 30 + modern fake timers): the async-act flush deadlocks against the component's
+    // pending withTimeout setTimeout; waitFor auto-advances the fake timers and settles the effects.
     await waitFor(
       () => {
         expect(retrieveLiveQueries).toHaveBeenCalled();
         expect(screen.getByText('Active queries')).toBeInTheDocument();
       },
-      { timeout: 1000 }
+      { timeout: 5000 }
     );
 
     unmount();
@@ -478,19 +485,14 @@ describe('InflightQueries', () => {
       )
     );
 
-    // Flush all promises and advance timers
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
+    // NOTE (Jest 30 + modern fake timers): the async-act flush deadlocks against the component's
+    // pending withTimeout setTimeout; waitFor auto-advances the fake timers and settles the effects.
     await waitFor(
       () => {
         expect(retrieveLiveQueries).toHaveBeenCalled();
         expect(screen.getAllByText('WLM Group').length).toBeGreaterThan(0);
       },
-      { timeout: 1000 }
+      { timeout: 5000 }
     );
 
     expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
@@ -498,7 +500,6 @@ describe('InflightQueries', () => {
 
     unmount();
   });
-
   it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
     const core = makeCore();
     mockLiveQueries(mockStubLiveQueries);
@@ -519,6 +520,14 @@ describe('InflightQueries', () => {
         />
       )
     );
+
+    // NOTE (Jest 30 + modern fake timers): the version-check effect resolves getVersionOnce
+    // asynchronously and only then flips taskDetailSupported to true, which re-runs the fetch
+    // effect. advanceTimersByTimeAsync flushes the interleaved microtasks + timers so the
+    // re-fetch (with the final `true` arg) is issued; a plain waitFor alone never re-runs it.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
 
     await waitFor(
       () => {
@@ -553,6 +562,12 @@ describe('InflightQueries', () => {
         />
       )
     );
+
+    // NOTE (Jest 30 + modern fake timers): see the SEARCH_WORKLOAD_GROUP test above — the version
+    // check must settle (flipping taskDetailSupported) before the re-fetch issues the `true` arg.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
 
     await waitFor(
       () => {
@@ -697,9 +712,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -787,9 +800,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -864,9 +875,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     // Wait for table to render, then click the link
@@ -930,9 +939,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -996,9 +1003,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -1064,9 +1069,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -1116,9 +1119,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -1169,9 +1170,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -1238,9 +1237,7 @@ describe('InflightQueries - additional coverage', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(
@@ -1329,9 +1326,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {
@@ -1369,9 +1364,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {
@@ -1408,9 +1401,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {
@@ -1448,9 +1439,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {
@@ -1487,9 +1476,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {
@@ -1526,9 +1513,7 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(100);
     });
 
     await waitFor(() => {

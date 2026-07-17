@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`InflightQueries matches snapshot 1`] = `
 <div>
@@ -401,6 +401,7 @@ exports[`InflightQueries matches snapshot 1`] = `
           class="euiAccordion__childWrapper"
           id="live-queries-visualizations"
           role="region"
+          style="height: 0px"
           tabindex="-1"
         >
           <div>

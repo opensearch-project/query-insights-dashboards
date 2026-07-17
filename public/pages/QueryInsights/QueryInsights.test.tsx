@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { waitFor, render, screen, fireEvent, within, act } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
 import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';

@@ -9,7 +9,7 @@ import { QueryGroupDetails } from './QueryGroupDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
 import React from 'react';
 import { mockQueries } from '../../../test/mocks/mockQueries';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 

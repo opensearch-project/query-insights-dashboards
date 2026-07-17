@@ -6,7 +6,7 @@
 module.exports = {
   rootDir: '../',
   setupFiles: ['<rootDir>/test/setupTests.ts', '<rootDir>/test/aceSetup.ts'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup.jest.ts'],
+  setupFilesAfterEnv: ['jest-location-mock', '<rootDir>/test/setup.jest.ts'],
   roots: ['<rootDir>'],
   coverageDirectory: './coverage',
   moduleNameMapper: {
@@ -23,6 +23,9 @@ module.exports = {
     '^@elastic/eui/lib/components/code_editor(.*)': '<rootDir>/test/mocks/brace.js',
     '^react$': '<rootDir>/../../node_modules/react',
     '^react-dom$': '<rootDir>/../../node_modules/react-dom',
+    // query-string v9 is pure ESM; this shim restores the default-import shape
+    // (`import qs from 'query-string'`) under Jest's CJS transform.
+    '^query-string$': '<rootDir>/test/mocks/queryStringMock.js',
   },
   coverageReporters: ['lcov', 'text', 'cobertura'],
   testMatch: ['**/*.test.js', '**/*.test.jsx', '**/*.test.ts', '**/*.test.tsx'],
@@ -50,11 +53,24 @@ module.exports = {
   testPathIgnorePatterns: ['<rootDir>/build/', '<rootDir>/node_modules/'],
   modulePathIgnorePatterns: ['queryInsightsDashboards'],
   testEnvironment: 'jsdom',
+  testEnvironmentOptions: {
+    // Set the default URL so window.location.origin is 'http://localhost:5601' rather than
+    // 'http://localhost', avoiding the need for tests to mock window.location.origin.
+    url: 'http://localhost:5601',
+  },
+  // Retain Jest 28 snapshot defaults; Jest 29 flipped escapeString and printBasicPrototype to false,
+  // which would invalidate existing snapshots. See https://jestjs.io/docs/upgrading-to-jest29
+  snapshotFormat: {
+    escapeString: true,
+    printBasicPrototype: true,
+  },
   snapshotSerializers: ['enzyme-to-json/serializer'],
   transform: {
     '^.+\\.(js|tsx?)$': '<rootDir>/../../src/dev/jest/babel_transform.js',
   },
   transformIgnorePatterns: [
-    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor|react-ace|query-string|decode-uri-component|split-on-first|filter-obj))[/\\\\].+\\.(js|ts|tsx)$',
+    // query-string v9 and its ESM-only deps must be babel-transformed so the mock's
+    // require of the real ESM index.js does not re-throw "Cannot use import statement".
+    '[/\\\\]node_modules(?![\\/\\\\](monaco-editor|react-monaco-editor|react-ace|query-string|decode-uri-component|filter-obj|split-on-first))[/\\\\].+\\.(js|ts|tsx)$',
   ],
 };

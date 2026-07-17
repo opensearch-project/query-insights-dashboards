@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`TopNQueries Component Query deduplication should deduplicate queries by ID from multiple metric endpoints 1`] = `
 Object {
