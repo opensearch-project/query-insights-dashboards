@@ -7,7 +7,7 @@ import { render, screen } from '@testing-library/react';
 import { QueryGroupAggregateSummary } from './QueryGroupAggregateSummary';
 import React from 'react';
 import { mockQueries } from '../../../../test/mocks/mockQueries';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { MemoryRouter, Route } from 'react-router-dom';
 
 describe('QueryGroupAggregateSummary', () => {

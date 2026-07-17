@@ -43,7 +43,7 @@
   },
   "resolutions": {
     "@types/react": "^18.2.0",
-    "**/@types/jest": "^29.3.1",
+    "**/@types/jest": "^30.0.0",
     "**/@types/react-dom": "^18.2.0",
     "async": "^3.2.3",
     "json5": "^2.2.3",
@@ -73,7 +73,7 @@
     "@elastic/elastic-eslint-config-kibana": "link:../../packages/opensearch-eslint-config-opensearch-dashboards",
     "@elastic/eslint-import-resolver-kibana": "link:../../packages/osd-eslint-import-resolver-opensearch-dashboards",
     "@testing-library/dom": "^8.11.3",
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.4.3",
     "@types/luxon": "^3.6.2",
     "@types/object-hash": "^3.0.0",
@@ -84,8 +84,7 @@
     "cypress-recurse": "^1.27.0",
     "eslint-plugin-prefer-object-spread": "^1.2.1",
     "husky": "^8.0.3",
-    "jest-cli": "^27.5.1",
-    "jest-environment-jsdom": "^27.5.1",
+    "jest-environment-jsdom": "^30.4.1",
     "lint-staged": "^13.2.2",
     "string.prototype.replaceall": "1.0.7",
     "ts-loader": "^6.2.1"

@@ -336,15 +336,12 @@ describe('renderProfiler', () => {
   });
 
   it('reads dataSourceId from URL search param', () => {
-    Object.defineProperty(window, 'location', {
-      value: { search: '?dataSource=test-id' },
-      writable: true,
-    });
+    window.location.assign('/?dataSource=test-id');
     act(() => {
       unmount = renderProfiler(container, 'fallback-id');
     });
     expect(container.textContent).toContain('Settings');
-    Object.defineProperty(window, 'location', { value: { search: '' }, writable: true });
+    window.location.assign('/');
   });
 
   it('unmounts cleanly', () => {

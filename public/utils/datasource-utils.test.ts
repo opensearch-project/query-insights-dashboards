@@ -27,27 +27,18 @@ import {
 describe('Tests datasource utils', () => {
   it('Tests getting the datasource from the url', () => {
     const mockSearchNoDataSourceId = '?foo=bar&baz=qux';
-    Object.defineProperty(window, 'location', {
-      value: { search: mockSearchNoDataSourceId },
-      writable: true,
-    });
+    window.location.assign(`/${mockSearchNoDataSourceId}`);
     expect(getDataSourceFromUrl()).toEqual({});
     const mockSearchDataSourceIdNotfirst =
       '?foo=bar&baz=qux&dataSource=%7B"id"%3A"94ffa650-f11a-11ee-a585-793f7b098e1a"%2C"label"%3A"9202"%7D';
-    Object.defineProperty(window, 'location', {
-      value: { search: mockSearchDataSourceIdNotfirst },
-      writable: true,
-    });
+    window.location.assign(`/${mockSearchDataSourceIdNotfirst}`);
     expect(getDataSourceFromUrl()).toEqual({
       id: '94ffa650-f11a-11ee-a585-793f7b098e1a',
       label: '9202',
     });
     const mockSearchDataSourceIdFirst =
       '?dataSource=%7B"id"%3A"94ffa650-f11a-11ee-a585-793f7b098e1a"%2C"label"%3A"9202"%7D';
-    Object.defineProperty(window, 'location', {
-      value: { search: mockSearchDataSourceIdFirst },
-      writable: true,
-    });
+    window.location.assign(`/${mockSearchDataSourceIdFirst}`);
     expect(getDataSourceFromUrl()).toEqual({
       id: '94ffa650-f11a-11ee-a585-793f7b098e1a',
       label: '9202',
@@ -56,10 +47,7 @@ describe('Tests datasource utils', () => {
 
   it('Tests getting the datasource from the url with undefined dataSource', () => {
     const mockSearchUndefinedDataSource = '?dataSource=undefined';
-    Object.defineProperty(window, 'location', {
-      value: { search: mockSearchUndefinedDataSource },
-      writable: true,
-    });
+    window.location.assign(`/${mockSearchUndefinedDataSource}`);
     expect(getDataSourceFromUrl()).toEqual({});
   });
 
