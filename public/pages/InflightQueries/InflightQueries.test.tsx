@@ -284,9 +284,12 @@ describe('InflightQueries', () => {
       await jest.advanceTimersByTimeAsync(100);
     });
 
-    await waitFor(() => expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBeGreaterThan(0), {
-      timeout: 5000,
-    });
+    await waitFor(
+      () => expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBeGreaterThan(0),
+      {
+        timeout: 5000,
+      }
+    );
     const baseline = (retrieveLiveQueries as jest.Mock).mock.calls.length;
 
     await act(async () => {
