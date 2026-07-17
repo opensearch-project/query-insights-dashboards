@@ -158,7 +158,6 @@ describe('Query Insights Dashboard', () => {
     cy.get('body').should('not.contain', 'No items found');
     // Click the Timestamp column header in main table to sort
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-    // eslint-disable-next-line jest/valid-expect-in-promise
     cy.get('.euiBasicTable')
       .last()
       .find('.euiTableRow')
@@ -167,7 +166,6 @@ describe('Query Insights Dashboard', () => {
       .then((firstRowAfterSort) => {
         const firstTimestamp = firstRowAfterSort.trim();
         cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-        // eslint-disable-next-line jest/valid-expect-in-promise
         cy.get('.euiBasicTable')
           .last()
           .find('.euiTableRow')
