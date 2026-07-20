@@ -91,6 +91,44 @@ const resetTypeFilterToNone = () => {
 const indexName = 'sample_index';
 
 /**
+ * Reload the overview page until the main Top N queries table is populated.
+ *
+ * The overview page fetches top queries exactly once per load (on mount) — it
+ * does not poll. Under security the query-insights collection queue drains more
+ * slowly, so the initial fetch can land before any queries are recorded and the
+ * table renders its "No items found" empty state. Because nothing re-fetches, a
+ * passive `.should('not.contain', 'No items found')` can never recover and just
+ * times out. Reloading re-issues the fetch, which is what actually lets the data
+ * appear.
+ *
+ * The empty-state check is scoped to the main data table (last `.euiBasicTable`
+ * on the page, as the sort assertion below targets) rather than the whole body:
+ * the page also renders a chart table whose own "No items found" state would
+ * otherwise keep this loop retrying even after the main table populated. EUI
+ * renders `noItemsMessage` inside a `.euiTableRow`, so a row-count check alone
+ * passes on an empty table — match on the message text instead.
+ *
+ * Worst-case runtime is bounded to roughly 3 minutes so a genuine failure
+ * surfaces in CI quickly rather than burning the full command timeout.
+ */
+const waitForTopQueriesTable = (attempts = 6) => {
+  cy.get('.euiBasicTable', { timeout: 30000 })
+    .last()
+    .then(($table) => {
+      if (!$table.text().includes('No items found')) {
+        return;
+      }
+      if (attempts <= 0) {
+        throw new Error('Top N queries table never populated after reloads');
+      }
+      cy.wait(3000);
+      cy.reload();
+      cy.contains('Query insights - Top N queries', { timeout: 30000 }).should('be.visible');
+      waitForTopQueriesTable(attempts - 1);
+    });
+};
+
+/**
  Helper function to clean up the environment:
  - Deletes the test index.
  - Disables the top queries features.
@@ -150,12 +188,14 @@ describe('Query Insights Dashboard', () => {
     // waiting for the query insights queue to drain
     cy.wait(10000);
     cy.navigateToOverview();
-    // Ensure main table has data before attempting to sort
+    // Ensure main table has data before attempting to sort. The page fetches
+    // once on load and does not poll, so reload until the queue has drained and
+    // the table is populated rather than waiting passively on a stale fetch.
+    waitForTopQueriesTable();
     cy.get('.euiBasicTable', { timeout: 30000 })
       .last()
       .find('.euiTableRow')
       .should('have.length.greaterThan', 0);
-    cy.get('body').should('not.contain', 'No items found');
     // Click the Timestamp column header in main table to sort
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
     // eslint-disable-next-line jest/valid-expect-in-promise
