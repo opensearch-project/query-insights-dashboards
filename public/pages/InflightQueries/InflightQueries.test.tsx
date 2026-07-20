@@ -1536,3 +1536,151 @@ describe('InflightQueries - DynamicSearchBar filtering', () => {
     });
   });
 });
+
+describe('InflightQueries - Column Visibility Integration', () => {
+  it('renders the Columns button in the page', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        const columnsButton = document.querySelector('[data-test-subj="column-visibility-button"]');
+        expect(columnsButton).toBeInTheDocument();
+        expect(columnsButton).toHaveTextContent('Columns');
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('opens column visibility popover and shows column toggles', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const columnsButton = await waitFor(
+      () => {
+        const btn = document.querySelector('[data-test-subj="column-visibility-button"]');
+        expect(btn).toBeInTheDocument();
+        return btn as HTMLElement;
+      },
+      { timeout: 5000 }
+    );
+
+    fireEvent.click(columnsButton);
+
+    await waitFor(() => {
+      const showAllButton = document.querySelector('[data-test-subj="column-visibility-show-all"]');
+      expect(showAllButton).toBeInTheDocument();
+      // Should display column toggle checkboxes
+      const toggles = document.querySelectorAll('[data-test-subj^="column-toggle-"]');
+      expect(toggles.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('toggling a column off reduces the number of visible table columns', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Wait for table to render with data
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    // Get initial column count using DOM queries to avoid aria-hidden issues
+    const tables = document.querySelectorAll('table');
+    const mainTable = tables[tables.length - 1];
+    const initialHeaders = mainTable.querySelectorAll('th');
+    const initialColumnCount = initialHeaders.length;
+
+    // Open the column visibility popover
+    const columnsButton = document.querySelector(
+      '[data-test-subj="column-visibility-button"]'
+    ) as HTMLElement;
+    expect(columnsButton).toBeInTheDocument();
+    fireEvent.click(columnsButton);
+
+    // Wait for popover
+    await waitFor(() => {
+      const showAll = document.querySelector('[data-test-subj="column-visibility-show-all"]');
+      expect(showAll).toBeInTheDocument();
+    });
+
+    // "Timestamp" is a non-pinned column always present in the live-queries
+    // table, so its toggle must exist. Assert unconditionally.
+    const timestampToggle = document.querySelector(
+      '[data-test-subj="column-toggle-timestamp"]'
+    ) as HTMLInputElement;
+    expect(timestampToggle).toBeInTheDocument();
+
+    fireEvent.click(timestampToggle);
+
+    // Close the popover so aria-hidden is removed from the table
+    fireEvent.click(columnsButton);
+
+    await waitFor(() => {
+      const updatedTables = document.querySelectorAll('table');
+      const updatedMainTable = updatedTables[updatedTables.length - 1];
+      const updatedHeaders = updatedMainTable.querySelectorAll('th');
+      expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
+    });
+  });
+});

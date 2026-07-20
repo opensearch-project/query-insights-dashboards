@@ -158,7 +158,6 @@ describe('Query Insights Dashboard', () => {
     cy.get('body').should('not.contain', 'No items found');
     // Click the Timestamp column header in main table to sort
     cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-    // eslint-disable-next-line jest/valid-expect-in-promise
     cy.get('.euiBasicTable')
       .last()
       .find('.euiTableRow')
@@ -167,7 +166,6 @@ describe('Query Insights Dashboard', () => {
       .then((firstRowAfterSort) => {
         const firstTimestamp = firstRowAfterSort.trim();
         cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Timestamp').click();
-        // eslint-disable-next-line jest/valid-expect-in-promise
         cy.get('.euiBasicTable')
           .last()
           .find('.euiTableRow')
@@ -238,10 +236,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
       'Indices',
-      'Search Type',
-      'Coordinator Node ID',
       'WLM Group',
-      'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
@@ -262,10 +257,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'CPU Time',
       'Memory Usage',
       'Indices',
-      'Search Type',
-      'Coordinator Node ID',
       'WLM Group',
-      'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
 
@@ -315,10 +307,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
       'Indices',
-      'Search Type',
-      'Coordinator Node ID',
       'WLM Group',
-      'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(totalRowCount);
@@ -351,10 +340,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'CPU Time',
       'Memory Usage',
       'Indices',
-      'Search Type',
-      'Coordinator Node ID',
       'WLM Group',
-      'Total Shards',
     ];
     getHeaders().should('deep.equal', expected);
     assertRowCountEquals(getRowsFromRaw(QUERY_ONLY).length);
@@ -385,7 +371,7 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
     assertRowCountEquals(getRowsFromRaw(GROUP_ONLY).length);
   });
 
-  it('renders dash in status column for group rows', () => {
+  it('renders no status badges in group-only view', () => {
     cy.get('.euiTableRow').each(($row) => {
       cy.wrap($row).find('.euiBadge').should('not.exist');
     });
@@ -623,11 +609,6 @@ describe('Query Insights — DynamicSearchBar', () => {
       .clear()
       .type('search_type = query_then_fetch');
     cy.get('.euiBasicTable').last().find('.euiTableRow').should('have.length.greaterThan', 0);
-    cy.get('.euiBasicTable')
-      .last()
-      .find('.euiTableRow')
-      .first()
-      .should('contain.text', 'query then fetch');
   });
 
   it('shows filter badges for active conditions', () => {
@@ -668,5 +649,124 @@ describe('Query Insights — DynamicSearchBar', () => {
   it('shows no items when filter matches nothing', () => {
     cy.get(`input[placeholder="${SEARCH_PLACEHOLDER}"]`).clear().type('id = nonexistent_xyz_123');
     cy.get('.euiBasicTable').last().contains('No items found').should('be.visible');
+  });
+});
+
+describe('Query Insights — Column Visibility', () => {
+  beforeEach(() => {
+    cy.intercept('GET', '**/api/top_queries/**', (req) => {
+      req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
+    }).as('topQueries');
+
+    // Clear localStorage before visiting so column preferences start fresh
+    cy.clearLocalStorage('queryInsights_topn_visibleColumns');
+
+    cy.waitForQueryInsightsPlugin();
+    cy.wait('@topQueries');
+
+    // Ensure the table is rendered before interacting
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .should('have.length.greaterThan', 0);
+  });
+
+  it('displays the Columns button', () => {
+    cy.get('[data-test-subj="column-visibility-button"]').should('exist').and('be.visible');
+  });
+
+  it('opens popover with column checkboxes on click', () => {
+    cy.get('[data-test-subj="column-visibility-button"]').click();
+    cy.get('[data-test-subj="column-visibility-show-all"]').should('be.visible');
+    cy.get('[data-test-subj="column-visibility-hide-all"]').should('be.visible');
+    cy.get('[data-test-subj^="column-toggle-"]').should('have.length.greaterThan', 0);
+    // Close popover
+    cy.get('body').click(0, 0);
+  });
+
+  // Opens the popover and waits for its content to be rendered/visible,
+  // avoiding arbitrary fixed sleeps.
+  const openColumnPopover = () => {
+    cy.get('[data-test-subj="column-visibility-button"]').click();
+    cy.get('[data-test-subj="column-visibility-show-all"]').should('be.visible');
+  };
+
+  // Closes the popover and waits for its content to be removed from the DOM.
+  const closeColumnPopover = () => {
+    cy.get('[data-test-subj="column-visibility-button"]').click();
+    cy.get('[data-test-subj="column-visibility-show-all"]').should('not.exist');
+  };
+
+  it('hides a column when unchecked', () => {
+    // Verify Indices column is visible initially
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Indices').should('exist');
+
+    // Open popover and toggle "Indices" column off
+    openColumnPopover();
+    cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
+    closeColumnPopover();
+
+    // Verify "Indices" header is gone
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .contains('Indices')
+      .should('not.exist');
+  });
+
+  it('shows a column when checked', () => {
+    // First hide Indices
+    openColumnPopover();
+    cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
+    closeColumnPopover();
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .contains('Indices')
+      .should('not.exist');
+
+    // Now show it again
+    openColumnPopover();
+    cy.get('[data-test-subj="column-toggle-indices"]').click({ force: true });
+    closeColumnPopover();
+
+    // Verify "Indices" header is back
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Indices').should('exist');
+  });
+
+  it('ID column checkbox is disabled (pinned)', () => {
+    openColumnPopover();
+    cy.get('[data-test-subj="column-toggle-id"]').should('be.disabled');
+    closeColumnPopover();
+  });
+
+  it('Show all makes all columns visible', () => {
+    // First hide a column
+    openColumnPopover();
+    cy.get('[data-test-subj="column-toggle-type"]').click({ force: true });
+    closeColumnPopover();
+    cy.get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .contains('Type')
+      .should('not.exist');
+
+    // Open popover and click Show all
+    openColumnPopover();
+    cy.get('[data-test-subj="column-visibility-show-all"]').click();
+    closeColumnPopover();
+
+    // Verify Type column is back
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Type').should('exist');
+  });
+
+  it('Hide all keeps only pinned columns', () => {
+    openColumnPopover();
+    cy.get('[data-test-subj="column-visibility-hide-all"]').click();
+    closeColumnPopover();
+
+    // Only "Id" should remain (pinned)
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').should('have.length', 1);
+    cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains('Id').should('exist');
   });
 });

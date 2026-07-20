@@ -57,6 +57,67 @@ exports[`QueryInsights Component renders the table with the correct columns and 
       class="euiFlexItem euiFlexItem--flexGrowZero"
     >
       <div
+        class="euiPopover euiPopover--anchorDownLeft"
+        data-test-subj="column-visibility-popover"
+      >
+        <div
+          class="euiPopover__anchor"
+        >
+          <button
+            aria-label="Toggle column visibility"
+            class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--small euiButtonEmpty--flushBoth"
+            data-test-subj="column-visibility-button"
+            type="button"
+          >
+            <span
+              class="euiButtonContent euiButtonEmpty__content"
+            >
+              <svg
+                aria-hidden="true"
+                class="euiIcon euiIcon--medium euiIcon--inherit euiButtonContent__icon"
+                focusable="false"
+                height="16"
+                role="img"
+                viewBox="0 0 16 16"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 3v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1Zm-1 0V2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v1h14Zm0 1H1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4ZM4.5 7a.5.5 0 0 1 0 1H2.496a.5.5 0 1 1 0-1H4.5Zm9 0a.5.5 0 1 1 0 1h-6a.5.5 0 0 1 0-1h6Zm-9 4a.5.5 0 1 1 0 1H2.496a.5.5 0 1 1 0-1H4.5Zm9 0a.5.5 0 1 1 0 1h-6a.5.5 0 1 1 0-1h6Z"
+                />
+              </svg>
+              <span
+                class="euiButtonEmpty__text"
+              >
+                <span>
+                  Columns
+                </span>
+                <svg
+                  aria-hidden="true"
+                  class="euiIcon euiIcon--small"
+                  focusable="false"
+                  height="16"
+                  role="img"
+                  style="margin-left: 4px;"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                    fill-rule="non-zero"
+                  />
+                </svg>
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="euiFlexItem euiFlexItem--flexGrowZero"
+    >
+      <div
         class="euiFlexGroup euiFlexGroup--gutterSmall euiFlexGroup--directionRow euiSuperDatePicker__flexWrapper"
       >
         <div
@@ -1451,81 +1512,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 </span>
               </button>
             </th>
-            <th
-              aria-live="polite"
-              aria-sort="none"
-              class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_search_type_8"
-              role="columnheader"
-              scope="col"
-            >
-              <button
-                class="euiTableHeaderButton"
-                data-test-subj="tableHeaderSortButton"
-                type="button"
-              >
-                <span
-                  class="euiTableCellContent"
-                >
-                  <span
-                    class="euiTableCellContent__text"
-                    title="Search Type"
-                  >
-                    Search Type
-                  </span>
-                </span>
-              </button>
-            </th>
-            <th
-              aria-live="polite"
-              aria-sort="none"
-              class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_node_id_9"
-              role="columnheader"
-              scope="col"
-            >
-              <button
-                class="euiTableHeaderButton"
-                data-test-subj="tableHeaderSortButton"
-                type="button"
-              >
-                <span
-                  class="euiTableCellContent"
-                >
-                  <span
-                    class="euiTableCellContent__text"
-                    title="Coordinator Node ID"
-                  >
-                    Coordinator Node ID
-                  </span>
-                </span>
-              </button>
-            </th>
-            <th
-              aria-live="polite"
-              aria-sort="none"
-              class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_total_shards_10"
-              role="columnheader"
-              scope="col"
-            >
-              <button
-                class="euiTableHeaderButton"
-                data-test-subj="tableHeaderSortButton"
-                type="button"
-              >
-                <span
-                  class="euiTableCellContent"
-                >
-                  <span
-                    class="euiTableCellContent__text"
-                    title="Total Shards"
-                  >
-                    Total Shards
-                  </span>
-                </span>
-              </button>
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -1675,60 +1661,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 </span>
               </div>
             </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  query then fetch
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  UYKFun8PSAeJvkkt9cWf0w
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  1
-                </span>
-              </div>
-            </td>
           </tr>
           <tr
             class="euiTableRow"
@@ -1805,14 +1737,18 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
               >
                 <span
-                  class=""
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
                 >
-                  <button
-                    class="euiLink euiLink--primary"
-                    type="button"
+                  <span
+                    class="euiBadge__content"
                   >
-                    -
-                  </button>
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -1872,61 +1808,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <span
                   class=""
                 >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2077,60 +1972,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 </span>
               </div>
             </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  query then fetch
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  UYKFun8PSAeJvkkt9cWf0w
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  1
-                </span>
-              </div>
-            </td>
           </tr>
           <tr
             class="euiTableRow"
@@ -2278,60 +2119,6 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 </span>
               </div>
             </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  query then fetch
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  KINGun8PSAeJvkkt9cWf0w
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  1
-                </span>
-              </div>
-            </td>
           </tr>
           <tr
             class="euiTableRow"
@@ -2408,14 +2195,18 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
               >
                 <span
-                  class=""
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
                 >
-                  <button
-                    class="euiLink euiLink--primary"
-                    type="button"
+                  <span
+                    class="euiBadge__content"
                   >
-                    -
-                  </button>
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2475,61 +2266,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <span
                   class=""
                 >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2609,14 +2359,18 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
               >
                 <span
-                  class=""
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
                 >
-                  <button
-                    class="euiLink euiLink--primary"
-                    type="button"
+                  <span
+                    class="euiBadge__content"
                   >
-                    -
-                  </button>
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2676,61 +2430,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <span
                   class=""
                 >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2810,14 +2523,18 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
               >
                 <span
-                  class=""
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
                 >
-                  <button
-                    class="euiLink euiLink--primary"
-                    type="button"
+                  <span
+                    class="euiBadge__content"
                   >
-                    -
-                  </button>
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -2877,61 +2594,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <span
                   class=""
                 >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -3011,14 +2687,18 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
               >
                 <span
-                  class=""
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
                 >
-                  <button
-                    class="euiLink euiLink--primary"
-                    type="button"
+                  <span
+                    class="euiBadge__content"
                   >
-                    -
-                  </button>
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>
@@ -3078,61 +2758,20 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                 <span
                   class=""
                 >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Search Type
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Coordinator Node ID
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
-                </span>
-              </div>
-            </td>
-            <td
-              class="euiTableRowCell"
-            >
-              <div
-                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-              >
-                Total Shards
-              </div>
-              <div
-                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
-              >
-                <span
-                  class=""
-                >
-                  -
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </div>
             </td>

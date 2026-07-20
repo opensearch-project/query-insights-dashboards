@@ -62,6 +62,8 @@ import {
   evaluateExpression,
 } from '../../components/DynamicSearchBar';
 import { SearchQueryRecord } from '../../../types/types';
+import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
+import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -549,6 +551,38 @@ export const InflightQueries = ({
     return map;
   }, [searchFields]);
 
+  // --- Column visibility ---
+  const columnDefs = useMemo<ColumnDef[]>(() => {
+    const defs: ColumnDef[] = [
+      { id: 'timestamp', label: 'Timestamp' },
+      { id: 'task_id', label: 'Task ID', pinned: true },
+      { id: 'index', label: 'Index' },
+      { id: 'coordinator_node', label: 'Coordinator Node' },
+      { id: 'time_elapsed', label: 'Time Elapsed' },
+      { id: 'cpu_usage', label: 'CPU Usage' },
+      { id: 'memory_usage', label: 'Memory Usage' },
+      { id: 'search_type', label: 'Search Type' },
+      { id: 'status', label: 'Status' },
+    ];
+    if (queryInsightWlmNavigationSupported) {
+      defs.push({ id: 'wlm_group', label: 'WLM Group' });
+    }
+    defs.push({ id: 'actions', label: 'Actions', pinned: true });
+    return defs;
+  }, [queryInsightWlmNavigationSupported]);
+
+  const {
+    visibleColumnIds,
+    isColumnVisible,
+    toggleColumn,
+    showAll,
+    hideAll,
+    columns: columnDefsForPopover,
+  } = useColumnVisibility({
+    storageKey: 'queryInsights_live_visibleColumns',
+    columns: columnDefs,
+  });
+
   // Filter live queries based on the dynamic search expression
   const filteredQueries = useMemo(() => {
     if (!searchQuery.trim()) return liveQueries;
@@ -713,6 +747,15 @@ export const InflightQueries = ({
             responsive={false}
             style={{ minHeight: 40 }}
           >
+            <EuiFlexItem grow={false}>
+              <ColumnVisibilityPopover
+                columns={columnDefsForPopover}
+                visibleColumnIds={visibleColumnIds}
+                onToggleColumn={toggleColumn}
+                onShowAll={showAll}
+                onHideAll={hideAll}
+              />
+            </EuiFlexItem>
             {taskDetailSupported && (
               <EuiFlexItem grow={false}>
                 <EuiSwitch
@@ -782,7 +825,7 @@ export const InflightQueries = ({
                         <b>{metrics?.activeQueries ?? 0}</b>
                       </h2>
                     </EuiTitle>
-                    <EuiIcon type="visGauge" />
+                    <EuiIcon type="visGauge" aria-hidden={true} />
                   </EuiTextAlign>
                 </EuiFlexItem>
               </EuiPanel>
@@ -936,7 +979,7 @@ export const InflightQueries = ({
                 ) : (
                   <EuiTextAlign textAlign="center">
                     <EuiSpacer size="xl" />
-                    <EuiIcon type="visPie" size="xxl" color="subdued" />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" aria-hidden={true} />
                     <EuiSpacer size="s" />
                     <EuiTitle size="s">
                       <h3>No Visualization Available</h3>
@@ -1002,7 +1045,7 @@ export const InflightQueries = ({
                 ) : (
                   <EuiTextAlign textAlign="center">
                     <EuiSpacer size="xl" />
-                    <EuiIcon type="visPie" size="xxl" color="subdued" />
+                    <EuiIcon type="visPie" size="xxl" color="subdued" aria-hidden={true} />
                     <EuiSpacer size="s" />
                     <EuiTitle size="s">
                       <h3>No Visualization Available</h3>
@@ -1096,112 +1139,148 @@ export const InflightQueries = ({
         )}
         <EuiInMemoryTable
           items={filteredQueries}
-          columns={[
-            { name: 'Timestamp', render: (item: any) => convertTime(item.timestamp) },
-            {
-              field: 'id',
-              name: 'Task ID',
-              render: taskDetailSupported
-                ? (id: string) => <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
-                : undefined,
-            },
-            { field: 'index', name: 'Index' },
-            { field: 'coordinator_node', name: 'Coordinator node' },
-            {
-              name: 'Time elapsed',
-              render: (item: any) => formatTime(item.measurements?.latency?.number / 1e9),
-            },
-            {
-              name: 'CPU usage',
-              render: (item: any) => formatTime(item.measurements?.cpu?.number / 1e9),
-            },
-            {
-              name: 'Memory usage',
-              render: (item: any) => formatMemory(item.measurements?.memory?.number),
-            },
-            { field: 'search_type', name: 'Search type' },
-
-            {
-              name: 'Status',
-              render: (item: any) =>
-                (item as any)._finished ? (
-                  <EuiBadge
-                    color={
-                      item.is_cancelled || (item as any)._status === 'Failed' ? 'danger' : 'success'
-                    }
-                  >
-                    {(item as any)._status || 'Completed'}
-                  </EuiBadge>
-                ) : item.is_cancelled === true ? (
-                  <EuiBadge color="danger">Cancelled</EuiBadge>
-                ) : (
-                  <EuiBadge color="primary">Running</EuiBadge>
-                ),
-            },
-
-            ...(queryInsightWlmNavigationSupported
-              ? [
-                  {
-                    name: 'WLM Group',
-                    render: (item: any) => {
-                      if (!item.wlm_group || item.wlm_group === 'N/A') {
-                        return 'N/A';
-                      }
-
-                      const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
-
-                      if (wlmAvailable) {
-                        return (
-                          <EuiLink
-                            onClick={() => {
-                              const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
-                              core.application.navigateToApp('workloadManagement', {
-                                path: `#/wlm-details?name=${encodeURIComponent(
-                                  displayName
-                                )}${dsParam}`,
-                              });
-                            }}
-                            color="primary"
-                          >
-                            {displayName} <EuiIcon type="popout" size="s" />
-                          </EuiLink>
-                        );
-                      }
-
-                      // Plugin not available → simple text
-                      return <span>{displayName}</span>;
+          columns={(() => {
+            const allColumns = [
+              ...(isColumnVisible('timestamp')
+                ? [{ name: 'Timestamp', render: (item: any) => convertTime(item.timestamp) }]
+                : []),
+              ...(isColumnVisible('task_id')
+                ? [
+                    {
+                      field: 'id',
+                      name: 'Task ID',
+                      render: taskDetailSupported
+                        ? (id: string) => (
+                            <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
+                          )
+                        : undefined,
                     },
-                  },
-                ]
-              : []),
+                  ]
+                : []),
+              ...(isColumnVisible('index') ? [{ field: 'index', name: 'Index' }] : []),
+              ...(isColumnVisible('coordinator_node')
+                ? [{ field: 'coordinator_node', name: 'Coordinator node' }]
+                : []),
+              ...(isColumnVisible('time_elapsed')
+                ? [
+                    {
+                      name: 'Time elapsed',
+                      render: (item: any) => formatTime(item.measurements?.latency?.number / 1e9),
+                    },
+                  ]
+                : []),
+              ...(isColumnVisible('cpu_usage')
+                ? [
+                    {
+                      name: 'CPU usage',
+                      render: (item: any) => formatTime(item.measurements?.cpu?.number / 1e9),
+                    },
+                  ]
+                : []),
+              ...(isColumnVisible('memory_usage')
+                ? [
+                    {
+                      name: 'Memory usage',
+                      render: (item: any) => formatMemory(item.measurements?.memory?.number),
+                    },
+                  ]
+                : []),
+              ...(isColumnVisible('search_type')
+                ? [{ field: 'search_type', name: 'Search type' }]
+                : []),
+              ...(isColumnVisible('status')
+                ? [
+                    {
+                      name: 'Status',
+                      render: (item: any) =>
+                        (item as any)._finished ? (
+                          <EuiBadge
+                            color={
+                              item.is_cancelled || (item as any)._status === 'Failed'
+                                ? 'danger'
+                                : 'success'
+                            }
+                          >
+                            {(item as any)._status || 'Completed'}
+                          </EuiBadge>
+                        ) : item.is_cancelled === true ? (
+                          <EuiBadge color="danger">Cancelled</EuiBadge>
+                        ) : (
+                          <EuiBadge color="primary">Running</EuiBadge>
+                        ),
+                    },
+                  ]
+                : []),
+              ...(queryInsightWlmNavigationSupported && isColumnVisible('wlm_group')
+                ? [
+                    {
+                      name: 'WLM Group',
+                      render: (item: any) => {
+                        if (!item.wlm_group || item.wlm_group === 'N/A') {
+                          return 'N/A';
+                        }
 
-            {
-              name: 'Actions',
-              actions: [
-                {
-                  name: 'Cancel',
-                  description: 'Cancel this query',
-                  icon: 'trash',
-                  color: 'danger',
-                  type: 'icon',
-                  available: (item) => item.is_cancelled !== true && !(item as any)._finished,
-                  onClick: async (item) => {
-                    try {
-                      const httpClient = dataSource?.id
-                        ? depsStart.data.dataSources.get(dataSource.id)
-                        : core.http;
+                        const displayName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
 
-                      await httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id));
-                      await new Promise((r) => setTimeout(r, 300));
-                      await fetchLiveQueries();
-                    } catch (err) {
-                      console.error('Failed to cancel task', err);
-                    }
-                  },
-                },
-              ],
-            },
-          ]}
+                        if (wlmAvailable) {
+                          return (
+                            <EuiLink
+                              onClick={() => {
+                                const dsParam = `&dataSourceId=${dataSource?.id || ''}`;
+                                core.application.navigateToApp('workloadManagement', {
+                                  path: `#/wlm-details?name=${encodeURIComponent(
+                                    displayName
+                                  )}${dsParam}`,
+                                });
+                              }}
+                              color="primary"
+                            >
+                              {displayName} <EuiIcon type="popout" size="s" aria-hidden={true} />
+                            </EuiLink>
+                          );
+                        }
+
+                        // Plugin not available → simple text
+                        return <span>{displayName}</span>;
+                      },
+                    },
+                  ]
+                : []),
+              // Actions column always last
+              ...(isColumnVisible('actions')
+                ? [
+                    {
+                      name: 'Actions',
+                      actions: [
+                        {
+                          name: 'Cancel',
+                          description: 'Cancel this query',
+                          icon: 'trash',
+                          color: 'danger',
+                          type: 'icon',
+                          available: (item: any) =>
+                            item.is_cancelled !== true && !(item as any)._finished,
+                          onClick: async (item: any) => {
+                            try {
+                              const httpClient = dataSource?.id
+                                ? depsStart.data.dataSources.get(dataSource.id)
+                                : core.http;
+
+                              await httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id));
+                              await new Promise((r) => setTimeout(r, 300));
+                              await fetchLiveQueries();
+                            } catch (err) {
+                              console.error('Failed to cancel task', err);
+                            }
+                          },
+                        },
+                      ],
+                    },
+                  ]
+                : []),
+            ];
+            return allColumns;
+          })()}
           selection={selection}
           pagination={{
             pageIndex: pagination.pageIndex,

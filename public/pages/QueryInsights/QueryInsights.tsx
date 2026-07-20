@@ -69,6 +69,8 @@ import {
   evaluateExpression,
 } from '../../components/DynamicSearchBar';
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
+import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
+import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -167,6 +169,38 @@ const QueryInsights = ({
       history.replace(location.pathname);
     }
   }, [location.search, history, location.pathname]);
+
+  // --- Column visibility definitions ---
+  const columnDefs = useMemo<ColumnDef[]>(() => {
+    const defs: ColumnDef[] = [
+      { id: 'id', label: 'ID', pinned: true },
+      { id: 'type', label: 'Type' },
+      { id: 'query_count', label: 'Query Count' },
+      { id: 'timestamp', label: 'Timestamp' },
+      ...(statusSupported ? [{ id: 'status', label: 'Status' }] : []),
+      { id: 'latency', label: 'Latency' },
+      { id: 'cpu', label: 'CPU Time' },
+      { id: 'memory', label: 'Memory Usage' },
+      { id: 'indices', label: 'Indices' },
+      { id: 'search_type', label: 'Search Type', defaultVisible: false },
+      { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      ...(queryInsightWlmNavigationSupported ? [{ id: 'wlm_group', label: 'WLM Group' }] : []),
+      { id: 'total_shards', label: 'Total Shards', defaultVisible: false },
+    ];
+    return defs;
+  }, [statusSupported, queryInsightWlmNavigationSupported]);
+
+  const {
+    visibleColumnIds,
+    isColumnVisible,
+    toggleColumn,
+    showAll,
+    hideAll,
+    columns: columnVisibilityColumns,
+  } = useColumnVisibility({
+    storageKey: 'queryInsights_topn_visibleColumns',
+    columns: columnDefs,
+  });
 
   const from = parseDateString(currStart);
   const to = parseDateString(currEnd);
@@ -421,8 +455,9 @@ const QueryInsights = ({
         : MEMORY_USAGE;
   }, [effectiveView]);
 
-  const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+  const baseColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
     {
+      id: 'id',
       name: ID,
       render: (query: SearchQueryRecord) => (
         <span>
@@ -443,6 +478,7 @@ const QueryInsights = ({
       truncateText: true,
     },
     {
+      id: 'type',
       name: TYPE,
       render: (query: SearchQueryRecord) => (
         <span>
@@ -464,8 +500,9 @@ const QueryInsights = ({
     },
   ];
 
-  const querycountColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+  const querycountColumn: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
     {
+      id: 'query_count',
       name: QUERY_COUNT,
       render: (q: SearchQueryRecord) =>
         `${
@@ -483,19 +520,20 @@ const QueryInsights = ({
     },
   ];
 
-  const timestampColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+  const timestampColumn: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
     {
+      id: 'timestamp',
       name: TIMESTAMP,
       render: (q: SearchQueryRecord) => {
         const isQuery = q.group_by === 'NONE';
-        const linkContent = isQuery ? convertTime(q.timestamp) : '-';
+        if (!isQuery) return <EuiBadge color="hollow">Aggregated</EuiBadge>;
         const onClickHandler = () => {
           const route = `/query-details?from=${from}&to=${to}&id=${q.id}&verbose=true`;
           history.push(route);
         };
         return (
           <span>
-            <EuiLink onClick={onClickHandler}>{linkContent}</EuiLink>
+            <EuiLink onClick={onClickHandler}>{convertTime(q.timestamp)}</EuiLink>
           </span>
         );
       },
@@ -504,11 +542,12 @@ const QueryInsights = ({
     },
   ];
 
-  const statusColumn: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+  const statusColumn: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
     {
+      id: 'status',
       name: 'Status',
       render: (q: SearchQueryRecord) => {
-        if (q.group_by === 'SIMILARITY') return <span>-</span>;
+        if (q.group_by === 'SIMILARITY') return <EuiBadge color="hollow">Aggregated</EuiBadge>;
         return q.failed ? (
           <EuiBadge color="danger">Failed</EuiBadge>
         ) : (
@@ -521,89 +560,113 @@ const QueryInsights = ({
   ];
 
   // columns shown only for query-type records
-  const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
-    {
-      field: INDICES_FIELD as keyof SearchQueryRecord,
-      name: INDICES,
-      render: (indices: string[] = [], q: SearchQueryRecord) => (
-        <span>{q.group_by === 'SIMILARITY' ? '-' : Array.from(new Set(indices)).join(', ')}</span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      field: SEARCH_TYPE_FIELD as keyof SearchQueryRecord,
-      name: SEARCH_TYPE,
-      render: (st: string, q: SearchQueryRecord) => (
-        <span>{q.group_by === 'SIMILARITY' ? '-' : (st || '').replaceAll('_', ' ')}</span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    {
-      field: NODE_ID_FIELD as keyof SearchQueryRecord,
-      name: NODE_ID,
-      render: (nid: string, q: SearchQueryRecord) => (
-        <span>{q.group_by === 'SIMILARITY' ? '-' : nid}</span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-    ...(queryInsightWlmNavigationSupported
-      ? [
-          {
-            field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
-            name: WLM_GROUP,
-            render: (wlmGroupId: string, q: SearchQueryRecord) => {
-              if (q.group_by === 'SIMILARITY') return '-';
-              const groupId = wlmGroupId || DEFAULT_WORKLOAD_GROUP;
-              const displayName =
-                groupId === DEFAULT_WORKLOAD_GROUP
-                  ? DEFAULT_WORKLOAD_GROUP
-                  : wlmAvailable
-                    ? wlmIdToNameMap[groupId] || '-'
-                    : '-';
+  const QueryTypeSpecificColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> =
+    [
+      {
+        id: 'indices',
+        field: INDICES_FIELD as keyof SearchQueryRecord,
+        name: INDICES,
+        render: (indices: string[] = [], q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? (
+              <EuiBadge color="hollow">Aggregated</EuiBadge>
+            ) : (
+              Array.from(new Set(indices)).join(', ')
+            )}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      {
+        id: 'search_type',
+        field: SEARCH_TYPE_FIELD as keyof SearchQueryRecord,
+        name: SEARCH_TYPE,
+        render: (st: string, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? (
+              <EuiBadge color="hollow">Aggregated</EuiBadge>
+            ) : (
+              (st || '').replaceAll('_', ' ')
+            )}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      {
+        id: 'node_id',
+        field: NODE_ID_FIELD as keyof SearchQueryRecord,
+        name: NODE_ID,
+        render: (nid: string, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : nid}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+      ...(queryInsightWlmNavigationSupported
+        ? [
+            {
+              id: 'wlm_group',
+              field: WLM_GROUP_FIELD as keyof SearchQueryRecord,
+              name: WLM_GROUP,
+              render: (wlmGroupId: string, q: SearchQueryRecord) => {
+                if (q.group_by === 'SIMILARITY')
+                  return <EuiBadge color="hollow">Aggregated</EuiBadge>;
+                const groupId = wlmGroupId || DEFAULT_WORKLOAD_GROUP;
+                const displayName =
+                  groupId === DEFAULT_WORKLOAD_GROUP
+                    ? DEFAULT_WORKLOAD_GROUP
+                    : wlmAvailable
+                      ? wlmIdToNameMap[groupId] || '-'
+                      : '-';
 
-              if (wlmAvailable && displayName !== '-') {
-                return (
-                  <EuiLink
-                    onClick={() => {
-                      const dsParam = dataSource?.id
-                        ? `&dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
-                        : '';
-                      core.application.navigateToApp('workloadManagement', {
-                        path: `#/wlm-details?name=${encodeURIComponent(displayName)}${dsParam}`,
-                      });
-                    }}
-                    color="primary"
-                  >
-                    {displayName} <EuiIcon type="popout" size="s" />
-                  </EuiLink>
-                );
-              }
+                if (wlmAvailable && displayName !== '-') {
+                  return (
+                    <EuiLink
+                      onClick={() => {
+                        const dsParam = dataSource?.id
+                          ? `&dataSource=${encodeURIComponent(JSON.stringify(dataSource))}`
+                          : '';
+                        core.application.navigateToApp('workloadManagement', {
+                          path: `#/wlm-details?name=${encodeURIComponent(displayName)}${dsParam}`,
+                        });
+                      }}
+                      color="primary"
+                    >
+                      {displayName} <EuiIcon type="popout" size="s" aria-hidden={true} />
+                    </EuiLink>
+                  );
+                }
 
-              return <span>{displayName}</span>;
+                return <span>{displayName}</span>;
+              },
+              sortable: true,
+              truncateText: true,
             },
-            sortable: true,
-            truncateText: true,
-          },
-        ]
-      : []),
-    {
-      field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
-      name: TOTAL_SHARDS,
-      render: (ts: number, q: SearchQueryRecord) => (
-        <span>{q.group_by === 'SIMILARITY' ? '-' : ts}</span>
-      ),
-      sortable: true,
-      truncateText: true,
-    },
-  ];
+          ]
+        : []),
+      {
+        id: 'total_shards',
+        field: TOTAL_SHARDS_FIELD as keyof SearchQueryRecord,
+        name: TOTAL_SHARDS,
+        render: (ts: number, q: SearchQueryRecord) => (
+          <span>
+            {q.group_by === 'SIMILARITY' ? <EuiBadge color="hollow">Aggregated</EuiBadge> : ts}
+          </span>
+        ),
+        sortable: true,
+        truncateText: true,
+      },
+    ];
 
   // metric columns (latency, cpu, memory)
-  const metricColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = useMemo(
+  const metricColumns: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = useMemo(
     () => [
       {
+        id: 'latency',
         field: LATENCY_FIELD as keyof SearchQueryRecord,
         name: latencyHeader,
         render: (_: any, q: SearchQueryRecord) =>
@@ -619,6 +682,7 @@ const QueryInsights = ({
         truncateText: true,
       },
       {
+        id: 'cpu',
         field: CPU_FIELD as keyof SearchQueryRecord,
         name: cpuHeader,
         render: (_: any, q: SearchQueryRecord) =>
@@ -634,6 +698,7 @@ const QueryInsights = ({
         truncateText: true,
       },
       {
+        id: 'memory',
         field: MEMORY_FIELD as keyof SearchQueryRecord,
         name: memHeader,
         render: (_: any, q: SearchQueryRecord) =>
@@ -695,10 +760,11 @@ const QueryInsights = ({
   );
 
   /**
-   * Decide which column set to show
-   * based on selected filters and presence of query/group rows
+   * Decide which column set to show for the current view, based on selected
+   * filters and the presence of query/group rows. This is the superset of
+   * columns before any visibility preferences are applied.
    */
-  const columnsToShow = useMemo(() => {
+  const viewColumns = useMemo(() => {
     // Check if any non-type filter conditions exist in the expression
     const hasNonTypeFilter = parsedExpression.conditions.some(
       (c) => c.field.toLowerCase() !== 'type' && c.field.toLowerCase() !== 'group_by'
@@ -709,7 +775,6 @@ const QueryInsights = ({
     if (selectedGroupBy.length === 1) {
       return selectedGroupBy[0] === 'SIMILARITY' ? groupTypeColumns : queryTypeColumns;
     }
-
     if (nonGroupActive && (selectedGroupBy.length === 0 || selectedGroupBy.length === 2)) {
       return queryTypeColumns;
     }
@@ -729,6 +794,25 @@ const QueryInsights = ({
     groupTypeColumns,
     queryTypeColumns,
   ]);
+
+  /**
+   * Filter the view's columns through visibility preferences (preserving the
+   * original definition order) and strip the internal `id` marker so it does
+   * not leak onto the rendered table cells as an invalid duplicate DOM id.
+   */
+  const columnsToShow = useMemo(() => {
+    return viewColumns
+      .filter((col) => (col.id ? isColumnVisible(col.id) : true))
+      .map((col) => {
+        const { id: _id, ...rest } = col;
+        return rest;
+      });
+  }, [viewColumns, isColumnVisible]);
+
+  // Column ids available in the current view (the popover only shows toggles for these)
+  const activeColumnIdsForPopover = useMemo(() => {
+    return new Set(viewColumns.map((col) => col.id).filter(Boolean));
+  }, [viewColumns]);
 
   const onSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -1024,6 +1108,22 @@ const QueryInsights = ({
               />
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
+              <ColumnVisibilityPopover
+                columns={columnVisibilityColumns}
+                visibleColumnIds={visibleColumnIds}
+                onToggleColumn={toggleColumn}
+                onShowAll={showAll}
+                onHideAll={hideAll}
+                unavailableColumnIds={
+                  new Set(
+                    columnVisibilityColumns
+                      .filter((col) => !activeColumnIdsForPopover.has(col.id))
+                      .map((col) => col.id)
+                  )
+                }
+              />
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
               <EuiSuperDatePicker
                 start={currStart}
                 end={currEnd}
@@ -1073,7 +1173,7 @@ const QueryInsights = ({
                     <EuiSpacer size="xxl" />
                     <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                       <EuiFlexItem grow={false}>
-                        <EuiIcon type="visLine" size="xxl" color="subdued" />
+                        <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
                       </EuiFlexItem>
                       <EuiFlexItem grow={false}>
                         <EuiTitle size="s">
@@ -1297,7 +1397,7 @@ const QueryInsights = ({
                                     responsive={false}
                                   >
                                     <EuiFlexItem grow={false}>
-                                      <EuiIcon type="dot" color={item.color} />
+                                      <EuiIcon type="dot" color={item.color} aria-hidden={true} />
                                     </EuiFlexItem>
                                     <EuiFlexItem>{name}</EuiFlexItem>
                                   </EuiFlexGroup>
@@ -1494,7 +1594,7 @@ const QueryInsights = ({
                   <EuiSpacer size="xxl" />
                   <EuiFlexGroup direction="column" alignItems="center" justifyContent="center">
                     <EuiFlexItem grow={false}>
-                      <EuiIcon type="visLine" size="xxl" color="subdued" />
+                      <EuiIcon type="visLine" size="xxl" color="subdued" aria-hidden={true} />
                     </EuiFlexItem>
                     <EuiFlexItem grow={false}>
                       <EuiTitle size="s">

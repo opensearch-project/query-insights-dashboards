@@ -241,6 +241,7 @@ describe('QueryInsights Component', () => {
         const headers = within(mainTable).getAllByRole('columnheader');
         const headerTexts = headers.map((h) => h.textContent?.trim());
         // sampleQueries has both NONE and SIMILARITY, so table shows mixed headers
+        // Note: Search Type, Coordinator Node ID, and Total Shards are hidden by default
         const expectedHeaders = [
           'Id',
           'Type',
@@ -251,10 +252,7 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
-          'Search Type',
-          'Coordinator Node ID',
           'WLM Group',
-          'Total Shards',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       },
@@ -306,10 +304,7 @@ describe('QueryInsights Component', () => {
           'CPU Time',
           'Memory Usage',
           'Indices',
-          'Search Type',
-          'Coordinator Node ID',
           'WLM Group',
-          'Total Shards',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       });
@@ -339,10 +334,7 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
-          'Search Type',
-          'Coordinator Node ID',
           'WLM Group',
-          'Total Shards',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       });
@@ -629,8 +621,6 @@ describe('QueryInsights Component', () => {
       const buttonTexts = buttons.map((b) => b.textContent?.trim());
       expect(buttonTexts).toContain('Type');
       expect(buttonTexts).toContain('Indices');
-      expect(buttonTexts).toContain('Search Type');
-      expect(buttonTexts).toContain('Coordinator Node ID');
       expect(buttonTexts).toContain('WLM Group');
     });
 
@@ -796,6 +786,107 @@ describe('QueryInsights Component', () => {
         expect(screen.queryByText('Completed')).not.toBeInTheDocument();
         expect(screen.queryByText('Failed')).not.toBeInTheDocument();
       });
+    });
+  });
+});
+
+describe('QueryInsights - Column Visibility Integration', () => {
+  beforeAll(() => {
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
+    jest.spyOn(Date.prototype, 'toDateString').mockImplementation(() => 'Mon Jan 13 2025');
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+  });
+
+  it('renders the Columns button in the page', async () => {
+    await act(async () => {
+      renderQueryInsights();
+    });
+
+    await waitFor(() => {
+      const columnsButton = document.querySelector('[data-test-subj="column-visibility-button"]');
+      expect(columnsButton).toBeInTheDocument();
+      expect(columnsButton).toHaveTextContent('Columns');
+    });
+  });
+
+  it('opens column visibility popover and shows column toggles', async () => {
+    await act(async () => {
+      renderQueryInsights();
+    });
+
+    const columnsButton = await waitFor(() => {
+      const btn = document.querySelector('[data-test-subj="column-visibility-button"]');
+      expect(btn).toBeInTheDocument();
+      return btn as HTMLElement;
+    });
+
+    fireEvent.click(columnsButton);
+
+    await waitFor(() => {
+      const showAllButton = document.querySelector('[data-test-subj="column-visibility-show-all"]');
+      expect(showAllButton).toBeInTheDocument();
+      // Should display at least one column toggle checkbox
+      const toggles = document.querySelectorAll('[data-test-subj^="column-toggle-"]');
+      expect(toggles.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('toggling a column off reduces the number of visible table columns', async () => {
+    await act(async () => {
+      renderQueryInsights();
+    });
+
+    // Wait for table to render (use container queries to avoid aria-hidden issues)
+    await waitFor(() => {
+      const tables = document.querySelectorAll('table');
+      expect(tables.length).toBeGreaterThan(0);
+    });
+
+    // Get initial column count from the main data table (last table)
+    const tables = document.querySelectorAll('table');
+    const mainTable = tables[tables.length - 1];
+    const initialHeaders = mainTable.querySelectorAll('th');
+    const initialColumnCount = initialHeaders.length;
+
+    // Open the column visibility popover
+    const columnsButton = document.querySelector(
+      '[data-test-subj="column-visibility-button"]'
+    ) as HTMLElement;
+    expect(columnsButton).toBeInTheDocument();
+    fireEvent.click(columnsButton);
+
+    // Wait for popover to open and find a non-pinned toggle
+    await waitFor(() => {
+      const showAll = document.querySelector('[data-test-subj="column-visibility-show-all"]');
+      expect(showAll).toBeInTheDocument();
+    });
+
+    // "Type" is a non-pinned column present in every default view, so its
+    // toggle must exist. Assert unconditionally rather than silently passing.
+    const typeToggle = document.querySelector(
+      '[data-test-subj="column-toggle-type"]'
+    ) as HTMLInputElement;
+    expect(typeToggle).toBeInTheDocument();
+
+    fireEvent.click(typeToggle);
+
+    // Close the popover by clicking the button again so aria-hidden is removed
+    fireEvent.click(columnsButton);
+
+    // Verify column count decreased
+    await waitFor(() => {
+      const updatedTable = document.querySelectorAll('table');
+      const updatedMainTable = updatedTable[updatedTable.length - 1];
+      const updatedHeaders = updatedMainTable.querySelectorAll('th');
+      expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
     });
   });
 });
