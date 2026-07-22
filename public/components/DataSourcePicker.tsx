@@ -47,8 +47,11 @@ export const DataSourceMenu = React.memo(
     const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
     const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
-      window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
-      setDataSource(dataSources[0]);
+      if (!dataSources || dataSources.length === 0 || !dataSources[0]) return;
+      const selected = dataSources[0];
+      if (!selected.id && !selected.label) return;
+      window.history.replaceState({}, '', getDataSourceEnabledUrl(selected).toString());
+      setDataSource(selected);
       onSelectedDataSource();
     };
 
@@ -64,7 +67,7 @@ export const DataSourceMenu = React.memo(
           activeOption:
             selectedDataSource?.id || selectedDataSource?.label
               ? [selectedDataSource]
-              : [{ id: '', label: 'Local cluster' }],
+              : undefined,
           onSelectedDataSources: wrapSetDataSourceWithUpdateUrl,
           fullWidth: true,
           dataSourceFilter,
@@ -73,8 +76,9 @@ export const DataSourceMenu = React.memo(
     ) : null;
   },
   (prevProps, newProps) =>
-    prevProps.selectedDataSource.id === newProps.selectedDataSource.id &&
-    prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly
+    prevProps.selectedDataSource?.id === newProps.selectedDataSource?.id &&
+    prevProps.dataSourcePickerReadOnly === newProps.dataSourcePickerReadOnly &&
+    prevProps.selectedDataSource?.label === newProps.selectedDataSource?.label
 );
 
 // Use the same component for both Query Insights and WLM

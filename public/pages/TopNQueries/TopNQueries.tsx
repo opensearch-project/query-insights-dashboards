@@ -106,6 +106,17 @@ const TopNQueries = ({
   const [currStart, setStart] = useState(initialStart);
   const [currEnd, setEnd] = useState(initialEnd);
   const [showLiveQueries, setShowLiveQueries] = useState<boolean>(true);
+
+  // Clean up invalid dataSource URL params on mount
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const dsParam = url.searchParams.get('dataSource');
+    if (dsParam === 'undefined' || dsParam === 'null') {
+      url.searchParams.delete('dataSource');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
   const dataSourceFromUrl = getDataSourceFromUrl();
   const dataSourceId = dataSourceFromUrl.id;
 
@@ -180,6 +191,43 @@ const TopNQueries = ({
 
   const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
 
+  // Determine if MDS is enabled (data source plugin available)
+  const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
+
+  // Check if we have a valid data source to query against
+  const hasValidDataSource = !dataSourceEnabled || !!dataSource?.id || !!dataSource?.label;
+
+  // Auto-select first available data source when MDS is enabled but none is selected
+  useEffect(() => {
+    if (!dataSourceEnabled || dataSource?.id) return;
+
+    const autoSelectDataSource = async () => {
+      try {
+        const savedObjectsClient = core.savedObjects.client;
+        const response = await savedObjectsClient.find<any>({
+          type: 'data-source',
+          perPage: 1,
+        });
+        if (response.savedObjects.length > 0) {
+          const firstDs = response.savedObjects[0];
+          const selected: DataSourceOption = {
+            id: firstDs.id,
+            label: firstDs.attributes?.title || firstDs.id,
+          };
+          wrappedSetDataSource(selected);
+          // Update URL with the selected data source
+          const url = new URL(window.location.href);
+          url.searchParams.set('dataSource', JSON.stringify(selected));
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (error) {
+        console.error('Failed to auto-select data source:', error);
+      }
+    };
+
+    autoSelectDataSource();
+  }, [dataSourceEnabled, dataSource?.id]);
+
   useEffect(() => {
     let isComponentUnmounted = false;
 
@@ -235,6 +283,7 @@ const TopNQueries = ({
   const retrieveQueries = useCallback(
     async (start: string, end: string) => {
       if (loading) return;
+      if (dataSourceEnabled && !getDataSourceFromUrl().id) return; // No valid data source in MDS mode
       setLoading(true);
       const nullResponse = { response: { top_queries: [] } };
       const apiParams = {
@@ -310,7 +359,7 @@ const TopNQueries = ({
         setLoading(false);
       }
     },
-    [latencySettings, cpuSettings, memorySettings, core]
+    [latencySettings, cpuSettings, memorySettings, core, dataSourceEnabled]
   );
 
   const retrieveConfigInfo = useCallback(
@@ -329,6 +378,7 @@ const TopNQueries = ({
       newRemotePath: string = ''
     ) => {
       if (get) {
+        if (dataSourceEnabled && !getDataSourceFromUrl().id) return; // No valid data source in MDS mode
         try {
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
           const resp = await core.http.get('/api/settings', {
@@ -463,7 +513,7 @@ const TopNQueries = ({
         }
       }
     },
-    [core]
+    [core, dataSourceEnabled]
   );
 
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
@@ -484,7 +534,7 @@ const TopNQueries = ({
 
   useEffect(() => {
     retrieveQueries(currStart, currEnd);
-  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries]);
+  }, [latencySettings, cpuSettings, memorySettings, currStart, currEnd, retrieveQueries, dataSource?.id]);
 
   return (
     <DataSourceContext.Provider value={{ dataSource, setDataSource: wrappedSetDataSource }}>
