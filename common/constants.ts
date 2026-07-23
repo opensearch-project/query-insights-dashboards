@@ -115,10 +115,17 @@ export const VALIDATION_LIMITS = {
 
 export interface ConfigSchema {
   wlm: { enabled: boolean };
+  // Controls whether users can register new S3 repositories from the remote exporter UI
+  remoteRepositoryRegistration: { enabled: boolean };
 }
 
 const DEFAULT_CONFIG: ConfigSchema = {
   wlm: { enabled: true },
+  remoteRepositoryRegistration: { enabled: true },
 };
 
 export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFAULT_CONFIG.wlm });
+
+export const REMOTE_REPOSITORY_REGISTRATION_CONFIG: Readonly<
+  ConfigSchema['remoteRepositoryRegistration']
+> = Object.freeze({ ...DEFAULT_CONFIG.remoteRepositoryRegistration });
