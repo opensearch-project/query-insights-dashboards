@@ -892,7 +892,7 @@ describe('InflightQueries - additional coverage', () => {
       expect(screen.getByText('Task ID - task-abc:123')).toBeInTheDocument();
       expect(screen.getByText('Task Summary')).toBeInTheDocument();
       expect(screen.getByText('Task Resource Usage')).toBeInTheDocument();
-      expect(screen.getByText('Query Source')).toBeInTheDocument();
+      expect(screen.getAllByText('DSL Query').length).toBeGreaterThan(0);
       expect(screen.getByText('my-index[0]')).toBeInTheDocument();
       expect(screen.getByText('Kill Query')).toBeInTheDocument();
     });
@@ -1255,7 +1255,7 @@ describe('InflightQueries - additional coverage', () => {
       expect(screen.getByText('Task Resource Usage')).toBeInTheDocument();
       // Should show coordinator and shard tasks from old format
       expect(screen.getAllByText('Coordinator Task').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Query Source')).toBeInTheDocument();
+      expect(screen.getAllByText('DSL Query').length).toBeGreaterThan(0);
     });
   });
 });
