@@ -10,6 +10,7 @@ import { MemoryRouter } from 'react-router-dom';
 import Configuration from './Configuration';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { TIME_UNITS_TEXT, EXPORTER_TYPE } from '../../../common/constants';
+import * as constants from '../../../common/constants';
 import {
   validateTopNSize,
   validateWindowSize,
@@ -515,10 +516,43 @@ describe('Configuration Component', () => {
       await waitFor(() => {
         expect(screen.getByText('Register new')).toBeInTheDocument();
       });
+      // When registration is enabled the help text mentions registering a new repository.
+      expect(
+        screen.getByText('Select an existing repository or register a new one.')
+      ).toBeInTheDocument();
       fireEvent.click(screen.getByText('Register new'));
       await waitFor(() => {
         expect(screen.getByText('Register S3 repository')).toBeInTheDocument();
       });
+    });
+
+    it('should hide Register new when repository registration is disabled', async () => {
+      // Self-contained: flip the flag off, then restore it at the end so no shared mock is needed.
+      const flag = jest.replaceProperty(constants, 'REMOTE_REPOSITORY_REGISTRATION_CONFIG', {
+        enabled: false,
+      });
+      mockCoreStart.http.get.mockImplementation((url: string) => {
+        if (url === '/api/cat/plugins') {
+          return Promise.resolve({ ok: true, response: [{ component: 'repository-s3' }] });
+        }
+        if (url === '/api/snapshot/repositories') {
+          return Promise.resolve({ ok: true, response: { 'my-repo': { type: 's3' } } });
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+      renderConfiguration();
+      fireEvent.click(getRemoteToggle());
+      // The repository selector still renders (users can pick an existing repository)...
+      await waitFor(() => {
+        expect(screen.getByText('exporter.remote.repository')).toBeInTheDocument();
+      });
+      // ...but the registration entry point is gone, and the help text drops the "register" wording.
+      expect(screen.queryByText('Register new')).not.toBeInTheDocument();
+      expect(screen.getByText('Select an existing repository.')).toBeInTheDocument();
+      expect(
+        screen.queryByText('Select an existing repository or register a new one.')
+      ).not.toBeInTheDocument();
+      flag.restore();
     });
 
     it('should hide fields when toggle is turned off after being on', async () => {
