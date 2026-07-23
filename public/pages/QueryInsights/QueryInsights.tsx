@@ -175,6 +175,7 @@ const QueryInsights = ({
     const defs: ColumnDef[] = [
       { id: 'id', label: 'ID', pinned: true },
       { id: 'type', label: 'Type' },
+      { id: 'query_source', label: 'Query Source' },
       { id: 'query_count', label: 'Query Count' },
       { id: 'timestamp', label: 'Timestamp' },
       ...(statusSupported ? [{ id: 'status', label: 'Status' }] : []),
@@ -500,6 +501,21 @@ const QueryInsights = ({
     },
   ];
 
+  const querySourceColumn: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
+    {
+      id: 'query_source',
+      name: 'Query Source',
+      render: (q: SearchQueryRecord) => {
+        const source = q.labels?.['x-query-source'];
+        if (source === 'sql') return <EuiBadge color="#0079A5">SQL</EuiBadge>;
+        if (source === 'ppl') return <EuiBadge color="#7B61FF">PPL</EuiBadge>;
+        return <EuiBadge color="hollow">DSL</EuiBadge>;
+      },
+      sortable: (q: SearchQueryRecord) => q.labels?.['x-query-source'] || 'dsl',
+      truncateText: true,
+    },
+  ];
+
   const querycountColumn: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
     {
       id: 'query_count',
@@ -720,6 +736,7 @@ const QueryInsights = ({
   const defaultColumns = useMemo(
     () => [
       ...baseColumns,
+      ...querySourceColumn,
       ...querycountColumn,
       ...timestampColumn,
       ...(statusSupported ? statusColumn : []),
@@ -728,6 +745,7 @@ const QueryInsights = ({
     ],
     [
       baseColumns,
+      querySourceColumn,
       querycountColumn,
       timestampColumn,
       statusSupported,
@@ -737,13 +755,14 @@ const QueryInsights = ({
     ]
   );
   const groupTypeColumns = useMemo(
-    () => [...baseColumns, ...querycountColumn, ...metricColumns],
-    [baseColumns, querycountColumn, metricColumns]
+    () => [...baseColumns, ...querySourceColumn, ...querycountColumn, ...metricColumns],
+    [baseColumns, querySourceColumn, querycountColumn, metricColumns]
   );
 
   const queryTypeColumns = useMemo(
     () => [
       ...baseColumns,
+      ...querySourceColumn,
       ...timestampColumn,
       ...(statusSupported ? statusColumn : []),
       ...metricColumns,
@@ -751,6 +770,7 @@ const QueryInsights = ({
     ],
     [
       baseColumns,
+      querySourceColumn,
       timestampColumn,
       statusSupported,
       statusColumn,

@@ -89,6 +89,9 @@ export const TaskDetailFlyout: React.FC<Props> = ({
   const totalShards = (task as any)._totalShards;
   const taskResourceUsages = (task as any)._taskResourceUsages;
 
+  const queryLanguage = (task as any).labels?.['x-query-source'];
+  const originalQuery = (task as any).labels?.['x-original-query'];
+
   const isFinished =
     task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled';
   const endTime = coord ? coord.start_time + coord.running_time_nanos / 1e6 : 0;
@@ -301,13 +304,44 @@ export const TaskDetailFlyout: React.FC<Props> = ({
           )}
         </EuiPanel>
 
-        {/* Query Source */}
+        {/* Original SQL/PPL Query */}
+        {queryLanguage && originalQuery && (
+          <>
+            <EuiSpacer size="m" />
+            <EuiPanel>
+              <EuiFlexGroup alignItems="center" gutterSize="s">
+                <EuiFlexItem grow={false}>
+                  <EuiTitle size="s">
+                    <h3>Original Query</h3>
+                  </EuiTitle>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiBadge color={queryLanguage === 'sql' ? '#0079A5' : '#7B61FF'}>
+                    {queryLanguage.toUpperCase()}
+                  </EuiBadge>
+                </EuiFlexItem>
+              </EuiFlexGroup>
+              <EuiHorizontalRule margin="xs" />
+              <EuiCodeBlock
+                language="sql"
+                paddingSize="m"
+                fontSize="s"
+                overflowHeight={300}
+                isCopyable
+              >
+                {originalQuery}
+              </EuiCodeBlock>
+            </EuiPanel>
+          </>
+        )}
+
+        {/* DSL Query Body */}
         {querySource && (
           <>
             <EuiSpacer size="m" />
             <EuiPanel>
               <EuiTitle size="s">
-                <h3>Query Source</h3>
+                <h3>DSL Query</h3>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiCodeBlock

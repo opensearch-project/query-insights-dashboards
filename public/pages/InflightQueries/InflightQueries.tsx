@@ -21,6 +21,7 @@ import {
   EuiSelect,
   EuiBadge,
   EuiAccordion,
+  EuiToolTip,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -331,6 +332,7 @@ export const InflightQueries = ({
             coordinator_node: nodeId,
             node_label: nodeId,
             wlm_group: wlmDisplay,
+            execution_id: (q as any).labels?.['x-query-execution-id'] || null,
           };
         });
 
@@ -369,6 +371,7 @@ export const InflightQueries = ({
               coordinator_node: fq.node_id || '-',
               node_label: fq.node_id || '-',
               wlm_group: wlmDisplay,
+              execution_id: fq.labels?.['x-query-execution-id'] || null,
               _finished: true,
               _topNId: fq.top_n_id,
               _status: status,
@@ -538,6 +541,12 @@ export const InflightQueries = ({
         accessor: (q) => (q as any).wlm_group,
         type: 'string',
       },
+      {
+        label: 'Query Source',
+        key: 'query_source',
+        accessor: (q) => (q as any).labels?.['x-query-source'] || 'dsl',
+        type: 'string',
+      },
     ];
     return fields;
   }, []);
@@ -556,6 +565,7 @@ export const InflightQueries = ({
     const defs: ColumnDef[] = [
       { id: 'timestamp', label: 'Timestamp' },
       { id: 'task_id', label: 'Task ID', pinned: true },
+      { id: 'query_source', label: 'Query Source' },
       { id: 'index', label: 'Index' },
       { id: 'coordinator_node', label: 'Coordinator Node' },
       { id: 'time_elapsed', label: 'Time Elapsed' },
@@ -1154,6 +1164,21 @@ export const InflightQueries = ({
                             <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
                           )
                         : undefined,
+                    },
+                  ]
+                : []),
+              ...(isColumnVisible('query_source')
+                ? [
+                    {
+                      name: 'Query Source',
+                      render: (item: any) => {
+                        const source = item.labels?.['x-query-source'];
+                        if (source === 'sql')
+                          return <EuiToolTip content={item.labels?.['x-original-query'] || 'SQL Query'}><EuiBadge color="#0079A5">SQL</EuiBadge></EuiToolTip>;
+                        if (source === 'ppl')
+                          return <EuiToolTip content={item.labels?.['x-original-query'] || 'PPL Query'}><EuiBadge color="#7B61FF">PPL</EuiBadge></EuiToolTip>;
+                        return <EuiBadge color="hollow">DSL</EuiBadge>;
+                      },
                     },
                   ]
                 : []),
