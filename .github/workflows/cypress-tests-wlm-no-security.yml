@@ -1,4 +1,4 @@
-name: Cypress e2e integration tests workflow for WLM without security
+name: E2E
 on:
   pull_request:
     branches:
@@ -15,7 +15,7 @@ env:
 
 jobs:
   tests:
-    name: Run Cypress E2E tests for WLM without security
+    name: WLM (no security)
     timeout-minutes: 90
     strategy:
       fail-fast: false

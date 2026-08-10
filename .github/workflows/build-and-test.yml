@@ -1,4 +1,4 @@
-name: Build and test workflow
+name: Build
 on:
   push:
     branches:
@@ -11,12 +11,13 @@ env:
 
 jobs:
   Get-CI-Image-Tag:
+    name: CI image
     uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
     with:
       product: opensearch-dashboards
 
   build-and-test:
-    name: Build query-insights-dashboards plugin and run unit tests
+    name: Unit tests
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]

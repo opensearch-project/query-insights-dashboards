@@ -1,4 +1,4 @@
-name: Cypress e2e integration tests workflow for QI-WLM interaction
+name: E2E
 on:
   pull_request:
     branches:
@@ -16,7 +16,7 @@ env:
 
 jobs:
   tests:
-    name: Run Cypress E2E tests for QI-WLM interaction
+    name: QI-WLM integration
     timeout-minutes: 90
     strategy:
       fail-fast: false

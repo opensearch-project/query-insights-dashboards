@@ -1,4 +1,4 @@
-name: 'Install Query Insights Dashboards with Plugin via Binary'
+name: Install
 
 on: [push, pull_request]
 
@@ -10,7 +10,7 @@ env:
 
 jobs:
   verify-binary-installation:
-    name: Run binary installation
+    name: Plugin binary
     strategy:
       fail-fast: false
       matrix:
