@@ -1099,6 +1099,14 @@ export const WLMDetails = ({
                             markDirty();
                           }}
                           onBlur={(e) => {
+                            // When the Security plugin is unavailable the cluster rejects any
+                            // principal, so the user must be able to remove a previously-set
+                            // username to save the rule. Suppressing the revert here is what
+                            // makes the "stay editable so the user can clear it" affordance
+                            // below actually work. Gate on securityPluginMissing (a definitive
+                            // negative probe) rather than showSecurity so the revert is not
+                            // skipped during the brief window before the version resolves.
+                            if (securityPluginMissing) return;
                             const originallyNonEmpty = !!existingRules[idx]?.username?.trim();
                             const nowEmpty =
                               (e.target.value ?? '')
@@ -1149,6 +1157,10 @@ export const WLMDetails = ({
                             markDirty();
                           }}
                           onBlur={(e) => {
+                            // See the Username onBlur above: when the Security plugin is
+                            // unavailable the user must be able to clear a previously-set role,
+                            // so skip the "cannot be cleared once set" revert in that state.
+                            if (securityPluginMissing) return;
                             const originallyNonEmpty = !!existingRules[idx]?.role?.trim();
                             const nowEmpty =
                               (e.target.value ?? '')

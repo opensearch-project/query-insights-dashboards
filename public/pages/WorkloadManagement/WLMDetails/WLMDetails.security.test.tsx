@@ -345,4 +345,67 @@ describe('WLMDetails — security plugin gating', () => {
     const body = JSON.parse(ruleCalls[0][1].body);
     expect(body.principal).toEqual(expect.objectContaining({ username: ['alice'] }));
   });
+
+  it('lets the user clear a previously-set username when Security is unavailable, and omits the principal from the update PUT', async () => {
+    // Regression: the "stay editable so the user can clear it" affordance was defeated
+    // by the onBlur "cannot be cleared once set" revert. On a security-less cluster a
+    // rule loaded with principal.username=['alice'] must be clearable, otherwise every
+    // update PUT re-sends the principal the cluster rejects and the rule can never be saved.
+    const core = buildCore();
+    setRouting(core, (path) => {
+      if (path === '/api/cat/plugins') {
+        // No opensearch-security → status resolves to 'unavailable' → showSecurity=false.
+        return Promise.resolve({ ok: true, response: [{ component: 'workload-management' }] });
+      }
+      if (path === '/api/_rules/workload_group') {
+        // Rule pre-loaded with a principal, as if it were created while security was enabled.
+        return Promise.resolve({
+          rules: [
+            {
+              id: 'r1',
+              description: 'd',
+              index_pattern: ['keep-*'],
+              principal: { username: ['alice'] },
+              workload_group: 'wg-123',
+            },
+          ],
+        });
+      }
+      return undefined;
+    });
+    (core.http.put as jest.Mock).mockResolvedValue({});
+
+    renderWith(core);
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => expect(screen.getByText(/Workload group settings/i)).toBeInTheDocument());
+
+    // Field is populated from the server and stays editable because it is non-empty.
+    const usernameInput = await screen.findByPlaceholderText('Enter username');
+    await waitFor(() => expect(usernameInput).toHaveValue('alice'));
+    expect(usernameInput).not.toBeDisabled();
+
+    // Clear it and blur — with the fix the value must NOT revert and no warning fires.
+    fireEvent.change(usernameInput, { target: { value: '' } });
+    fireEvent.blur(usernameInput);
+    expect(usernameInput).toHaveValue('');
+    expect(core.notifications.toasts.addWarning).not.toHaveBeenCalledWith(
+      expect.stringMatching(/cannot be cleared/i)
+    );
+
+    const applyButton = await screen.findByRole('button', { name: /apply changes/i });
+    await waitFor(() => expect(applyButton).not.toBeDisabled());
+    fireEvent.click(applyButton);
+
+    // The update PUT for the rule must omit principal, so the cluster accepts it and the save succeeds.
+    await waitFor(() => {
+      const ruleCalls = (core.http.put as jest.Mock).mock.calls.filter(
+        ([url]) => url === '/api/_rules/workload_group/r1'
+      );
+      expect(ruleCalls.length).toBeGreaterThan(0);
+      const body = JSON.parse(ruleCalls[0][1].body);
+      expect(body).not.toHaveProperty('principal');
+      expect(body).toHaveProperty('index_pattern', ['keep-*']);
+    });
+    expect(core.notifications.toasts.addDanger).not.toHaveBeenCalled();
+  });
 });
