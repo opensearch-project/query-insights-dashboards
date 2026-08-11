@@ -180,9 +180,9 @@ export function getSecurityFieldDisabledHelpText(
  *   1. /_cat/plugins — confirms the plugin is installed somewhere in the cluster.
  *   2. /_plugins/_security/health — confirms the plugin is enabled and responding.
  *
- * Both probes must succeed for the plugin to be considered available. If either
- * probe fails for an inconclusive reason we return 'unknown' so the UI does not
- * over-block the user.
+ * A definitive absence from /_cat/plugins makes the plugin unavailable. When
+ * the plugin is listed, the health probe distinguishes active from disabled;
+ * inconclusive failures fail open so the UI does not over-block the user.
  */
 export async function getSecurityPluginStatus(
   http: { get: (path: string, options?: any) => Promise<any> },
@@ -220,7 +220,7 @@ export async function getSecurityPluginStatus(
     console.warn('Failed to probe security plugin health:', err);
   }
 
-  // _cat/plugins says it's installed but health probe was inconclusive — assume available.
+  // _cat/plugins says it's installed but health was inconclusive — fail open.
   if (pluginListed === true) {
     return 'available';
   }

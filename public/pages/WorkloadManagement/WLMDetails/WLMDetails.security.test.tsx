@@ -53,7 +53,7 @@ const noDsDeps = { dataSource: { dataSourceEnabled: false } } as any;
 const localDataSource = { id: '', name: '', label: '' } as any;
 
 const buildCore = (): CoreStart =>
-  (({
+  ({
     http: {
       get: jest.fn(),
       put: jest.fn(),
@@ -78,11 +78,14 @@ const buildCore = (): CoreStart =>
         get: jest.fn().mockResolvedValue({ attributes: { dataSourceVersion: '3.3.0' } }),
       },
     },
-  } as unknown) as CoreStart);
+  }) as unknown as CoreStart;
 
-const setRouting = (core: CoreStart, securityImpl: (path: string) => Promise<any> | undefined) => {
-  (core.http.get as jest.Mock).mockImplementation((path: string) => {
-    const overridden = securityImpl(path);
+const setRouting = (
+  core: CoreStart,
+  securityImpl: (path: string, options?: any) => Promise<any> | undefined
+) => {
+  (core.http.get as jest.Mock).mockImplementation((path: string, options?: any) => {
+    const overridden = securityImpl(path, options);
     if (overridden) return overridden;
     if (path.startsWith('/api/_wlm/workload_group/test-group')) {
       return Promise.resolve(groupResponse);
@@ -133,6 +136,10 @@ const renderWith = (core: CoreStart, name = 'test-group') => {
 };
 
 describe('WLMDetails — security plugin gating', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('disables Username and Role inputs when Security plugin is not installed', async () => {
     const core = buildCore();
     setRouting(core, (path) => {
@@ -205,6 +212,81 @@ describe('WLMDetails — security plugin gating', () => {
       const usernameInput = await screen.findByPlaceholderText('Enter username');
       expect(usernameInput).not.toBeDisabled();
     });
+  });
+
+  it('ignores an interval probe that resolves after the data source changes', async () => {
+    jest.useFakeTimers();
+    const core = buildCore();
+    let oldCatCalls = 0;
+    let resolveOldIntervalProbe: (value: any) => void = () => {};
+    const oldIntervalProbe = new Promise((resolve) => {
+      resolveOldIntervalProbe = resolve;
+    });
+
+    setRouting(core, (path, options) => {
+      const dataSourceId = options?.query?.dataSourceId;
+      if (path === '/api/cat/plugins' && dataSourceId === 'old-ds') {
+        oldCatCalls += 1;
+        if (oldCatCalls === 1) {
+          return Promise.resolve({
+            ok: true,
+            response: [{ component: 'opensearch-security' }],
+          });
+        }
+        return oldIntervalProbe;
+      }
+      if (path === '/api/_plugins/_security/health' && dataSourceId === 'old-ds') {
+        return Promise.resolve({ ok: true, available: true });
+      }
+      if (path === '/api/cat/plugins' && dataSourceId === 'new-ds') {
+        return Promise.resolve({
+          ok: true,
+          response: [{ component: 'workload-management' }],
+        });
+      }
+      return undefined;
+    });
+
+    const renderDetails = (dataSourceId: string) => (
+      <MemoryRouter initialEntries={['/wlm-details?name=test-group']}>
+        <DataSourceContext.Provider
+          value={{
+            dataSource: { id: dataSourceId, name: dataSourceId, label: dataSourceId } as any,
+            setDataSource: jest.fn(),
+          }}
+        >
+          <WLMDetails
+            core={core}
+            depsStart={noDsDeps}
+            params={mockParams}
+            dataSourceManagement={mockDataSourceManagement}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+    const view = render(renderDetails('old-ds'));
+    fireEvent.click(screen.getByTestId('wlm-tab-settings'));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Enter username')).not.toBeDisabled();
+    });
+
+    jest.advanceTimersByTime(60000);
+    await waitFor(() => expect(oldCatCalls).toBe(2));
+
+    view.rerender(renderDetails('new-ds'));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Enter username')).toBeDisabled();
+    });
+
+    resolveOldIntervalProbe({
+      ok: true,
+      response: [{ component: 'opensearch-security' }],
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(screen.getByPlaceholderText('Enter username')).toBeDisabled();
   });
 
   it('rewrites the cryptic principal save error from the rule PUT to point at the Security plugin', async () => {

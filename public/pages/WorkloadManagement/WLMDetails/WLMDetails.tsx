@@ -214,6 +214,7 @@ export const WLMDetails = ({
   // the user has started editing — without this guard, a slow GET that lands
   // post-save can clobber the next test/user's in-flight toggle change.
   const fetchSeqRef = useRef(0);
+  const securityProbeSeqRef = useRef(0);
   const isSavedRef = useRef(true);
   // Keeps isSavedRef in lockstep with state across renders. Direct ref writes in
   // event handlers and saveChanges cover the synchronous gap before this fires.
@@ -286,9 +287,12 @@ export const WLMDetails = ({
     // Note: deps intentionally exclude `groupName` — navigating between groups on the
     // same cluster should not flicker the security gate.
     setSecurityStatus('unknown');
+    const probeSeq = ++securityProbeSeqRef.current;
     (async () => {
       const status = await getSecurityPluginStatus(core.http, dataSource?.id);
-      if (!cancelled) setSecurityStatus(status);
+      if (!cancelled && probeSeq === securityProbeSeqRef.current) {
+        setSecurityStatus(status);
+      }
     })();
     return () => {
       cancelled = true;
@@ -306,22 +310,25 @@ export const WLMDetails = ({
   useEffect(() => {
     if (!isSaved) return;
 
+    let cancelled = false;
     const interval = setInterval(() => {
       fetchGroupDetails();
       updateStats();
       // Refresh the security plugin gate too so a long-lived form reflects cluster
       // changes (admin enables/disables the plugin) instead of staying stale.
-      let cancelled = false;
+      const probeSeq = ++securityProbeSeqRef.current;
       (async () => {
         const status = await getSecurityPluginStatus(core.http, dataSource?.id);
-        if (!cancelled) setSecurityStatus(status);
+        if (!cancelled && probeSeq === securityProbeSeqRef.current) {
+          setSecurityStatus(status);
+        }
       })();
-      return () => {
-        cancelled = true;
-      };
     }, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [isSaved, groupName, dataSource, core]);
 
   // === Data Fetching ===

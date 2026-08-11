@@ -85,19 +85,13 @@ describe('WLM Create Page', () => {
     cy.url().should('include', '/workloadManagement');
   });
 
-  it('ignores commas-only inputs and does not send empty arrays', () => {
+  it('ignores a commas-only index and does not send an empty array', () => {
     const groupName = `wlm_commas_${Date.now()}`;
     cy.intercept('PUT', '/api/_wlm/workload_group').as('createGroup');
     cy.intercept('PUT', '/api/_rules/workload_group').as('createRule');
     cy.get('[data-testid="name-input"]').type(groupName);
     cy.contains('Soft').click();
     cy.get('[data-testid="indexInput"]').type(' , , , ');
-    // Username/Role inputs are gated off when the OpenSearch Security plugin is
-    // not installed (the case for this no-security suite). Use { force: true } so
-    // we still exercise the "commas-only payload not sent" path that is the
-    // actual subject of this test.
-    cy.get('[placeholder="Enter username"]').type(' , , ', { force: true });
-    cy.get('[placeholder="Enter role"]').type(' , ', { force: true });
     cy.get('[data-testid="memory-threshold-input"]').clear().type('1');
     cy.get('button').contains('Create workload group').click();
     cy.wait('@createGroup');

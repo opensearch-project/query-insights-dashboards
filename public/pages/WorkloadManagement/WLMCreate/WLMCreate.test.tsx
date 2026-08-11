@@ -415,6 +415,25 @@ describe('WLMCreate', () => {
       });
     });
 
+    it('skips rule when username and role contain only commas/spaces', async () => {
+      coreMock.http.put.mockResolvedValueOnce({ _id: 'gid-principals' });
+
+      renderComponent();
+      await fillRequiredFields();
+
+      await userEvent.type(screen.getByPlaceholderText(/username/i), ' , , ');
+      await userEvent.type(screen.getByPlaceholderText(/^enter role$/i), ' , ');
+      await userEvent.click(screen.getByRole('button', { name: /create workload group/i }));
+
+      await waitFor(() => {
+        expect(coreMock.http.put).toHaveBeenCalledTimes(1);
+        expect(coreMock.http.put).toHaveBeenCalledWith(
+          '/api/_wlm/workload_group',
+          expect.any(Object)
+        );
+      });
+    });
+
     it('sends resource_limits only when valid CPU/memory provided', async () => {
       coreMock.http.put.mockResolvedValueOnce({ body: { _id: 'gid-rl' } });
 

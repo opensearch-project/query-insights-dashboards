@@ -662,8 +662,8 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
       try {
         let res: any;
         if (!dataSourceEnabled || !request.query?.dataSourceId) {
-          const client = context.queryInsights_plugin.queryInsightsClient.asScoped(request)
-            .callAsCurrentUser;
+          const client =
+            context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           res = await client('queryInsights.getSecurityHealth');
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(
@@ -679,7 +679,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         // 400/404 means OpenSearch has no handler registered for this URI — the plugin is
         // not installed or disabled. 503 typically means the plugin is installed but
         // hasn't initialized (e.g. strict mode without securityconfig loaded).
-        const statusCode = error?.statusCode ?? error?.status;
+        const statusCode = error?.meta?.statusCode ?? error?.statusCode ?? error?.status;
         if (statusCode === 401 || statusCode === 403) {
           return response.ok({ body: { ok: true, available: true } });
         }
@@ -689,7 +689,11 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
         // Some upstream errors carry the plugin's health body even on non-2xx; if so,
         // classify based on body contents rather than only the status code.
         const errorBody = error?.body ?? error?.meta?.body;
-        if (errorBody && typeof errorBody === 'object') {
+        const hasHealthFields =
+          errorBody &&
+          typeof errorBody === 'object' &&
+          (typeof errorBody.mode === 'string' || typeof errorBody.status === 'string');
+        if (hasHealthFields) {
           return response.ok({
             body: { ok: true, available: isHealthBodyAvailable(errorBody), response: errorBody },
           });
