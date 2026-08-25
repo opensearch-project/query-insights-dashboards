@@ -96,35 +96,41 @@ const LocationDisplay = () => {
   return null;
 };
 
-const renderConfiguration = ({
-  configurationLoadState = 'ready',
-  configInfo = mockConfigInfo,
-}: {
+interface RenderConfigurationOptions {
   configurationLoadState?: 'loading' | 'ready' | 'accessDenied' | 'error';
   configInfo?: typeof mockConfigInfo;
-} = {}) =>
-  render(
-    <MemoryRouter initialEntries={['/configuration']}>
-      <DataSourceContext.Provider value={mockDataSourceContext}>
-        <Configuration
-          latencySettings={defaultLatencySettings}
-          cpuSettings={defaultCpuSettings}
-          memorySettings={defaultMemorySettings}
-          groupBySettings={groupBySettings}
-          configInfo={configInfo}
-          configurationLoadState={configurationLoadState}
-          dataRetentionSettings={dataRetentionSettings}
-          remoteExporterSettings={remoteExporterSettings}
-          core={mockCoreStart}
-          onDataSourceChange={mockOnDataSourceChange}
-          depsStart={{ navigation: {} }}
-          params={{} as any}
-          dataSourceManagement={dataSourceManagementMock}
-        />
-        <LocationDisplay />
-      </DataSourceContext.Provider>
-    </MemoryRouter>
-  );
+  dataSourceContext?: typeof mockDataSourceContext;
+}
+
+const getConfigurationView = ({
+  configurationLoadState = 'ready',
+  configInfo = mockConfigInfo,
+  dataSourceContext = mockDataSourceContext,
+}: RenderConfigurationOptions = {}) => (
+  <MemoryRouter initialEntries={['/configuration']}>
+    <DataSourceContext.Provider value={dataSourceContext}>
+      <Configuration
+        latencySettings={defaultLatencySettings}
+        cpuSettings={defaultCpuSettings}
+        memorySettings={defaultMemorySettings}
+        groupBySettings={groupBySettings}
+        configInfo={configInfo}
+        configurationLoadState={configurationLoadState}
+        dataRetentionSettings={dataRetentionSettings}
+        remoteExporterSettings={remoteExporterSettings}
+        core={mockCoreStart}
+        onDataSourceChange={mockOnDataSourceChange}
+        depsStart={{ navigation: {} }}
+        params={{} as any}
+        dataSourceManagement={dataSourceManagementMock}
+      />
+      <LocationDisplay />
+    </DataSourceContext.Provider>
+  </MemoryRouter>
+);
+
+const renderConfiguration = (options: RenderConfigurationOptions = {}) =>
+  render(getConfigurationView(options));
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
 const getTopNSizeConfiguration = () => screen.getAllByRole('spinbutton');
@@ -199,6 +205,78 @@ describe('Configuration Component', () => {
       'Saved Query Insights settings.'
     );
     expect(currentLocationPath).toBe('/configuration');
+  });
+
+  it('disables configuration edits while a save is pending', async () => {
+    const pendingSave = createDeferred<void>();
+    const configInfo = jest.fn().mockReturnValue(pendingSave.promise);
+    renderConfiguration({ configInfo });
+
+    const topNInput = getTopNSizeConfiguration()[0];
+    fireEvent.change(topNInput, { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(1));
+    expect(topNInput).toBeDisabled();
+    expect(getWindowSizeConfigurations()[0]).toBeDisabled();
+    expect(getEnableToggle()).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    await act(async () => {
+      pendingSave.resolve();
+      await pendingSave.promise;
+    });
+    expect(topNInput).toBeEnabled();
+    expect(topNInput).toHaveValue(7);
+  });
+
+  it('ignores a save completion from a previously selected data source', async () => {
+    const firstSave = createDeferred<void>();
+    const secondSave = createDeferred<void>();
+    const configInfo = jest
+      .fn()
+      .mockReturnValueOnce(firstSave.promise)
+      .mockReturnValueOnce(secondSave.promise);
+    const firstDataSourceContext = {
+      dataSource: { id: 'source-a', label: 'Source A' },
+      setDataSource: jest.fn(),
+    };
+    const secondDataSourceContext = {
+      dataSource: { id: 'source-b', label: 'Source B' },
+      setDataSource: jest.fn(),
+    };
+    const { rerender } = renderConfiguration({
+      configInfo,
+      dataSourceContext: firstDataSourceContext,
+    });
+
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(1));
+
+    rerender(
+      getConfigurationView({
+        configInfo,
+        dataSourceContext: secondDataSourceContext,
+      })
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      firstSave.resolve();
+      await firstSave.promise;
+    });
+    expect(mockCoreStart.notifications.toasts.addSuccess).not.toHaveBeenCalled();
+    expect(mockCoreStart.notifications.toasts.addDanger).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    await act(async () => {
+      secondSave.resolve();
+      await secondSave.promise;
+    });
+    expect(mockCoreStart.notifications.toasts.addSuccess).toHaveBeenCalledTimes(1);
   });
 
   it('keeps unsaved values and shows a permission error when saving is forbidden', async () => {

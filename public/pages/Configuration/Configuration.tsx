@@ -132,19 +132,23 @@ const Configuration = ({
   const selectedDataSourceId = useRef(dataSourceId);
   const latestPluginRequestId = useRef(0);
   const latestRepositoryRequestId = useRef(0);
+  const latestSaveRequestId = useRef(0);
   selectedDataSourceId.current = dataSourceId;
 
   useEffect(() => {
     latestPluginRequestId.current += 1;
     latestRepositoryRequestId.current += 1;
+    latestSaveRequestId.current += 1;
     setRepoOptions([]);
     setIsS3PluginInstalled(null);
     setIsCheckingPlugin(false);
     setIsRepoFlyoutOpen(false);
+    setIsSaving(false);
 
     return () => {
       latestPluginRequestId.current += 1;
       latestRepositoryRequestId.current += 1;
+      latestSaveRequestId.current += 1;
     };
   }, [dataSourceId]);
 
@@ -346,6 +350,7 @@ const Configuration = ({
       options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
+      disabled={isSaving}
     />
   );
 
@@ -356,6 +361,7 @@ const Configuration = ({
       required={true}
       value={windowSize}
       onChange={onWindowSizeChange}
+      disabled={isSaving}
     />
   );
 
@@ -389,6 +395,12 @@ const Configuration = ({
     (!remoteEnabled || isS3PluginInstalled !== false);
 
   const saveConfiguration = async () => {
+    const requestId = ++latestSaveRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestSaveRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
     setIsSaving(true);
     try {
       await configInfo(
@@ -405,8 +417,14 @@ const Configuration = ({
         remoteRepository,
         remotePath
       );
+      if (!isCurrentRequest()) {
+        return;
+      }
       core.notifications.toasts.addSuccess('Saved Query Insights settings.');
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       if (isForbiddenError(error)) {
         core.notifications.toasts.addDanger({
           title: QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
@@ -419,7 +437,9 @@ const Configuration = ({
         });
       }
     } finally {
-      setIsSaving(false);
+      if (requestId === latestSaveRequestId.current) {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -514,6 +534,7 @@ const Configuration = ({
                         options={METRIC_TYPES_TEXT}
                         value={metric}
                         onChange={onMetricChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -537,6 +558,7 @@ const Configuration = ({
                           checked={isEnabled}
                           onChange={onEnabledChange}
                           data-test-subj="top-n-metric-toggle"
+                          disabled={isSaving}
                         />
                       </EuiFlexItem>
                     </EuiFormRow>
@@ -567,6 +589,7 @@ const Configuration = ({
                             required={isEnabled}
                             value={topNSize}
                             onChange={onTopNSizeChange}
+                            disabled={isSaving}
                           />
                         </EuiFormRow>
                       </EuiFlexItem>
@@ -599,6 +622,7 @@ const Configuration = ({
                                 options={TIME_UNITS_TEXT}
                                 value={time}
                                 onChange={onTimeChange}
+                                disabled={isSaving}
                               />
                             </EuiFlexItem>
                           </EuiFlexGroup>
@@ -680,6 +704,7 @@ const Configuration = ({
                         options={GROUP_BY_OPTIONS}
                         value={groupBy}
                         onChange={onGroupByChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -739,6 +764,7 @@ const Configuration = ({
                         options={EXPORTER_TYPES_LIST}
                         value={exporterType}
                         onChange={onExporterTypeChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -765,7 +791,7 @@ const Configuration = ({
                       }
                     >
                       <EuiFieldNumber
-                        disabled={!isLocalIndex}
+                        disabled={!isLocalIndex || isSaving}
                         min={1}
                         max={180}
                         value={
@@ -842,6 +868,7 @@ const Configuration = ({
                               checked={remoteEnabled}
                               onChange={onRemoteEnabledChange}
                               data-test-subj="remote-exporter-toggle"
+                              disabled={isSaving}
                             />
                           </EuiFlexItem>
                           {isCheckingPlugin && (
@@ -922,6 +949,7 @@ const Configuration = ({
                               singleSelection={{ asPlainText: true }}
                               options={repoOptions}
                               isLoading={isCheckingPlugin}
+                              isDisabled={isSaving}
                               selectedOptions={
                                 remoteRepository ? [{ label: remoteRepository }] : []
                               }
@@ -937,6 +965,7 @@ const Configuration = ({
                                 size="s"
                                 onClick={() => setIsRepoFlyoutOpen(true)}
                                 data-test-subj="register-repo-button"
+                                isDisabled={isSaving}
                               >
                                 Register new
                               </EuiButton>
@@ -964,6 +993,7 @@ const Configuration = ({
                           value={remotePath}
                           onChange={onRemotePathChange}
                           data-test-subj="remote-exporter-path"
+                          disabled={isSaving}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>
@@ -998,7 +1028,13 @@ const Configuration = ({
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
             <EuiFlexItem grow={false}>
-              <EuiButtonEmpty color="ghost" size="s" iconType="cross" onClick={newOrReset}>
+              <EuiButtonEmpty
+                color="ghost"
+                size="s"
+                iconType="cross"
+                onClick={newOrReset}
+                isDisabled={isSaving}
+              >
                 Cancel
               </EuiButtonEmpty>
             </EuiFlexItem>
