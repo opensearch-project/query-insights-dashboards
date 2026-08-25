@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   EuiButton,
@@ -66,6 +66,7 @@ const QueryDetails = ({
   const [accessDenied, setAccessDenied] = useState(false);
   const history = useHistory();
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const latestQueryRequestId = useRef(0);
 
   // Convert UNIX time to a readable format
   const convertTime = useCallback((unixTime: number) => {
@@ -74,7 +75,8 @@ const QueryDetails = ({
     return `${month} ${day}, ${year} @ ${date.toLocaleTimeString('en-US')}`;
   }, []);
 
-  const fetchQueryDetails = async () => {
+  const fetchQueryDetails = useCallback(async () => {
+    const requestId = ++latestQueryRequestId.current;
     try {
       const retrievedQuery = await retrieveQueryById(
         core,
@@ -84,9 +86,15 @@ const QueryDetails = ({
         id,
         verbose
       );
+      if (requestId !== latestQueryRequestId.current) {
+        return;
+      }
       setQuery(retrievedQuery);
       setAccessDenied(false);
     } catch (error) {
+      if (requestId !== latestQueryRequestId.current) {
+        return;
+      }
       if (isForbiddenError(error)) {
         setQuery(null);
         setAccessDenied(true);
@@ -94,14 +102,20 @@ const QueryDetails = ({
       }
       console.error('Error retrieving query details:', error);
     }
-  };
+  }, [core, from, id, to, verbose]);
 
   useEffect(() => {
     if (id && from && to && verbose != null) {
       fetchQueryDetails();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, from, to, verbose]);
+  }, [fetchQueryDetails, from, id, to, verbose]);
+
+  useEffect(
+    () => () => {
+      latestQueryRequestId.current += 1;
+    },
+    []
+  );
 
   useEffect(() => {
     getVersionOnce(getDataSourceFromUrl().id || '').then((version) => {

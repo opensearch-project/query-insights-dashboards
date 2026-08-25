@@ -49,9 +49,15 @@ export const DataSourceMenu = React.memo(
     const dataSourceEnabled = !!depsStart.dataSource?.dataSourceEnabled;
 
     const wrapSetDataSourceWithUpdateUrl = (dataSources: DataSourceOption[]) => {
-      window.history.replaceState({}, '', getDataSourceEnabledUrl(dataSources[0]).toString());
-      setDataSource(dataSources[0]);
-      onSelectedDataSource();
+      const nextDataSource = dataSources[0];
+      if (!nextDataSource) return;
+
+      const dataSourceChanged = (nextDataSource.id ?? '') !== (selectedDataSource?.id ?? '');
+      window.history.replaceState({}, '', getDataSourceEnabledUrl(nextDataSource).toString());
+      setDataSource(nextDataSource);
+      if (dataSourceChanged) {
+        onSelectedDataSource();
+      }
     };
 
     return dataSourceEnabled ? (

@@ -20,6 +20,7 @@ import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
 jest.mock('../../utils/datasource-utils', () => ({
+  ...jest.requireActual('../../utils/datasource-utils'),
   getDataSourceVersion: jest.fn().mockResolvedValue('3.3.0'),
 }));
 jest.mock('../../utils/version-utils', () => ({
@@ -57,6 +58,9 @@ const makeCore = (): CoreStart =>
     http: {
       get: jest.fn(),
       post: jest.fn(),
+    },
+    savedObjects: {
+      client: {},
     },
     uiSettings: {
       get: jest.fn().mockReturnValue(false),
@@ -417,6 +421,49 @@ describe('InflightQueries', () => {
       true
     );
     expect(screen.queryByText('WLM Group')).not.toBeInTheDocument();
+  });
+
+  it('reloads parent settings after selecting a different MDS data source', async () => {
+    const core = makeCore();
+    (core.http.get as jest.Mock).mockResolvedValue({});
+    mockLiveQueries({ ok: true, response: { live_queries: [] } });
+    const onDataSourceChange = jest.fn();
+    const nextDataSource = { id: 'source-b', label: 'Source B' };
+    const SelectableDataSourceMenu = ({ componentConfig }: any) => (
+      <button type="button" onClick={() => componentConfig.onSelectedDataSources([nextDataSource])}>
+        Select source B
+      </button>
+    );
+    const dataSourceManagement = {
+      ui: {
+        getDataSourceMenu: jest.fn().mockReturnValue(SelectableDataSourceMenu),
+      },
+    };
+    const setDataSource = jest.fn();
+
+    render(
+      <MemoryRouter>
+        <DataSourceContext.Provider
+          value={{
+            dataSource: { id: 'source-a', label: 'Source A' },
+            setDataSource,
+          }}
+        >
+          <InflightQueries
+            core={core}
+            depsStart={{ dataSource: { dataSourceEnabled: true } } as any}
+            params={{ setHeaderActionMenu: jest.fn() } as any}
+            dataSourceManagement={dataSourceManagement as any}
+            onDataSourceChange={onDataSourceChange}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select source B' }));
+
+    expect(setDataSource).toHaveBeenCalledWith(nextDataSource);
+    expect(onDataSourceChange).toHaveBeenCalledTimes(1);
   });
 
   it('updates data periodically', async () => {

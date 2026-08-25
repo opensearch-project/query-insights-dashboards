@@ -8,8 +8,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { DataSourceMenu } from './DataSourcePicker';
 
 describe('DataSourceMenu', () => {
-  it('does not remount the OSD data source menu when the selection callback changes', () => {
+  it('ignores picker initialization and does not remount when the callback changes', () => {
     const selectedDataSource = { id: 'source-a', label: 'Source A' };
+    const nextDataSource = { id: 'source-b', label: 'Source B' };
     const firstSelectionCallback = jest.fn();
     const latestSelectionCallback = jest.fn();
     const setDataSource = jest.fn();
@@ -25,7 +26,7 @@ describe('DataSourceMenu', () => {
         return (
           <button
             type="button"
-            onClick={() => componentConfig.onSelectedDataSources([selectedDataSource])}
+            onClick={() => componentConfig.onSelectedDataSources([nextDataSource])}
           >
             Select source
           </button>
@@ -54,7 +55,7 @@ describe('DataSourceMenu', () => {
     );
 
     expect(getDataSourceMenu).toHaveBeenCalledTimes(1);
-    expect(firstSelectionCallback).toHaveBeenCalledTimes(1);
+    expect(firstSelectionCallback).not.toHaveBeenCalled();
 
     rerender(<DataSourceMenu {...commonProps} onSelectedDataSource={latestSelectionCallback} />);
 
@@ -64,5 +65,6 @@ describe('DataSourceMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select source' }));
 
     expect(latestSelectionCallback).toHaveBeenCalledTimes(1);
+    expect(setDataSource).toHaveBeenLastCalledWith(nextDataSource);
   });
 });

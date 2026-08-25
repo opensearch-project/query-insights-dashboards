@@ -173,7 +173,7 @@ describe('QueryInsights Component', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 
-  it('reloads settings and queries when the data source changes', () => {
+  it('delegates a data source change to the parent refresh handler', () => {
     renderQueryInsights(['/'], false, {
       dataSource: { dataSourceEnabled: true },
     });
@@ -186,7 +186,7 @@ describe('QueryInsights Component', () => {
     });
 
     expect(mockOnDataSourceChange).toHaveBeenCalledTimes(1);
-    expect(mockRetrieveQueries).toHaveBeenCalledWith('now-15m', 'now');
+    expect(mockRetrieveQueries).not.toHaveBeenCalled();
   });
 
   describe('WLM group URL parameter extraction', () => {

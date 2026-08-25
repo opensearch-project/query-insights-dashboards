@@ -100,11 +100,13 @@ export const InflightQueries = ({
   depsStart,
   params,
   dataSourceManagement,
+  onDataSourceChange,
 }: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  onDataSourceChange?: () => Promise<void> | void;
 }) => {
   const activeFetch = useRef<{ sourceId: string; token: number } | null>(null);
   const nextFetchToken = useRef(0);
@@ -843,6 +845,7 @@ export const InflightQueries = ({
           total_cancellations: 0,
           total_failures: 0,
         });
+        void onDataSourceChange?.();
       }}
       dataSourcePickerReadOnly={false}
     />

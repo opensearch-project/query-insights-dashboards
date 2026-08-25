@@ -86,6 +86,12 @@ export interface RemoteExporterSettings {
   path: string;
 }
 
+export interface EnabledMetrics {
+  latency: boolean;
+  cpu: boolean;
+  memory: boolean;
+}
+
 export type ConfigurationLoadState = 'loading' | 'ready' | 'accessDenied' | 'error';
 
 export interface DataSourceContextType {
@@ -196,11 +202,18 @@ const TopNQueries = ({
     useState<ConfigurationLoadState>('loading');
   const latestQueryRequestId = useRef(0);
   const latestConfigRequestId = useRef(0);
+  const latestDataSourceChangeId = useRef(0);
+  const enabledMetricsRef = useRef<EnabledMetrics>({
+    latency: DEFAULT_METRIC_ENABLED,
+    cpu: DEFAULT_METRIC_ENABLED,
+    memory: DEFAULT_METRIC_ENABLED,
+  });
 
   useEffect(
     () => () => {
       latestQueryRequestId.current += 1;
       latestConfigRequestId.current += 1;
+      latestDataSourceChangeId.current += 1;
     },
     []
   );
@@ -258,9 +271,10 @@ const TopNQueries = ({
 
   // TODO: refactor retrieveQueries and retrieveConfigInfo into a Util function
   const retrieveQueries = useCallback(
-    async (start: string, end: string) => {
+    async (start: string, end: string, enabledMetrics?: EnabledMetrics) => {
       const requestId = ++latestQueryRequestId.current;
       const requestDataSourceId = getDataSourceFromUrl().id;
+      const metrics = enabledMetrics ?? enabledMetricsRef.current;
       setLoading(true);
       setQueryAccessDenied(false);
       const nullResponse = { response: { top_queries: [] } };
@@ -316,13 +330,11 @@ const TopNQueries = ({
         }
       };
       try {
-        const respLatency = latencySettings.isEnabled
+        const respLatency = metrics.latency
           ? await fetchMetric('/api/top_queries/latency')
           : nullResponse;
-        const respCpu = cpuSettings.isEnabled
-          ? await fetchMetric('/api/top_queries/cpu')
-          : nullResponse;
-        const respMemory = memorySettings.isEnabled
+        const respCpu = metrics.cpu ? await fetchMetric('/api/top_queries/cpu') : nullResponse;
+        const respMemory = metrics.memory
           ? await fetchMetric('/api/top_queries/memory')
           : nullResponse;
         const newQueries = [
@@ -367,7 +379,7 @@ const TopNQueries = ({
         }
       }
     },
-    [latencySettings, cpuSettings, memorySettings, core]
+    [core]
   );
 
   const retrieveConfigInfo = useCallback(
@@ -384,7 +396,7 @@ const TopNQueries = ({
       newRemoteEnabled: boolean = false,
       newRemoteRepository: string = '',
       newRemotePath: string = ''
-    ) => {
+    ): Promise<EnabledMetrics | undefined> => {
       if (get) {
         const requestId = ++latestConfigRequestId.current;
         setConfigurationLoadState('loading');
@@ -449,6 +461,11 @@ const TopNQueries = ({
               },
             };
           });
+          const enabledMetrics: EnabledMetrics = {
+            latency: metricUpdates[0].updates.isEnabled,
+            cpu: metricUpdates[1].updates.isEnabled,
+            memory: metricUpdates[2].updates.isEnabled,
+          };
           const version = await getVersionOnce(requestDataSourceId);
           const groupBy = getMergedStringSettings(
             getGroupBySettingsPath(version, persistentSettings),
@@ -485,6 +502,7 @@ const TopNQueries = ({
             return;
           }
 
+          enabledMetricsRef.current = enabledMetrics;
           metricUpdates.forEach(({ metricType, updates }) => {
             setMetricSettings(metricType, updates);
           });
@@ -496,6 +514,7 @@ const TopNQueries = ({
             path: remotePath,
           });
           setConfigurationLoadState('ready');
+          return enabledMetrics;
         } catch (error) {
           if (requestId !== latestConfigRequestId.current) {
             return;
@@ -505,6 +524,13 @@ const TopNQueries = ({
           } else {
             setConfigurationLoadState('error');
           }
+          const fallbackMetrics = {
+            latency: true,
+            cpu: true,
+            memory: true,
+          };
+          enabledMetricsRef.current = fallbackMetrics;
+          return fallbackMetrics;
         }
       } else {
         const requestDataSourceId = getDataSourceFromUrl().id;
@@ -542,6 +568,16 @@ const TopNQueries = ({
           return;
         }
 
+        if (
+          metric === MetricType.LATENCY ||
+          metric === MetricType.CPU ||
+          metric === MetricType.MEMORY
+        ) {
+          enabledMetricsRef.current = {
+            ...enabledMetricsRef.current,
+            [metric]: enabled,
+          };
+        }
         setMetricSettings(metric, {
           isEnabled: enabled,
           currTopN: newTopN,
@@ -563,7 +599,28 @@ const TopNQueries = ({
     [core]
   );
 
-  const onDataSourceChange = useCallback(() => retrieveConfigInfo(true), [retrieveConfigInfo]);
+  const onDataSourceChange = useCallback(async () => {
+    const sourceChangeId = ++latestDataSourceChangeId.current;
+    const requestDataSourceId = getDataSourceFromUrl().id;
+
+    latestQueryRequestId.current += 1;
+    setQueries([]);
+    setQueryAccessDenied(false);
+    setLoading(true);
+
+    const enabledMetrics = await retrieveConfigInfo(true);
+    if (
+      sourceChangeId !== latestDataSourceChangeId.current ||
+      requestDataSourceId !== getDataSourceFromUrl().id
+    ) {
+      return;
+    }
+    if (!enabledMetrics) {
+      return;
+    }
+
+    await retrieveQueries(currStart, currEnd, enabledMetrics);
+  }, [currEnd, currStart, retrieveConfigInfo, retrieveQueries]);
 
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
@@ -644,6 +701,7 @@ const TopNQueries = ({
                 depsStart={depsStart}
                 params={params}
                 dataSourceManagement={dataSourceManagement}
+                onDataSourceChange={onDataSourceChange}
               />
             </Route>
           )}
@@ -702,6 +760,7 @@ const TopNQueries = ({
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={remoteExporterSettings}
               configInfo={retrieveConfigInfo}
+              onDataSourceChange={onDataSourceChange}
               configurationLoadState={configurationLoadState}
               core={core}
               depsStart={depsStart}

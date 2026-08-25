@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect, useContext } from 'react';
+import React, { useCallback, useState, useEffect, useContext, useRef } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -39,6 +39,7 @@ import {
   DataSourceContext,
   DataRetentionSettings,
   RemoteExporterSettings,
+  EnabledMetrics,
 } from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
@@ -75,7 +76,7 @@ type ConfigInfo = (
   newRemoteEnabled?: boolean,
   newRemoteRepository?: string,
   newRemotePath?: string
-) => Promise<void>;
+) => Promise<EnabledMetrics | undefined>;
 
 const Configuration = ({
   latencySettings,
@@ -85,6 +86,7 @@ const Configuration = ({
   dataRetentionSettings,
   remoteExporterSettings,
   configInfo,
+  onDataSourceChange,
   configurationLoadState,
   core,
   depsStart,
@@ -98,6 +100,7 @@ const Configuration = ({
   dataRetentionSettings: DataRetentionSettings;
   remoteExporterSettings: RemoteExporterSettings;
   configInfo: ConfigInfo;
+  onDataSourceChange: () => Promise<void> | void;
   configurationLoadState: ConfigurationLoadState;
   core: CoreStart;
   params: AppMountParameters;
@@ -125,43 +128,81 @@ const Configuration = ({
   const [isS3PluginInstalled, setIsS3PluginInstalled] = useState<boolean | null>(null);
   const [isCheckingPlugin, setIsCheckingPlugin] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const dataSourceId = dataSource?.id || '';
+  const selectedDataSourceId = useRef(dataSourceId);
+  const latestPluginRequestId = useRef(0);
+  const latestRepositoryRequestId = useRef(0);
+  selectedDataSourceId.current = dataSourceId;
+
+  useEffect(() => {
+    latestPluginRequestId.current += 1;
+    latestRepositoryRequestId.current += 1;
+    setRepoOptions([]);
+    setIsS3PluginInstalled(null);
+    setIsCheckingPlugin(false);
+    setIsRepoFlyoutOpen(false);
+
+    return () => {
+      latestPluginRequestId.current += 1;
+      latestRepositoryRequestId.current += 1;
+    };
+  }, [dataSourceId]);
 
   const checkS3Plugin = useCallback(async () => {
+    const requestId = ++latestPluginRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestPluginRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
     setIsCheckingPlugin(true);
     try {
       const resp = await core.http.get('/api/cat/plugins', {
-        query: { dataSourceId: dataSource?.id || '' },
+        query: { dataSourceId: requestDataSourceId },
       });
-      if (resp.ok && Array.isArray(resp.response)) {
+      if (isCurrentRequest() && resp.ok && Array.isArray(resp.response)) {
         const found = resp.response.some(
           (p: { component: string }) => p.component === 'repository-s3'
         );
         setIsS3PluginInstalled(found);
       }
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       console.error('Failed to check for repository-s3 plugin:', error);
       // On failure, assume plugin is installed so the user isn't stuck
       setIsS3PluginInstalled(true);
     } finally {
-      setIsCheckingPlugin(false);
+      if (isCurrentRequest()) {
+        setIsCheckingPlugin(false);
+      }
     }
-  }, [core.http, dataSource]);
+  }, [core.http, dataSourceId]);
 
   const fetchRepositories = useCallback(async () => {
+    const requestId = ++latestRepositoryRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestRepositoryRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
     try {
       const resp = await core.http.get('/api/snapshot/repositories', {
-        query: { dataSourceId: dataSource?.id || '' },
+        query: { dataSourceId: requestDataSourceId },
       });
-      if (resp.ok && resp.response) {
+      if (isCurrentRequest() && resp.ok && resp.response) {
         const names = Object.keys(resp.response)
           .filter((name) => resp.response[name].type === 's3')
           .map((name) => ({ label: name }));
         setRepoOptions(names);
       }
     } catch (error) {
-      console.error('Failed to fetch snapshot repositories:', error);
+      if (isCurrentRequest()) {
+        console.error('Failed to fetch snapshot repositories:', error);
+      }
     }
-  }, [core.http, dataSource]);
+  }, [core.http, dataSourceId]);
 
   useEffect(() => {
     if (configurationLoadState !== 'ready') {
@@ -396,7 +437,7 @@ const Configuration = ({
       selectedDataSource={dataSource}
       onManageDataSource={() => {}}
       onSelectedDataSource={() => {
-        void configInfo(true);
+        void onDataSourceChange();
       }}
       dataSourcePickerReadOnly={false}
     />

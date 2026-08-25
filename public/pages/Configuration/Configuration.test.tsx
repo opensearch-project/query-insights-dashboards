@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import Configuration from './Configuration';
@@ -19,6 +19,7 @@ import {
 } from './configurationValidation';
 
 const mockConfigInfo = jest.fn();
+const mockOnDataSourceChange = jest.fn();
 const mockCoreStart = {
   chrome: {
     setBreadcrumbs: jest.fn(),
@@ -80,6 +81,14 @@ const mockDataSourceContext = {
   setDataSource: jest.fn(),
 };
 
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+};
+
 let currentLocationPath = '';
 const LocationDisplay = () => {
   const location = useLocation();
@@ -107,6 +116,7 @@ const renderConfiguration = ({
           dataRetentionSettings={dataRetentionSettings}
           remoteExporterSettings={remoteExporterSettings}
           core={mockCoreStart}
+          onDataSourceChange={mockOnDataSourceChange}
           depsStart={{ navigation: {} }}
           params={{} as any}
           dataSourceManagement={dataSourceManagementMock}
@@ -127,6 +137,7 @@ describe('Configuration Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockConfigInfo.mockResolvedValue(undefined);
+    mockOnDataSourceChange.mockResolvedValue(undefined);
     currentLocationPath = '';
   });
 
@@ -539,6 +550,7 @@ describe('Configuration Component', () => {
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
               core={mockCoreStart}
+              onDataSourceChange={mockOnDataSourceChange}
               depsStart={{ navigation: {} }}
               params={{} as any}
               dataSourceManagement={dataSourceManagementMock}
@@ -549,6 +561,126 @@ describe('Configuration Component', () => {
       await waitFor(() => {
         expect(screen.getByText('Register new')).toBeInTheDocument();
       });
+    });
+
+    it('ignores repository and plugin responses from the previously selected data source', async () => {
+      const sourceARepositories = createDeferred<{
+        ok: boolean;
+        response: Record<string, { type: string }>;
+      }>();
+      const sourceAPlugins = createDeferred<{
+        ok: boolean;
+        response: Array<{ component: string }>;
+      }>();
+      const sourceBRepositories = createDeferred<{
+        ok: boolean;
+        response: Record<string, { type: string }>;
+      }>();
+      const sourceBPlugins = createDeferred<{
+        ok: boolean;
+        response: Array<{ component: string }>;
+      }>();
+
+      mockCoreStart.http.get.mockImplementation((url: string, options: any) => {
+        const isSourceA = options.query.dataSourceId === 'source-a';
+        if (url === '/api/snapshot/repositories') {
+          return isSourceA ? sourceARepositories.promise : sourceBRepositories.promise;
+        }
+        if (url === '/api/cat/plugins') {
+          return isSourceA ? sourceAPlugins.promise : sourceBPlugins.promise;
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+
+      const configurationForSource = (id: string) => (
+        <MemoryRouter>
+          <DataSourceContext.Provider
+            value={{
+              dataSource: { id, label: id },
+              setDataSource: jest.fn(),
+            }}
+          >
+            <Configuration
+              latencySettings={defaultLatencySettings}
+              cpuSettings={defaultCpuSettings}
+              memorySettings={defaultMemorySettings}
+              groupBySettings={groupBySettings}
+              configInfo={mockConfigInfo}
+              onDataSourceChange={mockOnDataSourceChange}
+              configurationLoadState="ready"
+              dataRetentionSettings={dataRetentionSettings}
+              remoteExporterSettings={{ enabled: true, repository: '', path: 'insights' }}
+              core={mockCoreStart}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+
+      const { rerender } = render(configurationForSource('source-a'));
+      await waitFor(() => {
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/cat/plugins', {
+          query: { dataSourceId: 'source-a' },
+        });
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/snapshot/repositories', {
+          query: { dataSourceId: 'source-a' },
+        });
+      });
+
+      rerender(configurationForSource('source-b'));
+      await waitFor(() => {
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/cat/plugins', {
+          query: { dataSourceId: 'source-b' },
+        });
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/snapshot/repositories', {
+          query: { dataSourceId: 'source-b' },
+        });
+      });
+
+      await act(async () => {
+        sourceBRepositories.resolve({
+          ok: true,
+          response: { 'source-b-repository': { type: 's3' } },
+        });
+        sourceBPlugins.resolve({
+          ok: true,
+          response: [{ component: 'repository-s3' }],
+        });
+        await Promise.all([sourceBRepositories.promise, sourceBPlugins.promise]);
+      });
+      await waitFor(() => {
+        expect(screen.getByText('exporter.remote.repository')).toBeInTheDocument();
+      });
+      const repositoryInput = document.querySelector(
+        '[data-test-subj="comboBoxSearchInput"]'
+      ) as HTMLInputElement;
+      expect(repositoryInput).not.toBeNull();
+      fireEvent.click(repositoryInput);
+      fireEvent.focus(repositoryInput);
+      fireEvent.keyDown(repositoryInput, { key: 'ArrowDown' });
+      await waitFor(() => {
+        expect(screen.getByText('source-b-repository')).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        sourceARepositories.resolve({
+          ok: true,
+          response: { 'source-a-repository': { type: 's3' } },
+        });
+        sourceAPlugins.resolve({
+          ok: true,
+          response: [{ component: 'other-plugin' }],
+        });
+        await Promise.all([sourceARepositories.promise, sourceAPlugins.promise]);
+      });
+
+      expect(screen.getByText('source-b-repository')).toBeInTheDocument();
+      expect(screen.queryByText('source-a-repository')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('The repository-s3 plugin is not installed')
+      ).not.toBeInTheDocument();
     });
 
     it('should show remote exporter status as Disabled in status panel', () => {
@@ -685,6 +817,7 @@ describe('Configuration Component', () => {
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
               core={mockCoreStart}
+              onDataSourceChange={mockOnDataSourceChange}
               depsStart={{ navigation: {} }}
               params={{} as any}
               dataSourceManagement={dataSourceManagementMock}

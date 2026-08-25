@@ -847,9 +847,8 @@ const QueryInsights = ({
   };
 
   const onSelectedDataSource = useCallback(() => {
-    onDataSourceChange();
-    retrieveQueries(currStart, currEnd);
-  }, [onDataSourceChange, retrieveQueries, currStart, currEnd]);
+    void onDataSourceChange();
+  }, [onDataSourceChange]);
 
   const percentileMetrics = useMemo(() => {
     const latencies: number[] = [];

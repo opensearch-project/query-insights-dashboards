@@ -4,11 +4,12 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import QueryDetails from './QueryDetails';
 import { MockQueries } from '../../../test/testUtils';
 import '@testing-library/jest-dom';
-import { MemoryRouter, Route } from 'react-router-dom';
+import { Route, Router } from 'react-router-dom';
+import { createMemoryHistory, MemoryHistory } from 'history';
 import hash from 'object-hash';
 import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
@@ -48,6 +49,18 @@ const mockDataSourceContext = {
 };
 
 const mockQuery = MockQueries()[0];
+const queryDetailsPath = (id: string) =>
+  `/query-details/?id=${id}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z&verbose=true`;
+
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+};
 
 describe('QueryDetails component', () => {
   beforeEach(() => {
@@ -55,15 +68,13 @@ describe('QueryDetails component', () => {
     (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
   });
 
-  const renderQueryDetails = () => {
+  const renderQueryDetails = (
+    history: MemoryHistory = createMemoryHistory({
+      initialEntries: [queryDetailsPath(hash(mockQuery.id))],
+    })
+  ) => {
     return render(
-      <MemoryRouter
-        initialEntries={[
-          `/query-details/?id=${hash(
-            mockQuery.id
-          )}&from=2025-01-21T22:30:33.347Z&to=2025-01-22T22:30:33.347Z&verbose=true`,
-        ]}
-      >
+      <Router history={history}>
         <DataSourceContext.Provider value={mockDataSourceContext}>
           <Route path="/query-details">
             <QueryDetails
@@ -74,7 +85,7 @@ describe('QueryDetails component', () => {
             />
           </Route>
         </DataSourceContext.Provider>
-      </MemoryRouter>
+      </Router>
     );
   };
 
@@ -123,6 +134,54 @@ describe('QueryDetails component', () => {
     });
     expect(getByTestSubj(container, 'query-details-source-section')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Latency' })).not.toBeInTheDocument();
+  });
+
+  it('ignores a stale forbidden response after navigating to another query', async () => {
+    const firstRequest = createDeferred<typeof mockQuery>();
+    const secondRequest = createDeferred<typeof mockQuery>();
+    (retrieveQueryById as jest.Mock).mockImplementation(
+      (_core, _dataSourceId, _from, _to, queryId) =>
+        queryId === 'query-a' ? firstRequest.promise : secondRequest.promise
+    );
+    const history = createMemoryHistory({ initialEntries: [queryDetailsPath('query-a')] });
+
+    renderQueryDetails(history);
+    await waitFor(() =>
+      expect(retrieveQueryById).toHaveBeenCalledWith(
+        mockCoreStart,
+        undefined,
+        '2025-01-21T22:30:33.347Z',
+        '2025-01-22T22:30:33.347Z',
+        'query-a',
+        true
+      )
+    );
+
+    act(() => history.push(queryDetailsPath('query-b')));
+    await waitFor(() =>
+      expect(retrieveQueryById).toHaveBeenCalledWith(
+        mockCoreStart,
+        undefined,
+        '2025-01-21T22:30:33.347Z',
+        '2025-01-22T22:30:33.347Z',
+        'query-b',
+        true
+      )
+    );
+
+    await act(async () => {
+      secondRequest.resolve({ ...mockQuery, id: 'query-b' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      firstRequest.reject({ statusCode: 403 });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.queryByText("You don't have permission to view Query Insights data.")
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Latency' }).length).toBeGreaterThan(0);
   });
 
   it('renders the ECharts latency chart', async () => {

@@ -7,29 +7,38 @@ import React from 'react';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
-import TopNQueries, { QUERY_INSIGHTS, CONFIGURATION } from './TopNQueries';
+import TopNQueries, { QUERY_INSIGHTS, CONFIGURATION, LIVE_QUERIES } from './TopNQueries';
 import { CoreStart, AppMountParameters } from 'opensearch-dashboards/public';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { getVersionOnce } from '../../utils/version-utils';
 
 interface MockQueryInsightsProps {
   accessDenied?: boolean;
+  loading: boolean;
   queries: Array<{ id?: string }>;
   retrieveQueries: (start: string, end: string) => Promise<void>;
   onDataSourceChange: () => Promise<void> | void;
+  onTimeChange: ({ start, end }: { start: string; end: string }) => void;
 }
 
 let mockQueryInsightsProps: MockQueryInsightsProps | undefined;
 
 interface MockConfigurationProps {
   configurationLoadState: 'loading' | 'ready' | 'accessDenied' | 'error';
-  configInfo: (...args: any[]) => Promise<void>;
+  configInfo: (...args: any[]) => Promise<any>;
+  onDataSourceChange: () => Promise<void> | void;
   latencySettings: {
     currTopN: string;
   };
 }
 
 let mockConfigurationProps: MockConfigurationProps | undefined;
+
+interface MockInflightQueriesProps {
+  onDataSourceChange?: () => Promise<void> | void;
+}
+
+let mockInflightQueriesProps: MockInflightQueriesProps | undefined;
 
 jest.mock('../QueryInsights/QueryInsights', () => (props: MockQueryInsightsProps) => {
   mockQueryInsightsProps = props;
@@ -51,6 +60,12 @@ jest.mock('../Configuration/Configuration', () => (props: MockConfigurationProps
     </div>
   );
 });
+jest.mock('../InflightQueries/InflightQueries', () => ({
+  InflightQueries: (props: MockInflightQueriesProps) => {
+    mockInflightQueriesProps = props;
+    return <div>Mocked InflightQueries</div>;
+  },
+}));
 jest.mock('../QueryDetails/QueryDetails', () => () => <div>Mocked QueryDetails</div>);
 jest.mock('../../utils/version-utils');
 
@@ -128,6 +143,7 @@ describe('TopNQueries Component', () => {
     window.history.replaceState({}, '', '/');
     mockQueryInsightsProps = undefined;
     mockConfigurationProps = undefined;
+    mockInflightQueriesProps = undefined;
     (getVersionOnce as jest.Mock).mockResolvedValue('3.1.0');
   });
 
@@ -358,6 +374,338 @@ describe('TopNQueries Component', () => {
       query: { dataSourceId: 'next-source' },
     });
     expect(getVersionOnce).toHaveBeenCalledWith('next-source');
+  });
+
+  it('waits for the selected data source settings before fetching its enabled metrics', async () => {
+    const settingsResponse = (enabledMetric: 'latency' | 'cpu') => ({
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: String(enabledMetric === 'latency'), window_size: '1h' },
+                cpu: { enabled: String(enabledMetric === 'cpu'), window_size: '1h' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    });
+    const sourceBSettings = createDeferred<ReturnType<typeof settingsResponse>>();
+
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint, options) => {
+      if (endpoint === '/api/settings') {
+        return options.query.dataSourceId === 'source-b'
+          ? sourceBSettings.promise
+          : Promise.resolve(settingsResponse('latency'));
+      }
+      return Promise.resolve({ response: { top_queries: [] } });
+    });
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+
+    renderTopNQueries(QUERY_INSIGHTS);
+    await waitFor(() => {
+      expect(mockCore.http.get).toHaveBeenCalledWith(
+        '/api/top_queries/latency',
+        expect.objectContaining({
+          query: expect.objectContaining({ dataSourceId: 'source-a' }),
+        })
+      );
+    });
+    (mockCore.http.get as jest.Mock).mockClear();
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+    let sourceChangePromise: Promise<void>;
+    act(() => {
+      sourceChangePromise = Promise.resolve(mockQueryInsightsProps!.onDataSourceChange());
+    });
+
+    await waitFor(() => {
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+        query: { dataSourceId: 'source-b' },
+      });
+    });
+    expect(mockCore.http.get).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^\/api\/top_queries\//),
+      expect.anything()
+    );
+
+    await act(async () => {
+      sourceBSettings.resolve(settingsResponse('cpu'));
+      await sourceChangePromise!;
+    });
+
+    expect(mockCore.http.get).toHaveBeenCalledWith(
+      '/api/top_queries/cpu',
+      expect.objectContaining({
+        query: expect.objectContaining({ dataSourceId: 'source-b' }),
+      })
+    );
+    expect(mockCore.http.get).not.toHaveBeenCalledWith(
+      '/api/top_queries/latency',
+      expect.anything()
+    );
+    expect(mockCore.http.get).not.toHaveBeenCalledWith(
+      '/api/top_queries/memory',
+      expect.anything()
+    );
+  });
+
+  it('does not clear loading when a newer refresh supersedes a data source settings request', async () => {
+    const settingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const sourceChangeSettings = createDeferred<typeof settingsResponse>();
+    const pendingTopQueries = createDeferred<{ response: { top_queries: [] } }>();
+    let sourceChangeStarted = false;
+    let pendingTopQueryRequests = 0;
+
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+      if (endpoint === '/api/settings') {
+        if (sourceChangeStarted) {
+          sourceChangeStarted = false;
+          return sourceChangeSettings.promise;
+        }
+        return Promise.resolve(settingsResponse);
+      }
+      if (endpoint.startsWith('/api/top_queries/')) {
+        if (window.location.search.includes('source-b')) {
+          pendingTopQueryRequests += 1;
+          return pendingTopQueries.promise;
+        }
+        return Promise.resolve({ response: { top_queries: [] } });
+      }
+      return Promise.resolve({ response: { top_queries: [] } });
+    });
+
+    renderTopNQueries(QUERY_INSIGHTS);
+    await waitFor(() => expect(mockQueryInsightsProps?.loading).toBe(false));
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+    sourceChangeStarted = true;
+    let sourceChangePromise: Promise<void>;
+    act(() => {
+      sourceChangePromise = Promise.resolve(mockQueryInsightsProps!.onDataSourceChange());
+    });
+    await waitFor(() =>
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+        query: { dataSourceId: 'source-b' },
+      })
+    );
+
+    act(() => {
+      mockQueryInsightsProps!.onTimeChange({ start: 'now-2h', end: 'now' });
+    });
+    await waitFor(() => {
+      expect(pendingTopQueryRequests).toBeGreaterThan(0);
+      expect(mockQueryInsightsProps?.loading).toBe(true);
+    });
+
+    await act(async () => {
+      sourceChangeSettings.resolve(settingsResponse);
+      await sourceChangePromise!;
+    });
+
+    expect(mockQueryInsightsProps?.loading).toBe(true);
+
+    await act(async () => {
+      pendingTopQueries.resolve({ response: { top_queries: [] } });
+      await pendingTopQueries.promise;
+    });
+    await waitFor(() => expect(mockQueryInsightsProps?.loading).toBe(false));
+  });
+
+  it('keeps fetching all metrics when selected source settings cannot be read', async () => {
+    const sourceASettings = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const forbiddenError = {
+      statusCode: 403,
+      body: { message: '[security_exception] no permissions for cluster settings' },
+    };
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint, options) => {
+      if (endpoint === '/api/settings') {
+        return options.query.dataSourceId === 'source-b'
+          ? Promise.reject(forbiddenError)
+          : Promise.resolve(sourceASettings);
+      }
+      return Promise.resolve({ response: { top_queries: [] } });
+    });
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+
+    renderTopNQueries(QUERY_INSIGHTS);
+    await waitFor(() => {
+      expect(mockCore.http.get).toHaveBeenCalledWith(
+        '/api/top_queries/latency',
+        expect.any(Object)
+      );
+    });
+    (mockCore.http.get as jest.Mock).mockClear();
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+    await act(async () => {
+      await mockQueryInsightsProps!.onDataSourceChange();
+    });
+
+    for (const metric of ['latency', 'cpu', 'memory']) {
+      expect(mockCore.http.get).toHaveBeenCalledWith(
+        `/api/top_queries/${metric}`,
+        expect.objectContaining({
+          query: expect.objectContaining({ dataSourceId: 'source-b' }),
+        })
+      );
+    }
+    (mockCore.http.get as jest.Mock).mockClear();
+
+    act(() => {
+      mockQueryInsightsProps!.onTimeChange({ start: 'now-2h', end: 'now' });
+    });
+
+    await waitFor(() => {
+      for (const metric of ['latency', 'cpu', 'memory']) {
+        expect(mockCore.http.get).toHaveBeenCalledWith(
+          `/api/top_queries/${metric}`,
+          expect.objectContaining({
+            query: expect.objectContaining({ dataSourceId: 'source-b' }),
+          })
+        );
+      }
+    });
+  });
+
+  it('reloads settings after a data source change from Live Queries', async () => {
+    const mockSettingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) =>
+      Promise.resolve(
+        endpoint === '/api/settings' ? mockSettingsResponse : { response: { top_queries: [] } }
+      )
+    );
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+
+    renderTopNQueries(LIVE_QUERIES);
+    await waitFor(() => expect(mockInflightQueriesProps?.onDataSourceChange).toBeDefined());
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+    await act(async () => {
+      await mockInflightQueriesProps!.onDataSourceChange!();
+    });
+
+    expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+      query: { dataSourceId: 'source-b' },
+    });
+  });
+
+  it('uses the full parent refresh after a data source change from Configuration', async () => {
+    const mockSettingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'false' },
+                cpu: { enabled: 'true', window_size: '1h' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) =>
+      Promise.resolve(
+        endpoint === '/api/settings' ? mockSettingsResponse : { response: { top_queries: [] } }
+      )
+    );
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.onDataSourceChange).toBeDefined());
+    (mockCore.http.get as jest.Mock).mockClear();
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+
+    await act(async () => {
+      await mockConfigurationProps!.onDataSourceChange();
+    });
+
+    expect(mockCore.http.get).toHaveBeenCalledWith('/api/settings', {
+      query: { dataSourceId: 'source-b' },
+    });
+    expect(mockCore.http.get).toHaveBeenCalledWith(
+      '/api/top_queries/cpu',
+      expect.objectContaining({
+        query: expect.objectContaining({ dataSourceId: 'source-b' }),
+      })
+    );
   });
 
   it('fetches queries for all metrics in retrieveQueries', async () => {
