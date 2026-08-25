@@ -111,6 +111,7 @@ export const InflightQueries = ({
   const activeFetch = useRef<{ sourceId: string; token: number } | null>(null);
   const nextFetchToken = useRef(0);
   const latestLiveQueryRequestId = useRef(0);
+  const latestAppliedLiveQueryRequestId = useRef(0);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
@@ -126,12 +127,13 @@ export const InflightQueries = ({
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
 
-  useEffect(
-    () => () => {
-      latestLiveQueryRequestId.current += 1;
-    },
-    []
-  );
+  const invalidatePendingLiveQueryResponses = useCallback(() => {
+    latestAppliedLiveQueryRequestId.current = ++latestLiveQueryRequestId.current;
+  }, []);
+
+  useEffect(() => {
+    return () => invalidatePendingLiveQueryResponses();
+  }, [dataSource?.id, invalidatePendingLiveQueryResponses]);
 
   const location = useLocation();
   const history = useHistory();
@@ -345,8 +347,8 @@ export const InflightQueries = ({
         return;
       }
       const requestId = ++latestLiveQueryRequestId.current;
-      const isCurrentRequest = () =>
-        requestId === latestLiveQueryRequestId.current &&
+      const canApplyResponse = () =>
+        requestId > latestAppliedLiveQueryRequestId.current &&
         requestDataSourceId === selectedDataSourceId.current;
       let retrieved: LiveSearchQueryResponse;
       try {
@@ -357,10 +359,11 @@ export const InflightQueries = ({
           taskDetailSupported && showFinishedQueries
         );
       } catch (error) {
-        if (!isCurrentRequest()) {
+        if (!canApplyResponse()) {
           return;
         }
         if (isForbiddenError(error)) {
+          latestAppliedLiveQueryRequestId.current = requestId;
           setAccessDenied(true);
           setQuery(null);
           setNodeCounts({});
@@ -375,11 +378,12 @@ export const InflightQueries = ({
         throw error;
       }
 
-      if (!isCurrentRequest()) {
+      if (!canApplyResponse()) {
         return;
       }
 
       if (retrieved?.response?.live_queries) {
+        latestAppliedLiveQueryRequestId.current = requestId;
         setAccessDenied(false);
         const mapFromOptions: Record<string, string> = Object.fromEntries(
           wlmGroupOptions.map((g) => [g.id, g.name])
@@ -835,7 +839,7 @@ export const InflightQueries = ({
       selectedDataSource={dataSource}
       onManageDataSource={() => {}}
       onSelectedDataSource={() => {
-        latestLiveQueryRequestId.current += 1;
+        invalidatePendingLiveQueryResponses();
         setAccessDenied(false);
         setQuery(null);
         setNodeCounts({});

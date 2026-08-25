@@ -15,6 +15,7 @@ import {
   isVersion33OrHigher,
   isVersion37OrHigher,
 } from '../../utils/version-utils';
+import { LiveSearchQueryResponse } from '../../../types/types';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
@@ -329,6 +330,49 @@ describe('InflightQueries', () => {
       jest.advanceTimersByTime(30_000);
     });
     expect(retrieveLiveQueries).toHaveBeenCalledTimes(requestCount);
+  });
+
+  it('applies a forbidden response that settles after its polling timeout', async () => {
+    const core = makeCore();
+    const firstRequest = createDeferred<LiveSearchQueryResponse>();
+    const secondRequest = createDeferred<LiveSearchQueryResponse>();
+    (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.0.0');
+    (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(false);
+    (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(false);
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>)
+      .mockReturnValueOnce(firstRequest.promise)
+      .mockReturnValue(secondRequest.promise);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      firstRequest.reject({ statusCode: 403 });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: "You don't have permission to view Query Insights data.",
+      })
+    ).toBeInTheDocument();
   });
 
   it('ignores a forbidden response from a previously selected data source', async () => {
