@@ -100,17 +100,19 @@ interface RenderConfigurationOptions {
   configurationLoadState?: 'loading' | 'ready' | 'accessDenied' | 'error';
   configInfo?: typeof mockConfigInfo;
   dataSourceContext?: typeof mockDataSourceContext;
+  latencySettings?: typeof defaultLatencySettings;
 }
 
 const getConfigurationView = ({
   configurationLoadState = 'ready',
   configInfo = mockConfigInfo,
   dataSourceContext = mockDataSourceContext,
+  latencySettings = defaultLatencySettings,
 }: RenderConfigurationOptions = {}) => (
   <MemoryRouter initialEntries={['/configuration']}>
     <DataSourceContext.Provider value={dataSourceContext}>
       <Configuration
-        latencySettings={defaultLatencySettings}
+        latencySettings={latencySettings}
         cpuSettings={defaultCpuSettings}
         memorySettings={defaultMemorySettings}
         groupBySettings={groupBySettings}
@@ -300,6 +302,24 @@ describe('Configuration Component', () => {
     expect(getTopNSizeConfiguration()[0]).toHaveValue(7);
     expect(currentLocationPath).toBe('/configuration');
     expect(mockCoreStart.notifications.toasts.addSuccess).not.toHaveBeenCalled();
+  });
+
+  it('preserves an unsaved draft when persisted settings change', async () => {
+    const { rerender } = renderConfiguration();
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '9' } });
+
+    rerender(
+      getConfigurationView({
+        latencySettings: {
+          ...defaultLatencySettings,
+          currTopN: '7',
+        },
+      })
+    );
+
+    await waitFor(() => expect(getTopNSizeConfiguration()[0]).toHaveValue(9));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(getTopNSizeConfiguration()[0]).toHaveValue(7);
   });
 
   it('shows an access-denied message instead of editable defaults when settings cannot be read', () => {

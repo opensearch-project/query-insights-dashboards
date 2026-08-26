@@ -202,21 +202,24 @@ const TopNQueries = ({
     useState<ConfigurationLoadState>('loading');
   const latestQueryRequestId = useRef(0);
   const latestConfigRequestId = useRef(0);
+  const configSaveQueueByDataSource = useRef(new Map<string | undefined, Promise<void>>());
   const latestDataSourceChangeId = useRef(0);
+  const isMounted = useRef(true);
   const enabledMetricsRef = useRef<EnabledMetrics>({
     latency: DEFAULT_METRIC_ENABLED,
     cpu: DEFAULT_METRIC_ENABLED,
     memory: DEFAULT_METRIC_ENABLED,
   });
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
       latestQueryRequestId.current += 1;
       latestConfigRequestId.current += 1;
       latestDataSourceChangeId.current += 1;
-    },
-    []
-  );
+    };
+  }, []);
 
   useEffect(() => {
     let isComponentUnmounted = false;
@@ -552,48 +555,71 @@ const TopNQueries = ({
           queryParams.window_size = `${newWindowSize}${normalizedTimeUnit}`;
         }
 
-        const response = await core.http.put('/api/update_settings', { query: queryParams });
-        if (isForbiddenError(response)) {
-          throw Object.assign(new Error(QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE), {
-            statusCode: 403,
+        const previousSave =
+          configSaveQueueByDataSource.current.get(requestDataSourceId) ?? Promise.resolve();
+        const save = previousSave
+          .catch(() => undefined)
+          .then(async () => {
+            if (!isMounted.current) {
+              return;
+            }
+
+            const response = await core.http.put('/api/update_settings', { query: queryParams });
+            if (!isMounted.current) {
+              return;
+            }
+            if (isForbiddenError(response)) {
+              throw Object.assign(new Error(QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE), {
+                statusCode: 403,
+              });
+            }
+            if (isFailedResponse(response)) {
+              throw new Error(
+                getErrorMessage(response) ?? QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
+              );
+            }
+            if (requestDataSourceId !== getDataSourceFromUrl().id) {
+              return;
+            }
+
+            latestConfigRequestId.current += 1;
+            if (
+              metric === MetricType.LATENCY ||
+              metric === MetricType.CPU ||
+              metric === MetricType.MEMORY
+            ) {
+              enabledMetricsRef.current = {
+                ...enabledMetricsRef.current,
+                [metric]: enabled,
+              };
+            }
+            setMetricSettings(metric, {
+              isEnabled: enabled,
+              currTopN: newTopN,
+              currWindowSize: newWindowSize,
+              currTimeUnit: newTimeUnit,
+            });
+            setGroupBySettings({ groupBy: newGroupBy });
+            setDataRetentionSettings({
+              deleteAfterDays: newDeleteAfterDays,
+              exporterType: newExporterType,
+            });
+            setRemoteExporterSettings({
+              enabled: newRemoteEnabled,
+              repository: newRemoteRepository,
+              path: newRemotePath,
+            });
+            setConfigurationLoadState('ready');
           });
-        }
-        if (isFailedResponse(response)) {
-          throw new Error(
-            getErrorMessage(response) ?? QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
-          );
-        }
 
-        if (requestDataSourceId !== getDataSourceFromUrl().id) {
-          return;
+        configSaveQueueByDataSource.current.set(requestDataSourceId, save);
+        try {
+          await save;
+        } finally {
+          if (configSaveQueueByDataSource.current.get(requestDataSourceId) === save) {
+            configSaveQueueByDataSource.current.delete(requestDataSourceId);
+          }
         }
-
-        if (
-          metric === MetricType.LATENCY ||
-          metric === MetricType.CPU ||
-          metric === MetricType.MEMORY
-        ) {
-          enabledMetricsRef.current = {
-            ...enabledMetricsRef.current,
-            [metric]: enabled,
-          };
-        }
-        setMetricSettings(metric, {
-          isEnabled: enabled,
-          currTopN: newTopN,
-          currWindowSize: newWindowSize,
-          currTimeUnit: newTimeUnit,
-        });
-        setGroupBySettings({ groupBy: newGroupBy });
-        setDataRetentionSettings({
-          deleteAfterDays: newDeleteAfterDays,
-          exporterType: newExporterType,
-        });
-        setRemoteExporterSettings({
-          enabled: newRemoteEnabled,
-          repository: newRemoteRepository,
-          path: newRemotePath,
-        });
       }
     },
     [core]

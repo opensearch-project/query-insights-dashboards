@@ -268,7 +268,8 @@ describe('TopNQueries Component', () => {
     await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7'));
   });
 
-  it('does not apply a completed settings update to a newly selected data source', async () => {
+  it('applies a completed settings update after switching away and back', async () => {
+    let sourceATopN = '10';
     const settingsResponse = (topNSize: string) => ({
       response: {
         persistent: {
@@ -288,7 +289,7 @@ describe('TopNQueries Component', () => {
     (mockCore.http.get as jest.Mock).mockImplementation((endpoint, options) => {
       if (endpoint === '/api/settings') {
         return Promise.resolve(
-          settingsResponse(options.query.dataSourceId === 'source-b' ? '20' : '10')
+          settingsResponse(options.query.dataSourceId === 'source-b' ? '20' : sourceATopN)
         );
       }
       return Promise.resolve({ response: { top_queries: [] } });
@@ -322,16 +323,341 @@ describe('TopNQueries Component', () => {
       `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
     );
     await act(async () => {
-      await mockConfigurationProps!.configInfo(true);
+      await mockConfigurationProps!.onDataSourceChange();
     });
     await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('20'));
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+    await act(async () => {
+      await mockConfigurationProps!.onDataSourceChange();
+    });
+    await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('10'));
+
+    await act(async () => {
+      sourceATopN = '7';
+      updateRequest.resolve({ ok: true });
+      await savePromise!;
+    });
+
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+  });
+
+  it('serializes saves for one data source so the newest save wins', async () => {
+    const settingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const firstUpdate = createDeferred<{ ok: boolean }>();
+    const secondUpdate = createDeferred<{ ok: boolean }>();
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) =>
+      Promise.resolve(
+        endpoint === '/api/settings' ? settingsResponse : { response: { top_queries: [] } }
+      )
+    );
+    (mockCore.http.put as jest.Mock)
+      .mockReturnValueOnce(firstUpdate.promise)
+      .mockReturnValueOnce(secondUpdate.promise);
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.configurationLoadState).toBe('ready'));
+
+    let firstSave: Promise<void>;
+    let secondSave: Promise<void>;
+    await act(async () => {
+      firstSave = mockConfigurationProps!.configInfo(false, true, 'latency', '7', '10', 'MINUTES');
+      secondSave = mockConfigurationProps!.configInfo(false, true, 'latency', '9', '10', 'MINUTES');
+      await Promise.resolve();
+    });
+    expect(mockCore.http.put).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      firstUpdate.resolve({ ok: true });
+      await firstSave!;
+    });
+    await waitFor(() => expect(mockCore.http.put).toHaveBeenCalledTimes(2));
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+
+    await act(async () => {
+      secondUpdate.resolve({ ok: true });
+      await secondSave!;
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('9');
+  });
+
+  it('keeps the last successful settings baseline when a later queued save fails', async () => {
+    const settingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const firstUpdate = createDeferred<{ ok: boolean }>();
+    const secondUpdate = createDeferred<{ ok: boolean; response?: string }>();
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) =>
+      Promise.resolve(
+        endpoint === '/api/settings' ? settingsResponse : { response: { top_queries: [] } }
+      )
+    );
+    (mockCore.http.put as jest.Mock)
+      .mockReturnValueOnce(firstUpdate.promise)
+      .mockReturnValueOnce(secondUpdate.promise);
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.configurationLoadState).toBe('ready'));
+
+    let firstSave: Promise<void>;
+    let secondSave: Promise<void>;
+    await act(async () => {
+      firstSave = mockConfigurationProps!.configInfo(false, true, 'latency', '7', '10', 'MINUTES');
+      secondSave = mockConfigurationProps!.configInfo(false, true, 'latency', '9', '10', 'MINUTES');
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      firstUpdate.resolve({ ok: true });
+      await firstSave!;
+    });
+    await waitFor(() => expect(mockCore.http.put).toHaveBeenCalledTimes(2));
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+
+    await act(async () => {
+      secondUpdate.resolve({ ok: false, response: 'Unable to update settings' });
+      await expect(secondSave!).rejects.toThrow('Unable to update settings');
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+  });
+
+  it('does not let a stale settings read overwrite a successful save', async () => {
+    const settingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const staleSettingsRequest = createDeferred<typeof settingsResponse>();
+    const updateRequest = createDeferred<{ ok: boolean }>();
+    let settingsRequestCount = 0;
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+      if (endpoint === '/api/settings') {
+        settingsRequestCount += 1;
+        return settingsRequestCount === 1
+          ? Promise.resolve(settingsResponse)
+          : staleSettingsRequest.promise;
+      }
+      return Promise.resolve({ response: { top_queries: [] } });
+    });
+    (mockCore.http.put as jest.Mock).mockReturnValue(updateRequest.promise);
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('10'));
+
+    let savePromise: Promise<void>;
+    let staleReadPromise: Promise<unknown>;
+    await act(async () => {
+      savePromise = mockConfigurationProps!.configInfo(
+        false,
+        true,
+        'latency',
+        '7',
+        '10',
+        'MINUTES'
+      );
+      staleReadPromise = mockConfigurationProps!.configInfo(true);
+      await Promise.resolve();
+    });
 
     await act(async () => {
       updateRequest.resolve({ ok: true });
       await savePromise!;
     });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+    expect(mockConfigurationProps?.configurationLoadState).toBe('ready');
 
-    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('20');
+    await act(async () => {
+      staleSettingsRequest.resolve(settingsResponse);
+      await staleReadPromise!;
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+    expect(mockConfigurationProps?.configurationLoadState).toBe('ready');
+  });
+
+  it('tracks concurrent settings saves independently for each data source', async () => {
+    const settingsResponse = (topNSize: string) => ({
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: topNSize, window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    });
+    const sourceAUpdate = createDeferred<{ ok: boolean }>();
+    const sourceBUpdate = createDeferred<{ ok: boolean }>();
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint, options) => {
+      if (endpoint === '/api/settings') {
+        return Promise.resolve(
+          settingsResponse(options.query.dataSourceId === 'source-b' ? '20' : '10')
+        );
+      }
+      return Promise.resolve({ response: { top_queries: [] } });
+    });
+    (mockCore.http.put as jest.Mock).mockImplementation((_endpoint, options) =>
+      options.query.dataSourceId === 'source-b' ? sourceBUpdate.promise : sourceAUpdate.promise
+    );
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('10'));
+
+    let sourceASave: Promise<void>;
+    await act(async () => {
+      sourceASave = mockConfigurationProps!.configInfo(
+        false,
+        true,
+        'latency',
+        '7',
+        '10',
+        'MINUTES'
+      );
+      await Promise.resolve();
+    });
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-b', label: 'Source B' }))}`
+    );
+    await act(async () => {
+      await mockConfigurationProps!.onDataSourceChange();
+    });
+
+    let sourceBSave: Promise<void>;
+    await act(async () => {
+      sourceBSave = mockConfigurationProps!.configInfo(
+        false,
+        true,
+        'latency',
+        '17',
+        '10',
+        'MINUTES'
+      );
+      await Promise.resolve();
+    });
+    expect(mockCore.http.put).toHaveBeenCalledTimes(2);
+
+    window.history.replaceState(
+      {},
+      '',
+      `/?dataSource=${encodeURIComponent(JSON.stringify({ id: 'source-a', label: 'Source A' }))}`
+    );
+    await act(async () => {
+      await mockConfigurationProps!.onDataSourceChange();
+    });
+
+    await act(async () => {
+      sourceAUpdate.resolve({ ok: true });
+      await sourceASave!;
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+
+    await act(async () => {
+      sourceBUpdate.resolve({ ok: true });
+      await sourceBSave!;
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
+  });
+
+  it('applies a successful settings save after leaving and returning to Configuration', async () => {
+    const settingsResponse = {
+      response: {
+        persistent: {
+          search: {
+            insights: {
+              top_queries: {
+                latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                cpu: { enabled: 'false' },
+                memory: { enabled: 'false' },
+              },
+            },
+          },
+        },
+      },
+    };
+    const updateRequest = createDeferred<{ ok: boolean }>();
+    (mockCore.http.get as jest.Mock).mockImplementation((endpoint) =>
+      Promise.resolve(
+        endpoint === '/api/settings' ? settingsResponse : { response: { top_queries: [] } }
+      )
+    );
+    (mockCore.http.put as jest.Mock).mockReturnValue(updateRequest.promise);
+
+    renderTopNQueries(CONFIGURATION);
+    await waitFor(() => expect(mockConfigurationProps?.latencySettings.currTopN).toBe('10'));
+
+    let savePromise: Promise<void>;
+    await act(async () => {
+      savePromise = mockConfigurationProps!.configInfo(
+        false,
+        true,
+        'latency',
+        '7',
+        '10',
+        'MINUTES'
+      );
+      await Promise.resolve();
+    });
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Top N queries' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Configuration' }));
+
+    await act(async () => {
+      updateRequest.resolve({ ok: true });
+      await savePromise!;
+    });
+    expect(mockConfigurationProps?.latencySettings.currTopN).toBe('7');
   });
 
   it('reloads settings for the selected data source', async () => {

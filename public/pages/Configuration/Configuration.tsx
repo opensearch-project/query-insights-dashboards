@@ -111,7 +111,7 @@ const Configuration = ({
   const location = useLocation();
 
   const [metric, setMetric] = useState<'latency' | 'cpu' | 'memory'>('latency');
-  const [isEnabled, setIsEnabled] = useState<boolean>(false);
+  const [isEnabled, setIsEnabled] = useState<boolean>(latencySettings.isEnabled);
   const [topNSize, setTopNSize] = useState(latencySettings.currTopN);
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
@@ -133,7 +133,11 @@ const Configuration = ({
   const latestPluginRequestId = useRef(0);
   const latestRepositoryRequestId = useRef(0);
   const latestSaveRequestId = useRef(0);
-  selectedDataSourceId.current = dataSourceId;
+  const settingsDataSourceChanged = useRef(false);
+  if (selectedDataSourceId.current !== dataSourceId) {
+    selectedDataSourceId.current = dataSourceId;
+    settingsDataSourceChanged.current = true;
+  }
 
   useEffect(() => {
     latestPluginRequestId.current += 1;
@@ -236,13 +240,70 @@ const Configuration = ({
     remoteExporter: remoteExporterSettings,
   });
 
+  const hasLocalEdits = useRef(false);
+  const isChanged =
+    isEnabled !== metricSettingsMap[metric].isEnabled ||
+    topNSize !== metricSettingsMap[metric].currTopN ||
+    windowSize !== metricSettingsMap[metric].currWindowSize ||
+    time !== metricSettingsMap[metric].currTimeUnit ||
+    groupBy !== groupBySettingMap.groupBy.groupBy ||
+    exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
+    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays ||
+    remoteEnabled !== remoteExporterSettingMap.remoteExporter.enabled ||
+    remoteRepository !== remoteExporterSettingMap.remoteExporter.repository ||
+    remotePath !== remoteExporterSettingMap.remoteExporter.path;
+  hasLocalEdits.current = settingsDataSourceChanged.current ? false : isChanged;
+
   useEffect(() => {
-    setMetricSettingsMap({
+    if (configurationLoadState !== 'ready') {
+      return;
+    }
+
+    const nextMetricSettingsMap = {
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-    });
-  }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
+    };
+    const nextGroupBySettingMap = {
+      groupBy: groupBySettings,
+    };
+    const nextDataRetentionSettingMap = {
+      dataRetention: dataRetentionSettings,
+    };
+    const nextRemoteExporterSettingMap = {
+      remoteExporter: remoteExporterSettings,
+    };
+
+    setMetricSettingsMap(nextMetricSettingsMap);
+    setGroupBySettingMap(nextGroupBySettingMap);
+    setDataRetentionSettingMap(nextDataRetentionSettingMap);
+    setRemoteExporterSettingMap(nextRemoteExporterSettingMap);
+
+    if (!hasLocalEdits.current) {
+      const currentMetric = nextMetricSettingsMap[metric];
+      setTopNSize(currentMetric.currTopN);
+      setWindowSize(currentMetric.currWindowSize);
+      setTime(currentMetric.currTimeUnit);
+      setIsEnabled(currentMetric.isEnabled);
+      setGroupBy(nextGroupBySettingMap.groupBy.groupBy);
+      setDeleteAfterDays(nextDataRetentionSettingMap.dataRetention.deleteAfterDays);
+      setExporterTypeType(nextDataRetentionSettingMap.dataRetention.exporterType);
+      setRemoteEnabled(nextRemoteExporterSettingMap.remoteExporter.enabled);
+      setRemoteRepository(nextRemoteExporterSettingMap.remoteExporter.repository);
+      setRemotePath(nextRemoteExporterSettingMap.remoteExporter.path);
+    }
+
+    settingsDataSourceChanged.current = false;
+  }, [
+    configurationLoadState,
+    latencySettings,
+    cpuSettings,
+    memorySettings,
+    groupBySettings,
+    dataRetentionSettings,
+    remoteExporterSettings,
+    metric,
+  ]);
 
   const newOrReset = useCallback(() => {
     const currMetric = metricSettingsMap[metric];
@@ -250,39 +311,20 @@ const Configuration = ({
     setWindowSize(currMetric.currWindowSize);
     setTime(currMetric.currTimeUnit);
     setIsEnabled(currMetric.isEnabled);
-    // setExporterTypeType(currMetric.exporterType);
+    setGroupBy(groupBySettingMap.groupBy.groupBy);
+    setDeleteAfterDays(dataRetentionSettingMap.dataRetention.deleteAfterDays);
+    setExporterTypeType(dataRetentionSettingMap.dataRetention.exporterType);
     setRemoteEnabled(remoteExporterSettingMap.remoteExporter.enabled);
     setRemoteRepository(remoteExporterSettingMap.remoteExporter.repository);
     setRemotePath(remoteExporterSettingMap.remoteExporter.path);
-  }, [metric, metricSettingsMap, remoteExporterSettingMap]);
-
-  useEffect(() => {
-    newOrReset();
-  }, [newOrReset, metricSettingsMap]);
-
-  useEffect(() => {
-    setGroupBySettingMap({
-      groupBy: groupBySettings,
-    });
-    setGroupBy(groupBySettings.groupBy);
-  }, [groupBySettings]);
-
-  useEffect(() => {
-    setDataRetentionSettingMap({
-      dataRetention: dataRetentionSettings,
-    });
-    setDeleteAfterDays(dataRetentionSettings.deleteAfterDays);
-    setExporterTypeType(dataRetentionSettings.exporterType);
-  }, [dataRetentionSettings]);
-
-  useEffect(() => {
-    setRemoteExporterSettingMap({
-      remoteExporter: remoteExporterSettings,
-    });
-    setRemoteEnabled(remoteExporterSettings.enabled);
-    setRemoteRepository(remoteExporterSettings.repository);
-    setRemotePath(remoteExporterSettings.path);
-  }, [remoteExporterSettings]);
+    hasLocalEdits.current = false;
+  }, [
+    metric,
+    metricSettingsMap,
+    groupBySettingMap,
+    dataRetentionSettingMap,
+    remoteExporterSettingMap,
+  ]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -298,7 +340,13 @@ const Configuration = ({
   }, [core.chrome, history, location]);
 
   const onMetricChange = (e: any) => {
-    setMetric(e.target.value);
+    const nextMetric = e.target.value as 'latency' | 'cpu' | 'memory';
+    const nextSettings = metricSettingsMap[nextMetric];
+    setMetric(nextMetric);
+    setTopNSize(nextSettings.currTopN);
+    setWindowSize(nextSettings.currWindowSize);
+    setTime(nextSettings.currTimeUnit);
+    setIsEnabled(nextSettings.isEnabled);
   };
 
   const onEnabledChange = (e: any) => {
@@ -369,18 +417,6 @@ const Configuration = ({
   const isLocalIndex = exporterType === EXPORTER_TYPE.localIndex;
   const parsedDeleteAfter = parseInt(deleteAfterDays, 10);
   const isDeleteAfterValid = !isLocalIndex || (parsedDeleteAfter >= 1 && parsedDeleteAfter <= 180);
-
-  const isChanged =
-    isEnabled !== metricSettingsMap[metric].isEnabled ||
-    topNSize !== metricSettingsMap[metric].currTopN ||
-    windowSize !== metricSettingsMap[metric].currWindowSize ||
-    time !== metricSettingsMap[metric].currTimeUnit ||
-    groupBy !== groupBySettingMap.groupBy.groupBy ||
-    exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
-    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays ||
-    remoteEnabled !== remoteExporterSettingMap.remoteExporter.enabled ||
-    remoteRepository !== remoteExporterSettingMap.remoteExporter.repository ||
-    remotePath !== remoteExporterSettingMap.remoteExporter.path;
 
   const isValid =
     validateConfiguration(
