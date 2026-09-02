@@ -51,25 +51,32 @@ const expectSortedBy = (label) => {
     });
 
   // Target the main data table (last table on page)
-  cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiBasicTable')
-    .last()
-    .find('.euiTableRow')
-    .then(($r) => {
-      const v = extract($r);
-      const asc = [...v].sort((a, b) => a - b);
-      expect(v, `${label} asc`).to.deep.equal(asc);
-    });
+  const headerCell = () =>
+    cy
+      .get('.euiBasicTable')
+      .last()
+      .find('.euiTableHeaderCell')
+      .contains(label)
+      .closest('.euiTableHeaderCell');
 
-  cy.get('.euiBasicTable').last().find('.euiTableHeaderCell').contains(label).click();
-  cy.get('.euiBasicTable')
-    .last()
-    .find('.euiTableRow')
-    .then(($r) => {
-      const v = extract($r);
-      const desc = [...v].sort((a, b) => b - a);
-      expect(v, `${label} desc`).to.deep.equal(desc);
-    });
+  const expectSortedInDirection = (direction) => {
+    headerCell().click();
+    headerCell()
+      .invoke('index')
+      .then((colIdx) => {
+        cy.get('.euiBasicTable')
+          .last()
+          .find('.euiTableRow')
+          .then(($r) => {
+            const values = extract($r, colIdx);
+            const sorted = [...values].sort((a, b) => (direction === 'asc' ? a - b : b - a));
+            expect(values, `${label} ${direction}`).to.deep.equal(sorted);
+          });
+      });
+  };
+
+  expectSortedInDirection('asc');
+  expectSortedInDirection('desc');
 };
 
 const setTypeFilter = (mode /* 'query' | 'group' | 'both' */) => {
