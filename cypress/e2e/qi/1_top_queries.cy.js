@@ -42,7 +42,15 @@ const getHeaders = () =>
 const expectSortedBy = (label) => {
   const extract = ($rows, colIdx) =>
     [...$rows].map(($r) => {
-      const txt = Cypress.$($r).find('td').eq(colIdx).text().trim();
+      // Read the cell content only. EUI renders a CSS-hidden `.euiTableRowCell__mobileHeader`
+      // holding the column label as a sibling of the content, and .text() ignores CSS, so the
+      // raw <td> text would be e.g. "TimestampSep 2, 2026 @ 1:00:02 PM".
+      const txt = Cypress.$($r).find('td').eq(colIdx).find('.euiTableCellContent').text().trim();
+      // Plain numbers first: Date.parse('4') is a valid date, so Query Count must not fall
+      // through to the date branch.
+      if (/^-?\d+(\.\d+)?$/.test(txt)) return parseFloat(txt);
+      // Timestamps before the unit heuristic: "Sep 2, 2026 @ 1:00:02 PM" matches /s/i.
+      if (/^[A-Za-z]{3} \d{1,2}, \d{4} @ /.test(txt)) return Date.parse(txt);
       if (/ms|s|B|KB|MB|GB|TB/i.test(txt)) return parseFloat(txt.replace(/[^\d.]/g, '')) || 0;
       const ms = Date.parse(txt);
       if (!Number.isNaN(ms)) return ms;
