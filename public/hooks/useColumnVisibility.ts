@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 export interface ColumnDef {
   id: string;
@@ -27,49 +27,93 @@ export interface UseColumnVisibilityResult {
 }
 
 /**
- * Reads stored column IDs from localStorage.
- * Returns null if unavailable, corrupted, or not present.
+ * Persisted shape: a choice map of the user's EXPLICIT visibility overrides.
+ *
+ *   { "memory": false, "node_id": true, ... }
+ *
+ * A column present in the map has an explicit choice (true = shown, false = hidden). A column
+ * ABSENT from the map has no explicit choice and falls back to its source-code default
+ * (`defaultVisible`, defaulting to true). This lets version-gated columns behave correctly
+ * without tracking which columns "existed" before: an absent column is simply not rendered, and
+ * when it appears it resolves from the map (if the user chose) or from its default.
+ *
+ * Updates MERGE into the map rather than overwriting it, so choices for columns not present in
+ * the current data source (e.g. under MDS) are preserved.
  */
-function readFromStorage(storageKey: string): string[] | null {
+type ChoiceMap = Record<string, boolean>;
+
+/**
+ * Reads the choice map from localStorage.
+ *
+ * Accepts two shapes for backward compatibility:
+ *  - The current object shape: `{ [id]: boolean }`.
+ *  - The legacy bare `string[]` of visible IDs (written by older builds). It is migrated by
+ *    marking each listed ID as an explicit `true`; unlisted IDs stay absent and fall back to
+ *    their defaults.
+ *
+ * Returns an empty map when nothing is stored, unavailable, or corrupted.
+ */
+function readChoiceMap(storageKey: string): ChoiceMap {
   try {
     const raw = localStorage.getItem(storageKey);
-    if (raw === null) return null;
+    if (raw === null) return {};
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === 'string')) {
-      return null;
+
+    // Legacy format: bare array of visible IDs.
+    if (Array.isArray(parsed)) {
+      const map: ChoiceMap = {};
+      for (const id of parsed) {
+        if (typeof id === 'string') map[id] = true;
+      }
+      return map;
     }
-    return parsed;
+
+    // Current format: object of id -> boolean.
+    if (parsed && typeof parsed === 'object') {
+      const map: ChoiceMap = {};
+      for (const [id, value] of Object.entries(parsed)) {
+        if (typeof value === 'boolean') map[id] = value;
+      }
+      return map;
+    }
+
+    return {};
   } catch {
-    return null;
+    return {};
   }
 }
 
 /**
- * Persists visible column IDs to localStorage.
- * Silently ignores errors (e.g., quota exceeded, private browsing).
+ * Persists the choice map. Silently ignores errors (e.g. quota exceeded, private browsing).
  */
-function writeToStorage(storageKey: string, ids: string[]): void {
+function writeChoiceMap(storageKey: string, choices: ChoiceMap): void {
   try {
-    localStorage.setItem(storageKey, JSON.stringify(ids));
+    localStorage.setItem(storageKey, JSON.stringify(choices));
   } catch {
-    // Fall back to in-memory only — no action needed
+    // Fall back to in-memory only — no action needed.
   }
 }
 
 /**
- * Computes the default visible set: columns with defaultVisible !== false.
+ * Resolves whether a column is visible: pinned columns are always visible; otherwise an explicit
+ * choice in the map wins, and an absent column falls back to its `defaultVisible` (default true).
  */
-function getAllColumnIds(columns: ColumnDef[]): Set<string> {
-  return new Set(columns.filter((col) => col.defaultVisible !== false).map((col) => col.id));
+function resolveVisible(col: ColumnDef, choices: ChoiceMap): boolean {
+  if (col.pinned) return true;
+  const choice = choices[col.id];
+  if (choice !== undefined) return choice;
+  return col.defaultVisible !== false;
 }
 
 /**
- * A reusable hook for managing column visibility state with localStorage persistence.
+ * A reusable hook for managing column visibility, persisted to localStorage as a choice map of
+ * explicit user overrides (see ChoiceMap).
  *
- * - Reads initial state from localStorage; defaults to all columns visible.
- * - Pinned columns are always included in visibleColumnIds.
- * - Guards against hiding all non-pinned columns (toggle is a no-op for the last one).
- * - Reconciles state when the columns array changes (removes stale, adds new as visible).
+ * - Columns without an explicit choice use their source-code default (`defaultVisible`).
+ * - Pinned columns are always visible and never stored.
+ * - Toggling merges a single entry into the map; "Show all" / "Hide all" only affect columns
+ *   present in the current data source, so choices for other columns are preserved.
+ * - Guards against hiding the last visible non-pinned column.
  * - Handles localStorage errors and corrupted JSON gracefully.
  */
 export function useColumnVisibility(
@@ -77,169 +121,81 @@ export function useColumnVisibility(
 ): UseColumnVisibilityResult {
   const { storageKey, columns } = options;
 
-  // Track columns array identity for reconciliation
-  const prevColumnsRef = useRef<ColumnDef[]>(columns);
+  const [choices, setChoices] = useState<ChoiceMap>(() => readChoiceMap(storageKey));
 
-  const [visibleColumnIds, setVisibleColumnIds] = useState<Set<string>>(() => {
-    const stored = readFromStorage(storageKey);
-    if (stored === null) {
-      return getAllColumnIds(columns);
-    }
-
-    // Build visible set from stored preferences, filtering to known column IDs
-    const knownIds = new Set(columns.map((col) => col.id));
-    const pinnedIds = new Set(columns.filter((col) => col.pinned).map((col) => col.id));
-    const visibleFromStorage = new Set<string>(stored.filter((id) => knownIds.has(id)));
-
-    // Always include pinned columns
-    for (const id of pinnedIds) {
-      visibleFromStorage.add(id);
-    }
-
-    return visibleFromStorage;
-  });
-
-  // Reconcile when columns array changes
-  const reconciledVisibleIds = useMemo(() => {
-    const currentIds = new Set(columns.map((col) => col.id));
-    const pinnedIds = new Set(columns.filter((col) => col.pinned).map((col) => col.id));
-    const prevIds = new Set(prevColumnsRef.current.map((col) => col.id));
-
-    // Find new columns (not in previous set)
-    const newColumnIds = [...currentIds].filter((id) => !prevIds.has(id));
-    // Find stale columns (in visible set but not in current columns)
-    const staleIds = [...visibleColumnIds].filter((id) => !currentIds.has(id));
-
-    if (newColumnIds.length === 0 && staleIds.length === 0) {
-      // Ensure pinned are always included
-      let needsUpdate = false;
-      for (const id of pinnedIds) {
-        if (!visibleColumnIds.has(id)) {
-          needsUpdate = true;
-          break;
-        }
-      }
-      if (!needsUpdate) return visibleColumnIds;
-    }
-
-    // Build reconciled set
-    const reconciled = new Set<string>();
-    for (const id of visibleColumnIds) {
-      if (currentIds.has(id)) {
-        reconciled.add(id);
-      }
-    }
-    // Add new columns as visible by default (respecting defaultVisible setting)
-    for (const id of newColumnIds) {
-      const col = columns.find((c) => c.id === id);
-      if (col && col.defaultVisible !== false) {
-        reconciled.add(id);
-      }
-    }
-    // Ensure pinned columns are always included
-    for (const id of pinnedIds) {
-      reconciled.add(id);
-    }
-
-    return reconciled;
-  }, [columns, visibleColumnIds]);
-
-  // Sync reconciled state back if it differs (via useEffect to avoid setting state during render)
+  // Re-read persisted choices when the storage key changes (e.g. switching data source).
   useEffect(() => {
-    if (reconciledVisibleIds !== visibleColumnIds) {
-      setVisibleColumnIds(reconciledVisibleIds);
-      // Persist reconciled state
-      const idsToStore = [...reconciledVisibleIds].filter((id) => {
-        const col = columns.find((c) => c.id === id);
-        return col && !col.pinned;
-      });
-      writeToStorage(storageKey, idsToStore);
-    }
-  }, [reconciledVisibleIds, visibleColumnIds, columns, storageKey]);
+    setChoices(readChoiceMap(storageKey));
+  }, [storageKey]);
 
-  // Update prevColumnsRef
-  useEffect(() => {
-    prevColumnsRef.current = columns;
-  }, [columns]);
+  const persist = useCallback(
+    (next: ChoiceMap) => {
+      setChoices(next);
+      writeChoiceMap(storageKey, next);
+    },
+    [storageKey]
+  );
+
+  // Visible columns present in the current data source, resolved from choices + defaults.
+  const visibleColumnIds = useMemo(() => {
+    const visible = new Set<string>();
+    for (const col of columns) {
+      if (resolveVisible(col, choices)) visible.add(col.id);
+    }
+    return visible;
+  }, [columns, choices]);
 
   const isColumnVisible = useCallback(
-    (id: string): boolean => {
-      return reconciledVisibleIds.has(id);
-    },
-    [reconciledVisibleIds]
+    (id: string): boolean => visibleColumnIds.has(id),
+    [visibleColumnIds]
   );
 
   const toggleColumn = useCallback(
     (id: string) => {
       const col = columns.find((c) => c.id === id);
-      // No-op for pinned columns
-      if (col?.pinned) return;
+      // No-op for unknown or pinned columns.
+      if (!col || col.pinned) return;
 
-      setVisibleColumnIds((prev) => {
-        const isCurrentlyVisible = prev.has(id);
+      const currentlyVisible = resolveVisible(col, choices);
 
-        if (isCurrentlyVisible) {
-          // Guard: don't hide if it's the last visible non-pinned column
-          const pinnedIds = new Set(columns.filter((c) => c.pinned).map((c) => c.id));
-          const currentColumnIds = new Set(columns.map((c) => c.id));
-          const nonPinnedVisible = [...prev].filter(
-            (visId) => !pinnedIds.has(visId) && currentColumnIds.has(visId)
-          );
-          if (nonPinnedVisible.length <= 1) {
-            return prev; // no-op
-          }
-        }
+      // Guard: don't hide the last visible non-pinned column in this data source.
+      if (currentlyVisible) {
+        const nonPinnedVisible = columns.filter((c) => !c.pinned && resolveVisible(c, choices));
+        if (nonPinnedVisible.length <= 1) return;
+      }
 
-        const next = new Set(prev);
-        if (isCurrentlyVisible) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-
-        // Persist (store only non-pinned visible IDs)
-        const idsToStore = [...next].filter((visId) => {
-          const colDef = columns.find((c) => c.id === visId);
-          return colDef && !colDef.pinned;
-        });
-        writeToStorage(storageKey, idsToStore);
-
-        return next;
-      });
+      // Merge a single explicit choice into the map.
+      persist({ ...choices, [id]: !currentlyVisible });
     },
-    [columns, storageKey]
+    [columns, choices, persist]
   );
 
   const showAll = useCallback(() => {
-    const allIds = new Set(columns.map((col) => col.id));
-    setVisibleColumnIds(allIds);
-
-    // Persist (store only non-pinned)
-    const idsToStore = columns.filter((col) => !col.pinned).map((col) => col.id);
-    writeToStorage(storageKey, idsToStore);
-  }, [columns, storageKey]);
+    // Only enable columns present in this data source; preserve choices for absent columns.
+    const next: ChoiceMap = { ...choices };
+    for (const col of columns) {
+      if (!col.pinned) next[col.id] = true;
+    }
+    persist(next);
+  }, [columns, choices, persist]);
 
   const hideAll = useCallback(() => {
-    // Keep only pinned columns visible
-    const pinnedIds = new Set(columns.filter((col) => col.pinned).map((col) => col.id));
+    // Hide every non-pinned column present in this data source, but keep at least one visible
+    // when there are no pinned columns. Choices for absent columns are preserved.
+    const next: ChoiceMap = { ...choices };
+    const nonPinned = columns.filter((col) => !col.pinned);
+    const hasPinned = columns.some((col) => col.pinned);
+    // When nothing is pinned, keep the first non-pinned column visible so the table isn't empty.
+    const keepVisibleId = !hasPinned && nonPinned.length > 0 ? nonPinned[0].id : undefined;
 
-    // Guard: if there are no pinned columns, keep at least the first non-pinned column
-    if (pinnedIds.size === 0 && columns.length > 0) {
-      pinnedIds.add(columns[0].id);
+    for (const col of nonPinned) {
+      next[col.id] = col.id === keepVisibleId;
     }
-
-    setVisibleColumnIds(pinnedIds);
-
-    // Persist: store empty array for non-pinned (none visible)
-    const idsToStore = [...pinnedIds].filter((id) => {
-      const col = columns.find((c) => c.id === id);
-      return col && !col.pinned;
-    });
-    writeToStorage(storageKey, idsToStore);
-  }, [columns, storageKey]);
+    persist(next);
+  }, [columns, choices, persist]);
 
   return {
-    visibleColumnIds: reconciledVisibleIds,
+    visibleColumnIds,
     isColumnVisible,
     toggleColumn,
     showAll,

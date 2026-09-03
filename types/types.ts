@@ -26,6 +26,7 @@ export interface SearchQueryRecord {
   wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
   username?: string;
   user_roles?: string[];
+  backend_roles?: string[];
   failed?: boolean;
 }
 
@@ -95,6 +96,9 @@ export interface RichLiveQueryRecord {
   total_memory_bytes: number;
   coordinator_task?: TaskDetailRecord;
   shard_tasks: TaskDetailRecord[];
+  username?: string;
+  user_roles?: string[];
+  backend_roles?: string[];
 }
 
 // Finished query record — extends SearchQueryRecord with top_n_id and status
@@ -115,7 +119,10 @@ export interface LiveSearchQueryRecord {
   };
   node_id: string;
   is_cancelled: boolean;
-  wlm_group_id?: string;
+  wlm_group_id?: string; // undefined when WLM is disabled or for old indices without this field
+  username?: string;
+  user_roles?: string[];
+  backend_roles?: string[];
 }
 
 export interface LiveQueriesApiResponse {

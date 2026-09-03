@@ -15,6 +15,12 @@ export const SEARCH_TYPE = 'Search Type';
 export const NODE_ID = 'Coordinator Node ID';
 export const TOTAL_SHARDS = 'Total Shards';
 export const WLM_GROUP = 'WLM Group';
+// Column header / search fieldMap key (UI). Same string as the wire key OPAQUE_ID_LABEL_KEY
+// below by coincidence — they're independent and can change separately.
+export const OPAQUE_ID = 'X-Opaque-Id';
+export const USERNAME = 'Username';
+export const USER_ROLES = 'User Roles';
+export const BACKEND_ROLES = 'Backend Roles';
 export const GROUP_BY = 'Group by';
 export const QUERY_GROUP_HASHCODE = 'Query Group Hashcode';
 export const AVERAGE_LATENCY = 'Average Latency';
@@ -129,3 +135,7 @@ export const WLM_CONFIG: Readonly<ConfigSchema['wlm']> = Object.freeze({ ...DEFA
 export const REMOTE_REPOSITORY_REGISTRATION_CONFIG: Readonly<
   ConfigSchema['remoteRepositoryRegistration']
 > = Object.freeze({ ...DEFAULT_CONFIG.remoteRepositoryRegistration });
+
+// Wire key: the backend copies the incoming X-Opaque-Id header into record.labels under this
+// key. Read from records, not shown as UI text.
+export const OPAQUE_ID_LABEL_KEY = 'X-Opaque-Id';

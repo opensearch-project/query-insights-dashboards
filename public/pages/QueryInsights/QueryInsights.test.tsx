@@ -10,21 +10,39 @@ import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
 import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
+import { getSecurityPluginStatus } from '../../utils/datasource-utils';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion35OrHigher,
+  isVersion36OrHigher,
+} from '../../utils/version-utils';
 
 // Mock version utilities
 jest.mock('../../utils/version-utils', () => ({
   getVersionOnce: jest.fn().mockResolvedValue('3.6.0'),
   isVersion33OrHigher: jest.fn().mockReturnValue(true),
+  isVersion35OrHigher: jest.fn().mockReturnValue(true),
   isVersion36OrHigher: jest.fn().mockReturnValue(true),
+}));
+
+// Security plugin probe: default to available so user-info columns render deterministically
+// and the async probe doesn't leak state updates across tests.
+jest.mock('../../utils/datasource-utils', () => ({
+  getSecurityPluginStatus: jest.fn().mockResolvedValue('available'),
 }));
 
 // Mock functions and data
 const sampleQueries = (stubTopQueries as any).response.top_queries;
 
 const mockOnTimeChange = jest.fn();
+const mockNavigateToApp = jest.fn();
 const mockCore = {
   chrome: {
     setBreadcrumbs: jest.fn(),
+  },
+  application: {
+    navigateToApp: mockNavigateToApp,
   },
 } as any;
 
@@ -124,6 +142,7 @@ describe('QueryInsights Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
   });
 
   describe('WLM group URL parameter extraction', () => {
@@ -156,8 +175,23 @@ describe('QueryInsights Component', () => {
     });
   });
 
-  it('renders the table with the correct columns and data', () => {
-    const { container } = renderQueryInsights();
+  it('renders the table with the correct columns and data', async () => {
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = renderQueryInsights());
+    });
+    // Wait for the version + security probes to resolve so the snapshot captures the gated
+    // user-info / X-Opaque-Id columns and their cell values rather than the pre-probe table.
+    await waitFor(() => {
+      const tables = screen.getAllByRole('table');
+      const mainTable = tables[tables.length - 1];
+      const headerTexts = within(mainTable)
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent?.trim());
+      expect(headerTexts).toContain('X-Opaque-Id');
+      expect(headerTexts).toContain('Username');
+      expect(headerTexts).toContain('Backend Roles');
+    });
     expect(container).toMatchSnapshot();
   });
 
@@ -252,12 +286,48 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
       },
       { timeout: 3000 }
     );
+  });
+
+  it('hides user-info columns when the security plugin is unavailable', async () => {
+    // Security plugin absent: the backend never populates user info, so Username / User Roles /
+    // Backend Roles must not render even though the version gate is satisfied. Use a persistent
+    // resolution (not ...Once) so a re-probe can't fall back to the default 'available'.
+    const securityMock = getSecurityPluginStatus as jest.Mock;
+    securityMock.mockResolvedValue('unavailable');
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    try {
+      await act(async () => {
+        renderQueryInsights();
+      });
+
+      await waitFor(
+        () => {
+          const tables = screen.getAllByRole('table');
+          const mainTable = tables[tables.length - 1];
+          const headers = within(mainTable).getAllByRole('columnheader');
+          const headerTexts = headers.map((h) => h.textContent?.trim());
+          // X-Opaque-Id is not security-gated, so it should still be present.
+          expect(headerTexts).toContain('X-Opaque-Id');
+          expect(headerTexts).not.toContain('Username');
+          expect(headerTexts).not.toContain('User Roles');
+          expect(headerTexts).not.toContain('Backend Roles');
+        },
+        { timeout: 3000 }
+      );
+    } finally {
+      // Restore the suite default so later tests still render the user-info columns.
+      securityMock.mockResolvedValue('available');
+    }
   });
 
   it('renders correct columns when SIMILARITY filter (group-only) is applied', async () => {
@@ -304,6 +374,10 @@ describe('QueryInsights Component', () => {
           'CPU Time',
           'Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
@@ -334,6 +408,10 @@ describe('QueryInsights Component', () => {
           'Avg CPU Time / CPU Time',
           'Avg Memory Usage / Memory Usage',
           'Indices',
+          'X-Opaque-Id',
+          'Username',
+          'User Roles',
+          'Backend Roles',
           'WLM Group',
         ];
         expect(headerTexts).toEqual(expectedHeaders);
@@ -741,6 +819,54 @@ describe('QueryInsights Component', () => {
         expect(screen.getByText('a2e1c822-3e3c-4d1b-adb2-258e04f96f78')).toBeInTheDocument();
       });
     });
+
+    it('filters by the user-info and X-Opaque-Id search fields', async () => {
+      // Exercises the username / user_roles / backend_roles / X-Opaque-Id search accessors,
+      // which are only registered (and invoked) when user info is supported.
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+      await act(async () => {
+        render(
+          <MemoryRouter>
+            <DataSourceContext.Provider value={mockDataSourceContext}>
+              <QueryInsights
+                queries={[
+                  {
+                    ...sampleQueries[0],
+                    group_by: 'NONE',
+                    username: 'alice',
+                    user_roles: ['admin'],
+                    backend_roles: ['ldap-admins'],
+                    labels: { 'X-Opaque-Id': 'req-42' },
+                  },
+                ]}
+                loading={false}
+                onTimeChange={mockOnTimeChange}
+                recentlyUsedRanges={[]}
+                currStart="now-15m"
+                currEnd="now"
+                retrieveQueries={mockRetrieveQueries}
+                // @ts-ignore
+                core={mockCoreWithHttp}
+                depsStart={{} as any}
+                params={{} as any}
+                dataSourceManagement={dataSourceManagementMock}
+              />
+            </DataSourceContext.Provider>
+          </MemoryRouter>
+        );
+      });
+
+      const searchInput = screen.getByPlaceholderText('e.g. latency >= 100 AND type = query');
+      fireEvent.change(searchInput, { target: { value: 'Username = alice' } });
+      await waitFor(() => {
+        expect(screen.getByText('alice')).toBeInTheDocument();
+      });
+
+      fireEvent.change(searchInput, { target: { value: 'X-Opaque-Id = req-42' } });
+      await waitFor(() => {
+        expect(screen.getByText('req-42')).toBeInTheDocument();
+      });
+    });
   });
 
   describe('Status column rendering', () => {
@@ -787,6 +913,187 @@ describe('QueryInsights Component', () => {
         expect(screen.queryByText('Failed')).not.toBeInTheDocument();
       });
     });
+
+    it('renders user-info and X-Opaque-Id cell values for an individual query', async () => {
+      renderWithQueries([
+        {
+          ...sampleQueries[0],
+          group_by: 'NONE',
+          username: 'alice',
+          user_roles: ['admin', 'reader'],
+          backend_roles: ['ldap-admins'],
+          labels: { 'X-Opaque-Id': 'req-42' },
+        },
+      ]);
+      await waitFor(() => {
+        expect(screen.getByText('alice')).toBeInTheDocument();
+        expect(screen.getByText('admin, reader')).toBeInTheDocument();
+        expect(screen.getByText('ldap-admins')).toBeInTheDocument();
+        expect(screen.getByText('req-42')).toBeInTheDocument();
+      });
+    });
+
+    it('renders a dash for an individual query missing user-info values', async () => {
+      renderWithQueries([
+        {
+          ...sampleQueries[0],
+          group_by: 'NONE',
+          username: undefined,
+          user_roles: undefined,
+          backend_roles: undefined,
+          labels: {},
+        },
+      ]);
+      // The username/user_roles/backend_roles cells fall back to '-' when values are absent.
+      await waitFor(() => {
+        expect(screen.getAllByText('-').length).toBeGreaterThan(0);
+      });
+    });
+
+    it('renders user-info cells for a mixed set including a similarity group row', async () => {
+      // A mixed set keeps the user-info columns visible; the group row exercises the SIMILARITY
+      // branch of the user-info cell renders while the individual row shows raw values.
+      renderWithQueries([
+        {
+          ...sampleQueries[0],
+          group_by: 'NONE',
+          username: 'alice',
+          user_roles: ['admin'],
+          backend_roles: ['ldap-admins'],
+          labels: { 'X-Opaque-Id': 'req-42' },
+        },
+        {
+          ...sampleQueries[1],
+          group_by: 'SIMILARITY',
+          username: 'bob',
+          user_roles: ['reader'],
+          backend_roles: ['ldap-readers'],
+        },
+      ]);
+      await waitFor(() => {
+        // Individual-row values render...
+        expect(screen.getByText('alice')).toBeInTheDocument();
+        // ...and the group row renders Aggregated badges in the user-info cells.
+        expect(screen.getAllByText('Aggregated').length).toBeGreaterThan(0);
+      });
+    });
+  });
+});
+
+describe('QueryInsights - user-info column interactions', () => {
+  beforeAll(() => {
+    jest.spyOn(Date.prototype, 'toLocaleTimeString').mockImplementation(() => '12:00:00 AM');
+    jest.spyOn(Date.prototype, 'toDateString').mockImplementation(() => 'Mon Jan 13 2025');
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
+  const renderWithQueries = (queries: any[]) =>
+    render(
+      <MemoryRouter>
+        <DataSourceContext.Provider value={mockDataSourceContext}>
+          <QueryInsights
+            queries={queries}
+            loading={false}
+            onTimeChange={mockOnTimeChange}
+            recentlyUsedRanges={[]}
+            currStart="now-15m"
+            currEnd="now"
+            retrieveQueries={mockRetrieveQueries}
+            // @ts-ignore
+            core={mockCoreWithHttp}
+            depsStart={{} as any}
+            params={{} as any}
+            dataSourceManagement={dataSourceManagementMock}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+  beforeEach(() => {
+    mockNavigateToApp.mockClear();
+    mockOnTimeChange.mockClear();
+    localStorage.clear();
+    // A prior describe's afterAll resets all mocks, so re-assert the version + security mock
+    // implementations this describe relies on to render the version/security-gated columns.
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.6.0');
+    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
+    (isVersion35OrHigher as jest.Mock).mockReturnValue(true);
+    (isVersion36OrHigher as jest.Mock).mockReturnValue(true);
+    (getSecurityPluginStatus as jest.Mock).mockResolvedValue('available');
+  });
+
+  it('navigates to Workload Management when a WLM Group link is clicked', async () => {
+    // detectWlm + fetchWorkloadGroups both read this response: a non-empty workload_groups array
+    // makes WLM available and maps the group id to a display name, so the cell renders a link.
+    mockHttp.get.mockResolvedValue({
+      workload_groups: [{ _id: 'grp-1', name: 'analytics' }],
+    });
+
+    await act(async () => {
+      renderWithQueries([{ ...sampleQueries[0], group_by: 'NONE', wlm_group_id: 'grp-1' }]);
+    });
+
+    const link = await screen.findByText('analytics');
+    fireEvent.click(link);
+
+    expect(mockNavigateToApp).toHaveBeenCalledWith(
+      'workloadManagement',
+      expect.objectContaining({
+        path: expect.stringContaining('#/wlm-details?name=analytics'),
+      })
+    );
+  });
+
+  it('sorts by the user-info and X-Opaque-Id columns without error', async () => {
+    // Clicking a sortable column header invokes its comparator across all rows, exercising the
+    // function-form `sortable` accessors for User Roles, Backend Roles, and X-Opaque-Id.
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+    await act(async () => {
+      renderWithQueries([
+        {
+          ...sampleQueries[0],
+          group_by: 'NONE',
+          username: 'alice',
+          user_roles: ['admin'],
+          backend_roles: ['ldap-admins'],
+          labels: { 'X-Opaque-Id': 'req-1' },
+        },
+        {
+          ...sampleQueries[0],
+          id: 'second-row',
+          group_by: 'NONE',
+          username: 'bob',
+          user_roles: undefined,
+          backend_roles: undefined,
+          labels: {},
+        },
+      ]);
+    });
+
+    // Wait for the user-info columns to render.
+    await screen.findByText('alice');
+
+    // Scope to the main data table (the last table) so header text isn't confused with the
+    // filter buttons / heatmap options that share the same labels.
+    const tables = screen.getAllByRole('table');
+    const mainTable = tables[tables.length - 1];
+
+    for (const header of ['User Roles', 'Backend Roles', 'X-Opaque-Id']) {
+      const columnHeaders = within(mainTable).getAllByRole('columnheader');
+      const headerCell = columnHeaders.find((h) => h.textContent?.includes(header));
+      const sortButton = headerCell?.querySelector('button') ?? headerCell;
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        fireEvent.click(sortButton as HTMLElement);
+      });
+    }
+
+    // Both rows still present after sorting; the comparators ran without throwing.
+    expect(within(mainTable).getByText('alice')).toBeInTheDocument();
+    expect(within(mainTable).getByText('bob')).toBeInTheDocument();
   });
 });
 
@@ -802,6 +1109,7 @@ describe('QueryInsights - Column Visibility Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
     mockHttp.get.mockResolvedValue({ workload_groups: [] });
   });
 
