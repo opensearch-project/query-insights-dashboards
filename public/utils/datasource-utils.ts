@@ -28,7 +28,16 @@ import { getSavedObjectsClient, getRouteService } from '../service';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
-  url.searchParams.set('dataSource', JSON.stringify(dataSource));
+  if (
+    dataSource &&
+    (dataSource.id || dataSource.label) &&
+    dataSource.id !== undefined &&
+    String(dataSource.id) !== 'undefined'
+  ) {
+    url.searchParams.set('dataSource', JSON.stringify(dataSource));
+  } else {
+    url.searchParams.delete('dataSource');
+  }
   return url;
 }
 
@@ -61,10 +70,21 @@ export function getDataSourceFromUrl(): DataSourceOption {
   const urlParams = new URLSearchParams(window.location.search);
   const dataSourceParam = (urlParams && urlParams.get('dataSource')) || '{}';
   // following block is needed if the dataSource param is set to non-JSON value, say 'undefined'
+  if (!dataSourceParam || dataSourceParam === 'undefined' || dataSourceParam === 'null') {
+    return {} as DataSourceOption;
+  }
   try {
-    return JSON.parse(dataSourceParam);
+    const parsed = JSON.parse(dataSourceParam);
+    // Guard against parsed objects with id set to undefined or the string "undefined"
+    if (
+      Object.keys(parsed).length > 0 &&
+      (parsed.id === undefined || parsed.id === 'undefined' || parsed.id === null)
+    ) {
+      return { ...parsed, id: '' } as DataSourceOption;
+    }
+    return parsed;
   } catch (_e) {
-    return JSON.parse('{}'); // Return an empty object or some default value if parsing fails
+    return {} as DataSourceOption;
   }
 }
 
