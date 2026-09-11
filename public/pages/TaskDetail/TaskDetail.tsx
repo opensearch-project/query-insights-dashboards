@@ -305,6 +305,22 @@ const TaskDetail = ({
                 />
               </EuiFlexItem>
               <PanelItem label="Timestamp" value={convertTime(finishedTask.timestamp)} />
+              <EuiFlexItem>
+                <EuiDescriptionList
+                  compressed
+                  listItems={[{
+                    title: <h4>Query Type</h4>,
+                    description: (() => {
+                      const parentId = finishedTask.labels?.['parent_id'];
+                      const source = finishedTask.labels?.['x-query-source'];
+                      if (parentId) return <EuiBadge color="hollow">DSL (Derived)</EuiBadge>;
+                      if (source === 'sql') return <EuiBadge color="#0079A5">SQL</EuiBadge>;
+                      if (source === 'ppl') return <EuiBadge color="#7B61FF">PPL</EuiBadge>;
+                      return <EuiBadge color="hollow">DSL</EuiBadge>;
+                    })(),
+                  }]}
+                />
+              </EuiFlexItem>
               <PanelItem label="Indices" value={finishedTask.indices?.join(', ') || '-'} />
               <PanelItem
                 label="Search Type"
@@ -329,7 +345,7 @@ const TaskDetail = ({
             </EuiFlexGrid>
           </EuiPanel>
           <EuiSpacer size="m" />
-          {finishedTask.task_resource_usages?.length > 0 && (
+          {finishedTask.task_resource_usages?.length > 0 && (!finishedTask.labels?.['x-query-source'] || finishedTask.labels?.['parent_id']) && (
             <EuiPanel>
               <EuiTitle size="s">
                 <h2>Task Resource Usage</h2>
@@ -416,7 +432,32 @@ const TaskDetail = ({
               })()}
             </EuiPanel>
           )}
-          {finishedTask.source && (
+          {finishedTask.labels?.['x-query-source'] && finishedTask.labels?.['x-original-query'] && (
+            <>
+              <EuiSpacer size="m" />
+              <EuiPanel data-test-subj="task-detail-original-query">
+                <EuiTitle size="s">
+                  <h2>
+                    Original {finishedTask.labels['x-query-source'] === 'sql' ? 'SQL' : 'PPL'} Query{' '}
+                    <EuiBadge color={finishedTask.labels['x-query-source'] === 'sql' ? '#0079A5' : '#7B61FF'}>
+                      {finishedTask.labels['x-query-source'].toUpperCase()}
+                    </EuiBadge>
+                  </h2>
+                </EuiTitle>
+                <EuiHorizontalRule margin="xs" />
+                <EuiCodeBlock
+                  language="sql"
+                  paddingSize="m"
+                  fontSize="s"
+                  overflowHeight={300}
+                  isCopyable
+                >
+                  {finishedTask.labels['x-original-query']}
+                </EuiCodeBlock>
+              </EuiPanel>
+            </>
+          )}
+          {finishedTask.source && (!finishedTask.labels?.['x-query-source'] || finishedTask.labels?.['parent_id']) && (
             <>
               <EuiSpacer size="m" />
               <EuiPanel data-test-subj="task-detail-query-source">
@@ -472,6 +513,22 @@ const TaskDetail = ({
                 />
               </EuiFlexItem>
               <PanelItem label="Start Time" value={convertTime(liveTask.start_time)} />
+              <EuiFlexItem>
+                <EuiDescriptionList
+                  compressed
+                  listItems={[{
+                    title: <h4>Query Type</h4>,
+                    description: (() => {
+                      const parentId = liveTask.labels?.['parent_id'];
+                      const source = liveTask.labels?.['x-query-source'];
+                      if (parentId) return <EuiBadge color="hollow">DSL (Derived)</EuiBadge>;
+                      if (source === 'sql') return <EuiBadge color="#0079A5">SQL</EuiBadge>;
+                      if (source === 'ppl') return <EuiBadge color="#7B61FF">PPL</EuiBadge>;
+                      return <EuiBadge color="hollow">DSL</EuiBadge>;
+                    })(),
+                  }]}
+                />
+              </EuiFlexItem>
               <PanelItem
                 label="Coordinator Node"
                 value={liveTask.coordinator_task?.node_id || '-'}
@@ -488,6 +545,33 @@ const TaskDetail = ({
             </EuiFlexGrid>
           </EuiPanel>
 
+          <EuiSpacer size="m" />
+
+          {liveTask.labels?.['x-query-source'] && liveTask.labels?.['x-original-query'] && !liveTask.labels?.['parent_id'] && (
+            <EuiPanel data-test-subj="task-detail-live-original-query">
+              <EuiTitle size="s">
+                <h2>
+                  Original {liveTask.labels['x-query-source'] === 'sql' ? 'SQL' : 'PPL'} Query{' '}
+                  <EuiBadge color={liveTask.labels['x-query-source'] === 'sql' ? '#0079A5' : '#7B61FF'}>
+                    {liveTask.labels['x-query-source'].toUpperCase()}
+                  </EuiBadge>
+                </h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiCodeBlock
+                language="sql"
+                paddingSize="m"
+                fontSize="s"
+                overflowHeight={300}
+                isCopyable
+              >
+                {liveTask.labels['x-original-query']}
+              </EuiCodeBlock>
+            </EuiPanel>
+          )}
+
+          {(!liveTask.labels?.['x-query-source'] || liveTask.labels?.['parent_id']) && (
+          <>
           <EuiSpacer size="m" />
 
           <EuiPanel data-test-subj="task-detail-resource-usage">
@@ -533,10 +617,12 @@ const TaskDetail = ({
               <p>No active shard tasks at this moment. Refresh to update.</p>
             )}
           </EuiPanel>
+          </>
+          )}
 
           <EuiSpacer size="m" />
 
-          {liveTask.coordinator_task?.description && (
+          {(!liveTask.labels?.['x-query-source'] || liveTask.labels?.['parent_id']) && liveTask.coordinator_task?.description && (
             <EuiPanel data-test-subj="task-detail-query-source">
               <EuiTitle size="s">
                 <h2>Query Source</h2>

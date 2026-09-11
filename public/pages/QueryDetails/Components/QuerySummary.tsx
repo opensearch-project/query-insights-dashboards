@@ -100,10 +100,41 @@ const QuerySummary = ({
           label={MEMORY_USAGE}
           value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B')}
         />
-        <PanelItem label={INDICES} value={indices.toString()} />
-        <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
-        <PanelItem label={NODE_ID} value={node_id} />
-        <PanelItem label={TOTAL_SHARDS} value={total_shards} />
+        <PanelItem label={INDICES} value={indices?.toString() ?? '-'} />
+        <EuiFlexItem>
+          <EuiDescriptionList
+            compressed={true}
+            listItems={[{
+              title: <h4>Query Type</h4>,
+              description: (() => {
+                const parentId = query.labels?.['parent_id'];
+                const source = query.labels?.['x-query-source'];
+                if (parentId) return <EuiBadge color="hollow">DSL (Derived)</EuiBadge>;
+                if (source === 'sql') return <EuiBadge color="#0079A5">SQL</EuiBadge>;
+                if (source === 'ppl') return <EuiBadge color="#7B61FF">PPL</EuiBadge>;
+                return <EuiBadge color="hollow">DSL</EuiBadge>;
+              })(),
+            }]}
+          />
+        </EuiFlexItem>
+        {query.labels?.['parent_id'] && (
+          <EuiFlexItem>
+            <EuiDescriptionList
+              compressed={true}
+              listItems={[{
+                title: <h4>Derived From</h4>,
+                description: (
+                  <EuiBadge color={query.labels?.['x-query-source'] === 'sql' ? '#0079A5' : '#7B61FF'}>
+                    {(query.labels?.['x-query-source'] || 'query').toUpperCase()}: {query.labels['parent_id']}
+                  </EuiBadge>
+                ),
+              }]}
+            />
+          </EuiFlexItem>
+        )}
+        <PanelItem label={SEARCH_TYPE} value={search_type?.replaceAll('_', ' ') ?? '-'} />
+        <PanelItem label={NODE_ID} value={node_id ?? '-'} />
+        <PanelItem label={TOTAL_SHARDS} value={total_shards ?? '-'} />
         {wlmSupported && wlm_group_id && <PanelItem label={WLM_GROUP} value={wlm_group_id} />}
         {userInfoSupported && username && <PanelItem label="Username" value={username} />}
         {userInfoSupported && user_roles?.length > 0 && (

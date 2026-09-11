@@ -27,6 +27,33 @@ export interface SearchQueryRecord {
   username?: string;
   user_roles?: string[];
   failed?: boolean;
+  sql_phases?: SqlPhases;
+  sub_queries?: SubQuery[];
+}
+
+export interface SqlPhaseMetrics {
+  time: number;
+  cpu?: number;
+  mem?: number;
+}
+
+export interface SqlPhases {
+  parse?: SqlPhaseMetrics;
+  analyze?: SqlPhaseMetrics;
+  plan?: SqlPhaseMetrics;
+  total?: SqlPhaseMetrics;
+}
+
+export interface SubQuery {
+  id: string;
+  source?: string;
+  indices?: string[];
+  measurements?: {
+    latency?: number;
+    cpu?: number;
+    memory?: number;
+  };
+  timestamp?: number;
 }
 
 export interface Measurement {
@@ -95,6 +122,7 @@ export interface RichLiveQueryRecord {
   total_memory_bytes: number;
   coordinator_task?: TaskDetailRecord;
   shard_tasks: TaskDetailRecord[];
+  labels?: Record<string, string>;
 }
 
 // Finished query record — extends SearchQueryRecord with top_n_id and status

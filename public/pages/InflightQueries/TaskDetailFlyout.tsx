@@ -5,6 +5,7 @@
 
 import React from 'react';
 import {
+  EuiBasicTable,
   EuiButton,
   EuiButtonEmpty,
   EuiCodeBlock,
@@ -88,6 +89,9 @@ export const TaskDetailFlyout: React.FC<Props> = ({
   const querySource = (task as any)._source || (sourceMatch ? sourceMatch[1] : null);
   const totalShards = (task as any)._totalShards;
   const taskResourceUsages = (task as any)._taskResourceUsages;
+
+  const queryLanguage = (task as any).labels?.['parent_id'] ? undefined : (task as any).labels?.['x-query-source'];
+  const originalQuery = (task as any).labels?.['parent_id'] ? undefined : (task as any).labels?.['x-original-query'];
 
   const isFinished =
     task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled';
@@ -194,6 +198,42 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             <PanelItem label="Coordinator Node" value={coordinatorNode} />
             <PanelItem label="Search Type" value={searchType} />
             <PanelItem label="Indices" value={indices} />
+            <EuiFlexItem>
+              <EuiDescriptionList
+                compressed
+                listItems={[{
+                  title: <h4>Query Type</h4>,
+                  description: (() => {
+                    const parentId = (task as any).labels?.['parent_id'];
+                    const source = (task as any).labels?.['x-query-source'];
+                    if (parentId) return <EuiBadge color="hollow">DSL (Derived)</EuiBadge>;
+                    if (source === 'sql') return <EuiBadge color="#0079A5">SQL</EuiBadge>;
+                    if (source === 'ppl') return <EuiBadge color="#7B61FF">PPL</EuiBadge>;
+                    return <EuiBadge color="hollow">DSL</EuiBadge>;
+                  })(),
+                }]}
+              />
+            </EuiFlexItem>
+            {(task as any).labels?.['parent_id'] && (
+              <EuiFlexItem>
+                <EuiDescriptionList
+                  compressed
+                  listItems={[{
+                    title: <h4>Derived From</h4>,
+                    description: (() => {
+                      const parentId = (task as any).labels['parent_id'];
+                      const source = (task as any).labels?.['x-query-source'];
+                      const badge = source === 'sql' ? 'SQL' : source === 'ppl' ? 'PPL' : 'Query';
+                      return (
+                        <EuiBadge color={source === 'sql' ? '#0079A5' : source === 'ppl' ? '#7B61FF' : 'hollow'}>
+                          {badge}: {parentId}
+                        </EuiBadge>
+                      );
+                    })(),
+                  }]}
+                />
+              </EuiFlexItem>
+            )}
             {(task as any)._topNId && <PanelItem label="Top N ID" value={(task as any)._topNId} />}
             {task.wlm_group_id && <PanelItem label="WLM Group" value={task.wlm_group_id} />}
             <PanelItem label="Time Elapsed" value={`${task.total_latency_millis} ms`} />
@@ -205,7 +245,8 @@ export const TaskDetailFlyout: React.FC<Props> = ({
 
         <EuiSpacer size="m" />
 
-        {/* Task Resource Usage */}
+        {/* Task Resource Usage — hidden for SQL/PPL parent queries */}
+        {!queryLanguage && (
         <EuiPanel>
           <EuiTitle size="s">
             <h3>Task Resource Usage</h3>
@@ -300,14 +341,101 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             </>
           )}
         </EuiPanel>
+        )}
 
-        {/* Query Source */}
-        {querySource && (
+        {/* Original SQL/PPL Query */}
+        {queryLanguage && originalQuery && (
+          <>
+            <EuiSpacer size="m" />
+            <EuiPanel>
+              <EuiFlexGroup alignItems="center" gutterSize="s">
+                <EuiFlexItem grow={false}>
+                  <EuiTitle size="s">
+                    <h3>Original Query</h3>
+                  </EuiTitle>
+                </EuiFlexItem>
+                <EuiFlexItem grow={false}>
+                  <EuiBadge color={queryLanguage === 'sql' ? '#0079A5' : '#7B61FF'}>
+                    {queryLanguage.toUpperCase()}
+                  </EuiBadge>
+                </EuiFlexItem>
+              </EuiFlexGroup>
+              <EuiHorizontalRule margin="xs" />
+              <EuiCodeBlock
+                language="sql"
+                paddingSize="m"
+                fontSize="s"
+                overflowHeight={300}
+                isCopyable
+              >
+                {originalQuery}
+              </EuiCodeBlock>
+            </EuiPanel>
+          </>
+        )}
+
+        {/* DSL Query Body */}
+        {queryLanguage && (task as any).labels?.['x-query-phases'] && (
           <>
             <EuiSpacer size="m" />
             <EuiPanel>
               <EuiTitle size="s">
-                <h3>Query Source</h3>
+                <h3>SQL Processing Phases</h3>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiBasicTable
+                items={(() => {
+                  const phasesStr = (task as any).labels?.['x-query-phases'] || '';
+                  const phases: Record<string, Record<string, number>> = {};
+                  try {
+                    for (const part of phasesStr.split(',')) {
+                      const segments = part.split('|');
+                      const [name, timeStr] = segments[0].split(':');
+                      const metrics: Record<string, number> = { time: parseInt(timeStr, 10) };
+                      for (let i = 1; i < segments.length; i++) {
+                        const [k, v] = segments[i].split(':');
+                        metrics[k] = parseInt(v, 10);
+                      }
+                      phases[name] = metrics;
+                    }
+                  } catch { /* ignore parse errors */ }
+                  const rows = [];
+                  if (phases.parse) rows.push({ phase: 'Parse', time: (phases.parse.time / 1e6).toFixed(2), cpu: phases.parse.cpu ? (phases.parse.cpu / 1e6).toFixed(2) : '-', memory: phases.parse.mem ? (phases.parse.mem / 1024).toFixed(2) : '-' });
+                  if (phases.analyze) rows.push({ phase: 'Analyze', time: (phases.analyze.time / 1e6).toFixed(2), cpu: phases.analyze.cpu ? (phases.analyze.cpu / 1e6).toFixed(2) : '-', memory: phases.analyze.mem ? (phases.analyze.mem / 1024).toFixed(2) : '-' });
+                  if (phases.plan) rows.push({ phase: 'Plan', time: (phases.plan.time / 1e6).toFixed(2), cpu: phases.plan.cpu ? (phases.plan.cpu / 1e6).toFixed(2) : '-', memory: phases.plan.mem ? (phases.plan.mem / 1024).toFixed(2) : '-' });
+                  // Execution row: total measurements minus SQL overhead
+                  const totalLatency = (task as any).total_latency_millis || ((task as any).measurements?.latency?.number) || 0;
+                  const totalCpu = (task as any).total_cpu_nanos || ((task as any).measurements?.cpu?.number) || 0;
+                  const totalMem = (task as any).total_memory_bytes || ((task as any).measurements?.memory?.number) || 0;
+                  const sqlOverhead = phases.total?.time ? phases.total.time / 1e6 : 0;
+                  const sqlCpu = (phases.parse?.cpu || 0) + (phases.analyze?.cpu || 0) + (phases.plan?.cpu || 0);
+                  const sqlMem = (phases.parse?.mem || 0) + (phases.analyze?.mem || 0) + (phases.plan?.mem || 0);
+                  rows.push({ phase: 'Execution (DSL)', time: Math.max(0, totalLatency - sqlOverhead).toFixed(2), cpu: (Math.max(0, totalCpu - sqlCpu) / 1e6).toFixed(2), memory: (Math.max(0, totalMem - sqlMem) / 1024).toFixed(2) });
+                  // Total row
+                  const parseT = phases.parse?.time ? phases.parse.time / 1e6 : 0;
+                  const analyzeT = phases.analyze?.time ? phases.analyze.time / 1e6 : 0;
+                  const planT = phases.plan?.time ? phases.plan.time / 1e6 : 0;
+                  const execT = Math.max(0, totalLatency - sqlOverhead);
+                  rows.push({ phase: 'Total', time: (parseT + analyzeT + planT + execT).toFixed(2), cpu: (totalCpu / 1e6).toFixed(2), memory: (totalMem / 1024).toFixed(2) });
+                  return rows;
+                })()}
+                columns={[
+                  { field: 'phase', name: 'Phase' },
+                  { field: 'time', name: 'Latency (ms)' },
+                  { field: 'cpu', name: 'CPU (ms)' },
+                  { field: 'memory', name: 'Memory (KB)' },
+                ]}
+                itemId="phase"
+              />
+            </EuiPanel>
+          </>
+        )}
+        {querySource && (!queryLanguage) && (
+          <>
+            <EuiSpacer size="m" />
+            <EuiPanel>
+              <EuiTitle size="s">
+                <h3>DSL Query</h3>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiCodeBlock

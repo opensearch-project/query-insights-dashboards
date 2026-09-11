@@ -6,6 +6,8 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
+  EuiBadge,
+  EuiBasicTable,
   EuiButton,
   EuiInMemoryTable,
   EuiCodeBlock,
@@ -16,12 +18,13 @@ import {
   EuiHorizontalRule,
   EuiPanel,
   EuiSpacer,
+  EuiStat,
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
-import { Task } from '../../../types/types';
+import { Task, SubQuery } from '../../../types/types';
 import QuerySummary from './Components/QuerySummary';
 import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
@@ -250,7 +253,7 @@ const QueryDetails = ({
           userInfoSupported={userInfoSupported}
         />
         <EuiSpacer size="m" />
-        {query?.task_resource_usages?.length > 0 && (
+        {query?.task_resource_usages?.length > 0 && (!query?.labels?.['x-query-source'] || query?.labels?.['parent_id']) && (
           <>
             <EuiPanel data-test-subj={'query-details-task-resource-usages'}>
               <EuiTitle size="s">
@@ -279,7 +282,248 @@ const QueryDetails = ({
             <EuiSpacer size="m" />
           </>
         )}
+        {query?.labels?.['x-query-source'] && query?.labels?.['x-original-query'] && !query?.labels?.['parent_id'] && (
+          <>
+            <EuiPanel data-test-subj={'query-details-original-query-section'}>
+              <EuiTitle size="s">
+                <h2>
+                  Original {query.labels['x-query-source'] === 'sql' ? 'SQL' : 'PPL'} Query{' '}
+                  <EuiBadge color={query.labels['x-query-source'] === 'sql' ? '#0079A5' : '#7B61FF'}>
+                    {query.labels['x-query-source'].toUpperCase()}
+                  </EuiBadge>
+                </h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiSpacer size="xs" />
+              <EuiCodeBlock
+                language="sql"
+                paddingSize="m"
+                fontSize="s"
+                overflowHeight={300}
+                isCopyable
+              >
+                {query.labels['x-original-query']}
+              </EuiCodeBlock>
+            </EuiPanel>
+            <EuiSpacer size="m" />
+          </>
+        )}
+        {query?.sql_phases && (
+          <>
+            <EuiPanel data-test-subj={'query-details-sql-phases-section'}>
+              <EuiTitle size="s">
+                <h2>SQL Processing Phases</h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiSpacer size="s" />
+              <EuiBasicTable
+                items={[
+                  ...(query.sql_phases.parse ? [{
+                    phase: 'Parse',
+                    time: (query.sql_phases.parse.time / 1e6).toFixed(2),
+                    cpu: query.sql_phases.parse.cpu != null ? (query.sql_phases.parse.cpu / 1e6).toFixed(2) : '-',
+                    memory: query.sql_phases.parse.mem != null ? (query.sql_phases.parse.mem / 1024).toFixed(2) : '-',
+                  }] : []),
+                  ...(query.sql_phases.analyze ? [{
+                    phase: 'Analyze',
+                    time: (query.sql_phases.analyze.time / 1e6).toFixed(2),
+                    cpu: query.sql_phases.analyze.cpu != null ? (query.sql_phases.analyze.cpu / 1e6).toFixed(2) : '-',
+                    memory: query.sql_phases.analyze.mem != null ? (query.sql_phases.analyze.mem / 1024).toFixed(2) : '-',
+                  }] : []),
+                  ...(query.sql_phases.plan ? [{
+                    phase: 'Plan',
+                    time: (query.sql_phases.plan.time / 1e6).toFixed(2),
+                    cpu: query.sql_phases.plan.cpu != null ? (query.sql_phases.plan.cpu / 1e6).toFixed(2) : '-',
+                    memory: query.sql_phases.plan.mem != null ? (query.sql_phases.plan.mem / 1024).toFixed(2) : '-',
+                  }] : []),
+                  {
+                    phase: 'Execution (DSL)',
+                    time: (() => {
+                      const totalLatency = query.measurements?.latency?.number ?? 0;
+                      const sqlOverhead = query.sql_phases?.total?.time ? query.sql_phases.total.time / 1e6 : 0;
+                      return Math.max(0, totalLatency - sqlOverhead).toFixed(2);
+                    })(),
+                    cpu: (() => {
+                      const totalCpu = query.measurements?.cpu?.number ?? 0;
+                      const sqlCpu = (query.sql_phases?.parse?.cpu ?? 0) + (query.sql_phases?.analyze?.cpu ?? 0) + (query.sql_phases?.plan?.cpu ?? 0);
+                      return (Math.max(0, totalCpu - sqlCpu) / 1e6).toFixed(2);
+                    })(),
+                    memory: (() => {
+                      const totalMem = query.measurements?.memory?.number ?? 0;
+                      const sqlMem = (query.sql_phases?.parse?.mem ?? 0) + (query.sql_phases?.analyze?.mem ?? 0) + (query.sql_phases?.plan?.mem ?? 0);
+                      return (Math.max(0, totalMem - sqlMem) / 1024).toFixed(2);
+                    })(),
+                  },
+                  {
+                    phase: 'Total',
+                    time: (() => {
+                      const parse = query.sql_phases?.parse?.time ? query.sql_phases.parse.time / 1e6 : 0;
+                      const analyze = query.sql_phases?.analyze?.time ? query.sql_phases.analyze.time / 1e6 : 0;
+                      const plan = query.sql_phases?.plan?.time ? query.sql_phases.plan.time / 1e6 : 0;
+                      const totalLatency = query.measurements?.latency?.number ?? 0;
+                      const sqlOverhead = query.sql_phases?.total?.time ? query.sql_phases.total.time / 1e6 : 0;
+                      const exec = Math.max(0, totalLatency - sqlOverhead);
+                      return (parse + analyze + plan + exec).toFixed(2);
+                    })(),
+                    cpu: (query.measurements?.cpu?.number ? (query.measurements.cpu.number / 1e6).toFixed(2) : '-'),
+                    memory: (query.measurements?.memory?.number ? (query.measurements.memory.number / 1024).toFixed(2) : '-'),
+                  },
+                ]}
+                columns={[
+                  { field: 'phase', name: 'Phase' },
+                  { field: 'time', name: 'Latency (ms)' },
+                  { field: 'cpu', name: 'CPU (ms)' },
+                  { field: 'memory', name: 'Memory (KB)' },
+                ]}
+                itemId="phase"
+              />
+            </EuiPanel>
+            <EuiSpacer size="m" />
+            <EuiPanel data-test-subj={'query-details-sql-latency-chart'}>
+              <EuiTitle size="xs">
+                <h2>Latency Breakdown</h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <ReactECharts
+                option={(() => {
+                  const parse = query.sql_phases?.parse?.time ? query.sql_phases.parse.time / 1e6 : 0;
+                  const analyze = query.sql_phases?.analyze?.time ? query.sql_phases.analyze.time / 1e6 : 0;
+                  const plan = query.sql_phases?.plan?.time ? query.sql_phases.plan.time / 1e6 : 0;
+                  const totalLatency = query.measurements?.latency?.number ?? 0;
+                  const sqlOverhead = query.sql_phases?.total?.time ? query.sql_phases.total.time / 1e6 : 0;
+                  const exec = Math.max(0, totalLatency - sqlOverhead);
+                  // Offsets for Gantt positioning (sequential)
+                  const parseStart = 0;
+                  const analyzeStart = parse;
+                  const planStart = analyzeStart + analyze;
+                  const execStart = planStart + plan;
+                  const total = parse + analyze + plan + exec;
+                  return {
+                    grid: { left: 90, right: 60, top: 10, bottom: 30 },
+                    xAxis: {
+                      type: 'value',
+                      min: 0,
+                      max: Math.ceil(total),
+                      axisLabel: { formatter: '{value} ms', color: '#535966' },
+                      axisLine: { lineStyle: { color: '#D4DAE5' } },
+                      splitLine: { lineStyle: { color: '#D4DAE5', type: 'dashed' } },
+                    },
+                    yAxis: {
+                      type: 'category',
+                      data: ['Execution', 'Plan', 'Analyze', 'Parse'],
+                      axisLine: { lineStyle: { color: '#D4DAE5' } },
+                      axisTick: { show: false },
+                    },
+                    series: [
+                      {
+                        type: 'bar',
+                        stack: 'offset',
+                        silent: true,
+                        data: [execStart, planStart, analyzeStart, parseStart],
+                        itemStyle: { color: 'transparent' },
+                        barWidth: '50%',
+                      },
+                      {
+                        type: 'bar',
+                        stack: 'offset',
+                        data: [
+                          { value: parseFloat(exec.toFixed(2)), itemStyle: { color: '#F990C0' } },
+                          { value: parseFloat(plan.toFixed(2)), itemStyle: { color: '#7DE2D1' } },
+                          { value: parseFloat(analyze.toFixed(2)), itemStyle: { color: '#1BA9F5' } },
+                          { value: parseFloat(parse.toFixed(2)), itemStyle: { color: '#F5A623' } },
+                        ],
+                        label: { show: true, position: 'right', formatter: '{c} ms', fontSize: 11 },
+                        barWidth: '50%',
+                      },
+                    ],
+                  };
+                })()}
+                style={{ height: 160, width: '100%' }}
+                opts={{ renderer: 'svg' }}
+              />
+            </EuiPanel>
+            <EuiSpacer size="m" />
+          </>
+        )}
+        {query?.sub_queries && query.sub_queries.length > 0 && (
+          <>
+            <EuiPanel data-test-subj={'query-details-sub-queries-section'}>
+              <EuiTitle size="s">
+                <h2>Sub-queries</h2>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiSpacer size="s" />
+              <EuiBasicTable
+                items={query.sub_queries}
+                columns={[
+                  {
+                    field: 'id',
+                    name: 'ID',
+                    render: (id: string) => (
+                      <a
+                        href={`#/query-details?from=${new URLSearchParams(location.search).get('from')}&to=${new URLSearchParams(location.search).get('to')}&id=${id}&verbose=true`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          history.push(
+                            `/query-details?from=${new URLSearchParams(location.search).get('from')}&to=${new URLSearchParams(location.search).get('to')}&id=${id}&verbose=true`
+                          );
+                        }}
+                      >
+                        {id}
+                      </a>
+                    ),
+                  },
+                  {
+                    name: 'Query Source',
+                    render: () => <EuiBadge color="hollow">DSL</EuiBadge>,
+                  },
+                  {
+                    field: 'timestamp',
+                    name: 'Timestamp',
+                    render: (ts: number) => {
+                      if (!ts) return '-';
+                      const d = new Date(ts);
+                      const loc = d.toDateString().split(' ');
+                      return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${d.toLocaleTimeString('en-US')}`;
+                    },
+                  },
+                  {
+                    name: 'Status',
+                    render: () => <EuiBadge color="secondary">Completed</EuiBadge>,
+                  },
+                  {
+                    field: 'measurements',
+                    name: 'Latency',
+                    render: (m: SubQuery['measurements']) =>
+                      m?.latency != null ? `${m.latency} ms` : '-',
+                  },
+                  {
+                    field: 'measurements',
+                    name: 'CPU Time',
+                    render: (m: SubQuery['measurements']) =>
+                      m?.cpu != null ? `${(m.cpu / 1e6).toFixed(2)} ms` : '-',
+                  },
+                  {
+                    field: 'measurements',
+                    name: 'Memory Usage',
+                    render: (m: SubQuery['measurements']) =>
+                      m?.memory != null ? `${m.memory.toLocaleString()} B` : '-',
+                  },
+                  {
+                    field: 'indices',
+                    name: 'Indices',
+                    render: (indices: string[] | undefined) =>
+                      indices ? indices.join(', ') : '-',
+                  },
+                ]}
+                itemId="id"
+              />
+            </EuiPanel>
+            <EuiSpacer size="m" />
+          </>
+        )}
         <EuiFlexGroup>
+          {!query?.sub_queries?.length && (!query?.labels?.['x-query-source'] || query?.labels?.['parent_id']) && (
           <EuiFlexItem grow={1} style={{ minWidth: 0 }}>
             <EuiPanel data-test-subj={'query-details-source-section'}>
               <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
@@ -334,7 +578,9 @@ const QueryDetails = ({
               </EuiCodeBlock>
             </EuiPanel>
           </EuiFlexItem>
+          )}
           <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
+            {(!query?.labels?.['x-query-source'] || query?.labels?.['parent_id']) && (
             <EuiPanel data-test-subj={'query-details-latency-chart'}>
               <EuiTitle size="xs">
                 <h2>Latency</h2>
@@ -346,6 +592,7 @@ const QueryDetails = ({
                 opts={{ renderer: 'svg' }}
               />
             </EuiPanel>
+            )}
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlexItem>

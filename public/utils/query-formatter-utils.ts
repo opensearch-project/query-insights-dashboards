@@ -32,7 +32,12 @@ export const formatQueryDisplay = (query: SearchQueryRecord | null): string => {
       // Truncated source can't be parsed, return with indicator
       return query.source + '\n...';
     }
-    parsedSource = JSON.parse(query.source);
+    try {
+      parsedSource = JSON.parse(query.source);
+    } catch {
+      // Source is not JSON (e.g., SQL/PPL original query text), return as-is
+      return query.source;
+    }
   }
   // Old format: source is already an object (ISearchSource)
   return JSON.stringify(parsedSource, null, 2);

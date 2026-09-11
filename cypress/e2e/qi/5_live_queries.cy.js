@@ -408,8 +408,8 @@ describe('Task Detail Flyout', () => {
       // Phase should be parsed
       cy.contains('Query').should('exist');
 
-      // Query Source
-      cy.contains('Query Source').scrollIntoView().should('exist');
+      // DSL Query
+      cy.contains('DSL Query').scrollIntoView().should('exist');
       cy.contains('match_all').should('exist');
     });
   });
@@ -484,8 +484,8 @@ describe('Task Detail Flyout', () => {
       cy.contains('Task Resource Usage').should('exist');
       cy.contains('Coordinator Task').should('exist');
 
-      // Query Source
-      cy.contains('Query Source').scrollIntoView().should('exist');
+      // DSL Query
+      cy.contains('DSL Query').scrollIntoView().should('exist');
     });
   });
 
