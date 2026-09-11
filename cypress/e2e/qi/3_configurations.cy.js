@@ -209,16 +209,16 @@ describe('Query Insights Configurations Page', () => {
   });
 
   /**
-   * Validate the save button, changes should be saved and redirect to overview
-   * After saving the status panel should show the correct status
+   * Validate the save button, changes should be saved without leaving Configuration.
+   * After saving the status panel should show the correct status.
    */
   it('should allow saving the configuration', () => {
     toggleMetricEnabled();
     cy.get('select#timeUnit').select('MINUTES');
     cy.get('select#minutes').select('5');
     cy.get('button[data-test-subj="save-config-button"]').click();
-    cy.url().should('include', '/queryInsights');
-    cy.navigateToConfiguration();
+    cy.contains('Saved Query Insights settings.').should('be.visible');
+    cy.url().should('include', '/configuration');
     cy.get('.euiHealth').contains('Enabled').should('be.visible');
     cy.get('.euiText').contains('Latency').should('be.visible');
   });

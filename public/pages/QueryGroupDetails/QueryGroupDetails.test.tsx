@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route } from 'react-router-dom';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { Route, Router } from 'react-router-dom';
+import { createMemoryHistory, MemoryHistory } from 'history';
 import { QueryGroupDetails } from './QueryGroupDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
 import React from 'react';
@@ -39,6 +40,18 @@ const mockDataSourceContext = {
 };
 
 const mockQuery = mockQueries[0];
+const queryGroupDetailsPath = (id: string) =>
+  `/query-group-details?id=${id}&from=1632441600000&to=1632528000000&verbose=true`;
+
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+};
 
 describe('QueryGroupDetails', () => {
   const coreMock = {
@@ -55,13 +68,13 @@ describe('QueryGroupDetails', () => {
     (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
   });
 
-  const renderComponent = () => {
+  const renderComponent = (
+    history: MemoryHistory = createMemoryHistory({
+      initialEntries: [queryGroupDetailsPath('mockId')],
+    })
+  ) => {
     return render(
-      <MemoryRouter
-        initialEntries={[
-          '/query-group-details?id=mockId&from=1632441600000&to=1632528000000&verbose=true',
-        ]}
-      >
+      <Router history={history}>
         <DataSourceContext.Provider value={mockDataSourceContext}>
           <Route path="/query-group-details">
             <QueryGroupDetails
@@ -72,7 +85,7 @@ describe('QueryGroupDetails', () => {
             />
           </Route>
         </DataSourceContext.Provider>
-      </MemoryRouter>
+      </Router>
     );
   };
 
@@ -106,6 +119,76 @@ describe('QueryGroupDetails', () => {
 
     expect(screen.getByText('Query')).toBeInTheDocument();
     expect(screen.getByText('Latency')).toBeInTheDocument();
+  });
+
+  it('shows an access-denied message instead of query group details for a forbidden response', async () => {
+    (retrieveQueryById as jest.Mock).mockRejectedValue({
+      statusCode: 403,
+      body: { message: '[security_exception] no permissions for top queries' },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', {
+          level: 2,
+          name: "You don't have permission to view Query Insights data.",
+        })
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Sample query details')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Latency' })).not.toBeInTheDocument();
+  });
+
+  it('ignores a stale forbidden response after navigating to another query group', async () => {
+    const firstRequest = createDeferred<typeof mockQuery>();
+    const secondRequest = createDeferred<typeof mockQuery>();
+    (retrieveQueryById as jest.Mock).mockImplementation(
+      (_core, _dataSourceId, _from, _to, queryId) =>
+        queryId === 'group-a' ? firstRequest.promise : secondRequest.promise
+    );
+    const history = createMemoryHistory({
+      initialEntries: [queryGroupDetailsPath('group-a')],
+    });
+
+    renderComponent(history);
+    await waitFor(() =>
+      expect(retrieveQueryById).toHaveBeenCalledWith(
+        coreMock,
+        undefined,
+        '1632441600000',
+        '1632528000000',
+        'group-a',
+        true
+      )
+    );
+
+    act(() => history.push(queryGroupDetailsPath('group-b')));
+    await waitFor(() =>
+      expect(retrieveQueryById).toHaveBeenCalledWith(
+        coreMock,
+        undefined,
+        '1632441600000',
+        '1632528000000',
+        'group-b',
+        true
+      )
+    );
+
+    await act(async () => {
+      secondRequest.resolve({ ...mockQuery, id: 'group-b' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      firstRequest.reject({ statusCode: 403 });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.queryByText("You don't have permission to view Query Insights data.")
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Sample query details')).toBeInTheDocument();
   });
 
   it('renders latency bar chart', async () => {

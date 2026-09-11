@@ -64,6 +64,8 @@ import {
 import { SearchQueryRecord } from '../../../types/types';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import { QueryInsightsAccessDenied } from '../../components/QueryInsightsAccessDenied';
+import { isForbiddenError } from '../../../common/utils/ErrorUtils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -98,15 +100,23 @@ export const InflightQueries = ({
   depsStart,
   params,
   dataSourceManagement,
+  onDataSourceChange,
 }: {
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  onDataSourceChange?: () => Promise<void> | void;
 }) => {
-  const isFetching = useRef(false);
+  const activeFetch = useRef<{ sourceId: string; token: number } | null>(null);
+  const nextFetchToken = useRef(0);
+  const latestLiveQueryRequestId = useRef(0);
+  const latestAppliedLiveQueryRequestId = useRef(0);
   const [query, setQuery] = useState<LiveSearchQueryResponse | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const selectedDataSourceId = useRef(dataSource?.id);
+  selectedDataSourceId.current = dataSource?.id;
   const [nodeCounts, setNodeCounts] = useState<Record<string, number>>({});
   const [indexCounts, setIndexCounts] = useState<Record<string, number>>({});
 
@@ -116,6 +126,14 @@ export const InflightQueries = ({
   const [refreshInterval, setRefreshInterval] = useState(DEFAULT_REFRESH_INTERVAL);
 
   const [wlmGroupOptions, setWlmGroupOptions] = useState<Array<{ id: string; name: string }>>([]);
+
+  const invalidatePendingLiveQueryResponses = useCallback(() => {
+    latestAppliedLiveQueryRequestId.current = ++latestLiveQueryRequestId.current;
+  }, []);
+
+  useEffect(() => {
+    return () => invalidatePendingLiveQueryResponses();
+  }, [dataSource?.id, invalidatePendingLiveQueryResponses]);
 
   const location = useLocation();
   const history = useHistory();
@@ -128,10 +146,16 @@ export const InflightQueries = ({
     [wlmGroupOptions]
   );
 
-  const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
-  const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
+  const [detectedWlmAvailable, setWlmAvailable] = useState<boolean>(false);
+  const [detectedQueryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
     useState<boolean>(false);
-  const [taskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
+  const [detectedTaskDetailSupported, setTaskDetailSupported] = useState<boolean>(false);
+  const [capabilityDataSourceId, setCapabilityDataSourceId] = useState<string | undefined>();
+  const capabilitiesAreCurrent = capabilityDataSourceId === dataSource?.id;
+  const wlmAvailable = capabilitiesAreCurrent && detectedWlmAvailable;
+  const queryInsightWlmNavigationSupported =
+    capabilitiesAreCurrent && detectedQueryInsightWlmNavigationSupported;
+  const taskDetailSupported = capabilitiesAreCurrent && detectedTaskDetailSupported;
   const wlmCacheRef = useRef<Record<string, boolean>>({});
 
   const detectWlm = useCallback(async (): Promise<boolean> => {
@@ -155,29 +179,51 @@ export const InflightQueries = ({
   }, [core.http, dataSource?.id]);
 
   useEffect(() => {
+    let cancelled = false;
+    const requestDataSourceId = dataSource?.id;
+    const isCurrentDataSource = () =>
+      !cancelled && requestDataSourceId === selectedDataSourceId.current;
+
     const checkWlmSupport = async () => {
       try {
-        const version = await getVersionOnce(dataSource?.id || '');
+        const version = await getVersionOnce(requestDataSourceId || '');
+        if (!isCurrentDataSource()) {
+          return;
+        }
         const versionSupported = isVersion33OrHigher(version);
+        setWlmAvailable(false);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setTaskDetailSupported(isVersion37OrHigher(version));
+        setCapabilityDataSourceId(requestDataSourceId);
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
-
-          setWlmAvailable(hasWlm);
+          if (isCurrentDataSource()) {
+            setWlmAvailable(hasWlm);
+          }
         } else {
           setWlmAvailable(false);
         }
       } catch (e) {
+        if (!isCurrentDataSource()) {
+          return;
+        }
         console.warn('Failed to check version for WLM groups support', e);
+        setWlmAvailable(false);
         setQueryInsightWlmNavigationSupported(false);
         setTaskDetailSupported(false);
-        setWlmAvailable(false);
+        setCapabilityDataSourceId(requestDataSourceId);
       }
     };
 
+    setCapabilityDataSourceId(undefined);
+    setWlmAvailable(false);
+    setQueryInsightWlmNavigationSupported(false);
+    setTaskDetailSupported(false);
     checkWlmSupport();
+    return () => {
+      cancelled = true;
+    };
   }, [detectWlm, dataSource?.id]);
 
   // Clean URL after extracting wlmGroupId
@@ -195,12 +241,23 @@ export const InflightQueries = ({
   }>({ total_completions: 0, total_cancellations: 0, total_failures: 0 });
 
   const fetchActiveWlmGroups = useCallback(async () => {
-    const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
+    const requestDataSourceId = dataSource?.id;
+    const isCurrentDataSource = () => requestDataSourceId === selectedDataSourceId.current;
+    if (!isCurrentDataSource()) {
+      return {};
+    }
+    const httpQuery = requestDataSourceId ? { dataSourceId: requestDataSourceId } : undefined;
     let statsBody: WlmStatsBody = {};
     try {
       const statsRes = await core.http.get(API_ENDPOINTS.WLM_STATS, { query: httpQuery });
+      if (!isCurrentDataSource()) {
+        return {};
+      }
       statsBody = statsRes as WlmStatsBody;
     } catch (e) {
+      if (!isCurrentDataSource()) {
+        return {};
+      }
       console.warn('[LiveQueries] Failed to fetch WLM stats', e);
       setWlmGroupOptions([]);
       return {};
@@ -248,6 +305,9 @@ export const InflightQueries = ({
         const groupsRes = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, {
           query: httpQuery,
         });
+        if (!isCurrentDataSource()) {
+          return {};
+        }
         const details = ((groupsRes as { body?: { workload_groups?: WlmGroupDetail[] } }).body
           ?.workload_groups ??
           (groupsRes as { workload_groups?: WlmGroupDetail[] }).workload_groups ??
@@ -256,9 +316,15 @@ export const InflightQueries = ({
         for (const g of details) idToNameMap[g._id] = g.name;
       }
     } catch (e) {
+      if (!isCurrentDataSource()) {
+        return {};
+      }
       console.warn('[LiveQueries] Failed to fetch workload groups', e);
     }
 
+    if (!isCurrentDataSource()) {
+      return {};
+    }
     const options = queryInsightWlmNavigationSupported
       ? Array.from(activeGroupIds).map((id) => ({ id, name: idToNameMap[id] || id }))
       : [];
@@ -276,14 +342,49 @@ export const InflightQueries = ({
 
   const fetchLiveQueries = useCallback(
     async (idToNameMapParam?: Record<string, string>) => {
-      const retrieved = await retrieveLiveQueries(
-        core,
-        dataSource?.id,
-        wlmGroupId,
-        taskDetailSupported && showFinishedQueries
-      );
+      const requestDataSourceId = dataSource?.id;
+      if (requestDataSourceId !== selectedDataSourceId.current) {
+        return;
+      }
+      const requestId = ++latestLiveQueryRequestId.current;
+      const canApplyResponse = () =>
+        requestId > latestAppliedLiveQueryRequestId.current &&
+        requestDataSourceId === selectedDataSourceId.current;
+      let retrieved: LiveSearchQueryResponse;
+      try {
+        retrieved = await retrieveLiveQueries(
+          core,
+          dataSource?.id,
+          wlmGroupId,
+          taskDetailSupported && showFinishedQueries
+        );
+      } catch (error) {
+        if (!canApplyResponse()) {
+          return;
+        }
+        if (isForbiddenError(error)) {
+          latestAppliedLiveQueryRequestId.current = requestId;
+          setAccessDenied(true);
+          setQuery(null);
+          setNodeCounts({});
+          setIndexCounts({});
+          setFinishedQueryStats({
+            total_completions: 0,
+            total_cancellations: 0,
+            total_failures: 0,
+          });
+          return;
+        }
+        throw error;
+      }
+
+      if (!canApplyResponse()) {
+        return;
+      }
 
       if (retrieved?.response?.live_queries) {
+        latestAppliedLiveQueryRequestId.current = requestId;
+        setAccessDenied(false);
         const mapFromOptions: Record<string, string> = Object.fromEntries(
           wlmGroupOptions.map((g) => [g.id, g.name])
         );
@@ -439,27 +540,40 @@ export const InflightQueries = ({
   }
 
   const fetchLiveQueriesSafe = useCallback(async () => {
-    if (isFetching.current) return;
-    isFetching.current = true;
+    const sourceId = dataSource?.id ?? '';
+    if (activeFetch.current?.sourceId === sourceId) return;
+    const token = ++nextFetchToken.current;
+    activeFetch.current = { sourceId, token };
     try {
+      let idToNameMap: Record<string, string> | undefined;
       if (queryInsightWlmNavigationSupported) {
         try {
-          await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
+          idToNameMap = await withTimeout(fetchActiveWlmGroups(), refreshInterval - 500);
         } catch (e) {
           console.warn('[LiveQueries] fetchActiveWlmGroups timed out or failed', e);
         }
       }
       try {
-        await withTimeout(fetchLiveQueries(), refreshInterval - 500);
+        await withTimeout(fetchLiveQueries(idToNameMap), refreshInterval - 500);
       } catch (e) {
         console.warn('[LiveQueries] fetchLiveQueries timed out or failed', e);
       }
     } finally {
-      isFetching.current = false;
+      if (activeFetch.current?.token === token) {
+        activeFetch.current = null;
+      }
     }
-  }, [refreshInterval, fetchActiveWlmGroups, fetchLiveQueries, queryInsightWlmNavigationSupported]);
+  }, [
+    dataSource?.id,
+    refreshInterval,
+    fetchActiveWlmGroups,
+    fetchLiveQueries,
+    queryInsightWlmNavigationSupported,
+  ]);
 
   useEffect(() => {
+    if (accessDenied) return;
+
     void fetchLiveQueriesSafe();
 
     if (!autoRefreshEnabled) return;
@@ -470,6 +584,7 @@ export const InflightQueries = ({
     return () => clearInterval(interval);
   }, [
     autoRefreshEnabled,
+    accessDenied,
     refreshInterval,
     fetchLiveQueriesSafe,
     queryInsightWlmNavigationSupported,
@@ -714,21 +829,45 @@ export const InflightQueries = ({
     }));
   };
 
+  const dataSourceMenu = (
+    <QueryInsightsDataSourceMenu
+      coreStart={core}
+      depsStart={depsStart}
+      params={params}
+      dataSourceManagement={dataSourceManagement}
+      setDataSource={setDataSource}
+      selectedDataSource={dataSource}
+      onManageDataSource={() => {}}
+      onSelectedDataSource={() => {
+        invalidatePendingLiveQueryResponses();
+        setAccessDenied(false);
+        setQuery(null);
+        setNodeCounts({});
+        setIndexCounts({});
+        setFinishedQueryStats({
+          total_completions: 0,
+          total_cancellations: 0,
+          total_failures: 0,
+        });
+        void onDataSourceChange?.();
+      }}
+      dataSourcePickerReadOnly={false}
+    />
+  );
+
+  if (accessDenied) {
+    return (
+      <div>
+        {dataSourceMenu}
+        <EuiSpacer size="m" />
+        <QueryInsightsAccessDenied dataTestSubj="liveQueriesAccessDenied" />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <QueryInsightsDataSourceMenu
-        coreStart={core}
-        depsStart={depsStart}
-        params={params}
-        dataSourceManagement={dataSourceManagement}
-        setDataSource={setDataSource}
-        selectedDataSource={dataSource}
-        onManageDataSource={() => {}}
-        onSelectedDataSource={() => {
-          fetchLiveQueries(); // re-fetch queries when data source changes
-        }}
-        dataSourcePickerReadOnly={false}
-      />
+      {dataSourceMenu}
       <EuiSpacer size="m" />
       <EuiFlexGroup alignItems="flexStart" gutterSize="m">
         <EuiFlexItem grow>

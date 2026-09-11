@@ -7,7 +7,7 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import ReactECharts from 'echarts-for-react';
 import { useHistory, useLocation } from 'react-router-dom';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   EuiCodeBlock,
   EuiFlexGrid,
@@ -30,6 +30,8 @@ import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 import { formatQueryDisplay } from '../../utils/query-formatter-utils';
+import { QueryInsightsAccessDenied } from '../../components/QueryInsightsAccessDenied';
+import { isForbiddenError } from '../../../common/utils/ErrorUtils';
 
 export const QueryGroupDetails = ({
   core,
@@ -51,7 +53,9 @@ export const QueryGroupDetails = ({
   const verbose = Boolean(searchParams.get('verbose'));
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const latestQueryRequestId = useRef(0);
 
   const convertTime = (unixTime: number) => {
     const date = new Date(unixTime);
@@ -61,23 +65,47 @@ export const QueryGroupDetails = ({
 
   const history = useHistory();
 
-  const fetchQueryDetails = async () => {
-    const retrievedQuery = await retrieveQueryById(
-      core,
-      getDataSourceFromUrl().id,
-      from,
-      to,
-      id,
-      verbose
-    );
-    setQuery(retrievedQuery);
-  };
+  const fetchQueryDetails = useCallback(async () => {
+    const requestId = ++latestQueryRequestId.current;
+    try {
+      const retrievedQuery = await retrieveQueryById(
+        core,
+        getDataSourceFromUrl().id,
+        from,
+        to,
+        id,
+        verbose
+      );
+      if (requestId !== latestQueryRequestId.current) {
+        return;
+      }
+      setQuery(retrievedQuery);
+      setAccessDenied(false);
+    } catch (error) {
+      if (requestId !== latestQueryRequestId.current) {
+        return;
+      }
+      if (isForbiddenError(error)) {
+        setQuery(null);
+        setAccessDenied(true);
+        return;
+      }
+      console.error('Error retrieving query group details:', error);
+    }
+  }, [core, from, id, to, verbose]);
 
   useEffect(() => {
     if (id && from && to && verbose) {
       fetchQueryDetails();
     }
-  }, [id, from, to, verbose]);
+  }, [fetchQueryDetails, from, id, to, verbose]);
+
+  useEffect(
+    () => () => {
+      latestQueryRequestId.current += 1;
+    },
+    []
+  );
 
   useEffect(() => {
     if (query) {
@@ -175,64 +203,73 @@ export const QueryGroupDetails = ({
         onSelectedDataSource={fetchQueryDetails}
         dataSourcePickerReadOnly={true}
       />
-      <EuiFlexItem>
-        <QueryGroupAggregateSummary query={query} />
-      </EuiFlexItem>
-      <EuiSpacer size="l" />
-      <EuiSpacer size="l" />
-      <EuiFlexGrid columns={2}>
-        <EuiTitle size="l">
-          <h1>Sample query details</h1>
-        </EuiTitle>
-        <EuiIconTip
-          content="Details for a sample query in the query group. This is the first query encountered in the group."
-          position="right"
-          type="iInCircle"
-          aria-label="Details tooltip"
-        />
-      </EuiFlexGrid>
-      <EuiSpacer size="l" />
-      <EuiFlexItem>
-        <QueryGroupSampleQuerySummary query={query} />
-        <EuiSpacer size="m" />
-        <EuiFlexGroup>
-          <EuiFlexItem grow={1} style={{ minWidth: 0 }}>
-            <EuiPanel>
-              <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
-                <EuiFlexItem>
-                  <EuiTitle size="xs">
-                    <h2>Query</h2>
+      {accessDenied ? (
+        <>
+          <EuiSpacer size="m" />
+          <QueryInsightsAccessDenied dataTestSubj="queryGroupDetailsAccessDenied" />
+        </>
+      ) : (
+        <>
+          <EuiFlexItem>
+            <QueryGroupAggregateSummary query={query} />
+          </EuiFlexItem>
+          <EuiSpacer size="l" />
+          <EuiSpacer size="l" />
+          <EuiFlexGrid columns={2}>
+            <EuiTitle size="l">
+              <h1>Sample query details</h1>
+            </EuiTitle>
+            <EuiIconTip
+              content="Details for a sample query in the query group. This is the first query encountered in the group."
+              position="right"
+              type="iInCircle"
+              aria-label="Details tooltip"
+            />
+          </EuiFlexGrid>
+          <EuiSpacer size="l" />
+          <EuiFlexItem>
+            <QueryGroupSampleQuerySummary query={query} />
+            <EuiSpacer size="m" />
+            <EuiFlexGroup>
+              <EuiFlexItem grow={1} style={{ minWidth: 0 }}>
+                <EuiPanel>
+                  <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
+                    <EuiFlexItem>
+                      <EuiTitle size="xs">
+                        <h2>Query</h2>
+                      </EuiTitle>
+                    </EuiFlexItem>
+                  </EuiFlexGroup>
+                  <EuiHorizontalRule margin="xs" />
+                  <EuiSpacer size="xs" />
+                  <EuiCodeBlock
+                    language="jsx"
+                    paddingSize="m"
+                    fontSize="s"
+                    overflowHeight={600}
+                    isCopyable
+                  >
+                    {queryDisplay}
+                  </EuiCodeBlock>
+                </EuiPanel>
+              </EuiFlexItem>
+              <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
+                <EuiPanel data-test-subj="query-group-details-latency-chart">
+                  <EuiTitle size="s">
+                    <h2>Latency</h2>
                   </EuiTitle>
-                </EuiFlexItem>
-              </EuiFlexGroup>
-              <EuiHorizontalRule margin="xs" />
-              <EuiSpacer size="xs" />
-              <EuiCodeBlock
-                language="jsx"
-                paddingSize="m"
-                fontSize="s"
-                overflowHeight={600}
-                isCopyable
-              >
-                {queryDisplay}
-              </EuiCodeBlock>
-            </EuiPanel>
+                  <EuiHorizontalRule margin="xs" />
+                  <ReactECharts
+                    option={chartOptions}
+                    style={{ height: 120, width: '100%' }}
+                    opts={{ renderer: 'svg' }}
+                  />
+                </EuiPanel>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
-          <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
-            <EuiPanel data-test-subj="query-group-details-latency-chart">
-              <EuiTitle size="s">
-                <h2>Latency</h2>
-              </EuiTitle>
-              <EuiHorizontalRule margin="xs" />
-              <ReactECharts
-                option={chartOptions}
-                style={{ height: 120, width: '100%' }}
-                opts={{ renderer: 'svg' }}
-              />
-            </EuiPanel>
-          </EuiFlexItem>
-        </EuiFlexGroup>
-      </EuiFlexItem>
+        </>
+      )}
     </div>
   );
 };

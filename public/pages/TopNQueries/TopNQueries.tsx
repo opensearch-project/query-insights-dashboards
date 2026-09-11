@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Redirect, Route, Switch, useHistory, useLocation } from 'react-router-dom';
 import { EuiTab, EuiTabs, EuiTitle, EuiSpacer } from '@elastic/eui';
 import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
@@ -39,9 +39,19 @@ import {
   DEFAULT_WINDOW_SIZE,
   EXPORTER_TYPE,
   MetricType,
+  QUERY_INSIGHTS_ACCESS_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE,
 } from '../../../common/constants';
 
 import { parseDateString } from '../../../common/utils/DateUtils';
+import {
+  getErrorMessage,
+  isFailedResponse,
+  isForbiddenError,
+} from '../../../common/utils/ErrorUtils';
 import {
   getMergedMetricSettings,
   getMergedStringSettings,
@@ -75,6 +85,14 @@ export interface RemoteExporterSettings {
   repository: string;
   path: string;
 }
+
+export interface EnabledMetrics {
+  latency: boolean;
+  cpu: boolean;
+  memory: boolean;
+}
+
+export type ConfigurationLoadState = 'loading' | 'ready' | 'accessDenied' | 'error';
 
 export interface DataSourceContextType {
   dataSource: DataSourceOption;
@@ -179,6 +197,29 @@ const TopNQueries = ({
   };
 
   const [queries, setQueries] = useState<SearchQueryRecord[]>([]);
+  const [queryAccessDenied, setQueryAccessDenied] = useState(false);
+  const [configurationLoadState, setConfigurationLoadState] =
+    useState<ConfigurationLoadState>('loading');
+  const latestQueryRequestId = useRef(0);
+  const latestConfigRequestId = useRef(0);
+  const configSaveQueueByDataSource = useRef(new Map<string | undefined, Promise<void>>());
+  const latestDataSourceChangeId = useRef(0);
+  const isMounted = useRef(true);
+  const enabledMetricsRef = useRef<EnabledMetrics>({
+    latency: DEFAULT_METRIC_ENABLED,
+    cpu: DEFAULT_METRIC_ENABLED,
+    memory: DEFAULT_METRIC_ENABLED,
+  });
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      latestQueryRequestId.current += 1;
+      latestConfigRequestId.current += 1;
+      latestDataSourceChangeId.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     let isComponentUnmounted = false;
@@ -233,33 +274,54 @@ const TopNQueries = ({
 
   // TODO: refactor retrieveQueries and retrieveConfigInfo into a Util function
   const retrieveQueries = useCallback(
-    async (start: string, end: string) => {
-      if (loading) return;
+    async (start: string, end: string, enabledMetrics?: EnabledMetrics) => {
+      const requestId = ++latestQueryRequestId.current;
+      const requestDataSourceId = getDataSourceFromUrl().id;
+      const metrics = enabledMetrics ?? enabledMetricsRef.current;
       setLoading(true);
+      setQueryAccessDenied(false);
       const nullResponse = { response: { top_queries: [] } };
       const apiParams = {
         query: {
           from: parseDateString(start),
           to: parseDateString(end),
-          dataSourceId: getDataSourceFromUrl().id, // TODO: get this dynamically from the URL
+          dataSourceId: requestDataSourceId,
           verbose: false,
         },
       };
       const fetchMetric = async (endpoint: string) => {
         try {
           // TODO: #13 refactor the interface definitions for requests and responses
-          const response: { response: { top_queries: SearchQueryRecord[] } } = await core.http.get(
-            endpoint,
-            apiParams
-          );
+          const response: {
+            ok?: boolean;
+            response: { top_queries: SearchQueryRecord[] } | string;
+          } = await core.http.get(endpoint, apiParams);
+          if (isForbiddenError(response)) {
+            throw Object.assign(new Error(QUERY_INSIGHTS_ACCESS_DENIED_TITLE), {
+              statusCode: 403,
+            });
+          }
+          if (response?.ok === false) {
+            throw new Error(
+              typeof response.response === 'string'
+                ? response.response
+                : 'Failed to retrieve top queries'
+            );
+          }
+          const responseBody =
+            typeof response?.response === 'object' ? response.response : undefined;
           return {
             response: {
-              top_queries: Array.isArray(response?.response?.top_queries)
-                ? response.response.top_queries
-                : [],
+              top_queries: Array.isArray(responseBody?.top_queries) ? responseBody.top_queries : [],
             },
           };
         } catch (error) {
+          if (isForbiddenError(error)) {
+            throw error;
+          }
+          if (requestId !== latestQueryRequestId.current) {
+            return nullResponse;
+          }
           core.notifications.toasts.addDanger({
             title: 'Failed to retrieve top queries',
             text:
@@ -271,13 +333,11 @@ const TopNQueries = ({
         }
       };
       try {
-        const respLatency = latencySettings.isEnabled
+        const respLatency = metrics.latency
           ? await fetchMetric('/api/top_queries/latency')
           : nullResponse;
-        const respCpu = cpuSettings.isEnabled
-          ? await fetchMetric('/api/top_queries/cpu')
-          : nullResponse;
-        const respMemory = memorySettings.isEnabled
+        const respCpu = metrics.cpu ? await fetchMetric('/api/top_queries/cpu') : nullResponse;
+        const respMemory = metrics.memory
           ? await fetchMetric('/api/top_queries/memory')
           : nullResponse;
         const newQueries = [
@@ -289,7 +349,7 @@ const TopNQueries = ({
           (query, index, self) => index === self.findIndex((q) => q.id === query.id)
         );
 
-        const version = await getVersionOnce(dataSourceId);
+        const version = await getVersionOnce(requestDataSourceId);
         const is219OSVersion = isVersion219(version);
 
         const fromTime = DateTime.fromISO(parseDateString(start));
@@ -303,14 +363,26 @@ const TopNQueries = ({
         const filteredQueries = is219OSVersion
           ? noDuplicates.filter(isWithinTimeWindow)
           : noDuplicates;
-        setQueries(filteredQueries);
+        if (requestId === latestQueryRequestId.current) {
+          setQueries(filteredQueries);
+        }
       } catch (error) {
+        if (requestId !== latestQueryRequestId.current) {
+          return;
+        }
+        if (isForbiddenError(error)) {
+          setQueries([]);
+          setQueryAccessDenied(true);
+          return;
+        }
         console.error('Error retrieving queries:', error);
       } finally {
-        setLoading(false);
+        if (requestId === latestQueryRequestId.current) {
+          setLoading(false);
+        }
       }
     },
-    [latencySettings, cpuSettings, memorySettings, core]
+    [core]
   );
 
   const retrieveConfigInfo = useCallback(
@@ -327,13 +399,26 @@ const TopNQueries = ({
       newRemoteEnabled: boolean = false,
       newRemoteRepository: string = '',
       newRemotePath: string = ''
-    ) => {
+    ): Promise<EnabledMetrics | undefined> => {
       if (get) {
+        const requestId = ++latestConfigRequestId.current;
+        setConfigurationLoadState('loading');
         try {
+          const requestDataSourceId = getDataSourceFromUrl().id;
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
           const resp = await core.http.get('/api/settings', {
-            query: { dataSourceId: getDataSourceFromUrl().id },
+            query: { dataSourceId: requestDataSourceId },
           });
+          if (isForbiddenError(resp)) {
+            throw Object.assign(new Error(QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE), {
+              statusCode: 403,
+            });
+          }
+          if (isFailedResponse(resp)) {
+            throw new Error(
+              getErrorMessage(resp) ?? QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE
+            );
+          }
           const persistentSettings = resp?.response?.persistent?.search?.insights?.top_queries;
           const transientSettings = resp?.response?.transient?.search?.insights?.top_queries;
           const metrics = [
@@ -360,29 +445,36 @@ const TopNQueries = ({
             },
           ];
 
-          // Process each metric
-          metrics.forEach(({ metricType, metricSetting }) => {
+          const metricUpdates = metrics.map(({ metricType, metricSetting }) => {
             if (metricSetting?.enabled === 'false') {
-              setMetricSettings(metricType, {
-                isEnabled: false,
-              });
-            } else {
-              const [time, timeUnits] = getTimeAndUnitFromString(metricSetting.window_size);
-              setMetricSettings(metricType, {
+              return {
+                metricType,
+                updates: { isEnabled: false },
+              };
+            }
+
+            const [time, timeUnits] = getTimeAndUnitFromString(metricSetting.window_size);
+            return {
+              metricType,
+              updates: {
                 isEnabled: true,
                 currTopN: metricSetting.top_n_size ?? DEFAULT_TOP_N_SIZE,
                 currWindowSize: time,
                 currTimeUnit: timeUnits,
-              });
-            }
+              },
+            };
           });
-          const version = await getVersionOnce(dataSourceId);
+          const enabledMetrics: EnabledMetrics = {
+            latency: metricUpdates[0].updates.isEnabled,
+            cpu: metricUpdates[1].updates.isEnabled,
+            memory: metricUpdates[2].updates.isEnabled,
+          };
+          const version = await getVersionOnce(requestDataSourceId);
           const groupBy = getMergedStringSettings(
             getGroupBySettingsPath(version, persistentSettings),
             getGroupBySettingsPath(version, transientSettings),
             DEFAULT_GROUP_BY
           );
-          setGroupBySettings({ groupBy });
 
           const deleteAfterDays = getMergedStringSettings(
             persistentSettings?.exporter?.delete_after_days,
@@ -394,7 +486,6 @@ const TopNQueries = ({
             transientSettings?.exporter?.type,
             DEFAULT_EXPORTER_TYPE
           );
-          setDataRetentionSettings({ deleteAfterDays, exporterType });
 
           const remoteEnabled =
             persistentSettings?.exporter?.remote?.enabled === 'true' ||
@@ -409,62 +500,153 @@ const TopNQueries = ({
             transientSettings?.exporter?.remote?.path,
             DEFAULT_REMOTE_EXPORTER_PATH
           );
+
+          if (requestId !== latestConfigRequestId.current) {
+            return;
+          }
+
+          enabledMetricsRef.current = enabledMetrics;
+          metricUpdates.forEach(({ metricType, updates }) => {
+            setMetricSettings(metricType, updates);
+          });
+          setGroupBySettings({ groupBy });
+          setDataRetentionSettings({ deleteAfterDays, exporterType });
           setRemoteExporterSettings({
             enabled: remoteEnabled,
             repository: remoteRepository,
             path: remotePath,
           });
+          setConfigurationLoadState('ready');
+          return enabledMetrics;
         } catch (error) {
-          console.error('Failed to retrieve settings:', error);
+          if (requestId !== latestConfigRequestId.current) {
+            return;
+          }
+          if (isForbiddenError(error)) {
+            setConfigurationLoadState('accessDenied');
+          } else {
+            setConfigurationLoadState('error');
+          }
+          const fallbackMetrics = {
+            latency: true,
+            cpu: true,
+            memory: true,
+          };
+          enabledMetricsRef.current = fallbackMetrics;
+          return fallbackMetrics;
         }
       } else {
-        try {
-          setMetricSettings(metric, {
-            isEnabled: enabled,
-            currTopN: newTopN,
-            currWindowSize: newWindowSize,
-            currTimeUnit: newTimeUnit,
-          });
-          setGroupBySettings({ groupBy: newGroupBy });
-          setDataRetentionSettings({
-            deleteAfterDays: newDeleteAfterDays,
-            exporterType: newExporterType,
-          });
-          setRemoteExporterSettings({
-            enabled: newRemoteEnabled,
-            repository: newRemoteRepository,
-            path: newRemotePath,
-          });
-          const queryParams: Record<string, any> = {
-            metric,
-            enabled,
-            top_n_size: newTopN,
-            exporterType: newExporterType,
-            group_by: newGroupBy,
-            delete_after_days: newDeleteAfterDays,
-            remote_enabled: newRemoteEnabled,
-            remote_repository: newRemoteRepository,
-            remote_path: newRemotePath,
-            dataSourceId: getDataSourceFromUrl().id,
-          };
-          if (newTimeUnit === 'MINUTES') {
-            newTimeUnit = 'm';
-          }
-          if (newTimeUnit === 'HOURS') {
-            newTimeUnit = 'h';
-          }
-          if (newWindowSize && newTimeUnit) {
-            queryParams.window_size = `${newWindowSize}${newTimeUnit}`;
-          }
+        const requestDataSourceId = getDataSourceFromUrl().id;
+        const queryParams: Record<string, any> = {
+          metric,
+          enabled,
+          top_n_size: newTopN,
+          exporterType: newExporterType,
+          group_by: newGroupBy,
+          delete_after_days: newDeleteAfterDays,
+          remote_enabled: newRemoteEnabled,
+          remote_repository: newRemoteRepository,
+          remote_path: newRemotePath,
+          dataSourceId: requestDataSourceId,
+        };
+        const normalizedTimeUnit =
+          newTimeUnit === 'MINUTES' ? 'm' : newTimeUnit === 'HOURS' ? 'h' : newTimeUnit;
+        if (newWindowSize && normalizedTimeUnit) {
+          queryParams.window_size = `${newWindowSize}${normalizedTimeUnit}`;
+        }
 
-          await core.http.put('/api/update_settings', { query: queryParams });
-        } catch (error) {
-          console.error('Failed to set settings:', error);
+        const previousSave =
+          configSaveQueueByDataSource.current.get(requestDataSourceId) ?? Promise.resolve();
+        const save = previousSave
+          .catch(() => undefined)
+          .then(async () => {
+            if (!isMounted.current) {
+              return;
+            }
+
+            const response = await core.http.put('/api/update_settings', { query: queryParams });
+            if (!isMounted.current) {
+              return;
+            }
+            if (isForbiddenError(response)) {
+              throw Object.assign(new Error(QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE), {
+                statusCode: 403,
+              });
+            }
+            if (isFailedResponse(response)) {
+              throw new Error(
+                getErrorMessage(response) ?? QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
+              );
+            }
+            if (requestDataSourceId !== getDataSourceFromUrl().id) {
+              return;
+            }
+
+            latestConfigRequestId.current += 1;
+            if (
+              metric === MetricType.LATENCY ||
+              metric === MetricType.CPU ||
+              metric === MetricType.MEMORY
+            ) {
+              enabledMetricsRef.current = {
+                ...enabledMetricsRef.current,
+                [metric]: enabled,
+              };
+            }
+            setMetricSettings(metric, {
+              isEnabled: enabled,
+              currTopN: newTopN,
+              currWindowSize: newWindowSize,
+              currTimeUnit: newTimeUnit,
+            });
+            setGroupBySettings({ groupBy: newGroupBy });
+            setDataRetentionSettings({
+              deleteAfterDays: newDeleteAfterDays,
+              exporterType: newExporterType,
+            });
+            setRemoteExporterSettings({
+              enabled: newRemoteEnabled,
+              repository: newRemoteRepository,
+              path: newRemotePath,
+            });
+            setConfigurationLoadState('ready');
+          });
+
+        configSaveQueueByDataSource.current.set(requestDataSourceId, save);
+        try {
+          await save;
+        } finally {
+          if (configSaveQueueByDataSource.current.get(requestDataSourceId) === save) {
+            configSaveQueueByDataSource.current.delete(requestDataSourceId);
+          }
         }
       }
     },
     [core]
   );
+
+  const onDataSourceChange = useCallback(async () => {
+    const sourceChangeId = ++latestDataSourceChangeId.current;
+    const requestDataSourceId = getDataSourceFromUrl().id;
+
+    latestQueryRequestId.current += 1;
+    setQueries([]);
+    setQueryAccessDenied(false);
+    setLoading(true);
+
+    const enabledMetrics = await retrieveConfigInfo(true);
+    if (
+      sourceChangeId !== latestDataSourceChangeId.current ||
+      requestDataSourceId !== getDataSourceFromUrl().id
+    ) {
+      return;
+    }
+    if (!enabledMetrics) {
+      return;
+    }
+
+    await retrieveQueries(currStart, currEnd, enabledMetrics);
+  }, [currEnd, currStart, retrieveConfigInfo, retrieveQueries]);
 
   const onTimeChange = ({ start, end }: { start: string; end: string }) => {
     const usedRange = recentlyUsedRanges.filter(
@@ -545,6 +727,7 @@ const TopNQueries = ({
                 depsStart={depsStart}
                 params={params}
                 dataSourceManagement={dataSourceManagement}
+                onDataSourceChange={onDataSourceChange}
               />
             </Route>
           )}
@@ -574,7 +757,9 @@ const TopNQueries = ({
               depsStart={depsStart}
               params={params}
               retrieveQueries={retrieveQueries}
+              onDataSourceChange={onDataSourceChange}
               dataSourceManagement={dataSourceManagement}
+              accessDenied={queryAccessDenied}
             />
           </Route>
           <Route exact path={CONFIGURATION}>
@@ -601,6 +786,8 @@ const TopNQueries = ({
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={remoteExporterSettings}
               configInfo={retrieveConfigInfo}
+              onDataSourceChange={onDataSourceChange}
+              configurationLoadState={configurationLoadState}
               core={core}
               depsStart={depsStart}
               params={params}

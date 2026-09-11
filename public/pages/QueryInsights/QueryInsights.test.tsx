@@ -10,6 +10,11 @@ import QueryInsights from './QueryInsights';
 import { MemoryRouter } from 'react-router-dom';
 import stubTopQueries from '../../../cypress/fixtures/stub_top_queries.json';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
+import {
+  getVersionOnce,
+  isVersion33OrHigher,
+  isVersion36OrHigher,
+} from '../../utils/version-utils';
 
 // Mock version utilities
 jest.mock('../../utils/version-utils', () => ({
@@ -25,6 +30,9 @@ const mockOnTimeChange = jest.fn();
 const mockCore = {
   chrome: {
     setBreadcrumbs: jest.fn(),
+  },
+  savedObjects: {
+    client: {},
   },
 } as any;
 
@@ -42,6 +50,7 @@ const mockDataSourceContext = {
 };
 
 const mockRetrieveQueries = jest.fn();
+const mockOnDataSourceChange = jest.fn();
 
 const mockHttp = {
   get: jest.fn(),
@@ -50,6 +59,14 @@ const mockHttp = {
 const mockCoreWithHttp = {
   ...mockCore,
   http: mockHttp,
+};
+
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
 };
 
 const findTypeFilterButton = (): HTMLElement => {
@@ -90,7 +107,7 @@ const clickTypeOption = async (label: 'group' | 'query') => {
   fireEvent.click(btn);
 };
 
-const renderQueryInsights = (initialEntries = ['/']) =>
+const renderQueryInsights = (initialEntries = ['/'], accessDenied = false, depsStart = {} as any) =>
   render(
     <MemoryRouter initialEntries={initialEntries}>
       <DataSourceContext.Provider value={mockDataSourceContext}>
@@ -102,11 +119,13 @@ const renderQueryInsights = (initialEntries = ['/']) =>
           currStart="now-15m"
           currEnd="now"
           retrieveQueries={mockRetrieveQueries}
+          onDataSourceChange={mockOnDataSourceChange}
           // @ts-ignore
           core={mockCoreWithHttp}
-          depsStart={{} as any}
+          depsStart={depsStart}
           params={{} as any}
           dataSourceManagement={dataSourceManagementMock}
+          accessDenied={accessDenied}
         />
       </DataSourceContext.Provider>
     </MemoryRouter>
@@ -124,6 +143,50 @@ describe('QueryInsights Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    window.history.replaceState({}, '', '/');
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.6.0');
+    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
+    (isVersion36OrHigher as jest.Mock).mockReturnValue(true);
+  });
+
+  it('shows an access-denied callout instead of the empty dashboard', () => {
+    renderQueryInsights(['/'], true);
+
+    const alert = screen.getByRole('alert');
+    expect(
+      within(alert).getByRole('heading', {
+        level: 2,
+        name: "You don't have permission to view Query Insights data.",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("You don't have permission to view Query Insights data.")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Ask your administrator to grant the required Query Insights read permission.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText('e.g. latency >= 100 AND type = query')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
+  it('delegates a data source change to the parent refresh handler', () => {
+    renderQueryInsights(['/'], false, {
+      dataSource: { dataSourceEnabled: true },
+    });
+
+    const dataSourceMenuProps = (dataSourceMenuMock as jest.Mock).mock.calls[0][0];
+    act(() => {
+      dataSourceMenuProps.componentConfig.onSelectedDataSources([
+        { id: 'next-source', label: 'Next source' },
+      ]);
+    });
+
+    expect(mockOnDataSourceChange).toHaveBeenCalledTimes(1);
+    expect(mockRetrieveQueries).not.toHaveBeenCalled();
   });
 
   describe('WLM group URL parameter extraction', () => {
@@ -209,6 +272,7 @@ describe('QueryInsights Component', () => {
               currStart="now-15m"
               currEnd="now"
               retrieveQueries={mockRetrieveQueries}
+              onDataSourceChange={mockOnDataSourceChange}
               // @ts-ignore
               core={mockCoreWithHttp}
               depsStart={{} as any}
@@ -381,6 +445,65 @@ describe('QueryInsights Component', () => {
           query: { dataSourceId: 'test' },
         });
       });
+    });
+
+    it('ignores WLM support results from a previously selected data source', async () => {
+      const previousVersion = createDeferred<string>();
+      const currentVersion = createDeferred<string>();
+      (getVersionOnce as jest.Mock).mockImplementation((dataSourceId: string) =>
+        dataSourceId === 'previous' ? previousVersion.promise : currentVersion.promise
+      );
+      (isVersion33OrHigher as jest.Mock).mockImplementation(
+        (version: string) => version === '3.6.0'
+      );
+      (isVersion36OrHigher as jest.Mock).mockImplementation(
+        (version: string) => version === '3.6.0'
+      );
+      mockHttp.get.mockResolvedValue({ workload_groups: [] });
+
+      const renderForDataSource = (id: string) => (
+        <MemoryRouter>
+          <DataSourceContext.Provider
+            value={{ dataSource: { id, label: id }, setDataSource: jest.fn() }}
+          >
+            <QueryInsights
+              queries={sampleQueries}
+              loading={false}
+              onTimeChange={mockOnTimeChange}
+              recentlyUsedRanges={[]}
+              currStart="now-15m"
+              currEnd="now"
+              retrieveQueries={mockRetrieveQueries}
+              onDataSourceChange={mockOnDataSourceChange}
+              core={mockCoreWithHttp}
+              depsStart={{} as any}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+
+      const { rerender } = render(renderForDataSource('previous'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('previous'));
+
+      rerender(renderForDataSource('current'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('current'));
+
+      await act(async () => {
+        currentVersion.resolve('2.19.0');
+        await currentVersion.promise;
+      });
+      await waitFor(() => expect(isVersion33OrHigher).toHaveBeenCalledWith('2.19.0'));
+
+      await act(async () => {
+        previousVersion.resolve('3.6.0');
+        await previousVersion.promise;
+      });
+
+      expect(isVersion33OrHigher).not.toHaveBeenCalledWith('3.6.0');
+      expect(screen.queryByRole('columnheader', { name: 'Status' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: 'WLM Group' })).not.toBeInTheDocument();
     });
   });
 
@@ -756,6 +879,7 @@ describe('QueryInsights Component', () => {
               currStart="now-15m"
               currEnd="now"
               retrieveQueries={mockRetrieveQueries}
+              onDataSourceChange={mockOnDataSourceChange}
               // @ts-ignore
               core={mockCoreWithHttp}
               depsStart={{} as any}

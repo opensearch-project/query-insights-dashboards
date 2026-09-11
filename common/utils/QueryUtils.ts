@@ -5,6 +5,7 @@
 
 import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
 import { API_ENDPOINTS } from './apiendpoints';
+import { isForbiddenError } from './ErrorUtils';
 
 interface CustomCore {
   http: { get: (endpoint: string, options?: any) => Promise<any> };
@@ -41,6 +42,9 @@ export const retrieveQueryById = async (
         endpoint,
         params
       );
+      if (isForbiddenError(response)) {
+        throw Object.assign(new Error('Unable to retrieve query details'), { statusCode: 403 });
+      }
       return {
         response: {
           top_queries: Array.isArray(response?.response?.top_queries)
@@ -49,6 +53,9 @@ export const retrieveQueryById = async (
         },
       };
     } catch (error) {
+      if (isForbiddenError(error)) {
+        throw error;
+      }
       console.error('Error occurred while fetching the data:', error);
       return nullResponse;
     }
@@ -70,6 +77,9 @@ export const retrieveQueryById = async (
     }
     return null;
   } catch (error) {
+    if (isForbiddenError(error)) {
+      throw error;
+    }
     console.error('Error retrieving query details:', error);
     return null;
   }
@@ -103,6 +113,9 @@ export const retrieveLiveQueries = async (
     const options = Object.keys(queryParams).length > 0 ? { query: queryParams } : undefined;
 
     const response: LiveSearchQueryResponse = await http.get(API_ENDPOINTS.LIVE_QUERIES, options);
+    if (isForbiddenError(response)) {
+      throw Object.assign(new Error('Unable to retrieve live queries'), { statusCode: 403 });
+    }
     const liveQueries = response?.response?.live_queries;
 
     if (Array.isArray(liveQueries)) {
@@ -112,6 +125,9 @@ export const retrieveLiveQueries = async (
       return nullResponse;
     }
   } catch (error) {
+    if (isForbiddenError(error)) {
+      throw error;
+    }
     console.error('Error retrieving live queries:', error);
     return errorResponse;
   }

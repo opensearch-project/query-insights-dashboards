@@ -71,6 +71,7 @@ import {
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import { QueryInsightsAccessDenied } from '../../components/QueryInsightsAccessDenied';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -101,7 +102,9 @@ const QueryInsights = ({
   depsStart,
   params,
   retrieveQueries,
+  onDataSourceChange,
   dataSourceManagement,
+  accessDenied = false,
 }: {
   queries: SearchQueryRecord[];
   loading: boolean;
@@ -112,8 +115,10 @@ const QueryInsights = ({
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
-  retrieveQueries?: any;
+  retrieveQueries: (start: string, end: string) => Promise<void> | void;
+  onDataSourceChange: () => Promise<void> | void;
   depsStart: QueryInsightsDashboardsPluginStartDependencies;
+  accessDenied?: boolean;
 }) => {
   const history = useHistory();
   const location = useLocation();
@@ -238,36 +243,54 @@ const QueryInsights = ({
       console.warn('[QueryInsights] Failed to fetch workload groups', e);
     }
 
-    setWlmIdToNameMap(idToNameMap);
     return idToNameMap;
   }, [core.http, dataSource?.id, wlmAvailable, queryInsightWlmNavigationSupported]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
+        if (cancelled) return;
+
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setStatusSupported(isVersion36OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
-          setWlmAvailable(hasWlm);
+          if (!cancelled) setWlmAvailable(hasWlm);
         } else {
           setWlmAvailable(false);
         }
       } catch (_e) {
-        setQueryInsightWlmNavigationSupported(false);
-        setWlmAvailable(false);
+        if (!cancelled) {
+          setQueryInsightWlmNavigationSupported(false);
+          setStatusSupported(false);
+          setWlmAvailable(false);
+        }
       }
     };
 
     checkWlmSupport();
+
+    return () => {
+      cancelled = true;
+    };
   }, [detectWlm, dataSource?.id]);
 
   // Fetch workload groups on mount and data source change
   useEffect(() => {
-    fetchWorkloadGroups();
+    let cancelled = false;
+
+    fetchWorkloadGroups().then((idToNameMap) => {
+      if (!cancelled) setWlmIdToNameMap(idToNameMap);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [fetchWorkloadGroups]);
 
   const commonlyUsedRanges = [
@@ -823,6 +846,10 @@ const QueryInsights = ({
     retrieveQueries(start, end);
   };
 
+  const onSelectedDataSource = useCallback(() => {
+    void onDataSourceChange();
+  }, [onDataSourceChange]);
+
   const percentileMetrics = useMemo(() => {
     const latencies: number[] = [];
     const cpus: number[] = [];
@@ -1089,13 +1116,18 @@ const QueryInsights = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={() => {}}
-        onSelectedDataSource={() => {
-          retrieveQueries(currStart, currEnd);
-        }}
+        onSelectedDataSource={onSelectedDataSource}
         dataSourcePickerReadOnly={false}
       />
 
-      {!loading && (
+      {accessDenied && (
+        <>
+          <EuiSpacer size="m" />
+          <QueryInsightsAccessDenied />
+        </>
+      )}
+
+      {!accessDenied && !loading && (
         <>
           <EuiSpacer size="m" />
           <EuiFlexGroup alignItems="flexStart" gutterSize="m">

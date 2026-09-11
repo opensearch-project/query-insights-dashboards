@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useState, useEffect, useContext } from 'react';
+import React, { useCallback, useState, useEffect, useContext, useRef } from 'react';
 import {
   EuiBottomBar,
   EuiButton,
@@ -33,11 +33,13 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import {
   QUERY_INSIGHTS,
+  ConfigurationLoadState,
   MetricSettings,
   GroupBySettings,
   DataSourceContext,
   DataRetentionSettings,
   RemoteExporterSettings,
+  EnabledMetrics,
 } from '../TopNQueries/TopNQueries';
 import {
   METRIC_TYPES_TEXT,
@@ -47,11 +49,34 @@ import {
   EXPORTER_TYPES_LIST,
   EXPORTER_TYPE,
   REMOTE_REPOSITORY_REGISTRATION_CONFIG,
+  QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_DESCRIPTION,
+  QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_DESCRIPTION,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE,
 } from '../../../common/constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { validateConfiguration } from './configurationValidation';
 import RegisterRepositoryFlyout from './Components/RegisterRepositoryFlyout';
+import { QueryInsightsAccessDenied } from '../../components/QueryInsightsAccessDenied';
+import { getErrorMessage, isForbiddenError } from '../../../common/utils/ErrorUtils';
+
+type ConfigInfo = (
+  get: boolean,
+  enabled?: boolean,
+  metric?: string,
+  newTopN?: string,
+  newWindowSize?: string,
+  newTimeUnit?: string,
+  newExporterType?: string,
+  newGroupBy?: string,
+  newDeleteAfterDays?: string,
+  newRemoteEnabled?: boolean,
+  newRemoteRepository?: string,
+  newRemotePath?: string
+) => Promise<EnabledMetrics | undefined>;
 
 const Configuration = ({
   latencySettings,
@@ -61,6 +86,8 @@ const Configuration = ({
   dataRetentionSettings,
   remoteExporterSettings,
   configInfo,
+  onDataSourceChange,
+  configurationLoadState,
   core,
   depsStart,
   params,
@@ -72,7 +99,9 @@ const Configuration = ({
   groupBySettings: GroupBySettings;
   dataRetentionSettings: DataRetentionSettings;
   remoteExporterSettings: RemoteExporterSettings;
-  configInfo: any;
+  configInfo: ConfigInfo;
+  onDataSourceChange: () => Promise<void> | void;
+  configurationLoadState: ConfigurationLoadState;
   core: CoreStart;
   params: AppMountParameters;
   dataSourceManagement?: DataSourceManagementPluginSetup;
@@ -82,7 +111,7 @@ const Configuration = ({
   const location = useLocation();
 
   const [metric, setMetric] = useState<'latency' | 'cpu' | 'memory'>('latency');
-  const [isEnabled, setIsEnabled] = useState<boolean>(false);
+  const [isEnabled, setIsEnabled] = useState<boolean>(latencySettings.isEnabled);
   const [topNSize, setTopNSize] = useState(latencySettings.currTopN);
   const [windowSize, setWindowSize] = useState(latencySettings.currWindowSize);
   const [time, setTime] = useState(latencySettings.currTimeUnit);
@@ -98,50 +127,100 @@ const Configuration = ({
   const [repoOptions, setRepoOptions] = useState<Array<{ label: string }>>([]);
   const [isS3PluginInstalled, setIsS3PluginInstalled] = useState<boolean | null>(null);
   const [isCheckingPlugin, setIsCheckingPlugin] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const dataSourceId = dataSource?.id || '';
+  const selectedDataSourceId = useRef(dataSourceId);
+  const latestPluginRequestId = useRef(0);
+  const latestRepositoryRequestId = useRef(0);
+  const latestSaveRequestId = useRef(0);
+  const settingsDataSourceChanged = useRef(false);
+  if (selectedDataSourceId.current !== dataSourceId) {
+    selectedDataSourceId.current = dataSourceId;
+    settingsDataSourceChanged.current = true;
+  }
+
+  useEffect(() => {
+    latestPluginRequestId.current += 1;
+    latestRepositoryRequestId.current += 1;
+    latestSaveRequestId.current += 1;
+    setRepoOptions([]);
+    setIsS3PluginInstalled(null);
+    setIsCheckingPlugin(false);
+    setIsRepoFlyoutOpen(false);
+    setIsSaving(false);
+
+    return () => {
+      latestPluginRequestId.current += 1;
+      latestRepositoryRequestId.current += 1;
+      latestSaveRequestId.current += 1;
+    };
+  }, [dataSourceId]);
 
   const checkS3Plugin = useCallback(async () => {
+    const requestId = ++latestPluginRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestPluginRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
     setIsCheckingPlugin(true);
     try {
       const resp = await core.http.get('/api/cat/plugins', {
-        query: { dataSourceId: dataSource?.id || '' },
+        query: { dataSourceId: requestDataSourceId },
       });
-      if (resp.ok && Array.isArray(resp.response)) {
+      if (isCurrentRequest() && resp.ok && Array.isArray(resp.response)) {
         const found = resp.response.some(
           (p: { component: string }) => p.component === 'repository-s3'
         );
         setIsS3PluginInstalled(found);
       }
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       console.error('Failed to check for repository-s3 plugin:', error);
       // On failure, assume plugin is installed so the user isn't stuck
       setIsS3PluginInstalled(true);
     } finally {
-      setIsCheckingPlugin(false);
+      if (isCurrentRequest()) {
+        setIsCheckingPlugin(false);
+      }
     }
-  }, [core.http, dataSource]);
+  }, [core.http, dataSourceId]);
 
   const fetchRepositories = useCallback(async () => {
+    const requestId = ++latestRepositoryRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestRepositoryRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
     try {
       const resp = await core.http.get('/api/snapshot/repositories', {
-        query: { dataSourceId: dataSource?.id || '' },
+        query: { dataSourceId: requestDataSourceId },
       });
-      if (resp.ok && resp.response) {
+      if (isCurrentRequest() && resp.ok && resp.response) {
         const names = Object.keys(resp.response)
           .filter((name) => resp.response[name].type === 's3')
           .map((name) => ({ label: name }));
         setRepoOptions(names);
       }
     } catch (error) {
-      console.error('Failed to fetch snapshot repositories:', error);
+      if (isCurrentRequest()) {
+        console.error('Failed to fetch snapshot repositories:', error);
+      }
     }
-  }, [core.http, dataSource]);
+  }, [core.http, dataSourceId]);
 
   useEffect(() => {
+    if (configurationLoadState !== 'ready') {
+      return;
+    }
     fetchRepositories();
     if (remoteExporterSettings.enabled) {
       checkS3Plugin();
     }
-  }, [fetchRepositories, checkS3Plugin, remoteExporterSettings.enabled]);
+  }, [fetchRepositories, checkS3Plugin, remoteExporterSettings.enabled, configurationLoadState]);
 
   const [metricSettingsMap, setMetricSettingsMap] = useState({
     latency: latencySettings,
@@ -161,13 +240,70 @@ const Configuration = ({
     remoteExporter: remoteExporterSettings,
   });
 
+  const hasLocalEdits = useRef(false);
+  const isChanged =
+    isEnabled !== metricSettingsMap[metric].isEnabled ||
+    topNSize !== metricSettingsMap[metric].currTopN ||
+    windowSize !== metricSettingsMap[metric].currWindowSize ||
+    time !== metricSettingsMap[metric].currTimeUnit ||
+    groupBy !== groupBySettingMap.groupBy.groupBy ||
+    exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
+    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays ||
+    remoteEnabled !== remoteExporterSettingMap.remoteExporter.enabled ||
+    remoteRepository !== remoteExporterSettingMap.remoteExporter.repository ||
+    remotePath !== remoteExporterSettingMap.remoteExporter.path;
+  hasLocalEdits.current = settingsDataSourceChanged.current ? false : isChanged;
+
   useEffect(() => {
-    setMetricSettingsMap({
+    if (configurationLoadState !== 'ready') {
+      return;
+    }
+
+    const nextMetricSettingsMap = {
       latency: latencySettings,
       cpu: cpuSettings,
       memory: memorySettings,
-    });
-  }, [latencySettings, cpuSettings, memorySettings, groupBySettings]);
+    };
+    const nextGroupBySettingMap = {
+      groupBy: groupBySettings,
+    };
+    const nextDataRetentionSettingMap = {
+      dataRetention: dataRetentionSettings,
+    };
+    const nextRemoteExporterSettingMap = {
+      remoteExporter: remoteExporterSettings,
+    };
+
+    setMetricSettingsMap(nextMetricSettingsMap);
+    setGroupBySettingMap(nextGroupBySettingMap);
+    setDataRetentionSettingMap(nextDataRetentionSettingMap);
+    setRemoteExporterSettingMap(nextRemoteExporterSettingMap);
+
+    if (!hasLocalEdits.current) {
+      const currentMetric = nextMetricSettingsMap[metric];
+      setTopNSize(currentMetric.currTopN);
+      setWindowSize(currentMetric.currWindowSize);
+      setTime(currentMetric.currTimeUnit);
+      setIsEnabled(currentMetric.isEnabled);
+      setGroupBy(nextGroupBySettingMap.groupBy.groupBy);
+      setDeleteAfterDays(nextDataRetentionSettingMap.dataRetention.deleteAfterDays);
+      setExporterTypeType(nextDataRetentionSettingMap.dataRetention.exporterType);
+      setRemoteEnabled(nextRemoteExporterSettingMap.remoteExporter.enabled);
+      setRemoteRepository(nextRemoteExporterSettingMap.remoteExporter.repository);
+      setRemotePath(nextRemoteExporterSettingMap.remoteExporter.path);
+    }
+
+    settingsDataSourceChanged.current = false;
+  }, [
+    configurationLoadState,
+    latencySettings,
+    cpuSettings,
+    memorySettings,
+    groupBySettings,
+    dataRetentionSettings,
+    remoteExporterSettings,
+    metric,
+  ]);
 
   const newOrReset = useCallback(() => {
     const currMetric = metricSettingsMap[metric];
@@ -175,39 +311,20 @@ const Configuration = ({
     setWindowSize(currMetric.currWindowSize);
     setTime(currMetric.currTimeUnit);
     setIsEnabled(currMetric.isEnabled);
-    // setExporterTypeType(currMetric.exporterType);
+    setGroupBy(groupBySettingMap.groupBy.groupBy);
+    setDeleteAfterDays(dataRetentionSettingMap.dataRetention.deleteAfterDays);
+    setExporterTypeType(dataRetentionSettingMap.dataRetention.exporterType);
     setRemoteEnabled(remoteExporterSettingMap.remoteExporter.enabled);
     setRemoteRepository(remoteExporterSettingMap.remoteExporter.repository);
     setRemotePath(remoteExporterSettingMap.remoteExporter.path);
-  }, [metric, metricSettingsMap, remoteExporterSettingMap]);
-
-  useEffect(() => {
-    newOrReset();
-  }, [newOrReset, metricSettingsMap]);
-
-  useEffect(() => {
-    setGroupBySettingMap({
-      groupBy: groupBySettings,
-    });
-    setGroupBy(groupBySettings.groupBy);
-  }, [groupBySettings]);
-
-  useEffect(() => {
-    setDataRetentionSettingMap({
-      dataRetention: dataRetentionSettings,
-    });
-    setDeleteAfterDays(dataRetentionSettings.deleteAfterDays);
-    setExporterTypeType(dataRetentionSettings.exporterType);
-  }, [dataRetentionSettings]);
-
-  useEffect(() => {
-    setRemoteExporterSettingMap({
-      remoteExporter: remoteExporterSettings,
-    });
-    setRemoteEnabled(remoteExporterSettings.enabled);
-    setRemoteRepository(remoteExporterSettings.repository);
-    setRemotePath(remoteExporterSettings.path);
-  }, [remoteExporterSettings]);
+    hasLocalEdits.current = false;
+  }, [
+    metric,
+    metricSettingsMap,
+    groupBySettingMap,
+    dataRetentionSettingMap,
+    remoteExporterSettingMap,
+  ]);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -223,7 +340,13 @@ const Configuration = ({
   }, [core.chrome, history, location]);
 
   const onMetricChange = (e: any) => {
-    setMetric(e.target.value);
+    const nextMetric = e.target.value as 'latency' | 'cpu' | 'memory';
+    const nextSettings = metricSettingsMap[nextMetric];
+    setMetric(nextMetric);
+    setTopNSize(nextSettings.currTopN);
+    setWindowSize(nextSettings.currWindowSize);
+    setTime(nextSettings.currTimeUnit);
+    setIsEnabled(nextSettings.isEnabled);
   };
 
   const onEnabledChange = (e: any) => {
@@ -275,6 +398,7 @@ const Configuration = ({
       options={MINUTES_OPTIONS}
       value={windowSize}
       onChange={onWindowSizeChange}
+      disabled={isSaving}
     />
   );
 
@@ -285,6 +409,7 @@ const Configuration = ({
       required={true}
       value={windowSize}
       onChange={onWindowSizeChange}
+      disabled={isSaving}
     />
   );
 
@@ -292,18 +417,6 @@ const Configuration = ({
   const isLocalIndex = exporterType === EXPORTER_TYPE.localIndex;
   const parsedDeleteAfter = parseInt(deleteAfterDays, 10);
   const isDeleteAfterValid = !isLocalIndex || (parsedDeleteAfter >= 1 && parsedDeleteAfter <= 180);
-
-  const isChanged =
-    isEnabled !== metricSettingsMap[metric].isEnabled ||
-    topNSize !== metricSettingsMap[metric].currTopN ||
-    windowSize !== metricSettingsMap[metric].currWindowSize ||
-    time !== metricSettingsMap[metric].currTimeUnit ||
-    groupBy !== groupBySettingMap.groupBy.groupBy ||
-    exporterType !== dataRetentionSettingMap.dataRetention.exporterType ||
-    deleteAfterDays !== dataRetentionSettingMap.dataRetention.deleteAfterDays ||
-    remoteEnabled !== remoteExporterSettingMap.remoteExporter.enabled ||
-    remoteRepository !== remoteExporterSettingMap.remoteExporter.repository ||
-    remotePath !== remoteExporterSettingMap.remoteExporter.path;
 
   const isValid =
     validateConfiguration(
@@ -317,25 +430,116 @@ const Configuration = ({
     ) &&
     (!remoteEnabled || isS3PluginInstalled !== false);
 
+  const saveConfiguration = async () => {
+    const requestId = ++latestSaveRequestId.current;
+    const requestDataSourceId = dataSourceId;
+    const isCurrentRequest = () =>
+      requestId === latestSaveRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current;
+
+    setIsSaving(true);
+    try {
+      await configInfo(
+        false,
+        isEnabled,
+        metric,
+        topNSize,
+        windowSize,
+        time,
+        exporterType,
+        groupBy,
+        deleteAfterDays,
+        remoteEnabled,
+        remoteRepository,
+        remotePath
+      );
+      if (!isCurrentRequest()) {
+        return;
+      }
+      core.notifications.toasts.addSuccess('Saved Query Insights settings.');
+    } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
+      if (isForbiddenError(error)) {
+        core.notifications.toasts.addDanger({
+          title: QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+          text: QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_DESCRIPTION,
+        });
+      } else {
+        core.notifications.toasts.addDanger({
+          title: QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE,
+          text: getErrorMessage(error) ?? 'Refresh the page and try again.',
+        });
+      }
+    } finally {
+      if (requestId === latestSaveRequestId.current) {
+        setIsSaving(false);
+      }
+    }
+  };
+
   const formRowPadding = { padding: '0px 0px 20px' };
   const enabledSymb = <EuiHealth color="primary">Enabled</EuiHealth>;
   const disabledSymb = <EuiHealth color="default">Disabled</EuiHealth>;
 
+  const dataSourceMenu = (
+    <QueryInsightsDataSourceMenu
+      coreStart={core}
+      depsStart={depsStart}
+      params={params}
+      dataSourceManagement={dataSourceManagement}
+      setDataSource={setDataSource}
+      selectedDataSource={dataSource}
+      onManageDataSource={() => {}}
+      onSelectedDataSource={() => {
+        void onDataSourceChange();
+      }}
+      dataSourcePickerReadOnly={false}
+    />
+  );
+
+  if (configurationLoadState !== 'ready') {
+    return (
+      <div>
+        {dataSourceMenu}
+        <EuiSpacer size="m" />
+        {configurationLoadState === 'loading' && (
+          <EuiFlexGroup justifyContent="center" alignItems="center" gutterSize="s" role="status">
+            <EuiFlexItem grow={false}>
+              <EuiLoadingSpinner size="xl" />
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              <EuiText>Loading Query Insights settings.</EuiText>
+            </EuiFlexItem>
+          </EuiFlexGroup>
+        )}
+        {configurationLoadState === 'accessDenied' && (
+          <QueryInsightsAccessDenied
+            title={QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE}
+            description={QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_DESCRIPTION}
+            dataTestSubj="queryInsightsSettingsAccessDenied"
+          />
+        )}
+        {configurationLoadState === 'error' && (
+          <EuiCallOut
+            title={QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE}
+            color="danger"
+            iconType="alert"
+            heading="h2"
+            role="alert"
+            data-test-subj="queryInsightsSettingsError"
+          >
+            <p>Refresh the page. If the problem continues, contact your administrator.</p>
+          </EuiCallOut>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
-      <QueryInsightsDataSourceMenu
-        coreStart={core}
-        depsStart={depsStart}
-        params={params}
-        dataSourceManagement={dataSourceManagement}
-        setDataSource={setDataSource}
-        selectedDataSource={dataSource}
-        onManageDataSource={() => {}}
-        onSelectedDataSource={() => {
-          configInfo(true);
-        }}
-        dataSourcePickerReadOnly={false}
-      />
+      {dataSourceMenu}
       <EuiFlexGroup>
         <EuiFlexItem grow={6}>
           <EuiPanel paddingSize="m">
@@ -366,6 +570,7 @@ const Configuration = ({
                         options={METRIC_TYPES_TEXT}
                         value={metric}
                         onChange={onMetricChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -389,6 +594,7 @@ const Configuration = ({
                           checked={isEnabled}
                           onChange={onEnabledChange}
                           data-test-subj="top-n-metric-toggle"
+                          disabled={isSaving}
                         />
                       </EuiFlexItem>
                     </EuiFormRow>
@@ -419,6 +625,7 @@ const Configuration = ({
                             required={isEnabled}
                             value={topNSize}
                             onChange={onTopNSizeChange}
+                            disabled={isSaving}
                           />
                         </EuiFormRow>
                       </EuiFlexItem>
@@ -451,6 +658,7 @@ const Configuration = ({
                                 options={TIME_UNITS_TEXT}
                                 value={time}
                                 onChange={onTimeChange}
+                                disabled={isSaving}
                               />
                             </EuiFlexItem>
                           </EuiFlexGroup>
@@ -532,6 +740,7 @@ const Configuration = ({
                         options={GROUP_BY_OPTIONS}
                         value={groupBy}
                         onChange={onGroupByChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -591,6 +800,7 @@ const Configuration = ({
                         options={EXPORTER_TYPES_LIST}
                         value={exporterType}
                         onChange={onExporterTypeChange}
+                        disabled={isSaving}
                       />
                     </EuiFormRow>
                   </EuiFlexItem>
@@ -617,7 +827,7 @@ const Configuration = ({
                       }
                     >
                       <EuiFieldNumber
-                        disabled={!isLocalIndex}
+                        disabled={!isLocalIndex || isSaving}
                         min={1}
                         max={180}
                         value={
@@ -694,6 +904,7 @@ const Configuration = ({
                               checked={remoteEnabled}
                               onChange={onRemoteEnabledChange}
                               data-test-subj="remote-exporter-toggle"
+                              disabled={isSaving}
                             />
                           </EuiFlexItem>
                           {isCheckingPlugin && (
@@ -774,6 +985,7 @@ const Configuration = ({
                               singleSelection={{ asPlainText: true }}
                               options={repoOptions}
                               isLoading={isCheckingPlugin}
+                              isDisabled={isSaving}
                               selectedOptions={
                                 remoteRepository ? [{ label: remoteRepository }] : []
                               }
@@ -789,6 +1001,7 @@ const Configuration = ({
                                 size="s"
                                 onClick={() => setIsRepoFlyoutOpen(true)}
                                 data-test-subj="register-repo-button"
+                                isDisabled={isSaving}
                               >
                                 Register new
                               </EuiButton>
@@ -816,6 +1029,7 @@ const Configuration = ({
                           value={remotePath}
                           onChange={onRemotePathChange}
                           data-test-subj="remote-exporter-path"
+                          disabled={isSaving}
                         />
                       </EuiFormRow>
                     </EuiFlexItem>
@@ -850,7 +1064,13 @@ const Configuration = ({
         <EuiBottomBar>
           <EuiFlexGroup gutterSize="s" justifyContent="flexEnd">
             <EuiFlexItem grow={false}>
-              <EuiButtonEmpty color="ghost" size="s" iconType="cross" onClick={newOrReset}>
+              <EuiButtonEmpty
+                color="ghost"
+                size="s"
+                iconType="cross"
+                onClick={newOrReset}
+                isDisabled={isSaving}
+              >
                 Cancel
               </EuiButtonEmpty>
             </EuiFlexItem>
@@ -861,23 +1081,8 @@ const Configuration = ({
                 fill
                 size="s"
                 iconType="check"
-                onClick={() => {
-                  configInfo(
-                    false,
-                    isEnabled,
-                    metric,
-                    topNSize,
-                    windowSize,
-                    time,
-                    exporterType,
-                    groupBy,
-                    deleteAfterDays,
-                    remoteEnabled,
-                    remoteRepository,
-                    remotePath
-                  );
-                  return history.push(QUERY_INSIGHTS);
-                }}
+                isLoading={isSaving}
+                onClick={saveConfiguration}
               >
                 Save
               </EuiButton>

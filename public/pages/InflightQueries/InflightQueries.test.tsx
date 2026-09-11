@@ -15,11 +15,13 @@ import {
   isVersion33OrHigher,
   isVersion37OrHigher,
 } from '../../utils/version-utils';
+import { LiveSearchQueryResponse } from '../../../types/types';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
 jest.mock('../../utils/datasource-utils', () => ({
+  ...jest.requireActual('../../utils/datasource-utils'),
   getDataSourceVersion: jest.fn().mockResolvedValue('3.3.0'),
 }));
 jest.mock('../../utils/version-utils', () => ({
@@ -58,6 +60,9 @@ const makeCore = (): CoreStart =>
       get: jest.fn(),
       post: jest.fn(),
     },
+    savedObjects: {
+      client: {},
+    },
     uiSettings: {
       get: jest.fn().mockReturnValue(false),
     },
@@ -82,10 +87,38 @@ const withDataSource = (ui: React.ReactNode) => (
   </MemoryRouter>
 );
 
+const inflightWithDataSource = (core: CoreStart, dataSourceId: string) => (
+  <MemoryRouter>
+    <DataSourceContext.Provider
+      value={{
+        dataSource: { id: dataSourceId },
+        setDataSource: jest.fn(),
+      }}
+    >
+      <InflightQueries
+        core={core}
+        depsStart={{ data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any}
+        params={{} as any}
+        dataSourceManagement={undefined}
+      />
+    </DataSourceContext.Provider>
+  </MemoryRouter>
+);
+
 const mockLiveQueries = (payload: any) => {
   (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>).mockResolvedValue(
     payload as any
   );
+};
+
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
 };
 
 // Create mock data with fixed timestamps to avoid timezone issues in snapshots
@@ -256,6 +289,225 @@ describe('InflightQueries', () => {
       },
       { timeout: 5000 }
     );
+  });
+
+  it('shows an access-denied callout instead of an empty dashboard for a forbidden response', async () => {
+    const core = makeCore();
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>).mockRejectedValue({
+      statusCode: 403,
+      body: {
+        message: '[security_exception] no permissions for live queries',
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', {
+          level: 2,
+          name: "You don't have permission to view Query Insights data.",
+        })
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Active queries')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument();
+
+    const requestCount = (retrieveLiveQueries as jest.Mock).mock.calls.length;
+    act(() => {
+      jest.advanceTimersByTime(30_000);
+    });
+    expect(retrieveLiveQueries).toHaveBeenCalledTimes(requestCount);
+  });
+
+  it('applies a forbidden response that settles after its polling timeout', async () => {
+    const core = makeCore();
+    const firstRequest = createDeferred<LiveSearchQueryResponse>();
+    const secondRequest = createDeferred<LiveSearchQueryResponse>();
+    (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.0.0');
+    (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(false);
+    (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(false);
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>)
+      .mockReturnValueOnce(firstRequest.promise)
+      .mockReturnValue(secondRequest.promise);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(30_000);
+    });
+    await waitFor(() => expect(retrieveLiveQueries).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      firstRequest.reject({ statusCode: 403 });
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: "You don't have permission to view Query Insights data.",
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('ignores a forbidden response from a previously selected data source', async () => {
+    const core = makeCore();
+    const sourceARequest = createDeferred<any>();
+    const sourceBRequest = createDeferred<any>();
+    (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(false);
+    (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(false);
+    (retrieveLiveQueries as jest.MockedFunction<typeof retrieveLiveQueries>).mockImplementation(
+      (_core, dataSourceId) =>
+        dataSourceId === 'source-a' ? sourceARequest.promise : sourceBRequest.promise
+    );
+
+    const { rerender } = render(inflightWithDataSource(core, 'source-a'));
+    await waitFor(() =>
+      expect(retrieveLiveQueries).toHaveBeenCalledWith(
+        expect.any(Object),
+        'source-a',
+        undefined,
+        false
+      )
+    );
+
+    rerender(inflightWithDataSource(core, 'source-b'));
+    await waitFor(() =>
+      expect(retrieveLiveQueries).toHaveBeenCalledWith(
+        expect.any(Object),
+        'source-b',
+        undefined,
+        false
+      )
+    );
+
+    await act(async () => {
+      sourceARequest.reject({ statusCode: 403 });
+      await Promise.resolve();
+    });
+    expect(
+      screen.queryByText("You don't have permission to view Query Insights data.")
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      sourceBRequest.resolve({ ok: true, response: { live_queries: [] } });
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(screen.getByText('Active queries')).toBeInTheDocument());
+  });
+
+  it('does not reuse capabilities from a previously selected data source', async () => {
+    const core = makeCore();
+    const sourceBVersion = createDeferred<string>();
+    (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockImplementation(
+      (dataSourceId) =>
+        dataSourceId === 'source-b' ? sourceBVersion.promise : Promise.resolve('3.7.0')
+    );
+    (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockImplementation(
+      (version) => version === '3.7.0'
+    );
+    (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockImplementation(
+      (version) => version === '3.7.0'
+    );
+    mockLiveQueries({ ok: true, response: { live_queries: [] } });
+
+    const { rerender } = render(inflightWithDataSource(core, 'source-a'));
+    await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-a'));
+    await waitFor(() => expect(screen.getAllByText('WLM Group').length).toBeGreaterThan(0), {
+      timeout: 5000,
+    });
+
+    rerender(inflightWithDataSource(core, 'source-b'));
+    await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-b'));
+    await waitFor(() =>
+      expect(retrieveLiveQueries).toHaveBeenCalledWith(
+        expect.any(Object),
+        'source-b',
+        undefined,
+        false
+      )
+    );
+
+    await act(async () => {
+      sourceBVersion.resolve('3.0.0');
+      await Promise.resolve();
+    });
+
+    expect(retrieveLiveQueries).not.toHaveBeenCalledWith(
+      expect.any(Object),
+      'source-b',
+      undefined,
+      true
+    );
+    expect(screen.queryByText('WLM Group')).not.toBeInTheDocument();
+  });
+
+  it('reloads parent settings after selecting a different MDS data source', async () => {
+    const core = makeCore();
+    (core.http.get as jest.Mock).mockResolvedValue({});
+    mockLiveQueries({ ok: true, response: { live_queries: [] } });
+    const onDataSourceChange = jest.fn();
+    const nextDataSource = { id: 'source-b', label: 'Source B' };
+    const SelectableDataSourceMenu = ({ componentConfig }: any) => (
+      <button type="button" onClick={() => componentConfig.onSelectedDataSources([nextDataSource])}>
+        Select source B
+      </button>
+    );
+    const dataSourceManagement = {
+      ui: {
+        getDataSourceMenu: jest.fn().mockReturnValue(SelectableDataSourceMenu),
+      },
+    };
+    const setDataSource = jest.fn();
+
+    render(
+      <MemoryRouter>
+        <DataSourceContext.Provider
+          value={{
+            dataSource: { id: 'source-a', label: 'Source A' },
+            setDataSource,
+          }}
+        >
+          <InflightQueries
+            core={core}
+            depsStart={{ dataSource: { dataSourceEnabled: true } } as any}
+            params={{ setHeaderActionMenu: jest.fn() } as any}
+            dataSourceManagement={dataSourceManagement as any}
+            onDataSourceChange={onDataSourceChange}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select source B' }));
+
+    expect(setDataSource).toHaveBeenCalledWith(nextDataSource);
+    expect(onDataSourceChange).toHaveBeenCalledTimes(1);
   });
 
   it('updates data periodically', async () => {

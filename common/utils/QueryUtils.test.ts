@@ -107,6 +107,31 @@ describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
     expect(mockCore.http.get).toHaveBeenCalledTimes(3);
   });
 
+  it('should propagate a forbidden API error without trying the remaining metrics', async () => {
+    const forbiddenError = {
+      statusCode: 403,
+      body: { message: '[security_exception] no permissions for top queries' },
+    };
+    mockCore.http.get.mockRejectedValue(forbiddenError);
+
+    await expect(
+      retrieveQueryById(mockCore, undefined, testStart, testEnd, testId, false)
+    ).rejects.toBe(forbiddenError);
+    expect(mockCore.http.get).toHaveBeenCalledTimes(1);
+  });
+
+  it('should propagate a legacy resolved security-exception response', async () => {
+    mockCore.http.get.mockResolvedValue({
+      ok: false,
+      response: 'Data Source Error: [security_exception] no permissions for top queries',
+    });
+
+    await expect(
+      retrieveQueryById(mockCore, undefined, testStart, testEnd, testId, false)
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(mockCore.http.get).toHaveBeenCalledTimes(1);
+  });
+
   it('should find query by id from records array', async () => {
     const query1 = { ...mockQuery, id: '1111c38a-8eb8-436c-b825-ff97d75b8bd8' };
     const query2 = { ...mockQuery, id: '2222c38a-8eb8-436c-b825-ff97d75b8bd8' };
@@ -227,5 +252,17 @@ describe('retrieveLiveQueries - Fetch Live Queries from API', () => {
     const result = await retrieveLiveQueries(mockCore);
 
     expect(result).toEqual({ ok: false, response: { live_queries: [] } });
+  });
+
+  it('should preserve forbidden API failures for the caller', async () => {
+    const forbiddenError = {
+      statusCode: 403,
+      body: {
+        message: '[security_exception] no permissions for live queries',
+      },
+    };
+    mockCore.http.get.mockRejectedValue(forbiddenError);
+
+    await expect(retrieveLiveQueries(mockCore)).rejects.toBe(forbiddenError);
   });
 });

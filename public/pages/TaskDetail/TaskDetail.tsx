@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   EuiBadge,
   EuiButton,
@@ -31,6 +31,8 @@ import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { PageHeader } from '../../components/PageHeader';
+import { QueryInsightsAccessDenied } from '../../components/QueryInsightsAccessDenied';
+import { isForbiddenError } from '../../../common/utils/ErrorUtils';
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
@@ -76,30 +78,83 @@ const TaskDetail = ({
   const [liveTask, setLiveTask] = useState<RichLiveQueryRecord | null>(null);
   const [finishedTask, setFinishedTask] = useState<FinishedQueryRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const history = useHistory();
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
+  const selectedDataSourceId = useRef(dataSource?.id);
+  const selectedTaskId = useRef(taskId);
+  const latestTaskRequestId = useRef(0);
+  selectedDataSourceId.current = dataSource?.id;
+  selectedTaskId.current = taskId;
 
   const fetchTask = useCallback(async () => {
+    const requestDataSourceId = dataSource?.id;
+    const requestTaskId = taskId;
+    if (
+      requestDataSourceId !== selectedDataSourceId.current ||
+      requestTaskId !== selectedTaskId.current
+    ) {
+      return;
+    }
+
+    const requestId = ++latestTaskRequestId.current;
+    const isCurrentRequest = () =>
+      requestId === latestTaskRequestId.current &&
+      requestDataSourceId === selectedDataSourceId.current &&
+      requestTaskId === selectedTaskId.current;
+
     setLoading(true);
     try {
-      const response = await retrieveLiveQueries(core, dataSource?.id, undefined, true);
+      const response = await retrieveLiveQueries(core, requestDataSourceId, undefined, true);
+      if (!isCurrentRequest()) {
+        return;
+      }
+
       const liveQueries = response?.response?.live_queries || [];
       const finishedQueries = response?.response?.finished_queries || [];
 
-      const foundLive = liveQueries.find((q) => q.id === taskId);
-      const foundFinished = finishedQueries.find((q) => q.id === taskId);
+      const foundLive = liveQueries.find((q) => q.id === requestTaskId);
+      const foundFinished = finishedQueries.find((q) => q.id === requestTaskId);
 
       setLiveTask(foundLive || null);
       setFinishedTask(foundFinished || null);
-    } catch (e) {
-      console.error('Failed to fetch task details:', e);
+      setAccessDenied(false);
+    } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
+      if (isForbiddenError(error)) {
+        setLiveTask(null);
+        setFinishedTask(null);
+        setAccessDenied(true);
+      } else {
+        console.error('Failed to fetch task details:', error);
+      }
+    } finally {
+      if (isCurrentRequest()) {
+        setLoading(false);
+      }
     }
-    setLoading(false);
   }, [core, dataSource?.id, taskId]);
 
   useEffect(() => {
     fetchTask();
   }, [fetchTask]);
+
+  useEffect(
+    () => () => {
+      latestTaskRequestId.current += 1;
+    },
+    []
+  );
+
+  const handleDataSourceChange = useCallback(() => {
+    latestTaskRequestId.current += 1;
+    setLiveTask(null);
+    setFinishedTask(null);
+    setAccessDenied(false);
+    setLoading(true);
+  }, []);
 
   useEffect(() => {
     core.chrome.setBreadcrumbs([
@@ -204,7 +259,7 @@ const TaskDetail = ({
         setDataSource={setDataSource}
         selectedDataSource={dataSource}
         onManageDataSource={() => {}}
-        onSelectedDataSource={fetchTask}
+        onSelectedDataSource={handleDataSourceChange}
         dataSourcePickerReadOnly={true}
       />
       <EuiFlexGroup justifyContent="flexEnd" gutterSize="s">
@@ -250,7 +305,11 @@ const TaskDetail = ({
         </EuiTitle>
       )}
 
-      {!loading && !liveTask && !finishedTask && (
+      {!loading && accessDenied && (
+        <QueryInsightsAccessDenied dataTestSubj="taskDetailsAccessDenied" />
+      )}
+
+      {!loading && !accessDenied && !liveTask && !finishedTask && (
         <EuiPanel>
           <EuiTitle size="s">
             <h2>Task not found</h2>

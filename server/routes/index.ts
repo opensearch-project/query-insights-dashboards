@@ -4,8 +4,98 @@
  */
 
 import { schema } from '@osd/config-schema';
-import { IRouter, Logger } from '../../../../src/core/server';
-import { EXPORTER_TYPE } from '../../common/constants';
+import {
+  IRouter,
+  Logger,
+  OpenSearchDashboardsResponseFactory,
+  RequestHandlerContext,
+} from '../../../../src/core/server';
+import {
+  EXPORTER_TYPE,
+  QUERY_INSIGHTS_ACCESS_DENIED_TITLE,
+  QUERY_INSIGHTS_REQUEST_FAILED_MESSAGE,
+  QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+  QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE,
+} from '../../common/constants';
+import {
+  getErrorMessage,
+  getErrorStatusCode,
+  isFailedResponse,
+  isForbiddenError,
+  isSecurityExceptionError,
+} from '../../common/utils/ErrorUtils';
+
+const queryInsightsErrorResponse = (
+  response: OpenSearchDashboardsResponseFactory,
+  logger: Logger,
+  operation: string,
+  error: unknown,
+  accessDeniedMessage = QUERY_INSIGHTS_ACCESS_DENIED_TITLE,
+  requestFailedMessage = QUERY_INSIGHTS_REQUEST_FAILED_MESSAGE
+) => {
+  const statusCode = getErrorStatusCode(error);
+  const forbidden = isForbiddenError(error);
+  const securityException = isSecurityExceptionError(error);
+  const responseStatusCode = forbidden ? 403 : (statusCode ?? 500);
+  const errorMessage = getErrorMessage(error);
+
+  logger.error(
+    forbidden || securityException
+      ? `${operation}: security request failed with status ${responseStatusCode}`
+      : `${operation}: ${errorMessage ?? 'Unknown error'}`
+  );
+
+  return response.customError({
+    statusCode: responseStatusCode,
+    body: {
+      message: forbidden
+        ? accessDeniedMessage
+        : securityException
+          ? requestFailedMessage
+          : (errorMessage ?? 'Internal server error'),
+    },
+  });
+};
+
+const queryInsightsResponse = (
+  response: OpenSearchDashboardsResponseFactory,
+  logger: Logger,
+  operation: string,
+  result: unknown,
+  accessDeniedMessage = QUERY_INSIGHTS_ACCESS_DENIED_TITLE,
+  requestFailedMessage = QUERY_INSIGHTS_REQUEST_FAILED_MESSAGE
+) =>
+  isFailedResponse(result)
+    ? queryInsightsErrorResponse(
+        response,
+        logger,
+        operation,
+        result,
+        accessDeniedMessage,
+        requestFailedMessage
+      )
+    : response.ok({
+        body: {
+          ok: true,
+          response: result,
+        },
+      });
+
+const getDataSourceTopQueries = async (
+  context: RequestHandlerContext,
+  dataSourceId: string,
+  querystring: Record<string, string | boolean> = {}
+) => {
+  const client = await context.dataSource.opensearch.getClient(dataSourceId);
+  const result = await client.transport.request({
+    method: 'GET',
+    path: '/_insights/top_queries',
+    querystring,
+  });
+  return result.body;
+};
 
 export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger: Logger) {
   router.get(
@@ -23,32 +113,13 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           const client =
             context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getTopNQueries');
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(response, logger, 'Unable to get top queries', res);
         } else {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res = await client.callAPI('queryInsights.getTopNQueries', {});
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          const res = await getDataSourceTopQueries(context, request.query.dataSourceId);
+          return queryInsightsResponse(response, logger, 'Unable to get top queries', res);
         }
       } catch (error) {
-        console.error('Unable to get top queries: ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(response, logger, 'Unable to get top queries', error);
       }
     }
   );
@@ -77,35 +148,34 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             id != null
               ? await client('queryInsights.getTopNQueriesLatencyForId', params)
               : await client('queryInsights.getTopNQueriesLatency', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
-        } else {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to get top queries (latency)',
+            res
           );
-          const res =
-            id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesLatencyForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesLatency', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
+        } else {
+          const res = await getDataSourceTopQueries(context, request.query.dataSourceId, {
+            type: 'latency',
+            from: from ?? '',
+            to: to ?? '',
+            ...(id ? { id } : {}),
+            verbose: verbose ?? false,
           });
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to get top queries (latency)',
+            res
+          );
         }
       } catch (error) {
-        console.error('Unable to get top queries (latency): ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(
+          response,
+          logger,
+          'Unable to get top queries (latency)',
+          error
+        );
       }
     }
   );
@@ -135,35 +205,24 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             id != null
               ? await client('queryInsights.getTopNQueriesCpuForId', params)
               : await client('queryInsights.getTopNQueriesCpu', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(response, logger, 'Unable to get top queries (cpu)', res);
         } else {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res =
-            id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesCpuForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesCpu', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
+          const res = await getDataSourceTopQueries(context, request.query.dataSourceId, {
+            type: 'cpu',
+            from: from ?? '',
+            to: to ?? '',
+            ...(id ? { id } : {}),
+            verbose: verbose ?? false,
           });
+          return queryInsightsResponse(response, logger, 'Unable to get top queries (cpu)', res);
         }
       } catch (error) {
-        console.error('Unable to get top queries (cpu): ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(
+          response,
+          logger,
+          'Unable to get top queries (cpu)',
+          error
+        );
       }
     }
   );
@@ -192,35 +251,24 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             id != null
               ? await client('queryInsights.getTopNQueriesMemoryForId', params)
               : await client('queryInsights.getTopNQueriesMemory', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(response, logger, 'Unable to get top queries (memory)', res);
         } else {
-          const client = context.dataSource.opensearch.legacy.getClient(
-            request.query?.dataSourceId
-          );
-          const res =
-            id != null
-              ? await client.callAPI('queryInsights.getTopNQueriesMemoryForId', params)
-              : await client.callAPI('queryInsights.getTopNQueriesMemory', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
+          const res = await getDataSourceTopQueries(context, request.query.dataSourceId, {
+            type: 'memory',
+            from: from ?? '',
+            to: to ?? '',
+            ...(id ? { id } : {}),
+            verbose: verbose ?? false,
           });
+          return queryInsightsResponse(response, logger, 'Unable to get top queries (memory)', res);
         }
       } catch (error) {
-        console.error('Unable to get top queries (memory): ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(
+          response,
+          logger,
+          'Unable to get top queries (memory)',
+          error
+        );
       }
     }
   );
@@ -240,32 +288,37 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           const client =
             context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.getSettings', { include_defaults: true });
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to get Query Insights settings',
+            res,
+            QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+            QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE
+          );
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
           const res = await client.callAPI('queryInsights.getSettings', { include_defaults: true });
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to get Query Insights settings',
+            res,
+            QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+            QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE
+          );
         }
       } catch (error) {
-        console.error('Unable to get top queries: ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(
+          response,
+          logger,
+          'Unable to get Query Insights settings',
+          error,
+          QUERY_INSIGHTS_SETTINGS_ACCESS_DENIED_TITLE,
+          QUERY_INSIGHTS_SETTINGS_REQUEST_FAILED_MESSAGE
+        );
       }
     }
   );
@@ -328,32 +381,37 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           const client =
             context.queryInsights_plugin.queryInsightsClient.asScoped(request).callAsCurrentUser;
           const res = await client('queryInsights.setSettings', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to update Query Insights settings',
+            res,
+            QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+            QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
+          );
         } else {
           const client = context.dataSource.opensearch.legacy.getClient(
             request.query?.dataSourceId
           );
           const res = await client.callAPI('queryInsights.setSettings', params);
-          return response.ok({
-            body: {
-              ok: true,
-              response: res,
-            },
-          });
+          return queryInsightsResponse(
+            response,
+            logger,
+            'Unable to update Query Insights settings',
+            res,
+            QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+            QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
+          );
         }
       } catch (error) {
-        console.error('Unable to set settings: ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(
+          response,
+          logger,
+          'Unable to update Query Insights settings',
+          error,
+          QUERY_INSIGHTS_SETTINGS_UPDATE_DENIED_TITLE,
+          QUERY_INSIGHTS_SETTINGS_UPDATE_FAILED_MESSAGE
+        );
       }
     }
   );
@@ -405,24 +463,13 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
             : await client.callAPI('queryInsights.getLiveQueries', params);
         }
 
-        if (!res || res.ok === false) {
-          throw new Error(res?.error || 'Query Insights service returned an error');
+        if (!res) {
+          throw new Error('Query Insights service returned an error');
         }
 
-        return response.ok({
-          body: {
-            ok: true,
-            response: res,
-          },
-        });
+        return queryInsightsResponse(response, logger, 'Unable to get live queries', res);
       } catch (error) {
-        console.error('Unable to get live queries: ', error);
-        return response.customError({
-          statusCode: error.statusCode ?? 500,
-          body: {
-            message: error.message || 'Internal server error',
-          },
-        });
+        return queryInsightsErrorResponse(response, logger, 'Unable to get live queries', error);
       }
     }
   );

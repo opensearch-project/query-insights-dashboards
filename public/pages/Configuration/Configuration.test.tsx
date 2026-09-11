@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import Configuration from './Configuration';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { TIME_UNITS_TEXT, EXPORTER_TYPE } from '../../../common/constants';
@@ -19,12 +19,19 @@ import {
 } from './configurationValidation';
 
 const mockConfigInfo = jest.fn();
+const mockOnDataSourceChange = jest.fn();
 const mockCoreStart = {
   chrome: {
     setBreadcrumbs: jest.fn(),
   },
   http: {
     get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
+  },
+  notifications: {
+    toasts: {
+      addSuccess: jest.fn(),
+      addDanger: jest.fn(),
+    },
   },
 };
 
@@ -74,26 +81,58 @@ const mockDataSourceContext = {
   setDataSource: jest.fn(),
 };
 
-const renderConfiguration = (overrides = {}) =>
-  render(
-    <MemoryRouter>
-      <DataSourceContext.Provider value={mockDataSourceContext}>
-        <Configuration
-          latencySettings={{ ...defaultLatencySettings, ...overrides }}
-          cpuSettings={defaultCpuSettings}
-          memorySettings={defaultMemorySettings}
-          groupBySettings={groupBySettings}
-          configInfo={mockConfigInfo}
-          dataRetentionSettings={dataRetentionSettings}
-          remoteExporterSettings={remoteExporterSettings}
-          core={mockCoreStart}
-          depsStart={{ navigation: {} }}
-          params={{} as any}
-          dataSourceManagement={dataSourceManagementMock}
-        />
-      </DataSourceContext.Provider>
-    </MemoryRouter>
-  );
+const createDeferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+};
+
+let currentLocationPath = '';
+const LocationDisplay = () => {
+  const location = useLocation();
+  currentLocationPath = location.pathname;
+  return null;
+};
+
+interface RenderConfigurationOptions {
+  configurationLoadState?: 'loading' | 'ready' | 'accessDenied' | 'error';
+  configInfo?: typeof mockConfigInfo;
+  dataSourceContext?: typeof mockDataSourceContext;
+  latencySettings?: typeof defaultLatencySettings;
+}
+
+const getConfigurationView = ({
+  configurationLoadState = 'ready',
+  configInfo = mockConfigInfo,
+  dataSourceContext = mockDataSourceContext,
+  latencySettings = defaultLatencySettings,
+}: RenderConfigurationOptions = {}) => (
+  <MemoryRouter initialEntries={['/configuration']}>
+    <DataSourceContext.Provider value={dataSourceContext}>
+      <Configuration
+        latencySettings={latencySettings}
+        cpuSettings={defaultCpuSettings}
+        memorySettings={defaultMemorySettings}
+        groupBySettings={groupBySettings}
+        configInfo={configInfo}
+        configurationLoadState={configurationLoadState}
+        dataRetentionSettings={dataRetentionSettings}
+        remoteExporterSettings={remoteExporterSettings}
+        core={mockCoreStart}
+        onDataSourceChange={mockOnDataSourceChange}
+        depsStart={{ navigation: {} }}
+        params={{} as any}
+        dataSourceManagement={dataSourceManagementMock}
+      />
+      <LocationDisplay />
+    </DataSourceContext.Provider>
+  </MemoryRouter>
+);
+
+const renderConfiguration = (options: RenderConfigurationOptions = {}) =>
+  render(getConfigurationView(options));
 
 const getWindowSizeConfigurations = () => screen.getAllByRole('combobox');
 const getTopNSizeConfiguration = () => screen.getAllByRole('spinbutton');
@@ -105,6 +144,9 @@ const getEnableToggle = () => {
 describe('Configuration Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConfigInfo.mockResolvedValue(undefined);
+    mockOnDataSourceChange.mockResolvedValue(undefined);
+    currentLocationPath = '';
   });
 
   it('renders with default settings', () => {
@@ -141,7 +183,7 @@ describe('Configuration Component', () => {
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
   });
 
-  it('calls configInfo and navigates on Save button click', async () => {
+  it('waits for configInfo and stays on Configuration after saving', async () => {
     renderConfiguration();
     fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
     fireEvent.click(screen.getByText('Save'));
@@ -161,6 +203,139 @@ describe('Configuration Component', () => {
         'query-insights'
       );
     });
+    expect(mockCoreStart.notifications.toasts.addSuccess).toHaveBeenCalledWith(
+      'Saved Query Insights settings.'
+    );
+    expect(currentLocationPath).toBe('/configuration');
+  });
+
+  it('disables configuration edits while a save is pending', async () => {
+    const pendingSave = createDeferred<void>();
+    const configInfo = jest.fn().mockReturnValue(pendingSave.promise);
+    renderConfiguration({ configInfo });
+
+    const topNInput = getTopNSizeConfiguration()[0];
+    fireEvent.change(topNInput, { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(1));
+    expect(topNInput).toBeDisabled();
+    expect(getWindowSizeConfigurations()[0]).toBeDisabled();
+    expect(getEnableToggle()).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    await act(async () => {
+      pendingSave.resolve();
+      await pendingSave.promise;
+    });
+    expect(topNInput).toBeEnabled();
+    expect(topNInput).toHaveValue(7);
+  });
+
+  it('ignores a save completion from a previously selected data source', async () => {
+    const firstSave = createDeferred<void>();
+    const secondSave = createDeferred<void>();
+    const configInfo = jest
+      .fn()
+      .mockReturnValueOnce(firstSave.promise)
+      .mockReturnValueOnce(secondSave.promise);
+    const firstDataSourceContext = {
+      dataSource: { id: 'source-a', label: 'Source A' },
+      setDataSource: jest.fn(),
+    };
+    const secondDataSourceContext = {
+      dataSource: { id: 'source-b', label: 'Source B' },
+      setDataSource: jest.fn(),
+    };
+    const { rerender } = renderConfiguration({
+      configInfo,
+      dataSourceContext: firstDataSourceContext,
+    });
+
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(1));
+
+    rerender(
+      getConfigurationView({
+        configInfo,
+        dataSourceContext: secondDataSourceContext,
+      })
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(configInfo).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      firstSave.resolve();
+      await firstSave.promise;
+    });
+    expect(mockCoreStart.notifications.toasts.addSuccess).not.toHaveBeenCalled();
+    expect(mockCoreStart.notifications.toasts.addDanger).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    await act(async () => {
+      secondSave.resolve();
+      await secondSave.promise;
+    });
+    expect(mockCoreStart.notifications.toasts.addSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps unsaved values and shows a permission error when saving is forbidden', async () => {
+    const forbiddenConfigInfo = jest.fn().mockRejectedValue({
+      statusCode: 403,
+      body: {
+        message: '[security_exception] no permissions for cluster settings',
+      },
+    });
+    renderConfiguration({ configInfo: forbiddenConfigInfo });
+
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '7' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(mockCoreStart.notifications.toasts.addDanger).toHaveBeenCalledWith({
+        title: "You don't have permission to update Query Insights settings.",
+        text: 'Ask your administrator to grant the required cluster settings update permission.',
+      });
+    });
+    expect(getTopNSizeConfiguration()[0]).toHaveValue(7);
+    expect(currentLocationPath).toBe('/configuration');
+    expect(mockCoreStart.notifications.toasts.addSuccess).not.toHaveBeenCalled();
+  });
+
+  it('preserves an unsaved draft when persisted settings change', async () => {
+    const { rerender } = renderConfiguration();
+    fireEvent.change(getTopNSizeConfiguration()[0], { target: { value: '9' } });
+
+    rerender(
+      getConfigurationView({
+        latencySettings: {
+          ...defaultLatencySettings,
+          currTopN: '7',
+        },
+      })
+    );
+
+    await waitFor(() => expect(getTopNSizeConfiguration()[0]).toHaveValue(9));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(getTopNSizeConfiguration()[0]).toHaveValue(7);
+  });
+
+  it('shows an access-denied message instead of editable defaults when settings cannot be read', () => {
+    renderConfiguration({ configurationLoadState: 'accessDenied' });
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: "You don't have permission to view Query Insights settings.",
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Top n queries monitoring configuration settings')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    expect(mockCoreStart.http.get).not.toHaveBeenCalled();
   });
 
   it('resets state on Cancel button click', async () => {
@@ -469,9 +644,11 @@ describe('Configuration Component', () => {
               memorySettings={defaultMemorySettings}
               groupBySettings={groupBySettings}
               configInfo={mockConfigInfo}
+              configurationLoadState="ready"
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
               core={mockCoreStart}
+              onDataSourceChange={mockOnDataSourceChange}
               depsStart={{ navigation: {} }}
               params={{} as any}
               dataSourceManagement={dataSourceManagementMock}
@@ -482,6 +659,126 @@ describe('Configuration Component', () => {
       await waitFor(() => {
         expect(screen.getByText('Register new')).toBeInTheDocument();
       });
+    });
+
+    it('ignores repository and plugin responses from the previously selected data source', async () => {
+      const sourceARepositories = createDeferred<{
+        ok: boolean;
+        response: Record<string, { type: string }>;
+      }>();
+      const sourceAPlugins = createDeferred<{
+        ok: boolean;
+        response: Array<{ component: string }>;
+      }>();
+      const sourceBRepositories = createDeferred<{
+        ok: boolean;
+        response: Record<string, { type: string }>;
+      }>();
+      const sourceBPlugins = createDeferred<{
+        ok: boolean;
+        response: Array<{ component: string }>;
+      }>();
+
+      mockCoreStart.http.get.mockImplementation((url: string, options: any) => {
+        const isSourceA = options.query.dataSourceId === 'source-a';
+        if (url === '/api/snapshot/repositories') {
+          return isSourceA ? sourceARepositories.promise : sourceBRepositories.promise;
+        }
+        if (url === '/api/cat/plugins') {
+          return isSourceA ? sourceAPlugins.promise : sourceBPlugins.promise;
+        }
+        return Promise.resolve({ ok: true, response: {} });
+      });
+
+      const configurationForSource = (id: string) => (
+        <MemoryRouter>
+          <DataSourceContext.Provider
+            value={{
+              dataSource: { id, label: id },
+              setDataSource: jest.fn(),
+            }}
+          >
+            <Configuration
+              latencySettings={defaultLatencySettings}
+              cpuSettings={defaultCpuSettings}
+              memorySettings={defaultMemorySettings}
+              groupBySettings={groupBySettings}
+              configInfo={mockConfigInfo}
+              onDataSourceChange={mockOnDataSourceChange}
+              configurationLoadState="ready"
+              dataRetentionSettings={dataRetentionSettings}
+              remoteExporterSettings={{ enabled: true, repository: '', path: 'insights' }}
+              core={mockCoreStart}
+              depsStart={{ navigation: {} }}
+              params={{} as any}
+              dataSourceManagement={dataSourceManagementMock}
+            />
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+
+      const { rerender } = render(configurationForSource('source-a'));
+      await waitFor(() => {
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/cat/plugins', {
+          query: { dataSourceId: 'source-a' },
+        });
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/snapshot/repositories', {
+          query: { dataSourceId: 'source-a' },
+        });
+      });
+
+      rerender(configurationForSource('source-b'));
+      await waitFor(() => {
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/cat/plugins', {
+          query: { dataSourceId: 'source-b' },
+        });
+        expect(mockCoreStart.http.get).toHaveBeenCalledWith('/api/snapshot/repositories', {
+          query: { dataSourceId: 'source-b' },
+        });
+      });
+
+      await act(async () => {
+        sourceBRepositories.resolve({
+          ok: true,
+          response: { 'source-b-repository': { type: 's3' } },
+        });
+        sourceBPlugins.resolve({
+          ok: true,
+          response: [{ component: 'repository-s3' }],
+        });
+        await Promise.all([sourceBRepositories.promise, sourceBPlugins.promise]);
+      });
+      await waitFor(() => {
+        expect(screen.getByText('exporter.remote.repository')).toBeInTheDocument();
+      });
+      const repositoryInput = document.querySelector(
+        '[data-test-subj="comboBoxSearchInput"]'
+      ) as HTMLInputElement;
+      expect(repositoryInput).not.toBeNull();
+      fireEvent.click(repositoryInput);
+      fireEvent.focus(repositoryInput);
+      fireEvent.keyDown(repositoryInput, { key: 'ArrowDown' });
+      await waitFor(() => {
+        expect(screen.getByText('source-b-repository')).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        sourceARepositories.resolve({
+          ok: true,
+          response: { 'source-a-repository': { type: 's3' } },
+        });
+        sourceAPlugins.resolve({
+          ok: true,
+          response: [{ component: 'other-plugin' }],
+        });
+        await Promise.all([sourceARepositories.promise, sourceAPlugins.promise]);
+      });
+
+      expect(screen.getByText('source-b-repository')).toBeInTheDocument();
+      expect(screen.queryByText('source-a-repository')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('The repository-s3 plugin is not installed')
+      ).not.toBeInTheDocument();
     });
 
     it('should show remote exporter status as Disabled in status panel', () => {
@@ -614,9 +911,11 @@ describe('Configuration Component', () => {
               memorySettings={defaultMemorySettings}
               groupBySettings={groupBySettings}
               configInfo={mockConfigInfo}
+              configurationLoadState="ready"
               dataRetentionSettings={dataRetentionSettings}
               remoteExporterSettings={{ enabled: true, repository: 'my-repo', path: 'insights' }}
               core={mockCoreStart}
+              onDataSourceChange={mockOnDataSourceChange}
               depsStart={{ navigation: {} }}
               params={{} as any}
               dataSourceManagement={dataSourceManagementMock}
