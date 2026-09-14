@@ -31,7 +31,7 @@ jobs:
           minor_version=$(echo $opensearch_version | cut -d. -f2)
           branch_version=${major_version}.${minor_version}
           opensearch_dashboards_branch=$branch_version
-          base_branch=${{ github.base_ref }}
+          base_branch=${{ github.base_ref || github.ref_name }}
           if [ "$base_branch" = "main" ]; then
             opensearch_dashboards_branch=main
           fi
