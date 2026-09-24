@@ -165,29 +165,6 @@ export const WorkloadManagementMain = ({
     }
   };
 
-  const checkQueryInsightsAvailability = async () => {
-    try {
-      const version = await getVersionOnce(dataSource?.id || '');
-      const versionSupported = isVersion33OrHigher(version);
-      setQueryInsightWlmNavigationSupported(versionSupported);
-
-      if (!versionSupported) {
-        setIsQueryInsightsAvailable(false);
-        return;
-      }
-
-      const res = await core.http.get('/api/live_queries', {
-        query: { dataSourceId: dataSource.id },
-      });
-      const hasValidStructure =
-        res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries);
-      setIsQueryInsightsAvailable(hasValidStructure);
-    } catch (_error) {
-      setQueryInsightWlmNavigationSupported(false);
-      setIsQueryInsightsAvailable(false);
-    }
-  };
-
   const fetchClusterLevelStats = async () => {
     setLoading(true);
 
@@ -487,8 +464,45 @@ export const WorkloadManagementMain = ({
 
   // === Lifecycle ===
   useEffect(() => {
-    checkQueryInsightsAvailability();
-  }, [dataSource?.id]);
+    let cancelled = false;
+    const dataSourceId = dataSource?.id;
+
+    setQueryInsightWlmNavigationSupported(false);
+    setIsQueryInsightsAvailable(false);
+
+    (async () => {
+      try {
+        const version = await getVersionOnce(dataSourceId || '');
+        if (cancelled) return;
+
+        const versionSupported = isVersion33OrHigher(version);
+        setQueryInsightWlmNavigationSupported(versionSupported);
+
+        if (!versionSupported) return;
+
+        const res = await core.http.get('/api/live_queries', {
+          query: { dataSourceId },
+        });
+        if (cancelled) return;
+
+        const hasValidStructure =
+          res &&
+          typeof res === 'object' &&
+          res.response &&
+          Array.isArray(res.response.live_queries);
+        setIsQueryInsightsAvailable(hasValidStructure);
+      } catch (_error) {
+        if (!cancelled) {
+          setQueryInsightWlmNavigationSupported(false);
+          setIsQueryInsightsAvailable(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [core.http, dataSource?.id]);
 
   useEffect(() => {
     fetchClusterLevelStats();

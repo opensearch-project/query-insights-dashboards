@@ -279,9 +279,19 @@ const QueryInsights = ({
   }, [core.http, dataSource?.id, wlmAvailable, queryInsightWlmNavigationSupported]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    setQueryInsightWlmNavigationSupported(false);
+    setStatusSupported(false);
+    setUserInfoVersionGate(false);
+    setBackendRolesVersionGate(false);
+    setWlmAvailable(false);
+
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
+        if (cancelled) return;
+
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setStatusSupported(isVersion36OrHigher(version));
@@ -290,20 +300,26 @@ const QueryInsights = ({
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
-          setWlmAvailable(hasWlm);
-        } else {
-          setWlmAvailable(false);
+          if (!cancelled) {
+            setWlmAvailable(hasWlm);
+          }
         }
       } catch (_e) {
-        setQueryInsightWlmNavigationSupported(false);
-        setWlmAvailable(false);
-        setUserInfoVersionGate(false);
-        setBackendRolesVersionGate(false);
+        if (!cancelled) {
+          setQueryInsightWlmNavigationSupported(false);
+          setStatusSupported(false);
+          setUserInfoVersionGate(false);
+          setBackendRolesVersionGate(false);
+          setWlmAvailable(false);
+        }
       }
     };
 
     checkWlmSupport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+    };
   }, [detectWlm, dataSource?.id]);
 
   // Probe security separately from the version fetch so a probe failure can't reset the version
