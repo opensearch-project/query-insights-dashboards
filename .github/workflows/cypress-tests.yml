@@ -307,7 +307,10 @@ jobs:
         uses: cypress-io/github-action@248bde77443c376edc45906ede03a1aba9da0462 # v5
         with:
           working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
-          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000 --spec cypress/e2e/qi/**/*
+          # 8_user_info_security runs against a real security-enabled cluster with seeded
+          # users/labels (see cypress-tests-user-info.yml); it is excluded from this
+          # no-security workflow, which has neither the security plugin nor that seed data.
+          command: yarn run cypress run --config defaultCommandTimeout=120000,requestTimeout=120000,responseTimeout=120000,pageLoadTimeout=180000,taskTimeout=120000,execTimeout=120000 --spec "cypress/e2e/qi/1_top_queries.cy.js,cypress/e2e/qi/2_query_details.cy.js,cypress/e2e/qi/3_configurations.cy.js,cypress/e2e/qi/4_group_details.cy.js,cypress/e2e/qi/5_live_queries.cy.js,cypress/e2e/qi/6_profiler.cy.js"
           wait-on: 'http://localhost:5601'
           wait-on-timeout: 1200
           browser: chrome

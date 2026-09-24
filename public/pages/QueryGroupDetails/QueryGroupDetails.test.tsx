@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route } from 'react-router-dom';
 import { QueryGroupDetails } from './QueryGroupDetails';
 import { CoreStart } from 'opensearch-dashboards/public';
@@ -17,7 +17,17 @@ jest.mock('object-hash', () => jest.fn(() => '8c1e50c035663459d567fa11d8eb494d')
 
 jest.mock('echarts-for-react', () => () => <div data-testid="echarts-mock" />);
 
+jest.mock('../../utils/version-utils', () => ({
+  getVersionOnce: jest.fn().mockResolvedValue('3.6.0'),
+  isVersion33OrHigher: jest.fn().mockReturnValue(true),
+  isVersion35OrHigher: jest.fn().mockReturnValue(true),
+  isVersion36OrHigher: jest.fn().mockReturnValue(true),
+}));
+
 jest.mock('../../../common/utils/QueryUtils', () => ({
+  // Keep the real getOpaqueId so the mock can't drift from production precedence;
+  // only retrieveQueryById needs stubbing.
+  ...jest.requireActual('../../../common/utils/QueryUtils'),
   retrieveQueryById: jest.fn(),
 }));
 
@@ -55,29 +65,36 @@ describe('QueryGroupDetails', () => {
     (retrieveQueryById as jest.Mock).mockResolvedValue(mockQuery);
   });
 
-  const renderComponent = () => {
-    return render(
-      <MemoryRouter
-        initialEntries={[
-          '/query-group-details?id=mockId&from=1632441600000&to=1632528000000&verbose=true',
-        ]}
-      >
-        <DataSourceContext.Provider value={mockDataSourceContext}>
-          <Route path="/query-group-details">
-            <QueryGroupDetails
-              core={coreMock}
-              depsStart={{ navigation: {} }}
-              params={{} as any}
-              dataSourceManagement={dataSourceManagementMock}
-            />
-          </Route>
-        </DataSourceContext.Provider>
-      </MemoryRouter>
-    );
+  const renderComponent = async () => {
+    let result!: ReturnType<typeof render>;
+    // Wrap in act and flush the async effects (getVersionOnce -> setUserInfoSupported,
+    // retrieveQueryById) so their state updates are covered and don't emit act() warnings.
+    await act(async () => {
+      result = render(
+        <MemoryRouter
+          initialEntries={[
+            '/query-group-details?id=mockId&from=1632441600000&to=1632528000000&verbose=true',
+          ]}
+        >
+          <DataSourceContext.Provider value={mockDataSourceContext}>
+            <Route path="/query-group-details">
+              <QueryGroupDetails
+                core={coreMock}
+                depsStart={{ navigation: {} }}
+                params={{} as any}
+                dataSourceManagement={dataSourceManagementMock}
+              />
+            </Route>
+          </DataSourceContext.Provider>
+        </MemoryRouter>
+      );
+      await Promise.resolve();
+    });
+    return result;
   };
 
   it('renders the QueryGroupDetails component', async () => {
-    renderComponent();
+    await renderComponent();
 
     expect(screen.getByText('Query group details')).toBeInTheDocument();
     expect(screen.getByText('Sample query details')).toBeInTheDocument();
@@ -91,7 +108,7 @@ describe('QueryGroupDetails', () => {
   });
 
   it('fetches and displays query group data', async () => {
-    renderComponent();
+    await renderComponent();
 
     await waitFor(() => {
       expect(retrieveQueryById).toHaveBeenCalledWith(
@@ -109,7 +126,7 @@ describe('QueryGroupDetails', () => {
   });
 
   it('renders latency bar chart', async () => {
-    renderComponent();
+    await renderComponent();
 
     await waitFor(() => {
       expect(screen.getAllByText('Latency')).toHaveLength(1);
@@ -118,8 +135,8 @@ describe('QueryGroupDetails', () => {
     expect(screen.getByTestId('echarts-mock')).toBeInTheDocument();
   });
 
-  it('renders tooltips', () => {
-    renderComponent();
+  it('renders tooltips', async () => {
+    await renderComponent();
 
     const tooltips = screen.getAllByLabelText('Details tooltip');
     expect(tooltips).toHaveLength(2);
@@ -129,7 +146,7 @@ describe('QueryGroupDetails', () => {
     jest.spyOn(Date.prototype, 'toDateString').mockReturnValue('Mon Sep 24 2021');
     jest.spyOn(Date.prototype, 'toLocaleTimeString').mockReturnValue('12:00:00 AM');
 
-    renderComponent();
+    await renderComponent();
 
     await waitFor(() => {
       expect(coreMock.chrome.setBreadcrumbs).toHaveBeenCalledWith([
@@ -146,7 +163,7 @@ describe('QueryGroupDetails', () => {
   });
 
   it('matches snapshot', async () => {
-    const { container } = renderComponent();
+    const { container } = await renderComponent();
 
     await waitFor(() => {
       expect(retrieveQueryById).toHaveBeenCalled();

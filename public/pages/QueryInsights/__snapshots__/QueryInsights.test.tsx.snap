@@ -361,6 +361,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
         class="euiAccordion__childWrapper"
         id="visualizations-accordion"
         role="region"
+        style="height: 0px"
         tabindex="-1"
       >
         <div>
@@ -550,6 +551,11 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                           value="username"
                         >
                           Username
+                        </option>
+                        <option
+                          value="wlm"
+                        >
+                          WLM Group
                         </option>
                       </select>
                       <div
@@ -1416,7 +1422,32 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.latency_4"
+              data-test-subj="tableHeaderCell_Status_4"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Status"
+                  >
+                    Status
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_measurements.latency_5"
               role="columnheader"
               scope="col"
             >
@@ -1441,7 +1472,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.cpu_5"
+              data-test-subj="tableHeaderCell_measurements.cpu_6"
               role="columnheader"
               scope="col"
             >
@@ -1466,7 +1497,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_measurements.memory_6"
+              data-test-subj="tableHeaderCell_measurements.memory_7"
               role="columnheader"
               scope="col"
             >
@@ -1491,7 +1522,7 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               aria-live="polite"
               aria-sort="none"
               class="euiTableHeaderCell"
-              data-test-subj="tableHeaderCell_indices_7"
+              data-test-subj="tableHeaderCell_indices_8"
               role="columnheader"
               scope="col"
             >
@@ -1508,6 +1539,131 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                     title="Indices"
                   >
                     Indices
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_X-Opaque-Id_9"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="X-Opaque-Id"
+                  >
+                    X-Opaque-Id
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_username_10"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Username"
+                  >
+                    Username
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_user_roles_11"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="User Roles"
+                  >
+                    User Roles
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_backend_roles_12"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="Backend Roles"
+                  >
+                    Backend Roles
+                  </span>
+                </span>
+              </button>
+            </th>
+            <th
+              aria-live="polite"
+              aria-sort="none"
+              class="euiTableHeaderCell"
+              data-test-subj="tableHeaderCell_wlm_group_id_13"
+              role="columnheader"
+              scope="col"
+            >
+              <button
+                class="euiTableHeaderButton"
+                data-test-subj="tableHeaderSortButton"
+                type="button"
+              >
+                <span
+                  class="euiTableCellContent"
+                >
+                  <span
+                    class="euiTableCellContent__text"
+                    title="WLM Group"
+                  >
+                    WLM Group
                   </span>
                 </span>
               </button>
@@ -1607,6 +1763,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(109, 204, 177); color: rgb(0, 0, 0);"
+                  title="Completed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Completed
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -1658,6 +1842,96 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   .kibana
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  90eb5c3b-8448-4af3-84ce-a941eee9ed5f
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  admin
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  all_access, analyst
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  DEFAULT_WORKLOAD_GROUP
                 </span>
               </div>
             </td>
@@ -1758,6 +2032,33 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -1820,6 +2121,153 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       >
                         Aggregated
                       </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
                     </span>
                   </span>
                 </span>
@@ -1918,6 +2366,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                  title="Failed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Failed
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -1969,6 +2445,96 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   my-index
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  search-service
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  search_user
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  readall
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
                 </span>
               </div>
             </td>
@@ -2065,6 +2631,34 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--iconLeft"
+                  style="background-color: rgb(109, 204, 177); color: rgb(0, 0, 0);"
+                  title="Completed"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Completed
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2116,6 +2710,96 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                   class=""
                 >
                   .kibana
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  8a936346-8d19-409c-9fe6-8b890eca1f7c
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  admin
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  all_access
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  -
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  DEFAULT_WORKLOAD_GROUP
                 </span>
               </div>
             </td>
@@ -2216,6 +2900,33 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2278,6 +2989,153 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       >
                         Aggregated
                       </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
                     </span>
                   </span>
                 </span>
@@ -2380,6 +3238,33 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2442,6 +3327,153 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       >
                         Aggregated
                       </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
                     </span>
                   </span>
                 </span>
@@ -2544,6 +3576,33 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2606,6 +3665,153 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       >
                         Aggregated
                       </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
                     </span>
                   </span>
                 </span>
@@ -2708,6 +3914,33 @@ exports[`QueryInsights Component renders the table with the correct columns and 
               <div
                 class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
               >
+                Status
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
                 Avg Latency / Latency
               </div>
               <div
@@ -2770,6 +4003,153 @@ exports[`QueryInsights Component renders the table with the correct columns and 
                       >
                         Aggregated
                       </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                X-Opaque-Id
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Username
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                User Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                Backend Roles
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class=""
+                >
+                  <span
+                    class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                    title="Aggregated"
+                  >
+                    <span
+                      class="euiBadge__content"
+                    >
+                      <span
+                        class="euiBadge__text"
+                      >
+                        Aggregated
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </td>
+            <td
+              class="euiTableRowCell"
+            >
+              <div
+                class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+              >
+                WLM Group
+              </div>
+              <div
+                class="euiTableCellContent euiTableCellContent--truncateText euiTableCellContent--overflowingContent"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="Aggregated"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      Aggregated
                     </span>
                   </span>
                 </span>

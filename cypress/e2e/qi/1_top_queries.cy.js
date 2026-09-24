@@ -271,6 +271,20 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
   const totalRowCount = mixedRows.length;
 
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
     }).as('topQueries');
@@ -291,6 +305,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
       'Indices',
+      'X-Opaque-Id',
+      'Username',
+      'User Roles',
+      'Backend Roles',
       'WLM Group',
     ];
     getHeaders().should('deep.equal', expected);
@@ -312,6 +330,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'CPU Time',
       'Memory Usage',
       'Indices',
+      'X-Opaque-Id',
+      'Username',
+      'User Roles',
+      'Backend Roles',
       'WLM Group',
     ];
     getHeaders().should('deep.equal', expected);
@@ -362,6 +384,10 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
       'Avg CPU Time / CPU Time',
       'Avg Memory Usage / Memory Usage',
       'Indices',
+      'X-Opaque-Id',
+      'Username',
+      'User Roles',
+      'Backend Roles',
       'WLM Group',
     ];
     getHeaders().should('deep.equal', expected);
@@ -377,6 +403,20 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
 // ---- QUERY ONLY fixture (no Type toggle)
 describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(QUERY_ONLY) });
     }).as('topQueries');
@@ -386,6 +426,10 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
   });
 
   it('renders only query headers (without changing Type filter)', () => {
+    // User-info columns are version-gated only: with the cluster version stubbed to 3.8.0
+    // (>= 3.5) the Username / User Roles / Backend Roles columns render regardless of whether
+    // the QUERY_ONLY fixture rows carry username data (rows without it show '-'). Application
+    // ID is unconditional.
     const expected = [
       'Id',
       'Type',
@@ -395,6 +439,10 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
       'CPU Time',
       'Memory Usage',
       'Indices',
+      'X-Opaque-Id',
+      'Username',
+      'User Roles',
+      'Backend Roles',
       'WLM Group',
     ];
     getHeaders().should('deep.equal', expected);
@@ -405,6 +453,20 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
 // ---- GROUP ONLY fixture (no Type toggle)
 describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(GROUP_ONLY) });
     }).as('topQueries');
@@ -435,6 +497,20 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
 
 describe('Query Insights — Stats & Visualizations Panel', () => {
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
     }).as('topQueries');
@@ -607,6 +683,20 @@ describe('Query Insights — DynamicSearchBar', () => {
   const SEARCH_PLACEHOLDER = 'e.g. latency >= 100 AND type = query';
 
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
     }).as('topQueries');
@@ -709,6 +799,20 @@ describe('Query Insights — DynamicSearchBar', () => {
 
 describe('Query Insights — Column Visibility', () => {
   beforeEach(() => {
+    // User-info columns are version-gated (>= 3.5); stub the version so column
+    // assertions are deterministic regardless of the live CI cluster version.
+    cy.intercept('GET', '**/api/cluster/version', {
+      statusCode: 200,
+      body: { version: '3.8.0' },
+    }).as('clusterVersion');
+    cy.intercept('GET', '**/api/cat/plugins*', {
+      statusCode: 200,
+      body: { ok: true, response: [{ component: 'opensearch-security' }] },
+    }).as('catPlugins');
+    cy.intercept('GET', '**/api/_plugins/_security/health*', {
+      statusCode: 200,
+      body: { ok: true, available: true },
+    }).as('securityHealth');
     cy.intercept('GET', '**/api/top_queries/**', (req) => {
       req.reply({ statusCode: 200, body: makeTimestampedBody(MIXED) });
     }).as('topQueries');

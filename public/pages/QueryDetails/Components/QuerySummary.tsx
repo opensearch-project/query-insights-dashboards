@@ -23,9 +23,14 @@ import {
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  OPAQUE_ID,
+  USERNAME,
+  USER_ROLES,
+  BACKEND_ROLES,
   WLM_GROUP,
 } from '../../../../common/constants';
 import { calculateMetric } from '../../../../common/utils/MetricUtils';
+import { getOpaqueId } from '../../../../common/utils/QueryUtils';
 
 // Panel component for displaying query detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -44,14 +49,14 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
 
 const QuerySummary = ({
   query,
-  wlmSupported,
-  statusSupported,
-  userInfoSupported,
+  userInfoSupported = false,
+  wlmSupported = false,
+  statusSupported = false,
 }: {
   query: SearchQueryRecord | null;
+  userInfoSupported?: boolean;
   wlmSupported?: boolean;
   statusSupported?: boolean;
-  userInfoSupported?: boolean;
 }) => {
   // If query is null, return a message indicating no data is available
   if (!query) {
@@ -69,17 +74,20 @@ const QuerySummary = ({
     const loc = date.toDateString().split(' ');
     return `${loc[1]} ${loc[2]}, ${loc[3]} @ ${date.toLocaleTimeString('en-US')}`;
   };
+
   const {
     timestamp,
     measurements,
     indices,
-    search_type, // eslint-disable-line @typescript-eslint/naming-convention
-    node_id, // eslint-disable-line @typescript-eslint/naming-convention
-    total_shards, // eslint-disable-line @typescript-eslint/naming-convention
-    wlm_group_id, // eslint-disable-line @typescript-eslint/naming-convention
+    search_type: searchType,
+    node_id: nodeId,
+    total_shards: totalShards,
+    labels,
     username,
-    user_roles, // eslint-disable-line @typescript-eslint/naming-convention
+    user_roles: userRoles,
+    backend_roles: backendRoles,
   } = query;
+  const appId = getOpaqueId(labels, '');
   return (
     <EuiPanel data-test-subj={'query-details-summary-section'}>
       <EuiTitle size="s">
@@ -101,13 +109,12 @@ const QuerySummary = ({
           value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B')}
         />
         <PanelItem label={INDICES} value={indices.toString()} />
-        <PanelItem label={SEARCH_TYPE} value={search_type.replaceAll('_', ' ')} />
-        <PanelItem label={NODE_ID} value={node_id} />
-        <PanelItem label={TOTAL_SHARDS} value={total_shards} />
-        {wlmSupported && wlm_group_id && <PanelItem label={WLM_GROUP} value={wlm_group_id} />}
-        {userInfoSupported && username && <PanelItem label="Username" value={username} />}
-        {userInfoSupported && user_roles?.length > 0 && (
-          <PanelItem label="User Roles" value={user_roles.join(', ')} />
+        <PanelItem label={SEARCH_TYPE} value={searchType.replaceAll('_', ' ')} />
+        <PanelItem label={NODE_ID} value={nodeId} />
+        <PanelItem label={TOTAL_SHARDS} value={totalShards} />
+        {appId && <PanelItem label={OPAQUE_ID} value={appId} />}
+        {wlmSupported && query.wlm_group_id && (
+          <PanelItem label={WLM_GROUP} value={query.wlm_group_id} />
         )}
         {statusSupported && (
           <EuiFlexItem>
@@ -116,15 +123,22 @@ const QuerySummary = ({
               listItems={[
                 {
                   title: <h4>Status</h4>,
-                  description: query.failed ? (
-                    <EuiBadge color="danger">Failed</EuiBadge>
-                  ) : (
-                    <EuiBadge color="success">Completed</EuiBadge>
+                  description: (
+                    <EuiBadge color={query.failed ? 'danger' : 'success'}>
+                      {query.failed ? 'Failed' : 'Completed'}
+                    </EuiBadge>
                   ),
                 },
               ]}
             />
           </EuiFlexItem>
+        )}
+        {userInfoSupported && username && <PanelItem label={USERNAME} value={username} />}
+        {userInfoSupported && userRoles && userRoles.length > 0 && (
+          <PanelItem label={USER_ROLES} value={userRoles.join(', ')} />
+        )}
+        {userInfoSupported && backendRoles && backendRoles.length > 0 && (
+          <PanelItem label={BACKEND_ROLES} value={backendRoles.join(', ')} />
         )}
       </EuiFlexGrid>
     </EuiPanel>

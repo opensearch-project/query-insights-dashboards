@@ -44,9 +44,15 @@ import {
   TOTAL_SHARDS,
   TYPE,
   WLM_GROUP,
+  OPAQUE_ID,
+  OPAQUE_ID_LABEL_KEY,
+  USERNAME,
+  USER_ROLES,
+  BACKEND_ROLES,
   CHART_COLORS,
 } from '../../../common/constants';
 import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
+import { getOpaqueId } from '../../../common/utils/QueryUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
@@ -60,6 +66,7 @@ import {
 import {
   getVersionOnce,
   isVersion33OrHigher,
+  isVersion35OrHigher,
   isVersion36OrHigher,
 } from '../../utils/version-utils';
 import {
@@ -71,6 +78,7 @@ import {
 import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import { getSecurityPluginStatus, SecurityPluginStatus } from '../../utils/datasource-utils';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -82,6 +90,9 @@ const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
 const WLM_GROUP_FIELD = 'wlm_group_id';
+const USERNAME_FIELD = 'username';
+const USER_ROLES_FIELD = 'user_roles';
+const BACKEND_ROLES_FIELD = 'backend_roles';
 const METRIC_DEFAULT_MSG = 'Not enabled';
 
 /**
@@ -123,8 +134,20 @@ const QueryInsights = ({
   const [wlmIdToNameMap, setWlmIdToNameMap] = useState<Record<string, string>>({});
   const [wlmAvailable, setWlmAvailable] = useState<boolean>(false);
   const [statusSupported, setStatusSupported] = useState<boolean>(false);
+  // username/user_roles exist since 3.5; backend_roles was added in 3.6, so it has its own gate.
+  const [userInfoVersionGate, setUserInfoVersionGate] = useState<boolean>(false);
+  const [backendRolesVersionGate, setBackendRolesVersionGate] = useState<boolean>(false);
+  // User info comes from the security plugin, so gate on it being available too. Wait for the
+  // probe before showing the columns (avoids a flash that would persist them), then fail open.
+  const [securityStatus, setSecurityStatus] = useState<SecurityPluginStatus>('unknown');
+  const [securityProbed, setSecurityProbed] = useState<boolean>(false);
+  const securityAvailable = securityProbed && securityStatus !== 'unavailable';
+  // Gate on version + security, not on whether the current window has data (that flickers).
+  const userInfoSupported = userInfoVersionGate && securityAvailable;
+  const backendRolesSupported = backendRolesVersionGate && securityAvailable;
   const [queryInsightWlmNavigationSupported, setQueryInsightWlmNavigationSupported] =
     useState<boolean>(false);
+
   // Initialize search query based on URL parameters
   const urlParams = new URLSearchParams(location.search);
   const wlmGroupIdFromUrl = urlParams.get('wlmGroupId');
@@ -184,11 +207,24 @@ const QueryInsights = ({
       { id: 'indices', label: 'Indices' },
       { id: 'search_type', label: 'Search Type', defaultVisible: false },
       { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      { id: 'opaque_id', label: OPAQUE_ID },
+      ...(userInfoSupported
+        ? [
+            { id: 'username', label: USERNAME },
+            { id: 'user_roles', label: USER_ROLES },
+          ]
+        : []),
+      ...(backendRolesSupported ? [{ id: 'backend_roles', label: BACKEND_ROLES }] : []),
       ...(queryInsightWlmNavigationSupported ? [{ id: 'wlm_group', label: 'WLM Group' }] : []),
       { id: 'total_shards', label: 'Total Shards', defaultVisible: false },
     ];
     return defs;
-  }, [statusSupported, queryInsightWlmNavigationSupported]);
+  }, [
+    statusSupported,
+    queryInsightWlmNavigationSupported,
+    userInfoSupported,
+    backendRolesSupported,
+  ]);
 
   const {
     visibleColumnIds,
@@ -249,6 +285,8 @@ const QueryInsights = ({
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setStatusSupported(isVersion36OrHigher(version));
+        setUserInfoVersionGate(isVersion35OrHigher(version));
+        setBackendRolesVersionGate(isVersion36OrHigher(version));
 
         if (versionSupported) {
           const hasWlm = await detectWlm();
@@ -259,11 +297,31 @@ const QueryInsights = ({
       } catch (_e) {
         setQueryInsightWlmNavigationSupported(false);
         setWlmAvailable(false);
+        setUserInfoVersionGate(false);
+        setBackendRolesVersionGate(false);
       }
     };
 
     checkWlmSupport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detectWlm, dataSource?.id]);
+
+  // Probe security separately from the version fetch so a probe failure can't reset the version
+  // gates; the cancelled flag drops a stale result after a data-source switch.
+  useEffect(() => {
+    let cancelled = false;
+    setSecurityProbed(false);
+    (async () => {
+      const status = await getSecurityPluginStatus(core.http, dataSource?.id);
+      if (!cancelled) {
+        setSecurityStatus(status);
+        setSecurityProbed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [core.http, dataSource?.id]);
 
   // Fetch workload groups on mount and data source change
   useEffect(() => {
@@ -372,8 +430,35 @@ const QueryInsights = ({
         type: 'string',
       });
     }
+    fields.push({
+      label: OPAQUE_ID,
+      key: 'opaque_id',
+      // Raw label (undefined when absent) so a missing opaque id isn't offered as an
+      // empty-string filter suggestion.
+      accessor: (q) => q.labels?.[OPAQUE_ID_LABEL_KEY],
+      type: 'string',
+    });
+    if (userInfoSupported) {
+      fields.push(
+        { label: 'Username', key: 'username', accessor: (q) => q.username, type: 'string' },
+        {
+          label: 'User Roles',
+          key: 'user_roles',
+          accessor: (q) => q.user_roles,
+          type: 'array',
+        }
+      );
+    }
+    if (backendRolesSupported) {
+      fields.push({
+        label: 'Backend Roles',
+        key: 'backend_roles',
+        accessor: (q) => q.backend_roles,
+        type: 'array',
+      });
+    }
     return fields;
-  }, [queryInsightWlmNavigationSupported]);
+  }, [queryInsightWlmNavigationSupported, userInfoSupported, backendRolesSupported]);
 
   const fieldMap = useMemo(() => {
     const map = new Map<string, FieldDef>();
@@ -407,7 +492,9 @@ const QueryInsights = ({
 
   // For metrics/visualizations, always filter out grouped queries
   const itemsForMetrics = useMemo(() => {
-    return items.filter((q: SearchQueryRecord) => q.group_by === 'NONE');
+    // Individual queries only (exclude similarity groups). Match on "not a group" rather than
+    // "== NONE" so records without an explicit group_by still count as individual queries.
+    return items.filter((q: SearchQueryRecord) => q.group_by !== 'SIMILARITY');
   }, [items]);
 
   // forView is used for effectiveView calculation (table column headers)
@@ -424,7 +511,7 @@ const QueryInsights = ({
     if (selectedGroupBy.length === 1) {
       return selectedGroupBy[0] === 'SIMILARITY' ? 'group' : 'query';
     }
-    const hasQuery = forView.some((q: SearchQueryRecord) => q.group_by === 'NONE');
+    const hasQuery = forView.some((q: SearchQueryRecord) => q.group_by !== 'SIMILARITY');
     const hasGroup = forView.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
     if (hasQuery && hasGroup) return 'mixed';
     return hasGroup ? 'group' : 'query';
@@ -525,7 +612,9 @@ const QueryInsights = ({
       id: 'timestamp',
       name: TIMESTAMP,
       render: (q: SearchQueryRecord) => {
-        const isQuery = q.group_by === 'NONE';
+        // A record is an aggregated group only when grouped by similarity. Treat NONE and any
+        // record without an explicit group_by as an individual query.
+        const isQuery = q.group_by !== 'SIMILARITY';
         if (!isQuery) return <EuiBadge color="hollow">Aggregated</EuiBadge>;
         const onClickHandler = () => {
           const route = `/query-details?from=${from}&to=${to}&id=${q.id}&verbose=true`;
@@ -606,6 +695,73 @@ const QueryInsights = ({
         sortable: true,
         truncateText: true,
       },
+      {
+        id: 'opaque_id',
+        name: OPAQUE_ID,
+        render: (q: SearchQueryRecord) => {
+          if (q.group_by === 'SIMILARITY') return <EuiBadge color="hollow">Aggregated</EuiBadge>;
+          return <span>{getOpaqueId(q.labels)}</span>;
+        },
+        // Raw label (undefined when absent) so rows without an opaque id sort last, not first.
+        sortable: (q: SearchQueryRecord) => q.labels?.[OPAQUE_ID_LABEL_KEY],
+        truncateText: true,
+      },
+      ...(userInfoSupported
+        ? [
+            {
+              id: 'username',
+              field: USERNAME_FIELD as keyof SearchQueryRecord,
+              name: USERNAME,
+              render: (username: string, q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    username || '-'
+                  )}
+                </span>
+              ),
+              sortable: true,
+              truncateText: true,
+            },
+            {
+              id: 'user_roles',
+              field: USER_ROLES_FIELD as keyof SearchQueryRecord,
+              name: USER_ROLES,
+              render: (roles: string[], q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    roles?.join(', ') || '-'
+                  )}
+                </span>
+              ),
+              sortable: (q: SearchQueryRecord) => q.user_roles?.join(', ') || undefined,
+              truncateText: true,
+            },
+          ]
+        : []),
+      ...(backendRolesSupported
+        ? [
+            {
+              id: 'backend_roles',
+              field: BACKEND_ROLES_FIELD as keyof SearchQueryRecord,
+              name: BACKEND_ROLES,
+              render: (roles: string[], q: SearchQueryRecord) => (
+                <span>
+                  {q.group_by === 'SIMILARITY' ? (
+                    <EuiBadge color="hollow">Aggregated</EuiBadge>
+                  ) : (
+                    roles?.join(', ') || '-'
+                  )}
+                </span>
+              ),
+              sortable: (q: SearchQueryRecord) => q.backend_roles?.join(', ') || undefined,
+              truncateText: true,
+            },
+          ]
+        : []),
       ...(queryInsightWlmNavigationSupported
         ? [
             {
@@ -779,7 +935,7 @@ const QueryInsights = ({
       return queryTypeColumns;
     }
 
-    const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by === 'NONE');
+    const hasAnyQuery = items.some((q: SearchQueryRecord) => q.group_by !== 'SIMILARITY');
     const hasAnyGroup = items.some((q: SearchQueryRecord) => q.group_by === 'SIMILARITY');
 
     if (items.length === 0) return defaultColumns;

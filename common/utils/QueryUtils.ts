@@ -5,6 +5,19 @@
 
 import { SearchQueryRecord, LiveSearchQueryResponse } from '../../types/types';
 import { API_ENDPOINTS } from './apiendpoints';
+import { OPAQUE_ID_LABEL_KEY } from '../constants';
+
+/**
+ * Resolve the X-Opaque-Id value for a query record from its labels. The backend copies the
+ * incoming X-Opaque-Id request header into the record's labels under OPAQUE_ID_LABEL_KEY,
+ * which is the value shown in the X-Opaque-Id column.
+ * @param labels the record's labels map (may be undefined)
+ * @param fallback value to return when the label is not present (default '-')
+ */
+export const getOpaqueId = (
+  labels: Record<string, string> | undefined,
+  fallback: string = '-'
+): string => labels?.[OPAQUE_ID_LABEL_KEY] || fallback;
 
 interface CustomCore {
   http: { get: (endpoint: string, options?: any) => Promise<any> };

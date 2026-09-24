@@ -16,7 +16,7 @@ const {
  */
 Cypress.Commands.overwrite('visit', (originalFn, url, options) => {
   // Add the basic auth header when security enabled in the Opensearch cluster
-  if (Cypress.env('security_enabled')) {
+  if (Cypress.env('SECURITY_ENABLED')) {
     if (options) {
       options.auth = ADMIN_AUTH;
     } else {

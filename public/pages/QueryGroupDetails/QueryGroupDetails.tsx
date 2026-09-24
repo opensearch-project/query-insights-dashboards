@@ -30,6 +30,7 @@ import { retrieveQueryById } from '../../../common/utils/QueryUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 import { formatQueryDisplay } from '../../utils/query-formatter-utils';
+import { getVersionOnce, isVersion35OrHigher } from '../../utils/version-utils';
 
 export const QueryGroupDetails = ({
   core,
@@ -51,6 +52,7 @@ export const QueryGroupDetails = ({
   const verbose = Boolean(searchParams.get('verbose'));
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
+  const [userInfoSupported, setUserInfoSupported] = useState<boolean>(false);
   const { dataSource, setDataSource } = useContext(DataSourceContext)!;
 
   const convertTime = (unixTime: number) => {
@@ -78,6 +80,16 @@ export const QueryGroupDetails = ({
       fetchQueryDetails();
     }
   }, [id, from, to, verbose]);
+
+  useEffect(() => {
+    // Probe the same cluster the record is fetched from (getDataSourceFromUrl().id, used by
+    // retrieveQueryById above) so the version gate and the record can't come from different
+    // data sources. Matches QueryDetails.
+    getVersionOnce(getDataSourceFromUrl().id || '').then((version) => {
+      setUserInfoSupported(isVersion35OrHigher(version));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataSource?.id]);
 
   useEffect(() => {
     if (query) {
@@ -193,7 +205,7 @@ export const QueryGroupDetails = ({
       </EuiFlexGrid>
       <EuiSpacer size="l" />
       <EuiFlexItem>
-        <QueryGroupSampleQuerySummary query={query} />
+        <QueryGroupSampleQuerySummary query={query} userInfoSupported={userInfoSupported} />
         <EuiSpacer size="m" />
         <EuiFlexGroup>
           <EuiFlexItem grow={1} style={{ minWidth: 0 }}>
