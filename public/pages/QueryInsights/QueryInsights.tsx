@@ -247,7 +247,7 @@ const QueryInsights = ({
     try {
       const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
       const res = await core.http.get(API_ENDPOINTS.WLM_WORKLOAD_GROUP, { query: httpQuery });
-      return res && typeof res === 'object' && Array.isArray(res.workload_groups);
+      return Boolean(res && typeof res === 'object' && Array.isArray(res.workload_groups));
     } catch (e) {
       console.warn('[QueryInsights] Failed to detect WLM availability:', e);
       return false;

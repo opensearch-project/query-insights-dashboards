@@ -153,8 +153,9 @@ export const InflightQueries = ({
     try {
       const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
       const res = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
-      const hasValidStructure =
-        res && typeof res === 'object' && Array.isArray(res.workload_groups);
+      const hasValidStructure = Boolean(
+        res && typeof res === 'object' && Array.isArray(res.workload_groups)
+      );
       wlmCacheRef.current[cacheKey] = hasValidStructure;
       return hasValidStructure;
     } catch (e) {

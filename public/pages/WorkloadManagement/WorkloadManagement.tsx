@@ -63,27 +63,42 @@ export const WorkloadManagement = ({
   const [isWLMInstalled, setIsWLMInstalled] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const dataSourceId = dataSource?.id;
+
+    setIsWLMInstalled(null);
+
     const checkWLMInstallation = async () => {
       try {
-        if (!dataSource?.id) {
+        if (!dataSourceId) {
           // For local cluster, assume WLM is available
-          setIsWLMInstalled(true);
+          if (!cancelled) {
+            setIsWLMInstalled(true);
+          }
           return;
         }
 
         const savedObjectsClient = core.savedObjects.client;
         const dataSourceObj = await savedObjectsClient.get<DataSourceAttributes>(
           'data-source',
-          dataSource.id
+          dataSourceId
         );
-        setIsWLMInstalled(isWLMDataSourceCompatible(dataSourceObj));
+        if (!cancelled) {
+          setIsWLMInstalled(isWLMDataSourceCompatible(dataSourceObj));
+        }
       } catch (error) {
-        console.error('Error checking WLM installation:', error);
-        setIsWLMInstalled(false);
+        if (!cancelled) {
+          console.error('Error checking WLM installation:', error);
+          setIsWLMInstalled(false);
+        }
       }
     };
 
     checkWLMInstallation();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dataSource?.id, core.savedObjects.client]);
 
   if (isWLMInstalled === null) {

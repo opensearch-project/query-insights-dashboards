@@ -485,11 +485,9 @@ export const WorkloadManagementMain = ({
         });
         if (cancelled) return;
 
-        const hasValidStructure =
-          res &&
-          typeof res === 'object' &&
-          res.response &&
-          Array.isArray(res.response.live_queries);
+        const hasValidStructure = Boolean(
+          res && typeof res === 'object' && res.response && Array.isArray(res.response.live_queries)
+        );
         setIsQueryInsightsAvailable(hasValidStructure);
       } catch (_error) {
         if (!cancelled) {
