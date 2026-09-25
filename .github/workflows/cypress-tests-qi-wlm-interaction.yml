@@ -181,52 +181,80 @@ jobs:
           cd OpenSearch-Dashboards
           export NODE_OPTIONS="--max-old-space-size=6144 --dns-result-order=ipv4first"
           nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          echo "$!" > dashboards.pid
+          echo "Dashboards process started with PID $(cat dashboards.pid)"
           sleep 10
         shell: bash
 
       - name: Wait for OpenSearch-Dashboards to be ready
         run: |
           cd OpenSearch-Dashboards
+          dashboards_pid=$(cat dashboards.pid)
           echo "Waiting for HTTP server..."
           max_wait=300
-          elapsed=0
-          while [ $elapsed -lt $max_wait ]; do
-            if curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
+          start_time=$SECONDS
+          next_log=0
+          http_ready=false
+          while [ $((SECONDS - start_time)) -lt $max_wait ]; do
+            if ! kill -0 "$dashboards_pid" 2>/dev/null; then
+              echo "ERROR: OpenSearch-Dashboards exited before becoming ready"
+              tail -n 200 dashboards.log
+              exit 1
+            fi
+            if curl --silent --fail --connect-timeout 2 --max-time 5 \
+              http://localhost:5601/api/status > /dev/null 2>&1; then
               echo "HTTP server is responding!"
+              http_ready=true
               break
             fi
-            if [ $((elapsed % 30)) -eq 0 ]; then
+            elapsed=$((SECONDS - start_time))
+            if [ "$elapsed" -ge "$next_log" ]; then
               echo "[${elapsed}s/${max_wait}s] Still waiting for HTTP..."
+              next_log=$((next_log + 30))
             fi
             sleep 10
-            elapsed=$((elapsed + 10))
           done
-          if ! curl -s -f http://localhost:5601/api/status > /dev/null 2>&1; then
-            echo "ERROR: HTTP server failed to start"
+          if [ "$http_ready" != true ]; then
+            echo "ERROR: HTTP server failed to respond within ${max_wait} seconds"
             tail -n 200 dashboards.log
             exit 1
           fi
           echo "Waiting for optimizer to finish compiling bundles..."
           max_wait=1800
-          elapsed=0
-          while [ $elapsed -lt $max_wait ]; do
+          start_time=$SECONDS
+          next_log=0
+          optimizer_ready=false
+          while [ $((SECONDS - start_time)) -lt $max_wait ]; do
+            if ! kill -0 "$dashboards_pid" 2>/dev/null; then
+              echo "ERROR: OpenSearch-Dashboards exited while compiling bundles"
+              tail -n 200 dashboards.log
+              exit 1
+            fi
             if grep -qE "[0-9]+ bundles? compiled successfully" dashboards.log 2>/dev/null; then
               echo "Bundles compiled! Waiting 20s for plugin initialization..."
               sleep 20
               echo "OpenSearch-Dashboards is fully ready!"
+              optimizer_ready=true
               break
             fi
-            if [ $((elapsed % 30)) -eq 0 ]; then
+            elapsed=$((SECONDS - start_time))
+            if [ "$elapsed" -ge "$next_log" ]; then
               echo "[${elapsed}s/${max_wait}s] Still compiling..."
+              next_log=$((next_log + 30))
               if tail -50 dashboards.log 2>/dev/null | grep -q "@osd/optimizer"; then
                 recent=$(tail -50 dashboards.log | grep "@osd/optimizer" | tail -1 | grep -oE '\[[0-9]+/[0-9]+\].*' || echo "compiling...")
                 echo "  Status: $recent"
               fi
             fi
             sleep 10
-            elapsed=$((elapsed + 10))
           done
+          if [ "$optimizer_ready" != true ]; then
+            echo "ERROR: Optimizer failed to finish within ${max_wait} seconds"
+            tail -n 200 dashboards.log
+            exit 1
+          fi
         shell: bash
+        timeout-minutes: 40
 
       - name: Install Cypress
         run: |
@@ -262,6 +290,14 @@ jobs:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
           CI: true
         timeout-minutes: 120
+
+      - name: Upload OpenSearch-Dashboards logs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: dashboards-logs-qi-wlm-interaction-${{ matrix.os }}
+          path: OpenSearch-Dashboards/dashboards.log
+          if-no-files-found: warn
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
