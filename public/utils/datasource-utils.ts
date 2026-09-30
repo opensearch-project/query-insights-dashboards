@@ -28,7 +28,11 @@ import { getSavedObjectsClient, getRouteService } from '../service';
 
 export function getDataSourceEnabledUrl(dataSource: DataSourceOption) {
   const url = new URL(window.location.href);
-  url.searchParams.set('dataSource', JSON.stringify(dataSource));
+  if (dataSource && (dataSource.id || dataSource.label)) {
+    url.searchParams.set('dataSource', JSON.stringify(dataSource));
+  } else {
+    url.searchParams.delete('dataSource');
+  }
   return url;
 }
 
@@ -61,6 +65,9 @@ export function getDataSourceFromUrl(): DataSourceOption {
   const urlParams = new URLSearchParams(window.location.search);
   const dataSourceParam = (urlParams && urlParams.get('dataSource')) || '{}';
   // following block is needed if the dataSource param is set to non-JSON value, say 'undefined'
+  if (!dataSourceParam || dataSourceParam === 'undefined' || dataSourceParam === 'null') {
+    return {} as DataSourceOption;
+  }
   try {
     return JSON.parse(dataSourceParam);
   } catch (_e) {
