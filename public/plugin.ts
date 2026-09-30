@@ -64,10 +64,21 @@ export class QueryInsightsDashboardsPlugin implements Plugin<
         // Get start services as specified in opensearch_dashboards.json
         const [coreStart, depsStart] = await core.getStartServices();
 
-        // Preserve data source from URL if navigating between apps
+        // Strip invalid dataSource param from URL immediately
         const urlParams = new URLSearchParams(window.location.search);
         const dataSourceParam = urlParams.get('dataSource');
-        if (dataSourceParam && !params.history.location.search.includes('dataSource')) {
+        if (dataSourceParam === 'undefined' || dataSourceParam === 'null') {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('dataSource');
+          window.history.replaceState({}, '', cleanUrl.toString());
+        }
+
+        // Preserve data source from URL if navigating between apps
+        const isValidDataSourceParam =
+          dataSourceParam &&
+          dataSourceParam !== 'undefined' &&
+          dataSourceParam !== 'null';
+        if (isValidDataSourceParam && !params.history.location.search.includes('dataSource')) {
           const newUrl = `${params.history.location.pathname}?dataSource=${encodeURIComponent(
             dataSourceParam
           )}`;
@@ -108,7 +119,11 @@ export class QueryInsightsDashboardsPlugin implements Plugin<
           // Preserve data source from URL if navigating between apps
           const urlParams = new URLSearchParams(window.location.search);
           const dataSourceParam = urlParams.get('dataSource');
-          if (dataSourceParam && !params.history.location.search.includes('dataSource')) {
+          const isValidDataSourceParam =
+            dataSourceParam &&
+            dataSourceParam !== 'undefined' &&
+            dataSourceParam !== 'null';
+          if (isValidDataSourceParam && !params.history.location.search.includes('dataSource')) {
             const newUrl = `${params.history.location.pathname}?dataSource=${encodeURIComponent(
               dataSourceParam
             )}`;
@@ -167,7 +182,11 @@ export class QueryInsightsDashboardsPlugin implements Plugin<
         url: undefined,
         onClick: () => {
           const currentDataSource = new URLSearchParams(window.location.search).get('dataSource');
-          const targetUrl = currentDataSource
+          const isValidDataSource =
+            currentDataSource &&
+            currentDataSource !== 'undefined' &&
+            currentDataSource !== 'null';
+          const targetUrl = isValidDataSource
             ? `/app/workload-management?dataSource=${encodeURIComponent(
                 currentDataSource
               )}#/workloadManagement`
@@ -181,7 +200,11 @@ export class QueryInsightsDashboardsPlugin implements Plugin<
       url: undefined,
       onClick: () => {
         const currentDataSource = new URLSearchParams(window.location.search).get('dataSource');
-        const targetUrl = currentDataSource
+        const isValidDataSource =
+          currentDataSource &&
+          currentDataSource !== 'undefined' &&
+          currentDataSource !== 'null';
+        const targetUrl = isValidDataSource
           ? `/app/query-insights-dashboards?dataSource=${encodeURIComponent(
               currentDataSource
             )}#/queryInsights`
