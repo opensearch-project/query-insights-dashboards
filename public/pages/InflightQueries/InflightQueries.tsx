@@ -153,8 +153,9 @@ export const InflightQueries = ({
     try {
       const httpQuery = dataSource?.id ? { dataSourceId: dataSource.id } : undefined;
       const res = await core.http.get('/api/_wlm/workload_group', { query: httpQuery });
-      const hasValidStructure =
-        res && typeof res === 'object' && Array.isArray(res.workload_groups);
+      const hasValidStructure = Boolean(
+        res && typeof res === 'object' && Array.isArray(res.workload_groups)
+      );
       wlmCacheRef.current[cacheKey] = hasValidStructure;
       return hasValidStructure;
     } catch (e) {
@@ -165,9 +166,18 @@ export const InflightQueries = ({
   }, [core.http, dataSource?.id]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    setQueryInsightWlmNavigationSupported(false);
+    setTaskDetailSupported(false);
+    setUserInfoVersionGate(false);
+    setWlmAvailable(false);
+
     const checkWlmSupport = async () => {
       try {
         const version = await getVersionOnce(dataSource?.id || '');
+        if (cancelled) return;
+
         const versionSupported = isVersion33OrHigher(version);
         setQueryInsightWlmNavigationSupported(versionSupported);
         setTaskDetailSupported(isVersion37OrHigher(version));
@@ -179,20 +189,26 @@ export const InflightQueries = ({
         if (versionSupported) {
           const hasWlm = await detectWlm();
 
-          setWlmAvailable(hasWlm);
-        } else {
-          setWlmAvailable(false);
+          if (!cancelled) {
+            setWlmAvailable(hasWlm);
+          }
         }
       } catch (e) {
         console.warn('Failed to check version for WLM groups support', e);
-        setQueryInsightWlmNavigationSupported(false);
-        setTaskDetailSupported(false);
-        setWlmAvailable(false);
-        setUserInfoVersionGate(false);
+        if (!cancelled) {
+          setQueryInsightWlmNavigationSupported(false);
+          setTaskDetailSupported(false);
+          setWlmAvailable(false);
+          setUserInfoVersionGate(false);
+        }
       }
     };
 
     checkWlmSupport();
+
+    return () => {
+      cancelled = true;
+    };
   }, [detectWlm, dataSource?.id]);
 
   useEffect(() => {

@@ -4,17 +4,22 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import { WorkloadManagementMain } from './WLMMain';
 import { CoreStart } from 'opensearch-dashboards/public';
 import userEvent from '@testing-library/user-event';
 import { DataSourceContext } from '../WorkloadManagement';
+import { getVersionOnce, isVersion33OrHigher } from '../../../utils/version-utils';
 
 jest.mock('echarts-for-react', () => () => <div data-testid="MockedChart">Mocked Chart</div>);
 jest.mock('../../../components/PageHeader', () => ({
   PageHeader: () => <div>Mocked PageHeader</div>,
+}));
+jest.mock('../../../utils/version-utils', () => ({
+  getVersionOnce: jest.fn(),
+  isVersion33OrHigher: jest.fn(),
 }));
 
 const mockCore = {
@@ -65,6 +70,8 @@ beforeEach(() => {
 
   // Restore the data source menu mock after reset
   mockDataSourceManagement.ui.getDataSourceMenu.mockReturnValue(MockDataSourceMenu);
+  (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.3.0');
+  (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(true);
 
   (mockCore.http.get as jest.Mock).mockImplementation((url: string) => {
     if (url === '/api/_wlm/workload_group') {
@@ -128,19 +135,20 @@ const mockParams = {
   setHeaderActionMenu: jest.fn(),
 } as any;
 
-const renderComponent = () =>
-  render(
-    <MemoryRouter>
-      <DataSourceContext.Provider value={{ dataSource: mockDataSource, setDataSource: jest.fn() }}>
-        <WorkloadManagementMain
-          core={mockCore}
-          depsStart={mockDepsStart}
-          params={mockParams}
-          dataSourceManagement={mockDataSourceManagement}
-        />
-      </DataSourceContext.Provider>
-    </MemoryRouter>
-  );
+const componentForDataSource = (dataSource = mockDataSource) => (
+  <MemoryRouter>
+    <DataSourceContext.Provider value={{ dataSource, setDataSource: jest.fn() }}>
+      <WorkloadManagementMain
+        core={mockCore}
+        depsStart={mockDepsStart}
+        params={mockParams}
+        dataSourceManagement={mockDataSourceManagement}
+      />
+    </DataSourceContext.Provider>
+  </MemoryRouter>
+);
+
+const renderComponent = () => render(componentForDataSource());
 
 describe('WorkloadManagementMain', () => {
   it('renders workload group table', async () => {
@@ -481,5 +489,51 @@ describe('WorkloadManagementMain', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/search workload groups/i)).toBeInTheDocument();
     });
+  });
+
+  it('ignores a stale availability response after the data source changes', async () => {
+    let resolveSourceAAvailability!: (response: { response: { live_queries: unknown[] } }) => void;
+    const sourceAAvailability = new Promise<{ response: { live_queries: unknown[] } }>(
+      (resolve) => {
+        resolveSourceAAvailability = resolve;
+      }
+    );
+    const defaultHttpGet = (mockCore.http.get as jest.Mock).getMockImplementation();
+
+    (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.3.0');
+    (mockCore.http.get as jest.Mock).mockImplementation(
+      (url: string, options?: { query?: { dataSourceId?: string } }) => {
+        if (url === '/api/live_queries') {
+          return options?.query?.dataSourceId === 'source-a'
+            ? sourceAAvailability
+            : Promise.resolve({});
+        }
+        return defaultHttpGet?.(url, options);
+      }
+    );
+
+    const { rerender } = render(
+      componentForDataSource({ id: 'source-a', name: 'Source A' } as any)
+    );
+    await waitFor(() =>
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/live_queries', {
+        query: { dataSourceId: 'source-a' },
+      })
+    );
+
+    rerender(componentForDataSource({ id: 'source-b', name: 'Source B' } as any));
+    await waitFor(() =>
+      expect(mockCore.http.get).toHaveBeenCalledWith('/api/live_queries', {
+        query: { dataSourceId: 'source-b' },
+      })
+    );
+    expect(screen.queryByText('Top N Queries')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveSourceAAvailability({ response: { live_queries: [] } });
+      await sourceAAvailability;
+    });
+
+    expect(screen.queryByText('Top N Queries')).not.toBeInTheDocument();
   });
 });

@@ -73,11 +73,11 @@ const makeCore = (): CoreStart =>
     },
   }) as unknown as CoreStart;
 
-const withDataSource = (ui: React.ReactNode) => (
+const withDataSource = (ui: React.ReactNode, dataSourceId = 'default') => (
   <MemoryRouter>
     <DataSourceContext.Provider
       value={{
-        dataSource: { id: 'default' },
+        dataSource: { id: dataSourceId },
         setDataSource: jest.fn(),
       }}
     >
@@ -116,6 +116,7 @@ beforeEach(() => {
   (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.7.0');
   (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(true);
   (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(true);
+  (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(false);
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -1985,6 +1986,50 @@ describe('InflightQueries - Column Visibility Integration', () => {
       // Security unavailable -> user-info columns stay hidden despite the version gate.
       expect(screen.queryByText('Backend Roles')).not.toBeInTheDocument();
       expect(screen.queryByText('User Roles')).not.toBeInTheDocument();
+    });
+
+    it('ignores a stale version response after the data source changes', async () => {
+      let resolveSourceAVersion!: (version: string) => void;
+      const sourceAVersion = new Promise<string>((resolve) => {
+        resolveSourceAVersion = resolve;
+      });
+
+      (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockImplementation(
+        (dataSourceId: string) =>
+          dataSourceId === 'source-a' ? sourceAVersion : Promise.resolve('3.7.0')
+      );
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockImplementation(
+        (version) => version === '3.8.0'
+      );
+
+      const core = makeCore();
+      mockLiveQueries(withUserInfo);
+      const componentForDataSource = (dataSourceId: string) =>
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />,
+          dataSourceId
+        );
+
+      const { rerender } = render(componentForDataSource('source-a'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-a'));
+
+      rerender(componentForDataSource('source-b'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-b'));
+      expect(screen.queryByText('alice')).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveSourceAVersion('3.8.0');
+        await sourceAVersion;
+      });
+
+      expect(screen.queryByText('alice')).not.toBeInTheDocument();
     });
   });
 });

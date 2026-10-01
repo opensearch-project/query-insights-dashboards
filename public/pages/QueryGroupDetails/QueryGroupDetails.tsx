@@ -82,13 +82,29 @@ export const QueryGroupDetails = ({
   }, [id, from, to, verbose]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    setUserInfoSupported(false);
+
     // Probe the same cluster the record is fetched from (getDataSourceFromUrl().id, used by
     // retrieveQueryById above) so the version gate and the record can't come from different
     // data sources. Matches QueryDetails.
-    getVersionOnce(getDataSourceFromUrl().id || '').then((version) => {
-      setUserInfoSupported(isVersion35OrHigher(version));
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (async () => {
+      try {
+        const version = await getVersionOnce(getDataSourceFromUrl().id || '');
+        if (!cancelled) {
+          setUserInfoSupported(isVersion35OrHigher(version));
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setUserInfoSupported(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dataSource?.id]);
 
   useEffect(() => {

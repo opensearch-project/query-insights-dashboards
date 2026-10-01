@@ -1025,6 +1025,14 @@ describe('QueryInsights - user-info column interactions', () => {
     (getSecurityPluginStatus as jest.Mock).mockResolvedValue('available');
   });
 
+  afterEach(() => {
+    (getVersionOnce as jest.Mock).mockResolvedValue('3.6.0');
+    (isVersion33OrHigher as jest.Mock).mockReturnValue(true);
+    (isVersion35OrHigher as jest.Mock).mockReturnValue(true);
+    (isVersion36OrHigher as jest.Mock).mockReturnValue(true);
+    (getSecurityPluginStatus as jest.Mock).mockResolvedValue('available');
+  });
+
   it('navigates to Workload Management when a WLM Group link is clicked', async () => {
     // detectWlm + fetchWorkloadGroups both read this response: a non-empty workload_groups array
     // makes WLM available and maps the group id to a display name, so the cell renders a link.
@@ -1094,6 +1102,74 @@ describe('QueryInsights - user-info column interactions', () => {
     // Both rows still present after sorting; the comparators ran without throwing.
     expect(within(mainTable).getByText('alice')).toBeInTheDocument();
     expect(within(mainTable).getByText('bob')).toBeInTheDocument();
+  });
+
+  it('ignores a stale version response after the data source changes', async () => {
+    let resolveSourceAVersion!: (version: string) => void;
+    const sourceAVersion = new Promise<string>((resolve) => {
+      resolveSourceAVersion = resolve;
+    });
+
+    (getVersionOnce as jest.Mock).mockImplementation((dataSourceId: string) =>
+      dataSourceId === 'source-a' ? sourceAVersion : Promise.resolve('3.4.0')
+    );
+    (isVersion33OrHigher as jest.Mock).mockImplementation(
+      (version: string | undefined) => version === '3.4.0' || version === '3.8.0'
+    );
+    (isVersion35OrHigher as jest.Mock).mockImplementation(
+      (version: string | undefined) => version === '3.8.0'
+    );
+    (isVersion36OrHigher as jest.Mock).mockImplementation(
+      (version: string | undefined) => version === '3.8.0'
+    );
+    mockHttp.get.mockResolvedValue({ workload_groups: [] });
+
+    const query = {
+      ...sampleQueries[0],
+      group_by: 'NONE',
+      username: 'alice',
+      user_roles: ['analyst'],
+      backend_roles: ['ldap-group-a'],
+    };
+    const componentForDataSource = (dataSourceId: string) => (
+      <MemoryRouter>
+        <DataSourceContext.Provider
+          value={{
+            dataSource: { id: dataSourceId, label: dataSourceId },
+            setDataSource: jest.fn(),
+          }}
+        >
+          <QueryInsights
+            queries={[query]}
+            loading={false}
+            onTimeChange={mockOnTimeChange}
+            recentlyUsedRanges={[]}
+            currStart="now-15m"
+            currEnd="now"
+            retrieveQueries={mockRetrieveQueries}
+            // @ts-ignore
+            core={mockCoreWithHttp}
+            depsStart={{} as any}
+            params={{} as any}
+            dataSourceManagement={dataSourceManagementMock}
+          />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+
+    const { rerender } = render(componentForDataSource('source-a'));
+    await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-a'));
+
+    rerender(componentForDataSource('source-b'));
+    await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-b'));
+    expect(screen.queryByText('alice')).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveSourceAVersion('3.8.0');
+      await sourceAVersion;
+    });
+
+    expect(screen.queryByText('alice')).not.toBeInTheDocument();
   });
 });
 
