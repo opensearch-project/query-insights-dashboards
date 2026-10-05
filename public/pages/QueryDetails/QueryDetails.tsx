@@ -91,11 +91,32 @@ const QueryDetails = ({
   }, [id, from, to, verbose]);
 
   useEffect(() => {
-    getVersionOnce(getDataSourceFromUrl().id || '').then((version) => {
-      setWlmSupported(isVersion33OrHigher(version));
-      setStatusSupported(isVersion36OrHigher(version));
-      setUserInfoSupported(isVersion35OrHigher(version));
-    });
+    let cancelled = false;
+
+    setWlmSupported(false);
+    setStatusSupported(false);
+    setUserInfoSupported(false);
+
+    (async () => {
+      try {
+        const version = await getVersionOnce(getDataSourceFromUrl().id || '');
+        if (cancelled) return;
+
+        setWlmSupported(isVersion33OrHigher(version));
+        setStatusSupported(isVersion36OrHigher(version));
+        setUserInfoSupported(isVersion35OrHigher(version));
+      } catch (_error) {
+        if (!cancelled) {
+          setWlmSupported(false);
+          setStatusSupported(false);
+          setUserInfoSupported(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dataSource?.id]);
 
   // ECharts options for latency chart

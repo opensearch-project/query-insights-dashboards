@@ -53,6 +53,9 @@ interface Props {
   onViewTopN?: (topNId: string) => void;
   onRefresh: () => void;
   onKillQuery?: () => void;
+  // Whether the cluster version supports user info (Username / User Roles / Backend Roles).
+  // Gates the user-info panel items so the flyout matches the table's version gate.
+  userInfoSupported?: boolean;
 }
 
 const PHASE_DISPLAY: Record<string, string> = {
@@ -73,6 +76,7 @@ export const TaskDetailFlyout: React.FC<Props> = ({
   onViewTopN,
   onRefresh,
   onKillQuery,
+  userInfoSupported = false,
 }) => {
   const coord = task.coordinator_task;
   const desc = coord?.description || '';
@@ -196,6 +200,15 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             <PanelItem label="Indices" value={indices} />
             {(task as any)._topNId && <PanelItem label="Top N ID" value={(task as any)._topNId} />}
             {task.wlm_group_id && <PanelItem label="WLM Group" value={task.wlm_group_id} />}
+            {userInfoSupported && task.username && (
+              <PanelItem label="Username" value={task.username} />
+            )}
+            {userInfoSupported && task.user_roles && task.user_roles.length > 0 && (
+              <PanelItem label="User Roles" value={task.user_roles.join(', ')} />
+            )}
+            {userInfoSupported && task.backend_roles && task.backend_roles.length > 0 && (
+              <PanelItem label="Backend Roles" value={task.backend_roles.join(', ')} />
+            )}
             <PanelItem label="Time Elapsed" value={`${task.total_latency_millis} ms`} />
             <PanelItem label="CPU Usage" value={formatCpu(task.total_cpu_nanos)} />
             <PanelItem label="Memory Usage" value={formatMem(task.total_memory_bytes)} />

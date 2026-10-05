@@ -8,6 +8,11 @@ import { useColumnVisibility, ColumnDef } from './useColumnVisibility';
 
 const STORAGE_KEY = 'test_visible_columns';
 
+// Seed the choice map (the persisted shape: id -> explicit boolean override).
+const seedChoiceMap = (choices: Record<string, boolean>) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(choices));
+};
+
 const baseColumns: ColumnDef[] = [
   { id: 'id', label: 'ID', pinned: true },
   { id: 'type', label: 'Type' },
@@ -31,6 +36,18 @@ describe('useColumnVisibility', () => {
       baseColumns.forEach((col) => {
         expect(result.current.isColumnVisible(col.id)).toBe(true);
       });
+    });
+
+    it('a column with defaultVisible:false is hidden with no stored choice', () => {
+      const columns: ColumnDef[] = [
+        ...baseColumns,
+        { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      ];
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns })
+      );
+
+      expect(result.current.isColumnVisible('node_id')).toBe(false);
     });
   });
 
@@ -61,6 +78,23 @@ describe('useColumnVisibility', () => {
         result.current.toggleColumn('type');
       });
       expect(result.current.isColumnVisible('type')).toBe(true);
+    });
+
+    it('toggling a defaultVisible:false column on opts the user in', () => {
+      const columns: ColumnDef[] = [
+        ...baseColumns,
+        { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      ];
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns })
+      );
+
+      expect(result.current.isColumnVisible('node_id')).toBe(false);
+      act(() => {
+        result.current.toggleColumn('node_id');
+      });
+      expect(result.current.isColumnVisible('node_id')).toBe(true);
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).node_id).toBe(true);
     });
   });
 
@@ -106,7 +140,7 @@ describe('useColumnVisibility', () => {
   });
 
   describe('showAll', () => {
-    it('makes all columns visible', () => {
+    it('makes all present columns visible', () => {
       const { result } = renderHook(() =>
         useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
       );
@@ -126,6 +160,25 @@ describe('useColumnVisibility', () => {
       baseColumns.forEach((col) => {
         expect(result.current.isColumnVisible(col.id)).toBe(true);
       });
+    });
+
+    it('only enables columns present in the current data source; other choices are preserved', () => {
+      // The user previously hid a column ('username') that is NOT present in this data source.
+      seedChoiceMap({ username: false });
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
+      );
+
+      act(() => {
+        result.current.showAll();
+      });
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      // Present columns were enabled...
+      baseColumns.filter((c) => !c.pinned).forEach((c) => expect(stored[c.id]).toBe(true));
+      // ...but the absent column's choice was left untouched (not enabled).
+      expect(stored.username).toBe(false);
     });
   });
 
@@ -168,43 +221,11 @@ describe('useColumnVisibility', () => {
       ).length;
       expect(visibleCount).toBeGreaterThanOrEqual(1);
     });
-  });
 
-  describe('localStorage persistence', () => {
-    it('persists state to localStorage on toggle', () => {
-      const { result } = renderHook(() =>
-        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
-      );
+    it('only disables columns present in the current data source; other choices are preserved', () => {
+      // The user previously opted a column ('node_id') in that is NOT present in this data source.
+      seedChoiceMap({ node_id: true });
 
-      act(() => {
-        result.current.toggleColumn('type');
-      });
-
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      expect(stored).toBeInstanceOf(Array);
-      expect(stored).not.toContain('type');
-    });
-
-    it('persists state to localStorage on showAll', () => {
-      const { result } = renderHook(() =>
-        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
-      );
-
-      act(() => {
-        result.current.toggleColumn('type');
-      });
-      act(() => {
-        result.current.showAll();
-      });
-
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      expect(stored).toContain('type');
-      expect(stored).toContain('timestamp');
-      expect(stored).toContain('latency');
-      expect(stored).toContain('cpu');
-    });
-
-    it('persists state to localStorage on hideAll', () => {
       const { result } = renderHook(() =>
         useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
       );
@@ -214,32 +235,140 @@ describe('useColumnVisibility', () => {
       });
 
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      // Non-pinned columns should not be in stored array (they're hidden)
-      expect(stored).not.toContain('type');
-      expect(stored).not.toContain('timestamp');
+      // Present non-pinned columns were disabled...
+      expect(stored.type).toBe(false);
+      // ...but the absent column's choice was preserved.
+      expect(stored.node_id).toBe(true);
+    });
+  });
+
+  describe('choice-map persistence', () => {
+    it('persists an explicit choice map on toggle (merge, not overwrite)', () => {
+      seedChoiceMap({ username: true }); // a choice for an absent column
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
+      );
+
+      act(() => {
+        result.current.toggleColumn('type');
+      });
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(stored).toMatchObject({ type: false, username: true });
     });
 
-    it('restores state from localStorage on mount', () => {
-      // Pre-seed localStorage with only some columns visible
+    it('restores state from a stored choice map on mount', () => {
+      // Explicit choices: hide type (default on), show node_id (default off).
+      const columns: ColumnDef[] = [
+        ...baseColumns,
+        { id: 'node_id', label: 'Node ID', defaultVisible: false },
+      ];
+      seedChoiceMap({ type: false, node_id: true });
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns })
+      );
+
+      expect(result.current.isColumnVisible('id')).toBe(true); // pinned
+      expect(result.current.isColumnVisible('type')).toBe(false); // explicit off
+      expect(result.current.isColumnVisible('node_id')).toBe(true); // explicit on
+      // No explicit choice -> default.
+      expect(result.current.isColumnVisible('timestamp')).toBe(true);
+      expect(result.current.isColumnVisible('cpu')).toBe(true);
+    });
+
+    it('migrates a legacy bare string[] of visible IDs to explicit choices', () => {
+      // Legacy format written by an older build: the user had type/latency visible.
       localStorage.setItem(STORAGE_KEY, JSON.stringify(['type', 'latency']));
 
       const { result } = renderHook(() =>
         useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
       );
 
-      // Pinned column always visible
-      expect(result.current.isColumnVisible('id')).toBe(true);
-      // Stored visible columns
+      // Listed IDs become explicit true.
       expect(result.current.isColumnVisible('type')).toBe(true);
       expect(result.current.isColumnVisible('latency')).toBe(true);
-      // Not stored, so hidden
+      // Unlisted IDs have no explicit choice, so they fall back to their default (visible here).
+      expect(result.current.isColumnVisible('timestamp')).toBe(true);
+      expect(result.current.isColumnVisible('cpu')).toBe(true);
+    });
+  });
+
+  describe('version-gated columns', () => {
+    it('shows a gated column by its default when it appears with no stored choice', () => {
+      const withoutGated = baseColumns;
+      const withGated = [...baseColumns, { id: 'status', label: 'Status' }];
+
+      const { result, rerender } = renderHook(
+        ({ cols }) => useColumnVisibility({ storageKey: STORAGE_KEY, columns: cols }),
+        { initialProps: { cols: withoutGated } }
+      );
+
+      // Gate off: column absent, not rendered.
+      expect(result.current.isColumnVisible('status')).toBe(false);
+
+      // Gate on: column appears and uses its default (visible), no reconcile needed.
+      rerender({ cols: withGated });
+      expect(result.current.isColumnVisible('status')).toBe(true);
+    });
+
+    it('honors a stored explicit choice for a gated column when it appears', () => {
+      // The user turned the gated 'status' column off previously.
+      seedChoiceMap({ status: false });
+
+      const withoutGated = baseColumns;
+      const withGated = [...baseColumns, { id: 'status', label: 'Status' }];
+
+      const { result, rerender } = renderHook(
+        ({ cols }) => useColumnVisibility({ storageKey: STORAGE_KEY, columns: cols }),
+        { initialProps: { cols: withoutGated } }
+      );
+
+      // The stored choice must not be lost while the column is absent.
+      rerender({ cols: withGated });
+      expect(result.current.isColumnVisible('status')).toBe(false);
+    });
+
+    it('preserves an absent gated column choice across data-source columns', () => {
+      // A choice for a gated column absent this render must survive a toggle of a present column.
+      seedChoiceMap({ status: true });
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
+      );
+
+      act(() => {
+        result.current.toggleColumn('type');
+      });
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+      expect(stored.status).toBe(true); // preserved
+      expect(stored.type).toBe(false); // merged in
+    });
+  });
+
+  describe('storage key changes (MDS data-source switch)', () => {
+    it('re-reads choices when the storage key changes', () => {
+      localStorage.setItem('ds_a', JSON.stringify({ type: false }));
+      localStorage.setItem('ds_b', JSON.stringify({ timestamp: false }));
+
+      const { result, rerender } = renderHook(
+        ({ key }) => useColumnVisibility({ storageKey: key, columns: baseColumns }),
+        { initialProps: { key: 'ds_a' } }
+      );
+
+      expect(result.current.isColumnVisible('type')).toBe(false);
+      expect(result.current.isColumnVisible('timestamp')).toBe(true);
+
+      rerender({ key: 'ds_b' });
+      expect(result.current.isColumnVisible('type')).toBe(true);
       expect(result.current.isColumnVisible('timestamp')).toBe(false);
-      expect(result.current.isColumnVisible('cpu')).toBe(false);
     });
   });
 
   describe('corrupted localStorage handling', () => {
-    it('falls back to all-visible defaults when stored JSON is invalid', () => {
+    it('falls back to defaults when stored JSON is invalid', () => {
       localStorage.setItem(STORAGE_KEY, 'not-valid-json{{{');
 
       const { result } = renderHook(() =>
@@ -251,8 +380,34 @@ describe('useColumnVisibility', () => {
       });
     });
 
-    it('falls back to all-visible defaults when stored value is not an array of strings', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ foo: 'bar' }));
+    it('ignores non-boolean values in a stored choice map', () => {
+      // Only valid boolean entries are honored; others fall back to defaults.
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ type: 'nope', timestamp: false }));
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
+      );
+
+      expect(result.current.isColumnVisible('type')).toBe(true); // invalid -> default
+      expect(result.current.isColumnVisible('timestamp')).toBe(false); // valid explicit off
+    });
+
+    it('ignores non-string entries in a legacy array', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([1, 2, 3]));
+
+      const { result } = renderHook(() =>
+        useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
+      );
+
+      // No valid entries -> empty choice map -> all default (visible).
+      baseColumns.forEach((col) => {
+        expect(result.current.isColumnVisible(col.id)).toBe(true);
+      });
+    });
+
+    it('falls back to defaults when the stored value is a JSON primitive', () => {
+      // Valid JSON, but neither an array (legacy) nor an object (choice map).
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(42));
 
       const { result } = renderHook(() =>
         useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
@@ -263,16 +418,22 @@ describe('useColumnVisibility', () => {
       });
     });
 
-    it('falls back to all-visible defaults when stored array contains non-strings', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([1, 2, 3]));
+    it('keeps working when localStorage writes throw (e.g. quota exceeded)', () => {
+      const setItemSpy = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
 
       const { result } = renderHook(() =>
         useColumnVisibility({ storageKey: STORAGE_KEY, columns: baseColumns })
       );
 
-      baseColumns.forEach((col) => {
-        expect(result.current.isColumnVisible(col.id)).toBe(true);
+      // The write throws internally but is swallowed; in-memory state still updates.
+      act(() => {
+        result.current.toggleColumn('type');
       });
+      expect(result.current.isColumnVisible('type')).toBe(false);
+
+      setItemSpy.mockRestore();
     });
   });
 

@@ -199,6 +199,26 @@ exports[`QueryDetails component matches snapshot 1`] = `
                 class="euiDescriptionList__title"
               >
                 <h4>
+                  X-Opaque-Id
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                ae6c1170-5f98-47f4-b7fc-09ebcf574b81
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
                   Status
                 </h4>
               </dt>

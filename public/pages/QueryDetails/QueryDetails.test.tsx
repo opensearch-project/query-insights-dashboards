@@ -16,6 +16,9 @@ import { DataSourceContext } from '../TopNQueries/TopNQueries';
 jest.mock('echarts-for-react', () => () => <div data-testid="echarts-mock" />);
 
 jest.mock('../../../common/utils/QueryUtils', () => ({
+  // Keep the real getOpaqueId so the mock can't drift from production precedence;
+  // only retrieveQueryById needs stubbing.
+  ...jest.requireActual('../../../common/utils/QueryUtils'),
   retrieveQueryById: jest.fn(),
 }));
 

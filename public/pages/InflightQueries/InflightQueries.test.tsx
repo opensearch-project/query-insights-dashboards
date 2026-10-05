@@ -10,10 +10,12 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { getSecurityPluginStatus } from '../../utils/datasource-utils';
 import {
   getVersionOnce,
   isVersion33OrHigher,
   isVersion37OrHigher,
+  isVersion38OrHigher,
 } from '../../utils/version-utils';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import '@testing-library/jest-dom';
@@ -21,11 +23,13 @@ import '@testing-library/jest-dom';
 jest.mock('../../../common/utils/QueryUtils');
 jest.mock('../../utils/datasource-utils', () => ({
   getDataSourceVersion: jest.fn().mockResolvedValue('3.3.0'),
+  getSecurityPluginStatus: jest.fn().mockResolvedValue('available'),
 }));
 jest.mock('../../utils/version-utils', () => ({
   getVersionOnce: jest.fn(),
   isVersion33OrHigher: jest.fn(),
   isVersion37OrHigher: jest.fn(),
+  isVersion38OrHigher: jest.fn(),
   isVersion31OrHigher: jest.fn(),
   isVersion219: jest.fn(),
   getGroupBySettingsPath: jest.fn(),
@@ -69,11 +73,11 @@ const makeCore = (): CoreStart =>
     },
   }) as unknown as CoreStart;
 
-const withDataSource = (ui: React.ReactNode) => (
+const withDataSource = (ui: React.ReactNode, dataSourceId = 'default') => (
   <MemoryRouter>
     <DataSourceContext.Provider
       value={{
-        dataSource: { id: 'default' },
+        dataSource: { id: dataSourceId },
         setDataSource: jest.fn(),
       }}
     >
@@ -104,12 +108,15 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
   cleanup();
+  // Clear persisted column-visibility prefs so they don't leak across tests.
+  localStorage.clear();
   // Reset useLocation mock to default
   (useLocation as jest.Mock).mockReturnValue({ search: '' });
   // Mock version utilities - default to 3.7.0 for full feature support
   (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.7.0');
   (isVersion33OrHigher as jest.MockedFunction<typeof isVersion33OrHigher>).mockReturnValue(true);
   (isVersion37OrHigher as jest.MockedFunction<typeof isVersion37OrHigher>).mockReturnValue(true);
+  (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(false);
   // Suppress console warnings for cleaner test output
   jest.spyOn(console, 'warn').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -1681,6 +1688,348 @@ describe('InflightQueries - Column Visibility Integration', () => {
       const updatedMainTable = updatedTables[updatedTables.length - 1];
       const updatedHeaders = updatedMainTable.querySelectorAll('th');
       expect(updatedHeaders.length).toBeLessThan(initialColumnCount);
+    });
+  });
+
+  describe('user info columns', () => {
+    const withUserInfo = {
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            timestamp: 1640995200000,
+            id: 'node-a:42',
+            description: 'indices[logs-*] search_type[query_then_fetch]',
+            node_id: 'node-a',
+            is_cancelled: false,
+            measurements: {
+              latency: { number: 1e9, count: 1, aggregationType: 'NONE' },
+              cpu: { number: 5e8, count: 1, aggregationType: 'NONE' },
+              memory: { number: 1024, count: 1, aggregationType: 'NONE' },
+            },
+            username: 'alice',
+            user_roles: ['analyst', 'reader'],
+            backend_roles: ['ldap-group-a'],
+          },
+        ],
+      },
+    };
+
+    it('renders Username, User Roles, and Backend Roles columns when version >= 3.8', async () => {
+      (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.8.0');
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(
+        true
+      );
+      const core = makeCore();
+      mockLiveQueries(withUserInfo);
+
+      render(
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+        )
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await waitFor(
+        () => {
+          expect(screen.getAllByText('Username').length).toBeGreaterThan(0);
+          expect(screen.getAllByText('User Roles').length).toBeGreaterThan(0);
+          expect(screen.getAllByText('Backend Roles').length).toBeGreaterThan(0);
+        },
+        { timeout: 5000 }
+      );
+
+      expect(screen.getAllByText('alice').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('analyst, reader').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('ldap-group-a').length).toBeGreaterThan(0);
+    });
+
+    it('hides user info columns when version < 3.8', async () => {
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(
+        false
+      );
+      const core = makeCore();
+      mockLiveQueries(withUserInfo);
+
+      render(
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+        )
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('Backend Roles')).not.toBeInTheDocument();
+    });
+
+    it('flyout shows Username, User Roles, and Backend Roles when version >= 3.8', async () => {
+      // Regression guard: the row -> richTask mapping must carry username/user_roles/
+      // backend_roles into the flyout, otherwise the gated panel items never have data.
+      (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.8.0');
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(
+        true
+      );
+      const core = makeCore();
+      mockLiveQueries({
+        ok: true,
+        response: {
+          live_queries: [
+            {
+              id: 'task-user:99',
+              timestamp: 1640995200000,
+              node_id: 'node1',
+              description:
+                'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+              measurements: {
+                latency: { number: 5e9 },
+                cpu: { number: 1e6 },
+                memory: { number: 4096 },
+              },
+              is_cancelled: false,
+              coordinator_task: {
+                task_id: 'task-user:99',
+                node_id: 'node1',
+                action: 'indices:data/read/search',
+                status: 'running',
+                description:
+                  'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+                start_time: 1640995200000,
+                running_time_nanos: 5e9,
+                cpu_nanos: 1e6,
+                memory_bytes: 4096,
+              },
+              shard_tasks: [],
+              username: 'alice',
+              user_roles: ['analyst', 'reader'],
+              backend_roles: ['ldap-group-a'],
+            },
+          ],
+        },
+      });
+
+      render(
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+        )
+      );
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(100);
+      });
+
+      await waitFor(
+        () => expect(screen.getAllByText('task-user:99').length).toBeGreaterThanOrEqual(1),
+        { timeout: 5000 }
+      );
+
+      // Open the flyout for the running task
+      screen.getAllByText('task-user:99')[0].click();
+
+      await waitFor(() => {
+        expect(screen.getByText('Task ID - task-user:99')).toBeInTheDocument();
+      });
+
+      // The flyout renders the user-info panel items with values carried from the row
+      await waitFor(() => {
+        expect(screen.getAllByText('Username').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('User Roles').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Backend Roles').length).toBeGreaterThan(0);
+      });
+      expect(screen.getAllByText('alice').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('analyst, reader').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('ldap-group-a').length).toBeGreaterThan(0);
+    });
+
+    it('flyout hides user info when version < 3.8', async () => {
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(
+        false
+      );
+      const core = makeCore();
+      mockLiveQueries({
+        ok: true,
+        response: {
+          live_queries: [
+            {
+              id: 'task-nouser:1',
+              timestamp: 1640995200000,
+              node_id: 'node1',
+              description:
+                'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+              measurements: {
+                latency: { number: 5e9 },
+                cpu: { number: 1e6 },
+                memory: { number: 4096 },
+              },
+              is_cancelled: false,
+              coordinator_task: {
+                task_id: 'task-nouser:1',
+                node_id: 'node1',
+                action: 'indices:data/read/search',
+                status: 'running',
+                description:
+                  'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+                start_time: 1640995200000,
+                running_time_nanos: 5e9,
+                cpu_nanos: 1e6,
+                memory_bytes: 4096,
+              },
+              shard_tasks: [],
+              username: 'alice',
+              user_roles: ['analyst'],
+              backend_roles: ['ldap-group-a'],
+            },
+          ],
+        },
+      });
+
+      render(
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+        )
+      );
+
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(100);
+      });
+
+      await waitFor(
+        () => expect(screen.getAllByText('task-nouser:1').length).toBeGreaterThanOrEqual(1),
+        { timeout: 5000 }
+      );
+
+      screen.getAllByText('task-nouser:1')[0].click();
+
+      await waitFor(() => {
+        expect(screen.getByText('Task ID - task-nouser:1')).toBeInTheDocument();
+      });
+
+      // Version gate not satisfied: the flyout must not surface user identity.
+      expect(screen.queryByText('Backend Roles')).not.toBeInTheDocument();
+      expect(screen.queryByText('ldap-group-a')).not.toBeInTheDocument();
+    });
+
+    it('hides user info columns when the security plugin is unavailable (version >= 3.8)', async () => {
+      // Version gate satisfied, but the security probe reports unavailable, so the backend never
+      // populates user info and the columns must not render.
+      (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockResolvedValue('3.8.0');
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockReturnValue(
+        true
+      );
+      (getSecurityPluginStatus as jest.Mock).mockResolvedValueOnce('unavailable');
+      const core = makeCore();
+      mockLiveQueries(withUserInfo);
+
+      render(
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+        )
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      });
+
+      // Security unavailable -> user-info columns stay hidden despite the version gate.
+      expect(screen.queryByText('Backend Roles')).not.toBeInTheDocument();
+      expect(screen.queryByText('User Roles')).not.toBeInTheDocument();
+    });
+
+    it('ignores a stale version response after the data source changes', async () => {
+      let resolveSourceAVersion!: (version: string) => void;
+      const sourceAVersion = new Promise<string>((resolve) => {
+        resolveSourceAVersion = resolve;
+      });
+
+      (getVersionOnce as jest.MockedFunction<typeof getVersionOnce>).mockImplementation(
+        (dataSourceId: string) =>
+          dataSourceId === 'source-a' ? sourceAVersion : Promise.resolve('3.7.0')
+      );
+      (isVersion38OrHigher as jest.MockedFunction<typeof isVersion38OrHigher>).mockImplementation(
+        (version) => version === '3.8.0'
+      );
+
+      const core = makeCore();
+      mockLiveQueries(withUserInfo);
+      const componentForDataSource = (dataSourceId: string) =>
+        withDataSource(
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />,
+          dataSourceId
+        );
+
+      const { rerender } = render(componentForDataSource('source-a'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-a'));
+
+      rerender(componentForDataSource('source-b'));
+      await waitFor(() => expect(getVersionOnce).toHaveBeenCalledWith('source-b'));
+      expect(screen.queryByText('alice')).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveSourceAVersion('3.8.0');
+        await sourceAVersion;
+      });
+
+      expect(screen.queryByText('alice')).not.toBeInTheDocument();
     });
   });
 });

@@ -320,6 +320,10 @@ jobs:
         env:
           CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
           CI: true
+          # Forward the cluster admin password so WLM_AUTH resolves from the environment
+          # instead of the 'admin' default in cypress.config.js (which would 401 against a
+          # security-enabled cluster booted with a custom admin password).
+          CYPRESS_OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
         timeout-minutes: 120
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

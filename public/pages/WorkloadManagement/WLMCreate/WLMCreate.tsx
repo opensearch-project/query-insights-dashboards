@@ -309,7 +309,7 @@ export const WLMCreate = ({
       <EuiText color="subdued" size="s">
         Use workload groups to manage resource usage in associated queries.{' '}
         <a
-          href="https://docs.opensearch.org/docs/latest/tuning-your-cluster/availability-and-recovery/workload-management/wlm-feature-overview/"
+          href="https://docs.opensearch.org/latest/tuning-your-cluster/availability-and-recovery/workload-management/wlm-feature-overview/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: '#0073e6' }}

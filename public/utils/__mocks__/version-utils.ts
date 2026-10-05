@@ -9,6 +9,7 @@ export const isVersion33OrHigher = jest.fn().mockReturnValue(true);
 export const isVersion34OrHigher = jest.fn().mockReturnValue(true);
 export const isVersion35OrHigher = jest.fn().mockReturnValue(true);
 export const isVersion36OrHigher = jest.fn().mockReturnValue(true);
+export const isVersion38OrHigher = jest.fn().mockReturnValue(false);
 export const isVersion219 = jest.fn().mockReturnValue(false);
 export const getGroupBySettingsPath = jest
   .fn()

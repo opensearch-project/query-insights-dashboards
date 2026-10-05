@@ -1,0 +1,294 @@
+name: E2E
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+env:
+  OS_BRANCH: "main"
+  SECURITY_ENABLED: "true"
+  # Ephemeral CI-only credentials. Sourced from repo secrets when available so the
+  # values are not committed; fall back to throwaway defaults on forks without secrets.
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${{ secrets.OPENSEARCH_INITIAL_ADMIN_PASSWORD || 'myStrongPassword123!' }}
+  TEST_USER_PASSWORD: ${{ secrets.QI_TEST_USER_PASSWORD || 'TestP@ssw0rd!2026' }}
+jobs:
+  tests:
+    name: User Info (security)
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            cypress_cache_folder: ~/.cache/Cypress
+    runs-on: ${{ matrix.os }}
+    env:
+      CI: 1
+      TERM: xterm
+      NODE_OPTIONS: '--max-old-space-size=6144 --dns-result-order=ipv4first'
+      # Inherits OPENSEARCH_INITIAL_ADMIN_PASSWORD from the workflow-level env above
+      # (repo secret with a throwaway fallback); not re-hardcoded here.
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@b6e674f4b717d7b0ae3baee0fbe79f498905dfde # v1
+        with:
+          java-version: 21
+
+      - name: Checkout OpenSearch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: OpenSearch
+          repository: opensearch-project/OpenSearch
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Get OpenSearch version
+        id: get-version
+        run: |
+          cd OpenSearch
+          VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}' | sed 's/-SNAPSHOT//')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      # query-insights is a standalone repo (not a core OpenSearch plugin), so it must be
+      # checked out and built on its own, with its runtime dependency plugins supplied.
+      - name: Checkout Query Insights
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: query-insights
+          repository: opensearch-project/query-insights
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Build required dependency plugins
+        run: |
+          set -e
+          cd OpenSearch
+          # query-insights depends on autotagging-commons (rule framework) and workload-management
+          ./gradlew :modules:autotagging-commons:assemble :plugins:workload-management:assemble --no-daemon
+          ls -la modules/autotagging-commons/build/distributions/
+          ls -la plugins/workload-management/build/distributions/
+
+      - name: Copy dependency plugins into Query Insights
+        run: |
+          set -e
+          mkdir -p query-insights/plugins
+          find OpenSearch/modules/autotagging-commons/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          find OpenSearch/plugins/workload-management/build/distributions/ -name "*.zip" -exec cp {} query-insights/plugins/ \;
+          ls -la query-insights/plugins/
+
+      - name: Patch spotless eclipse formatter in Query Insights
+        run: |
+          # Remove the spotless block: its eclipse formatter downloads from a P2 mirror at
+          # configuration time, which times out in CI. Mirrors the sibling cypress workflows.
+          python3 - <<'EOF'
+          import re
+          with open('query-insights/build.gradle', 'r') as f:
+              content = f.read()
+          content = re.sub(r'spotless \{.*?\}\n\}', '', content, flags=re.DOTALL)
+          content = content.replace('check.dependsOn spotlessCheck\n', '')
+          with open('query-insights/build.gradle', 'w') as f:
+              f.write(content)
+          EOF
+
+      - name: Build Query Insights plugin
+        run: |
+          set -e
+          cd query-insights
+          ./gradlew assemble -Dopensearch.version=${{ steps.get-version.outputs.VERSION }}-SNAPSHOT --no-daemon -x test
+          cp build/distributions/query-insights-*.zip "$GITHUB_WORKSPACE/query-insights.zip"
+          ls -lh "$GITHUB_WORKSPACE/query-insights.zip"
+
+      - name: Download Security plugin
+        run: |
+          set -euo pipefail
+          VERSION=${{ steps.get-version.outputs.VERSION }}
+          REPO="https://ci.opensearch.org/ci/dbc/snapshots/maven/org/opensearch/plugin/opensearch-security/${VERSION}.0-SNAPSHOT"
+          METADATA=$(curl -sf "${REPO}/maven-metadata.xml")
+          SNAPSHOT_VER=$(echo "$METADATA" | grep -oP '(?<=<value>)[^<]+' | head -1)
+          if [ -z "$SNAPSHOT_VER" ]; then
+            echo "Failed to resolve security plugin snapshot version from maven-metadata.xml" >&2
+            exit 1
+          fi
+          ARTIFACT_URL="${REPO}/opensearch-security-${SNAPSHOT_VER}.zip"
+          curl -sfL "$ARTIFACT_URL" -o "$GITHUB_WORKSPACE/security.zip"
+          # Verify the download against the SHA-512 the OpenSearch CI Maven repo publishes next
+          # to the artifact. Scope of this check: it catches network corruption and truncated /
+          # partially-published snapshots (the common failure here). It does NOT defend against a
+          # compromise of ci.opensearch.org itself, since the checksum is served from the same
+          # origin — a server that could swap the artifact could swap the digest too. There is no
+          # independent out-of-band digest for a nightly SNAPSHOT build; the artifact source is
+          # OpenSearch's own first-party CI, the same source the sibling cypress workflows use.
+          curl -sfL "${ARTIFACT_URL}.sha512" -o "$GITHUB_WORKSPACE/security.zip.sha512"
+          EXPECTED=$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/security.zip.sha512")
+          ACTUAL=$(sha512sum "$GITHUB_WORKSPACE/security.zip" | awk '{print $1}')
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Security plugin checksum mismatch!" >&2
+            echo "  expected: $EXPECTED" >&2
+            echo "  actual:   $ACTUAL" >&2
+            exit 1
+          fi
+          echo "Security plugin checksum verified (sha512)."
+
+      - name: Run OpenSearch with plugins
+        # Pinned to a full commit SHA for supply-chain safety (the SHA is immutable; it was the
+        # tip of opensearch-build main at the time of pinning).
+        uses: opensearch-project/opensearch-build/.github/actions/start-opensearch@15d4a8960ca11210dc1a2aec01c85a3840405085 # 15d4a89
+        with:
+          opensearch-version: ${{ steps.get-version.outputs.VERSION }}
+          plugins: "file:$GITHUB_WORKSPACE/query-insights.zip,file:$GITHUB_WORKSPACE/security.zip"
+          security-enabled: true
+          admin-password: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+          jdk-version: 21
+
+      - name: Enable Query Insights and create test users
+        run: |
+          # Enable query insights
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_cluster/settings" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "persistent": {
+                "search.insights.top_queries.latency.enabled": true,
+                "search.insights.top_queries.latency.window_size": "1m",
+                "search.insights.top_queries.latency.top_n_size": 100
+              }
+            }'
+
+          # Create test user
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_plugins/_security/api/internalusers/testuser_alice" \
+            -H "Content-Type: application/json" \
+            -d "{\"password\":\"${TEST_USER_PASSWORD}\",\"backend_roles\":[\"analyst\"]}"
+
+          # Map user to all_access
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X PUT "https://localhost:9200/_plugins/_security/api/rolesmapping/all_access" \
+            -H "Content-Type: application/json" \
+            -d '{"users":["admin","testuser_alice"],"backend_roles":["admin"]}'
+
+          # Create test index and run queries
+          curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+            -X POST "https://localhost:9200/test-user-info/_doc" \
+            -H "Content-Type: application/json" \
+            -d '{"name":"test","value":42}'
+
+          # Run queries as different users
+          for i in $(seq 1 10); do
+            curl -ksu admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} \
+              -X POST "https://localhost:9200/test-user-info/_search" \
+              -H "Content-Type: application/json" \
+              -H "X-Opaque-Id: admin-console" \
+              -d '{"query":{"match_all":{}}}' > /dev/null
+            curl -ksu testuser_alice:${TEST_USER_PASSWORD} \
+              -X POST "https://localhost:9200/test-user-info/_search" \
+              -H "Content-Type: application/json" \
+              -H "X-Opaque-Id: analytics-app" \
+              -d '{"query":{"match_all":{}}}' > /dev/null
+          done
+
+          # Wait for window
+          sleep 65
+
+      - name: Checkout OpenSearch-Dashboards
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          path: OpenSearch-Dashboards
+          ref: ${{ env.OS_BRANCH }}
+
+      - name: Configure OpenSearch Dashboards
+        run: |
+          FILE="OpenSearch-Dashboards/config/opensearch_dashboards.yml"
+          printf '%s\n' 'server.host: "0.0.0.0"' >> "$FILE"
+          printf '%s\n' 'opensearch.hosts: ["https://localhost:9200"]' >> "$FILE"
+          printf '%s\n' 'opensearch.ssl.verificationMode: none' >> "$FILE"
+          printf '%s\n' 'opensearch.username: "admin"' >> "$FILE"
+          printf '%s\n' "opensearch.password: \"${OPENSEARCH_INITIAL_ADMIN_PASSWORD}\"" >> "$FILE"
+
+      - name: Checkout Query Insights Dashboards plugin
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          path: OpenSearch-Dashboards/plugins/query-insights-dashboards
+
+      - name: Setup Node
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+        with:
+          node-version-file: './OpenSearch-Dashboards/.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Yarn
+        run: |
+          YARN_VERSION=$(node -p "require('./OpenSearch-Dashboards/package.json').engines.yarn")
+          npm i -g yarn@$YARN_VERSION
+
+      - name: Bootstrap
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          yarn osd bootstrap --single-version=loose
+
+      - name: Run OpenSearch-Dashboards server
+        run: |
+          cd OpenSearch-Dashboards
+          nohup yarn start --no-base-path --no-watch --server.host="0.0.0.0" > dashboards.log 2>&1 &
+          sleep 10
+
+      - name: Wait for Dashboards
+        run: |
+          cd OpenSearch-Dashboards
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5601/api/status || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "Dashboards ready"
+              break
+            fi
+            attempt=$((attempt + 1))
+            sleep 10
+          done
+
+      - name: Wait for bundles
+        run: |
+          cd OpenSearch-Dashboards
+          max_wait=1200
+          elapsed=0
+          while [ $elapsed -lt $max_wait ]; do
+            if grep -qE "bundles? compiled successfully" dashboards.log 2>/dev/null; then
+              echo "Bundles ready"
+              sleep 20
+              break
+            fi
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+      - name: Install Cypress
+        run: |
+          cd OpenSearch-Dashboards/plugins/query-insights-dashboards
+          npx cypress install
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@248bde77443c376edc45906ede03a1aba9da0462 # v5
+        with:
+          working-directory: OpenSearch-Dashboards/plugins/query-insights-dashboards
+          command: yarn run cypress run --config defaultCommandTimeout=120000,pageLoadTimeout=180000 --spec cypress/e2e/qi/8_user_info_security.cy.js
+          browser: chrome
+        env:
+          CYPRESS_CACHE_FOLDER: ${{ matrix.cypress_cache_folder }}
+          CI: true
+          CYPRESS_openSearchUrl: https://localhost:9200
+          CYPRESS_SECURITY_ENABLED: true
+          CYPRESS_OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${{ env.OPENSEARCH_INITIAL_ADMIN_PASSWORD }}
+        timeout-minutes: 30
+
+      # Cypress screenshots are disabled (screenshotOnRunFailure=false), so the OpenSearch
+      # Dashboards server log is the useful artifact for diagnosing a failed run.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: dashboards-log-user-info-${{ matrix.os }}
+          path: OpenSearch-Dashboards/dashboards.log

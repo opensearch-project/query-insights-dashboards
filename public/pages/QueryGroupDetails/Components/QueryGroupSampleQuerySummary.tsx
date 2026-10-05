@@ -18,7 +18,12 @@ import {
   SEARCH_TYPE,
   TIMESTAMP,
   TOTAL_SHARDS,
+  OPAQUE_ID,
+  USERNAME,
+  USER_ROLES,
+  BACKEND_ROLES,
 } from '../../../../common/constants';
+import { getOpaqueId } from '../../../../common/utils/QueryUtils';
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
@@ -34,7 +39,13 @@ const PanelItem = ({ label, value }: { label: string; value: string | number }) 
   </EuiFlexItem>
 );
 
-export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
+export const QueryGroupSampleQuerySummary = ({
+  query,
+  userInfoSupported = false,
+}: {
+  query: any;
+  userInfoSupported?: boolean;
+}) => {
   if (!query) {
     return (
       <EuiTitle size="s">
@@ -54,7 +65,12 @@ export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
     search_type: searchType,
     node_id: nodeId,
     total_shards: totalShards,
+    labels,
+    username,
+    user_roles: userRoles,
+    backend_roles: backendRoles,
   } = query;
+  const appId = getOpaqueId(labels, '');
   return (
     <EuiPanel>
       <EuiTitle size="s">
@@ -67,6 +83,14 @@ export const QueryGroupSampleQuerySummary = ({ query }: { query: any }) => {
         <PanelItem label={SEARCH_TYPE} value={searchType.replace(/_/g, ' ')} />
         <PanelItem label={NODE_ID} value={nodeId} />
         <PanelItem label={TOTAL_SHARDS} value={totalShards} />
+        {appId && <PanelItem label={OPAQUE_ID} value={appId} />}
+        {userInfoSupported && username && <PanelItem label={USERNAME} value={username} />}
+        {userInfoSupported && userRoles && userRoles.length > 0 && (
+          <PanelItem label={USER_ROLES} value={userRoles.join(', ')} />
+        )}
+        {userInfoSupported && backendRoles && backendRoles.length > 0 && (
+          <PanelItem label={BACKEND_ROLES} value={backendRoles.join(', ')} />
+        )}
       </EuiFlexGrid>
     </EuiPanel>
   );

@@ -78,4 +78,44 @@ describe('QueryGroupSampleQuerySummary', () => {
 
     expect(screen.getByText(mockQueries[0].total_shards)).toBeInTheDocument();
   });
+
+  it('displays application ID when present in labels', () => {
+    render(
+      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
+        <Route exact path="/query-group-details/:hashedQuery">
+          <QueryGroupSampleQuerySummary query={mockQueries[0]} />
+        </Route>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('X-Opaque-Id')).toBeInTheDocument();
+    expect(screen.getByText('my-analytics-app')).toBeInTheDocument();
+  });
+
+  it('hides user info fields when userInfoSupported is false (default)', () => {
+    render(
+      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
+        <Route exact path="/query-group-details/:hashedQuery">
+          <QueryGroupSampleQuerySummary query={mockQueries[0]} />
+        </Route>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('Username')).not.toBeInTheDocument();
+    expect(screen.queryByText('User Roles')).not.toBeInTheDocument();
+    expect(screen.queryByText('Backend Roles')).not.toBeInTheDocument();
+  });
+
+  it('shows user info fields when userInfoSupported is true', () => {
+    render(
+      <MemoryRouter initialEntries={[`/query-group-details/${expectedHash}`]}>
+        <Route exact path="/query-group-details/:hashedQuery">
+          <QueryGroupSampleQuerySummary query={mockQueries[0]} userInfoSupported={true} />
+        </Route>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Username')).toBeInTheDocument();
+    expect(screen.getByText('User Roles')).toBeInTheDocument();
+  });
 });
