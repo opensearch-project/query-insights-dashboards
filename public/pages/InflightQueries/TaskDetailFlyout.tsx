@@ -24,6 +24,7 @@ import {
 } from '@elastic/eui';
 import { filesize } from 'filesize';
 import { RichLiveQueryRecord, TaskDetailRecord } from '../../../types/types';
+import { SEARCH_ACTION } from '../../utils/live-query-utils';
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
@@ -89,7 +90,15 @@ export const TaskDetailFlyout: React.FC<Props> = ({
     (task as any)._searchType?.replace(/_/g, ' ') ||
     (searchTypeMatch ? searchTypeMatch[1].replace(/_/g, ' ') : '-');
   const coordinatorNode = (task as any)._nodeId || coord?.node_id || '-';
-  const querySource = (task as any)._source || (sourceMatch ? sourceMatch[1] : null);
+  // A PPL query's source is its query text; its child tasks are its searches and their shards.
+  const { _querySource, _queryText } = task as RichLiveQueryRecord & {
+    _querySource?: string;
+    _queryText?: string;
+  };
+  const isPpl = _querySource === 'PPL';
+  const querySource = isPpl
+    ? _queryText || null
+    : (task as any)._source || (sourceMatch ? sourceMatch[1] : null);
   const totalShards = (task as any)._totalShards;
   const taskResourceUsages = (task as any)._taskResourceUsages;
 
@@ -110,6 +119,8 @@ export const TaskDetailFlyout: React.FC<Props> = ({
     {
       name: 'Phase',
       render: (t: TaskDetailRecord) => {
+        // A PPL query's child tasks include its searches, not only shard tasks.
+        if (t.action === SEARCH_ACTION) return 'Search';
         const match = t.action.match(/\[([^\]]+)\]/);
         const raw = match ? match[1].replace('phase/', '') : t.action;
         return PHASE_DISPLAY[raw] ?? raw;
@@ -243,7 +254,7 @@ export const TaskDetailFlyout: React.FC<Props> = ({
           {task.shard_tasks.length > 0 && (
             <>
               <EuiTitle size="xs">
-                <h4>Shard Tasks</h4>
+                <h4>{isPpl ? 'Child Tasks' : 'Shard Tasks'}</h4>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiInMemoryTable
@@ -256,7 +267,11 @@ export const TaskDetailFlyout: React.FC<Props> = ({
           )}
 
           {task.shard_tasks.length === 0 && !taskResourceUsages?.length && (
-            <p>No active shard tasks at this moment. Refresh to update.</p>
+            <p>
+              {isPpl
+                ? 'No searches running at this moment. Refresh to update.'
+                : 'No active shard tasks at this moment. Refresh to update.'}
+            </p>
           )}
 
           {/* Finished query task resource usages (old format) */}
@@ -320,17 +335,18 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             <EuiSpacer size="m" />
             <EuiPanel>
               <EuiTitle size="s">
-                <h3>Query Source</h3>
+                <h3>{isPpl ? 'PPL Query' : 'Query Source'}</h3>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiCodeBlock
-                language="json"
+                language={isPpl ? undefined : 'json'}
                 paddingSize="m"
                 fontSize="s"
                 overflowHeight={400}
                 isCopyable
               >
                 {(() => {
+                  if (isPpl) return String(querySource);
                   try {
                     if (typeof querySource === 'object')
                       return JSON.stringify(querySource, null, 2);

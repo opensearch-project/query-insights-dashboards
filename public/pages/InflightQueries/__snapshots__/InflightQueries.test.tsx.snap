@@ -1319,7 +1319,32 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_index_2"
+                  data-test-subj="tableHeaderCell_query_source_2"
+                  role="columnheader"
+                  scope="col"
+                >
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
+                  >
+                    <span
+                      class="euiTableCellContent"
+                    >
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Query source"
+                      >
+                        Query source
+                      </span>
+                    </span>
+                  </button>
+                </th>
+                <th
+                  aria-live="polite"
+                  aria-sort="none"
+                  class="euiTableHeaderCell"
+                  data-test-subj="tableHeaderCell_index_3"
                   role="columnheader"
                   scope="col"
                 >
@@ -1344,7 +1369,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="descending"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Time elapsed_3"
+                  data-test-subj="tableHeaderCell_Time elapsed_4"
                   role="columnheader"
                   scope="col"
                 >
@@ -1383,7 +1408,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_CPU usage_4"
+                  data-test-subj="tableHeaderCell_CPU usage_5"
                   role="columnheader"
                   scope="col"
                 >
@@ -1408,7 +1433,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Memory usage_5"
+                  data-test-subj="tableHeaderCell_Memory usage_6"
                   role="columnheader"
                   scope="col"
                 >
@@ -1433,7 +1458,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Status_6"
+                  data-test-subj="tableHeaderCell_Status_7"
                   role="columnheader"
                   scope="col"
                 >
@@ -1458,7 +1483,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_WLM Group_7"
+                  data-test-subj="tableHeaderCell_WLM Group_8"
                   role="columnheader"
                   scope="col"
                 >
@@ -1555,6 +1580,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                     >
                       node-A1B2C4E5:3614
                     </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
                   </div>
                 </td>
                 <td
@@ -1783,6 +1835,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
                     Index
                   </div>
                   <div
@@ -1995,6 +2074,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                     >
                       node-P0Q9R8S7:3603
                     </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
                   </div>
                 </td>
                 <td
@@ -2224,6 +2330,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
                     Index
                   </div>
                   <div
@@ -2414,6 +2547,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
                     Index
                   </div>
                   <div
@@ -2595,6 +2755,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                     >
                       node-N2O3P4Q5:3607
                     </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
                   </div>
                 </td>
                 <td
@@ -2824,6 +3011,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
                     Index
                   </div>
                   <div
@@ -3005,6 +3219,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                     >
                       no-P0Q9R8S7T6:3611
                     </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
                   </div>
                 </td>
                 <td
@@ -3234,6 +3475,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
                     Index
                   </div>
                   <div
@@ -3415,6 +3683,33 @@ exports[`InflightQueries matches snapshot 1`] = `
                     >
                       node-X8Z7W6V5:3615
                     </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
                   </div>
                 </td>
                 <td
