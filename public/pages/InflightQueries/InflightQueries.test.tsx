@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
@@ -18,6 +18,7 @@ import {
   isVersion38OrHigher,
 } from '../../utils/version-utils';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
+import stubLiveQueriesPpl from '../../../cypress/fixtures/stub_live_queries_ppl.json';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
@@ -2030,6 +2031,109 @@ describe('InflightQueries - Column Visibility Integration', () => {
       });
 
       expect(screen.queryByText('alice')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('InflightQueries - PPL queries', () => {
+  // Live Queries responses captured from a cluster running a PPL join beside a DSL search: one while
+  // the join had a search running, one while it was between searches.
+  const PPL_ID = 'ludTvLmlQpW7fvLIs4agRA:84';
+  const DSL_ID = 'ludTvLmlQpW7fvLIs4agRA:1194';
+  const PPL_TEXT =
+    'source=qibig | join left=a right=b ON a.grp = b.grp qibig | eval z = a.v * b.v | stats sum(z) as c';
+
+  const renderPage = async (payload: unknown) => {
+    const core = makeCore();
+    mockLiveQueries(payload);
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+    await waitFor(() => expect(screen.getAllByText(PPL_ID).length).toBeGreaterThanOrEqual(1));
+  };
+
+  // The table row of a query; its id can also appear in the longest-query metric.
+  const rowOf = (id: string) => {
+    const row = screen
+      .queryAllByText(id)
+      .map((el) => el.closest('tr'))
+      .find((tr) => tr !== null);
+    if (!row) throw new Error(`no table row for ${id}`);
+    return row;
+  };
+
+  it('shows a running PPL query as a PPL row with the index it reads', async () => {
+    await renderPage(stubLiveQueriesPpl.running_search);
+
+    const ppl = within(rowOf(PPL_ID));
+    expect(ppl.getByText('PPL')).toBeInTheDocument();
+    expect(ppl.getByText('qibig')).toBeInTheDocument();
+    expect(within(rowOf(DSL_ID)).getByText('DSL')).toBeInTheDocument();
+  });
+
+  it('keeps the index of a PPL query while it is between searches', async () => {
+    await renderPage(stubLiveQueriesPpl.between_searches);
+
+    // No search is running, so the index comes from the query text.
+    const ppl = within(rowOf(PPL_ID));
+    expect(ppl.getByText('PPL')).toBeInTheDocument();
+    expect(ppl.getByText('qibig')).toBeInTheDocument();
+  });
+
+  it('opens the flyout of a PPL query with its query text and child tasks', async () => {
+    await renderPage(stubLiveQueriesPpl.running_search);
+
+    within(rowOf(PPL_ID)).getByText(PPL_ID).click();
+
+    const title = await screen.findByText(`Task ID - ${PPL_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(flyout.getByText('PPL Query')).toBeInTheDocument();
+    expect(flyout.queryByText('Query Source')).not.toBeInTheDocument();
+    expect(flyout.getByText('Child Tasks')).toBeInTheDocument();
+    expect(flyout.getByText('Search')).toBeInTheDocument(); // the join's running search
+    expect(flyout.getByText('qibig[0]')).toBeInTheDocument(); // and its shard task
+    const code = (title.closest('.euiFlyout') as HTMLElement).querySelector('.euiCodeBlock__code');
+    expect(code?.textContent).toBe(PPL_TEXT);
+    expect(flyout.getByText('Kill Query')).toBeInTheDocument();
+  });
+
+  it('tells a PPL query between searches has no running search', async () => {
+    await renderPage(stubLiveQueriesPpl.between_searches);
+
+    within(rowOf(PPL_ID)).getByText(PPL_ID).click();
+
+    const title = await screen.findByText(`Task ID - ${PPL_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(
+      flyout.getByText('No searches running at this moment. Refresh to update.')
+    ).toBeInTheDocument();
+  });
+
+  it('filters by query source', async () => {
+    await renderPage(stubLiveQueriesPpl.running_search);
+    expect(rowOf(DSL_ID)).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Dynamic search bar'), {
+        target: { value: 'query_source = PPL' },
+      });
+    });
+
+    await waitFor(() => {
+      expect(rowOf(PPL_ID)).toBeInTheDocument();
+      expect(screen.queryByText(DSL_ID)).not.toBeInTheDocument();
     });
   });
 });
