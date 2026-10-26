@@ -24,7 +24,7 @@ OpenSearch is a community project that is built and maintained by people just li
 
 2. **Only submit your own work**  (or work you have sufficient rights to submit) - Please make sure that any code or documentation you submit is your work or you have the rights to submit. We respect the intellectual property rights of others, and as part of contributing, we'll ask you to sign your contribution with a "Developer Certificate of Origin" (DCO) that states you have the rights to submit this work and you understand we'll use your contribution. There's more information about this topic in the [DCO section](#developer-certificate-of-origin).
 
-3. When you're ready to start, we have [a step-by-step onboarding guide](ONBOARDING.md) to help you get oriented.
+3. When you're ready to start, we have [a step-by-step developer guide](DEVELOPER_GUIDE.md) to help you get oriented.
 
 ## Ways to Contribute
 
@@ -56,7 +56,7 @@ As with other types of contributions, the first step is to [open an issue on Git
 
 ## Developer Certificate of Origin
 
-OpenSearch is an open source product released under the Apache 2.0 license (see either [the Apache site](https://www.apache.org/licenses/LICENSE-2.0) or the [LICENSE.txt file](LICENSE.txt)). The Apache 2.0 license allows you to freely use, modify, distribute, and sell your own products that include Apache 2.0 licensed software.
+OpenSearch is an open source product released under the Apache 2.0 license (see either [the Apache site](https://www.apache.org/licenses/LICENSE-2.0) or the [LICENSE file](LICENSE)). The Apache 2.0 license allows you to freely use, modify, distribute, and sell your own products that include Apache 2.0 licensed software.
 
 We respect intellectual property rights of others and we want to make sure all incoming contributions are correctly attributed and licensed. A Developer Certificate of Origin (DCO) is a lightweight mechanism to do that.
 
@@ -119,6 +119,8 @@ To fix:
 ## License Headers
 
 New files in your code contributions should contain the following license header. If you are modifying existing files with license headers, or including new files that already have license headers, do not remove or modify them without guidance.
+
+For JavaScript, TypeScript, and SCSS files in this repo, use the header in the [Developer Guide](DEVELOPER_GUIDE.md#license-headers).
 
 ### Java
 
