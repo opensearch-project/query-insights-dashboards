@@ -2040,6 +2040,9 @@ describe('InflightQueries - PPL queries', () => {
   // the join had a search running, one while it was between searches.
   const PPL_ID = 'ludTvLmlQpW7fvLIs4agRA:84';
   const DSL_ID = 'ludTvLmlQpW7fvLIs4agRA:1194';
+  // In running_search, the PPL join's running search and that search's shard task.
+  const SEARCH_TASK_ID = 'ludTvLmlQpW7fvLIs4agRA:1130';
+  const SHARD_TASK_ID = 'ludTvLmlQpW7fvLIs4agRA:1131';
   const PPL_TEXT =
     'source=qibig | join left=a right=b ON a.grp = b.grp qibig | eval z = a.v * b.v | stats sum(z) as c';
 
@@ -2092,7 +2095,17 @@ describe('InflightQueries - PPL queries', () => {
     expect(ppl.getByText('qibig')).toBeInTheDocument();
   });
 
-  it('opens the flyout of a PPL query with its query text and child tasks', async () => {
+  // The table listed under a flyout heading.
+  const tableUnder = (heading: HTMLElement) => {
+    let el = heading.nextElementSibling;
+    while (el && !el.querySelector('table')) {
+      el = el.nextElementSibling;
+    }
+    if (!el) throw new Error(`no table under ${heading.textContent}`);
+    return within(el as HTMLElement);
+  };
+
+  it('opens the flyout of a PPL query with its query text, searches and shard tasks', async () => {
     await renderPage(stubLiveQueriesPpl.running_search);
 
     within(rowOf(PPL_ID)).getByText(PPL_ID).click();
@@ -2101,12 +2114,31 @@ describe('InflightQueries - PPL queries', () => {
     const flyout = within(title.closest('.euiFlyout') as HTMLElement);
     expect(flyout.getByText('PPL Query')).toBeInTheDocument();
     expect(flyout.queryByText('Query Source')).not.toBeInTheDocument();
-    expect(flyout.getByText('Child Tasks')).toBeInTheDocument();
-    expect(flyout.getByText('Search')).toBeInTheDocument(); // the join's running search
-    expect(flyout.getByText('qibig[0]')).toBeInTheDocument(); // and its shard task
+    // The join's running search and that search's shard task are listed apart.
+    const searches = tableUnder(flyout.getByText('Child Search Tasks'));
+    expect(searches.getByText(SEARCH_TASK_ID)).toBeInTheDocument();
+    expect(searches.getByText('qibig')).toBeInTheDocument();
+    expect(searches.queryByText(SHARD_TASK_ID)).not.toBeInTheDocument();
+    const shards = tableUnder(flyout.getByText('Shard Tasks'));
+    expect(shards.getByText(SHARD_TASK_ID)).toBeInTheDocument();
+    expect(shards.getByText('qibig[0]')).toBeInTheDocument();
+    expect(shards.getByText('Query')).toBeInTheDocument();
+    expect(shards.queryByText(SEARCH_TASK_ID)).not.toBeInTheDocument();
     const code = (title.closest('.euiFlyout') as HTMLElement).querySelector('.euiCodeBlock__code');
     expect(code?.textContent).toBe(PPL_TEXT);
     expect(flyout.getByText('Kill Query')).toBeInTheDocument();
+  });
+
+  it('lists only shard tasks in the flyout of a DSL search', async () => {
+    await renderPage(stubLiveQueriesPpl.running_search);
+
+    within(rowOf(DSL_ID)).getByText(DSL_ID).click();
+
+    const title = await screen.findByText(`Task ID - ${DSL_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(flyout.queryByText('Child Search Tasks')).not.toBeInTheDocument();
+    const shards = tableUnder(flyout.getByText('Shard Tasks'));
+    expect(shards.getByText('qibig[0]')).toBeInTheDocument();
   });
 
   it('tells a PPL query between searches has no running search', async () => {
