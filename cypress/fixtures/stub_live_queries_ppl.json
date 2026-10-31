@@ -7,7 +7,6 @@
           "id": "ludTvLmlQpW7fvLIs4agRA:84",
           "status": "running",
           "start_time": 1792437542802,
-          "wlm_group_id": "DEFAULT_WORKLOAD_GROUP",
           "total_latency_millis": 1316,
           "total_cpu_nanos": 904102000,
           "total_memory_bytes": 370663848,
