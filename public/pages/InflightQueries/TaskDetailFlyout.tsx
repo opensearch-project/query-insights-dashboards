@@ -24,6 +24,7 @@ import {
 } from '@elastic/eui';
 import { filesize } from 'filesize';
 import { RichLiveQueryRecord, TaskDetailRecord } from '../../../types/types';
+import { SEARCH_ACTION } from '../../utils/live-query-utils';
 
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
   <EuiFlexItem>
@@ -89,7 +90,20 @@ export const TaskDetailFlyout: React.FC<Props> = ({
     (task as any)._searchType?.replace(/_/g, ' ') ||
     (searchTypeMatch ? searchTypeMatch[1].replace(/_/g, ' ') : '-');
   const coordinatorNode = (task as any)._nodeId || coord?.node_id || '-';
-  const querySource = (task as any)._source || (sourceMatch ? sourceMatch[1] : null);
+  // A PPL query's source is its query text. Its tasks are the searches it runs and their shard
+  // tasks, which the flyout lists apart.
+  const { _querySource, _queryText } = task as RichLiveQueryRecord & {
+    _querySource?: string;
+    _queryText?: string;
+  };
+  const isPpl = _querySource === 'PPL';
+  const querySource = isPpl
+    ? _queryText || null
+    : (task as any)._source || (sourceMatch ? sourceMatch[1] : null);
+  const childSearchTasks = isPpl ? task.shard_tasks.filter((t) => t.action === SEARCH_ACTION) : [];
+  const shardTasks = isPpl
+    ? task.shard_tasks.filter((t) => t.action !== SEARCH_ACTION)
+    : task.shard_tasks;
   const totalShards = (task as any)._totalShards;
   const taskResourceUsages = (task as any)._taskResourceUsages;
 
@@ -114,6 +128,18 @@ export const TaskDetailFlyout: React.FC<Props> = ({
         const raw = match ? match[1].replace('phase/', '') : t.action;
         return PHASE_DISPLAY[raw] ?? raw;
       },
+    },
+    { name: 'CPU Time (ms)', render: (t: TaskDetailRecord) => (t.cpu_nanos / 1e6).toFixed(2) },
+    { name: 'Memory (bytes)', render: (t: TaskDetailRecord) => t.memory_bytes },
+  ];
+
+  // A PPL query's searches have no shard or phase; each shows the indices it reads.
+  const childSearchColumns = [
+    { field: 'task_id', name: 'Task ID' },
+    { field: 'node_id', name: 'Node ID', truncateText: true },
+    {
+      name: 'Indices',
+      render: (t: TaskDetailRecord) => t.description?.match(/indices\[([^\]]+)\]/)?.[1] ?? '-',
     },
     { name: 'CPU Time (ms)', render: (t: TaskDetailRecord) => (t.cpu_nanos / 1e6).toFixed(2) },
     { name: 'Memory (bytes)', render: (t: TaskDetailRecord) => t.memory_bytes },
@@ -240,14 +266,32 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             </>
           )}
 
-          {task.shard_tasks.length > 0 && (
+          {childSearchTasks.length > 0 && (
+            <>
+              <EuiTitle size="xs">
+                <h4>Child Search Tasks</h4>
+              </EuiTitle>
+              <EuiHorizontalRule margin="xs" />
+              <EuiInMemoryTable
+                tableCaption="Child search tasks"
+                items={childSearchTasks}
+                columns={childSearchColumns}
+                itemId="task_id"
+                pagination={{ initialPageSize: 10, showPerPageOptions: false }}
+              />
+              <EuiSpacer size="m" />
+            </>
+          )}
+
+          {shardTasks.length > 0 && (
             <>
               <EuiTitle size="xs">
                 <h4>Shard Tasks</h4>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiInMemoryTable
-                items={task.shard_tasks}
+                tableCaption="Shard tasks"
+                items={shardTasks}
                 columns={shardColumns}
                 itemId="task_id"
                 pagination={{ initialPageSize: 10, showPerPageOptions: false }}
@@ -256,7 +300,11 @@ export const TaskDetailFlyout: React.FC<Props> = ({
           )}
 
           {task.shard_tasks.length === 0 && !taskResourceUsages?.length && (
-            <p>No active shard tasks at this moment. Refresh to update.</p>
+            <p>
+              {isPpl
+                ? 'No searches running at this moment. Refresh to update.'
+                : 'No active shard tasks at this moment. Refresh to update.'}
+            </p>
           )}
 
           {/* Finished query task resource usages (old format) */}
@@ -320,17 +368,18 @@ export const TaskDetailFlyout: React.FC<Props> = ({
             <EuiSpacer size="m" />
             <EuiPanel>
               <EuiTitle size="s">
-                <h3>Query Source</h3>
+                <h3>{isPpl ? 'PPL Query' : 'Query Source'}</h3>
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiCodeBlock
-                language="json"
+                language={isPpl ? undefined : 'json'}
                 paddingSize="m"
                 fontSize="s"
                 overflowHeight={400}
                 isCopyable
               >
                 {(() => {
+                  if (isPpl) return String(querySource);
                   try {
                     if (typeof querySource === 'object')
                       return JSON.stringify(querySource, null, 2);

@@ -21,6 +21,7 @@ import {
   EuiSelect,
   EuiBadge,
   EuiAccordion,
+  EuiToolTip,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -69,6 +70,12 @@ import {
 import { SearchQueryRecord } from '../../../types/types';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import {
+  QUERY_SOURCE_BADGE_COLORS,
+  liveQuerySource,
+  pplIndices,
+  pplQueryText,
+} from '../../utils/live-query-utils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -78,6 +85,9 @@ type LiveQueryRow = LiveQueryRaw & {
   coordinator_node: string;
   node_label: string;
   wlm_group: string;
+  query_source: string;
+  // The query text of a PPL row; a DSL row's source stays in its coordinator description.
+  query_text?: string;
 };
 
 interface WlmGroupTally {
@@ -349,6 +359,10 @@ export const InflightQueries = ({
 
         const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
           const desc = (q as any).coordinator_task?.description || (q as any).description || '';
+          // A PPL row's coordinator is the PPL task, which is described by its query text
+          // rather than by a search's indices and source.
+          const querySource = liveQuerySource(q.coordinator_task?.action);
+          const queryText = querySource === 'PPL' ? pplQueryText(desc) : undefined;
           const indexMatch = desc.match(/indices\[(.*?)\]/);
           const searchTypeMatch = desc.match(/search_type\[(.*?)\]/);
           const nodeId = (q as any).coordinator_task?.node_id || (q as any).node_id || '';
@@ -372,6 +386,11 @@ export const InflightQueries = ({
             memory: { number: (q as any).total_memory_bytes || shardMemTotal || 0 },
           };
 
+          let index = indexMatch ? indexMatch[1] : 'N/A';
+          if (queryText !== undefined) {
+            index = pplIndices(queryText, shards).join(', ') || 'N/A';
+          }
+
           return {
             ...q,
             timestamp: (q as any).timestamp || (q as any).start_time,
@@ -379,7 +398,9 @@ export const InflightQueries = ({
             node_id: nodeId,
             measurements,
             is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
-            index: indexMatch ? indexMatch[1] : 'N/A',
+            index,
+            query_source: querySource,
+            query_text: queryText,
             search_type: searchTypeMatch
               ? searchTypeMatch[1].replace(/_/g, ' ')
               : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
@@ -420,6 +441,7 @@ export const InflightQueries = ({
                 memory: { number: 0 },
               },
               index: fq.indices?.join(', ') || '-',
+              query_source: fq.query_source || 'DSL',
               search_type: fq.search_type || '-',
               coordinator_node: fq.node_id || '-',
               node_label: fq.node_id || '-',
@@ -537,6 +559,12 @@ export const InflightQueries = ({
   const searchFields = useMemo<FieldDef[]>(() => {
     const fields: FieldDef[] = [
       { label: 'Task ID', key: 'id', accessor: (q) => (q as any).id, type: 'string' },
+      {
+        label: 'Query Source',
+        key: 'query_source',
+        accessor: (q) => (q as unknown as LiveQueryRow).query_source,
+        type: 'string',
+      },
       { label: 'Index', key: 'index', accessor: (q) => (q as any).index, type: 'string' },
       {
         label: 'Search Type',
@@ -633,6 +661,7 @@ export const InflightQueries = ({
     const defs: ColumnDef[] = [
       { id: 'timestamp', label: 'Timestamp' },
       { id: 'task_id', label: 'Task ID', pinned: true },
+      { id: 'query_source', label: 'Query Source' },
       { id: 'index', label: 'Index' },
       { id: 'coordinator_node', label: 'Coordinator Node' },
       { id: 'time_elapsed', label: 'Time Elapsed' },
@@ -1242,6 +1271,27 @@ export const InflightQueries = ({
                     },
                   ]
                 : []),
+              ...(isColumnVisible('query_source')
+                ? [
+                    {
+                      field: 'query_source',
+                      name: 'Query source',
+                      render: (source: string, item: LiveQueryRaw) => {
+                        const queryText = (item as LiveQueryRow).query_text;
+                        const badge = (
+                          <EuiBadge color={QUERY_SOURCE_BADGE_COLORS[source] ?? 'hollow'}>
+                            {source}
+                          </EuiBadge>
+                        );
+                        return queryText ? (
+                          <EuiToolTip content={queryText}>{badge}</EuiToolTip>
+                        ) : (
+                          badge
+                        );
+                      },
+                    },
+                  ]
+                : []),
               ...(isColumnVisible('index') ? [{ field: 'index', name: 'Index' }] : []),
               ...(isColumnVisible('coordinator_node')
                 ? [{ field: 'coordinator_node', name: 'Coordinator node' }]
@@ -1435,6 +1485,8 @@ export const InflightQueries = ({
             user_roles: (selectedItem as any).user_roles,
             backend_roles: (selectedItem as any).backend_roles,
             _topNId: (selectedItem as any)._topNId,
+            _querySource: (selectedItem as LiveQueryRow).query_source,
+            _queryText: (selectedItem as LiveQueryRow).query_text,
             // Direct fields for finished queries
             _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
             _searchType: (selectedItem as any).search_type || selectedItem.search_type,

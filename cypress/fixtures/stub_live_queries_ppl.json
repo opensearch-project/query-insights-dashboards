@@ -1,0 +1,145 @@
+{
+  "running_search": {
+    "ok": true,
+    "response": {
+      "live_queries": [
+        {
+          "id": "ludTvLmlQpW7fvLIs4agRA:84",
+          "status": "running",
+          "start_time": 1792437542802,
+          "total_latency_millis": 1316,
+          "total_cpu_nanos": 904102000,
+          "total_memory_bytes": 370663848,
+          "coordinator_task": {
+            "task_id": "ludTvLmlQpW7fvLIs4agRA:84",
+            "node_id": "ludTvLmlQpW7fvLIs4agRA",
+            "action": "cluster:admin/opensearch/ppl",
+            "status": "running",
+            "description": "PPL: source=qibig | join left=a right=b ON a.grp = b.grp qibig | eval z = a.v * b.v | stats sum(z) as c",
+            "start_time": 1792437542802,
+            "running_time_nanos": 1316823167,
+            "cpu_nanos": 847612000,
+            "memory_bytes": 360370616
+          },
+          "shard_tasks": [
+            {
+              "task_id": "ludTvLmlQpW7fvLIs4agRA:1130",
+              "node_id": "ludTvLmlQpW7fvLIs4agRA",
+              "action": "indices:data/read/search",
+              "status": "running",
+              "description": "indices[qibig], search_type[QUERY_THEN_FETCH], source[{\"from\":0,\"size\":10000,\"timeout\":\"1m\",\"_source\":{\"includes\":[\"grp\",\"v\"]},\"sort\":[{\"grp\":{\"order\":\"asc\",\"missing\":\"_last\"}},{\"_doc\":{\"order\":\"asc\"}},{\"_shard_doc\":{\"order\":\"asc\"}}],\"pit\":{\"id\":\"w5u9QQEFcWliaWcWNms5MlU3Nk1UcDZjdUlOc0k1Wlo3ZwAWbHVkVHZMbWxRcFc3ZnZMSXM0YWdSQQAAAAAAAAABkBZwUlFqeXM4VlJPRzhQWW5uN2hKTnJ3ARY2azkyVTc2TVRwNmN1SU5zSTVaWjdnAAA=\"}}]",
+              "start_time": 1792437544057,
+              "running_time_nanos": 62623667,
+              "cpu_nanos": 0,
+              "memory_bytes": 0
+            },
+            {
+              "task_id": "ludTvLmlQpW7fvLIs4agRA:1131",
+              "node_id": "ludTvLmlQpW7fvLIs4agRA",
+              "action": "indices:data/read/search[phase/query]",
+              "status": "running",
+              "description": "shardId[[qibig][0]]",
+              "start_time": 1792437544057,
+              "running_time_nanos": 62383458,
+              "cpu_nanos": 56490000,
+              "memory_bytes": 10293232
+            }
+          ]
+        },
+        {
+          "id": "ludTvLmlQpW7fvLIs4agRA:1194",
+          "status": "running",
+          "start_time": 1792437544117,
+          "wlm_group_id": "DEFAULT_WORKLOAD_GROUP",
+          "total_latency_millis": 2,
+          "total_cpu_nanos": 424000,
+          "total_memory_bytes": 14496,
+          "coordinator_task": {
+            "task_id": "ludTvLmlQpW7fvLIs4agRA:1194",
+            "node_id": "ludTvLmlQpW7fvLIs4agRA",
+            "action": "indices:data/read/search",
+            "status": "running",
+            "description": "indices[qibig], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"query\":{\"script_score\":{\"query\":{\"match_all\":{\"boost\":1.0}},\"script\":{\"source\":\"double s = 0; for (int i = 0; i < 4000; i++) { s += Math.sqrt(i + doc['v'].value); } return s;\",\"lang\":\"painless\"},\"boost\":1.0}},\"aggregations\":{\"g\":{\"terms\":{\"field\":\"grp\",\"size\":50,\"min_doc_count\":1,\"shard_min_doc_count\":0,\"show_term_doc_count_error\":false,\"order\":[{\"_count\":\"desc\"},{\"_key\":\"asc\"}]}}}}]",
+            "start_time": 1792437544117,
+            "running_time_nanos": 2228041,
+            "cpu_nanos": 0,
+            "memory_bytes": 0
+          },
+          "shard_tasks": [
+            {
+              "task_id": "ludTvLmlQpW7fvLIs4agRA:1195",
+              "node_id": "ludTvLmlQpW7fvLIs4agRA",
+              "action": "indices:data/read/search[phase/query]",
+              "status": "running",
+              "description": "shardId[[qibig][0]]",
+              "start_time": 1792437544118,
+              "running_time_nanos": 1024625,
+              "cpu_nanos": 424000,
+              "memory_bytes": 14496
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "between_searches": {
+    "ok": true,
+    "response": {
+      "live_queries": [
+        {
+          "id": "ludTvLmlQpW7fvLIs4agRA:83",
+          "status": "running",
+          "start_time": 1792437542802,
+          "wlm_group_id": "DEFAULT_WORKLOAD_GROUP",
+          "total_latency_millis": 23,
+          "total_cpu_nanos": 5395000,
+          "total_memory_bytes": 1726416,
+          "coordinator_task": {
+            "task_id": "ludTvLmlQpW7fvLIs4agRA:83",
+            "node_id": "ludTvLmlQpW7fvLIs4agRA",
+            "action": "indices:data/read/search",
+            "status": "running",
+            "description": "indices[qibig], search_type[QUERY_THEN_FETCH], source[{\"size\":0,\"query\":{\"script_score\":{\"query\":{\"match_all\":{\"boost\":1.0}},\"script\":{\"source\":\"double s = 0; for (int i = 0; i < 4000; i++) { s += Math.sqrt(i + doc['v'].value); } return s;\",\"lang\":\"painless\"},\"boost\":1.0}},\"aggregations\":{\"g\":{\"terms\":{\"field\":\"grp\",\"size\":50,\"min_doc_count\":1,\"shard_min_doc_count\":0,\"show_term_doc_count_error\":false,\"order\":[{\"_count\":\"desc\"},{\"_key\":\"asc\"}]}}}}]",
+            "start_time": 1792437542802,
+            "running_time_nanos": 23400167,
+            "cpu_nanos": 0,
+            "memory_bytes": 0
+          },
+          "shard_tasks": [
+            {
+              "task_id": "ludTvLmlQpW7fvLIs4agRA:85",
+              "node_id": "ludTvLmlQpW7fvLIs4agRA",
+              "action": "indices:data/read/search[phase/query]",
+              "status": "running",
+              "description": "shardId[[qibig][0]]",
+              "start_time": 1792437542815,
+              "running_time_nanos": 10476000,
+              "cpu_nanos": 5395000,
+              "memory_bytes": 1726416
+            }
+          ]
+        },
+        {
+          "id": "ludTvLmlQpW7fvLIs4agRA:84",
+          "status": "running",
+          "start_time": 1792437542802,
+          "total_latency_millis": 23,
+          "total_cpu_nanos": 0,
+          "total_memory_bytes": 0,
+          "coordinator_task": {
+            "task_id": "ludTvLmlQpW7fvLIs4agRA:84",
+            "node_id": "ludTvLmlQpW7fvLIs4agRA",
+            "action": "cluster:admin/opensearch/ppl",
+            "status": "running",
+            "description": "PPL: source=qibig | join left=a right=b ON a.grp = b.grp qibig | eval z = a.v * b.v | stats sum(z) as c",
+            "start_time": 1792437542802,
+            "running_time_nanos": 23446084,
+            "cpu_nanos": 0,
+            "memory_bytes": 0
+          },
+          "shard_tasks": []
+        }
+      ]
+    }
+  }
+}
