@@ -325,11 +325,8 @@ describe('Inflight Queries Dashboard', () => {
   });
 
   it('displays WLM group as text when WLM is disabled', () => {
-    cy.get('tbody tr')
-      .first()
-      .within(() => {
-        cy.get('td').contains('ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
-      });
+    // Rows are sorted by time elapsed by default, so do not depend on the first row.
+    cy.contains('tbody td', 'ANALYTICS_WORKLOAD_GROUP').should('not.have.attr', 'href');
   });
 });
 
