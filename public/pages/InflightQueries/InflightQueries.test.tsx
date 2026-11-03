@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
@@ -229,12 +229,17 @@ describe('InflightQueries', () => {
 
     // Spot-check a few fixture-driven values from your JSON (active queries only)
     expect(screen.getByText('8.25 s')).toBeInTheDocument();
-    expect(screen.getByText('9.69 s')).toBeInTheDocument();
+    // 9.69 s is also in the table (sorted by time elapsed), so check the longest-query panel.
+    const longestPanel = document.querySelector(
+      '[data-test-subj="panel-longest-query"]'
+    ) as HTMLElement;
+    expect(within(longestPanel).getByText('9.69 s')).toBeInTheDocument();
     expect(screen.getByText('576.76 µs')).toBeInTheDocument();
     expect(screen.getByText('23.53 KB')).toBeInTheDocument();
 
-    // A row identifier — text is split across elements due to the link
-    expect(screen.getByText('node-A1B2C4E5:3614')).toBeInTheDocument();
+    // A row identifier — text is split across elements due to the link.
+    // It is the longest query, so it also shows in the longest-query panel.
+    expect(screen.getAllByText('node-A1B2C4E5:3614').length).toBeGreaterThan(0);
   });
 
   it('shows zeros when there are no queries', async () => {
@@ -503,7 +508,16 @@ describe('InflightQueries', () => {
     );
 
     expect(screen.getAllByText('ANALYTICS_WORKLOAD_GROUP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+
+    // The table is sorted by time elapsed, so the SEARCH_WORKLOAD_GROUP query is on page 2.
+    await act(async () => {
+      fireEvent.click(
+        document.querySelector('[data-test-subj="pagination-button-1"]') as HTMLElement
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getAllByText('SEARCH_WORKLOAD_GROUP').length).toBeGreaterThan(0);
+    });
 
     unmount();
   });
@@ -2031,5 +2045,256 @@ describe('InflightQueries - Column Visibility Integration', () => {
 
       expect(screen.queryByText('alice')).not.toBeInTheDocument();
     });
+  });
+});
+
+describe('InflightQueries - table sorting', () => {
+  const makeQuery = (
+    id: string,
+    latencySec: number,
+    cpuNanos: number,
+    memoryBytes: number,
+    isCancelled = false
+  ) => ({
+    id,
+    timestamp: 1640995200000,
+    node_id: 'nodeAlpha',
+    description: 'indices[orders-2024] search_type[query_then_fetch]',
+    measurements: {
+      latency: { number: latencySec * 1e9 },
+      cpu: { number: cpuNanos },
+      memory: { number: memoryBytes },
+    },
+    is_cancelled: isCancelled,
+  });
+
+  const payload = (queries: any[]) => ({ ok: true, response: { live_queries: queries } });
+
+  const firstBatch = [
+    makeQuery('task-a:1', 5, 3e6, 2048),
+    makeQuery('task-b:2', 10, 1e6, 8192),
+    makeQuery('task-c:3', 1, 2e6, 4096, true),
+  ];
+
+  const renderPage = () => {
+    const core = makeCore();
+    return render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+  };
+
+  const getMainTable = () => {
+    const tables = document.querySelectorAll('table');
+    return tables[tables.length - 1] as HTMLElement;
+  };
+
+  // Task IDs of the table rows, in the order they are rendered.
+  const getRowIds = (ids: string[]) =>
+    Array.from(getMainTable().querySelectorAll('tbody tr')).map((row) =>
+      ids.find((id) => (row.textContent ?? '').includes(id))
+    );
+
+  const getHeaderCell = (name: string) =>
+    Array.from(getMainTable().querySelectorAll('thead th')).find(
+      (th) => (th.textContent ?? '').trim() === name
+    ) as HTMLElement;
+
+  const clickHeader = async (name: string) => {
+    const button = getHeaderCell(name).querySelector('button') as HTMLElement;
+    expect(button).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(button);
+    });
+  };
+
+  const ids = ['task-a:1', 'task-b:2', 'task-c:3'];
+
+  it('sorts by time elapsed, descending, by default', async () => {
+    mockLiveQueries(payload(firstBatch));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-b:2', 'task-a:1', 'task-c:3']);
+    });
+    expect(getHeaderCell('Time elapsed')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('makes the expected columns sortable', async () => {
+    mockLiveQueries(payload(firstBatch));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(ids)).toHaveLength(3);
+    });
+
+    [
+      'Timestamp',
+      'Task ID',
+      'Index',
+      'Coordinator node',
+      'Time elapsed',
+      'CPU usage',
+      'Memory usage',
+      'Search type',
+      'Status',
+      'WLM Group',
+    ].forEach((name) => {
+      expect(getHeaderCell(name).querySelector('button')).toBeInTheDocument();
+    });
+    expect(getHeaderCell('Actions').querySelector('button')).not.toBeInTheDocument();
+  });
+
+  it('sorts by a column when its header is clicked and toggles the direction', async () => {
+    mockLiveQueries(payload(firstBatch));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-b:2', 'task-a:1', 'task-c:3']);
+    });
+
+    await clickHeader('CPU usage');
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-b:2', 'task-c:3', 'task-a:1']);
+    });
+    expect(getHeaderCell('CPU usage')).toHaveAttribute('aria-sort', 'ascending');
+
+    await clickHeader('CPU usage');
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-a:1', 'task-c:3', 'task-b:2']);
+    });
+    expect(getHeaderCell('CPU usage')).toHaveAttribute('aria-sort', 'descending');
+
+    await clickHeader('Status');
+    await waitFor(() => {
+      // Cancelled sorts before Running
+      expect(getRowIds(ids)[0]).toBe('task-c:3');
+    });
+  });
+
+  it('sorts by status case-insensitively when finished queries are shown', async () => {
+    // The backend sends finished statuses in lowercase, while live rows are 'Running' or 'Cancelled'.
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: firstBatch,
+        finished_queries: [
+          {
+            id: 'task-f:4',
+            timestamp: 1640995200000,
+            node_id: 'nodeAlpha',
+            status: 'completed',
+            indices: ['orders-2024'],
+            search_type: 'query_then_fetch',
+            measurements: {
+              latency: { number: 3e9 },
+              cpu: { number: 4e6 },
+              memory: { number: 1024 },
+            },
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    const statusIds = [...ids, 'task-f:4'];
+    await waitFor(() => {
+      expect(getRowIds(statusIds)).toEqual(['task-b:2', 'task-a:1', 'task-f:4', 'task-c:3']);
+    });
+
+    await clickHeader('Status');
+    await waitFor(() => {
+      // cancelled, completed, running
+      expect(getRowIds(statusIds)).toEqual(['task-c:3', 'task-f:4', 'task-a:1', 'task-b:2']);
+    });
+    expect(getHeaderCell('Status')).toHaveAttribute('aria-sort', 'ascending');
+
+    await clickHeader('Status');
+    await waitFor(() => {
+      expect(getRowIds(statusIds)).toEqual(['task-a:1', 'task-b:2', 'task-f:4', 'task-c:3']);
+    });
+    expect(getHeaderCell('Status')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('switches the default sort to ascending instead of clearing it', async () => {
+    mockLiveQueries(payload(firstBatch));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-b:2', 'task-a:1', 'task-c:3']);
+    });
+
+    await clickHeader('Time elapsed');
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-c:3', 'task-a:1', 'task-b:2']);
+    });
+    expect(getHeaderCell('Time elapsed')).toHaveAttribute('aria-sort', 'ascending');
+  });
+
+  it('keeps the selected sort when the data refreshes', async () => {
+    mockLiveQueries(payload(firstBatch));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(ids)).toHaveLength(3);
+    });
+
+    await clickHeader('Memory usage');
+    await waitFor(() => {
+      expect(getRowIds(ids)).toEqual(['task-a:1', 'task-c:3', 'task-b:2']);
+    });
+
+    // Next poll returns new values; the table should still be sorted by memory, ascending.
+    const refreshedIds = ['task-a:1', 'task-b:2', 'task-c:3', 'task-d:4'];
+    mockLiveQueries(
+      payload([
+        makeQuery('task-a:1', 6, 3e6, 9000),
+        makeQuery('task-b:2', 11, 1e6, 1000),
+        makeQuery('task-c:3', 2, 2e6, 5000, true),
+        makeQuery('task-d:4', 20, 4e6, 3000),
+      ])
+    );
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(30_000);
+    });
+
+    await waitFor(() => {
+      expect(getRowIds(refreshedIds)).toEqual(['task-b:2', 'task-d:4', 'task-c:3', 'task-a:1']);
+    });
+    expect(getHeaderCell('Memory usage')).toHaveAttribute('aria-sort', 'ascending');
   });
 });
