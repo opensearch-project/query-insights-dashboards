@@ -184,13 +184,14 @@ export const QueryInsightsPlugin = function (Client, config, components) {
     method: 'GET',
   });
 
+  // Keep wlmGroupId in `params` (not the path template). Putting `?wlmGroupId=`
+  // in `fmt` made the legacy client append a second `?verbose=…`, so the
+  // backend saw the group id as `<id>?verbose=true` and returned no queries (#618).
   queryInsights.getLiveQueriesWLMGroup = ca({
     url: {
-      fmt: `/_insights/live_queries?wlmGroupId=<%=wlmGroupId%>`,
-      req: {
-        wlmGroupId: { type: 'string', required: true },
-      },
+      fmt: `/_insights/live_queries`,
       params: {
+        wlmGroupId: { type: 'string', required: true },
         verbose: { type: 'boolean' },
         use_finished_cache: { type: 'boolean' },
       },
