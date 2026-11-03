@@ -599,11 +599,7 @@ export const InflightQueries = ({
       {
         label: 'Status',
         key: 'status',
-        accessor: (q) => {
-          if ((q as any)._finished) return (q as any)._status || 'Completed';
-          if ((q as any).is_cancelled) return 'Cancelled';
-          return 'Running';
-        },
+        accessor: (q) => getStatusLabel(q),
         type: 'string',
       },
       {
@@ -1338,23 +1334,30 @@ export const InflightQueries = ({
                 ? [
                     {
                       name: 'Status',
-                      sortable: (item: any) => getStatusLabel(item),
-                      render: (item: any) =>
-                        (item as any)._finished ? (
-                          <EuiBadge
-                            color={
-                              item.is_cancelled || (item as any)._status === 'Failed'
-                                ? 'danger'
-                                : 'success'
-                            }
-                          >
-                            {(item as any)._status || 'Completed'}
+                      // Finished statuses come from the backend in lowercase (e.g. 'completed'),
+                      // so sort on the lowercase label to order live and finished rows together.
+                      sortable: (item: any) => getStatusLabel(item).toLowerCase(),
+                      render: (item: any) => {
+                        const label = getStatusLabel(item);
+                        if (item._finished) {
+                          return (
+                            <EuiBadge
+                              color={
+                                item.is_cancelled || item._status === 'Failed'
+                                  ? 'danger'
+                                  : 'success'
+                              }
+                            >
+                              {label}
+                            </EuiBadge>
+                          );
+                        }
+                        return (
+                          <EuiBadge color={label === 'Cancelled' ? 'danger' : 'primary'}>
+                            {label}
                           </EuiBadge>
-                        ) : item.is_cancelled === true ? (
-                          <EuiBadge color="danger">Cancelled</EuiBadge>
-                        ) : (
-                          <EuiBadge color="primary">Running</EuiBadge>
-                        ),
+                        );
+                      },
                     },
                   ]
                 : []),

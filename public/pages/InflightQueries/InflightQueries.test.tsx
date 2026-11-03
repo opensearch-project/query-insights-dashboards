@@ -2192,6 +2192,55 @@ describe('InflightQueries - table sorting', () => {
     });
   });
 
+  it('sorts by status case-insensitively when finished queries are shown', async () => {
+    // The backend sends finished statuses in lowercase, while live rows are 'Running' or 'Cancelled'.
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: firstBatch,
+        finished_queries: [
+          {
+            id: 'task-f:4',
+            timestamp: 1640995200000,
+            node_id: 'nodeAlpha',
+            status: 'completed',
+            indices: ['orders-2024'],
+            search_type: 'query_then_fetch',
+            measurements: {
+              latency: { number: 3e9 },
+              cpu: { number: 4e6 },
+              memory: { number: 1024 },
+            },
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    const statusIds = [...ids, 'task-f:4'];
+    await waitFor(() => {
+      expect(getRowIds(statusIds)).toEqual(['task-b:2', 'task-a:1', 'task-f:4', 'task-c:3']);
+    });
+
+    await clickHeader('Status');
+    await waitFor(() => {
+      // cancelled, completed, running
+      expect(getRowIds(statusIds)).toEqual(['task-c:3', 'task-f:4', 'task-a:1', 'task-b:2']);
+    });
+    expect(getHeaderCell('Status')).toHaveAttribute('aria-sort', 'ascending');
+
+    await clickHeader('Status');
+    await waitFor(() => {
+      expect(getRowIds(statusIds)).toEqual(['task-a:1', 'task-b:2', 'task-f:4', 'task-c:3']);
+    });
+    expect(getHeaderCell('Status')).toHaveAttribute('aria-sort', 'descending');
+  });
+
   it('switches the default sort to ascending instead of clearing it', async () => {
     mockLiveQueries(payload(firstBatch));
     renderPage();
