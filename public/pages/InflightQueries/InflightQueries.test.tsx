@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { CoreStart } from 'opensearch-dashboards/public';
-import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
@@ -1252,7 +1252,8 @@ describe('InflightQueries - additional coverage', () => {
         expect(screen.getByText('old-format:1')).toBeInTheDocument();
         // Finished-query latency is supplied in milliseconds (2000 ms),
         // while the table renders its normalized nanosecond value.
-        expect(screen.getByText('2.00 s')).toBeInTheDocument();
+        const row = screen.getByText('old-format:1').closest('tr');
+        expect(within(row!).getByText('2.00 s')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
