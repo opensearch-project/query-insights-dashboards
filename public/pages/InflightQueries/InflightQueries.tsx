@@ -226,14 +226,6 @@ export const InflightQueries = ({
     };
   }, [core.http, dataSource?.id]);
 
-  // Clean URL after extracting wlmGroupId
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    if (urlParams.get(WLM_GROUP_ID_PARAM)) {
-      history.replace(location.pathname);
-    }
-  }, [location.search, history, location.pathname]);
-
   const [finishedQueryStats, setFinishedQueryStats] = useState<{
     total_completions: number;
     total_cancellations: number;
@@ -310,7 +302,7 @@ export const InflightQueries = ({
       : [];
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroupId, queryInsightWlmNavigationSupported]);
+  }, [core.http, dataSource?.id, wlmGroupId, queryInsightWlmNavigationSupported, wlmAvailable]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
