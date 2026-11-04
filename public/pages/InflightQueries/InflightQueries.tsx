@@ -69,6 +69,7 @@ import {
 import { SearchQueryRecord } from '../../../types/types';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import { normalizeFinishedMeasurements } from '../../utils/live-query-measurements';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -414,11 +415,7 @@ export const InflightQueries = ({
               node_id: fq.node_id || '-',
               description: '',
               is_cancelled: fq.failed || false,
-              measurements: fq.measurements || {
-                latency: { number: 0 },
-                cpu: { number: 0 },
-                memory: { number: 0 },
-              },
+              measurements: normalizeFinishedMeasurements(fq.measurements),
               index: fq.indices?.join(', ') || '-',
               search_type: fq.search_type || '-',
               coordinator_node: fq.node_id || '-',

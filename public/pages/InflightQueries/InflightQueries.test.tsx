@@ -768,7 +768,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['idx1'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 2e6 },
               memory: { number: 2048 },
             },
@@ -783,7 +783,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['idx1'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 3e9 },
+              latency: { number: 3000 },
               cpu: { number: 3e6 },
               memory: { number: 3072 },
             },
@@ -920,7 +920,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 5e6 },
               memory: { number: 8192 },
             },
@@ -1055,7 +1055,7 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 3e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            measurements: { latency: { number: 3000 }, cpu: { number: 0 }, memory: { number: 0 } },
             task_resource_usages: [],
           },
         ],
@@ -1105,7 +1105,7 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 1e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            measurements: { latency: { number: 1000 }, cpu: { number: 0 }, memory: { number: 0 } },
             task_resource_usages: [],
           },
         ],
@@ -1204,7 +1204,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 5e6 },
               memory: { number: 8192 },
             },
@@ -1250,6 +1250,9 @@ describe('InflightQueries - additional coverage', () => {
     await waitFor(
       () => {
         expect(screen.getByText('old-format:1')).toBeInTheDocument();
+        // Finished-query latency is supplied in milliseconds (2000 ms),
+        // while the table renders its normalized nanosecond value.
+        expect(screen.getByText('2.00 s')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
@@ -1259,6 +1262,7 @@ describe('InflightQueries - additional coverage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Task ID - old-format:1')).toBeInTheDocument();
+      expect(screen.getByText('2000 ms')).toBeInTheDocument();
       expect(screen.getByText('Task Resource Usage')).toBeInTheDocument();
       // Should show coordinator and shard tasks from old format
       expect(screen.getAllByText('Coordinator Task').length).toBeGreaterThanOrEqual(1);
