@@ -124,6 +124,7 @@ const RegisterRepositoryFlyout = ({
       if (basePath.trim()) settings.base_path = basePath.trim();
 
       // Check if a repo with this name already exists
+      let nameWasFree = false;
       try {
         const existingRepos = await core.http.get('/api/snapshot/repositories', {
           query: { dataSourceId: dataSourceId || '' },
@@ -133,38 +134,45 @@ const RegisterRepositoryFlyout = ({
           setIsSubmitting(false);
           return;
         }
+        nameWasFree = !!existingRepos.ok && !!existingRepos.response;
       } catch (e) {
         // If we can't check, proceed with registration — OpenSearch will reject duplicates
         console.warn('Unable to check existing repositories:', e);
       }
 
-      const resp = await core.http.put('/api/snapshot/repository', {
-        query: { dataSourceId: dataSourceId || '' },
-        body: JSON.stringify({
-          repository: trimmedName,
-          type: 's3',
-          settings,
-        }),
-      });
-
-      if (resp.ok) {
-        core.notifications.toasts.addSuccess(`Repository "${trimmedName}" registered.`);
-        onSuccess(trimmedName);
-        onClose();
-      } else {
+      try {
+        await core.http.put('/api/snapshot/repository', {
+          query: { dataSourceId: dataSourceId || '' },
+          body: JSON.stringify({
+            repository: trimmedName,
+            type: 's3',
+            settings,
+          }),
+        });
+      } catch (error: any) {
         // OpenSearch creates the repo metadata entry before verification runs.
-        // If verification fails, the broken entry remains — clean it up.
-        try {
-          await core.http.delete(`/api/snapshot/repository/${encodeURIComponent(trimmedName)}`, {
-            query: { dataSourceId: dataSourceId || '' },
-          });
-        } catch (e) {
-          console.warn('Failed to clean up broken repository entry:', e);
+        // If verification fails, the broken entry remains — clean it up. Only do this
+        // when the name was confirmed free above, so an existing repository is never removed.
+        if (nameWasFree) {
+          try {
+            await core.http.delete(`/api/snapshot/repository/${encodeURIComponent(trimmedName)}`, {
+              query: { dataSourceId: dataSourceId || '' },
+            });
+          } catch (e) {
+            console.warn('Failed to clean up broken repository entry:', e);
+          }
         }
         core.notifications.toasts.addDanger(
-          `Failed to register repository: ${parseErrorReason(resp.response || 'Unknown error')}`
+          `Failed to register repository: ${parseErrorReason(
+            error?.body?.message || error?.message || 'Unknown error'
+          )}`
         );
+        return;
       }
+
+      core.notifications.toasts.addSuccess(`Repository "${trimmedName}" registered.`);
+      onSuccess(trimmedName);
+      onClose();
     } catch (error: any) {
       core.notifications.toasts.addDanger(
         `Failed to register repository: ${

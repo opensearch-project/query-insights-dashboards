@@ -429,7 +429,11 @@ export const WLMDetails = ({
         });
         const allRules = rulesRes?.rules ?? [];
 
-        const matchedRules = allRules.filter((rule: any) => rule.workload_group === groupId);
+        // The rules API returns rules in index order, which changes whenever a rule is
+        // updated. Sort by id so the list keeps a stable order across Apply and reloads.
+        const matchedRules = allRules
+          .filter((rule: any) => rule.workload_group === groupId)
+          .sort((a: any, b: any) => String(a.id ?? '').localeCompare(String(b.id ?? '')));
         const toRule = (rule: any): Rule => ({
           index: (rule?.index_pattern ?? []).join(','),
           indexId: rule.id,

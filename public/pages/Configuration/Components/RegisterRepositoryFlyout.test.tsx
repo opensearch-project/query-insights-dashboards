@@ -27,6 +27,12 @@ const createMockCore = (overrides: Record<string, jest.Mock> = {}) => ({
   },
 });
 
+// Shape of the HttpFetchError that core.http rejects with when a route returns an error status.
+const httpError = (message: string) => ({
+  message: 'Internal Server Error',
+  body: { statusCode: 500, error: 'Internal Server Error', message },
+});
+
 const renderFlyout = (coreOverrides: Record<string, jest.Mock> = {}) => {
   const core = createMockCore(coreOverrides);
   render(
@@ -187,15 +193,16 @@ describe('RegisterRepositoryFlyout', () => {
     it('should show user-friendly error for missing credentials', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: {
-              reason: '[repo] path not accessible',
-              caused_by: { reason: 'Failed to load credentials from IMDS.' },
-            },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: {
+                reason: '[repo] path not accessible',
+                caused_by: { reason: 'Failed to load credentials from IMDS.' },
+              },
+            })
+          )
+        ),
         delete: jest.fn().mockResolvedValue({ ok: true }),
       });
       fillForm('new-repo', 'my-bucket');
@@ -210,17 +217,18 @@ describe('RegisterRepositoryFlyout', () => {
     it('should show user-friendly error for missing region', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: {
-              reason: '[repo] path not accessible',
-              caused_by: {
-                reason: 'Unable to load region from any of the providers in the chain',
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: {
+                reason: '[repo] path not accessible',
+                caused_by: {
+                  reason: 'Unable to load region from any of the providers in the chain',
+                },
               },
-            },
-          }),
-        }),
+            })
+          )
+        ),
         delete: jest.fn().mockResolvedValue({ ok: true }),
       });
       fillForm('new-repo', 'my-bucket');
@@ -235,15 +243,16 @@ describe('RegisterRepositoryFlyout', () => {
     it('should show user-friendly error for non-existent bucket', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: {
-              reason: '[repo] path not accessible',
-              caused_by: { reason: 'The specified bucket does not exist' },
-            },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: {
+                reason: '[repo] path not accessible',
+                caused_by: { reason: 'The specified bucket does not exist' },
+              },
+            })
+          )
+        ),
         delete: jest.fn().mockResolvedValue({ ok: true }),
       });
       fillForm('new-repo', 'bad-bucket');
@@ -258,15 +267,16 @@ describe('RegisterRepositoryFlyout', () => {
     it('should show user-friendly error for access denied', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: {
-              reason: '[repo] path not accessible',
-              caused_by: { reason: 'Access Denied (Service: S3, Status Code: 403)' },
-            },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: {
+                reason: '[repo] path not accessible',
+                caused_by: { reason: 'Access Denied (Service: S3, Status Code: 403)' },
+              },
+            })
+          )
+        ),
         delete: jest.fn().mockResolvedValue({ ok: true }),
       });
       fillForm('new-repo', 'my-bucket');
@@ -280,12 +290,13 @@ describe('RegisterRepositoryFlyout', () => {
       const mockDelete = jest.fn().mockResolvedValue({ ok: true });
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: { reason: 'verification failed' },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: { reason: 'verification failed' },
+            })
+          )
+        ),
         delete: mockDelete,
       });
       fillForm('new-repo', 'my-bucket');
@@ -296,6 +307,29 @@ describe('RegisterRepositoryFlyout', () => {
           expect.objectContaining({ query: { dataSourceId: 'test-ds' } })
         );
       });
+    });
+
+    it('should not delete the repository when the duplicate check could not run', async () => {
+      const mockDelete = jest.fn().mockResolvedValue({ ok: true });
+      renderFlyout({
+        get: jest.fn().mockRejectedValue(new Error('Forbidden')),
+        put: jest
+          .fn()
+          .mockRejectedValue(
+            httpError(JSON.stringify({ error: { reason: 'verification failed' } }))
+          ),
+        delete: mockDelete,
+      });
+      fillForm('existing-repo', 'my-bucket');
+      fireEvent.click(screen.getByText('Register repository'));
+      await waitFor(() => {
+        expect(mockAddDanger).toHaveBeenCalledWith(
+          'Failed to register repository: verification failed'
+        );
+      });
+      expect(mockDelete).not.toHaveBeenCalled();
+      expect(mockOnSuccess).not.toHaveBeenCalled();
+      expect(mockOnClose).not.toHaveBeenCalled();
     });
 
     it('should handle network errors gracefully', async () => {
@@ -327,15 +361,16 @@ describe('RegisterRepositoryFlyout', () => {
     it('should show fallback error with caused_by for unknown errors', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: {
-              reason: '[repo] path not accessible',
-              caused_by: { reason: 'Some unexpected error from OpenSearch' },
-            },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: {
+                reason: '[repo] path not accessible',
+                caused_by: { reason: 'Some unexpected error from OpenSearch' },
+              },
+            })
+          )
+        ),
         delete: jest.fn().mockResolvedValue({ ok: true }),
       });
       fillForm('new-repo', 'my-bucket');
@@ -364,12 +399,13 @@ describe('RegisterRepositoryFlyout', () => {
     it('should still show error toast when cleanup delete fails', async () => {
       renderFlyout({
         get: jest.fn().mockResolvedValue({ ok: true, response: {} }),
-        put: jest.fn().mockResolvedValue({
-          ok: false,
-          response: JSON.stringify({
-            error: { reason: 'verification failed' },
-          }),
-        }),
+        put: jest.fn().mockRejectedValue(
+          httpError(
+            JSON.stringify({
+              error: { reason: 'verification failed' },
+            })
+          )
+        ),
         delete: jest.fn().mockRejectedValue(new Error('Delete failed')),
       });
       fillForm('new-repo', 'my-bucket');

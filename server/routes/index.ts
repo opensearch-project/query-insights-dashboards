@@ -6,6 +6,7 @@
 import { schema } from '@osd/config-schema';
 import { IRouter, Logger } from '../../../../src/core/server';
 import { EXPORTER_TYPE } from '../../common/constants';
+import { getTaskCancelFailure } from './taskCancelUtils';
 
 export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger: Logger) {
   router.get(
@@ -62,7 +63,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
-          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
+          verbose: schema.boolean({ defaultValue: true }),
         }),
       },
     },
@@ -119,7 +120,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
-          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
+          verbose: schema.boolean({ defaultValue: true }),
         }),
       },
     },
@@ -177,7 +178,7 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
           to: schema.maybe(schema.string({ defaultValue: '' })),
           id: schema.maybe(schema.string({ defaultValue: '' })),
           dataSourceId: schema.maybe(schema.string()),
-          verbose: schema.maybe(schema.boolean({ defaultValue: false })),
+          verbose: schema.boolean({ defaultValue: true }),
         }),
       },
     },
@@ -448,6 +449,14 @@ export function defineRoutes(router: IRouter, dataSourceEnabled: boolean, logger
 
         if (!res) {
           throw new Error('failed');
+        }
+
+        const failure = getTaskCancelFailure(res.body);
+        if (failure) {
+          return response.customError({
+            statusCode: failure.statusCode,
+            body: { message: `Failed to cancel task ${taskId}: ${failure.reason}` },
+          });
         }
 
         return response.ok({ body: { ok: true, res } });

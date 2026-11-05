@@ -49,14 +49,10 @@ export function defineWlmRoutes(router: IRouter, dataSourceEnabled: boolean) {
         }
         return response.ok({ body: stats });
       } catch (error: any) {
-        context.queryInsights.logger.error(`Failed to fetch WLM stats: ${error.message}`, {
-          error,
-        });
+        console.error('Failed to fetch WLM stats:', error);
         return response.customError({
-          statusCode: error.statusCode || 500,
-          body: {
-            message: `Failed to fetch WLM stats: ${error.message}`,
-          },
+          statusCode: extractErrorStatus(error),
+          body: { message: extractErrorMessage(error, 'Failed to fetch WLM stats') },
         });
       }
     }
