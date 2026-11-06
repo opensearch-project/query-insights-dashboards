@@ -734,6 +734,48 @@ describe('WLMDetails Component', () => {
     expect(mockCore.notifications.toasts.addSuccess).toHaveBeenCalled();
   });
 
+  it('lists rules in a stable order regardless of the order the API returns them', async () => {
+    const defaultGet = (mockCore.http.get as jest.Mock).getMockImplementation()!;
+    const rule = (id: string, index: string) => ({
+      id,
+      description: 'd',
+      index_pattern: [index],
+      workload_group: 'wg-123',
+    });
+    // The API returns updated rules last, so the order differs between fetches.
+    const responses = [
+      [rule('b-rule', 'b-*'), rule('c-rule', 'c-*'), rule('a-rule', 'a-*')],
+      [rule('c-rule', 'c-*'), rule('a-rule', 'a-*'), rule('b-rule', 'b-*')],
+    ];
+    let rulesFetches = 0;
+    (mockCore.http.get as jest.Mock).mockImplementation((path: string, ...rest: any[]) => {
+      if (path === '/api/_rules/workload_group') {
+        const rules = responses[Math.min(rulesFetches, responses.length - 1)];
+        rulesFetches++;
+        return Promise.resolve({ rules });
+      }
+      return defaultGet(path, ...rest);
+    });
+
+    renderComponent();
+    fireEvent.click(await screen.findByTestId('wlm-tab-settings'));
+    await waitFor(() =>
+      expect(screen.getAllByTestId('indexInput').map((i) => (i as HTMLInputElement).value)).toEqual(
+        ['a-*', 'b-*', 'c-*']
+      )
+    );
+
+    fireEvent.change(screen.getAllByTestId('indexInput')[1], { target: { value: 'b2-*' } });
+    fireEvent.click(screen.getByRole('button', { name: /Apply Changes/i }));
+
+    await waitFor(() => expect(rulesFetches).toBeGreaterThanOrEqual(2));
+    await waitFor(() =>
+      expect(screen.getAllByTestId('indexInput').map((i) => (i as HTMLInputElement).value)).toEqual(
+        ['a-*', 'b-*', 'c-*']
+      )
+    );
+  });
+
   it('clicking Refresh calls both details and stats fetchers', async () => {
     jest.useFakeTimers();
     (mockCore.http.get as jest.Mock).mockClear();

@@ -245,6 +245,9 @@ const TopNQueries = ({
           verbose: false,
         },
       };
+      // The metric endpoints usually fail for the same reason (for example missing
+      // permissions), so collect the messages and show a single toast per refresh.
+      const fetchErrors = new Set<string>();
       const fetchMetric = async (endpoint: string) => {
         try {
           // TODO: #13 refactor the interface definitions for requests and responses
@@ -260,13 +263,11 @@ const TopNQueries = ({
             },
           };
         } catch (error) {
-          core.notifications.toasts.addDanger({
-            title: 'Failed to retrieve top queries',
-            text:
-              error?.body?.message ??
+          fetchErrors.add(
+            error?.body?.message ??
               error?.message ??
-              'An unknown error occurred while fetching top queries.',
-          });
+              'An unknown error occurred while fetching top queries.'
+          );
           return nullResponse;
         }
       };
@@ -280,6 +281,12 @@ const TopNQueries = ({
         const respMemory = memorySettings.isEnabled
           ? await fetchMetric('/api/top_queries/memory')
           : nullResponse;
+        if (fetchErrors.size > 0) {
+          core.notifications.toasts.addDanger({
+            title: 'Failed to retrieve top queries',
+            text: Array.from(fetchErrors).join('; '),
+          });
+        }
         const newQueries = [
           ...respLatency.response.top_queries,
           ...respCpu.response.top_queries,
@@ -328,7 +335,7 @@ const TopNQueries = ({
       newRemoteRepository: string = '',
       newRemotePath: string = ''
     ) => {
-      if (get) {
+      const loadSettings = async () => {
         try {
           // const resp = await core.http.get('/api/settings', {query: {dataSourceId: '738ffbd0-d8de-11ef-9d96-eff1abd421b8'}});
           const resp = await core.http.get('/api/settings', {
@@ -417,6 +424,10 @@ const TopNQueries = ({
         } catch (error) {
           console.error('Failed to retrieve settings:', error);
         }
+      };
+
+      if (get) {
+        await loadSettings();
       } else {
         try {
           setMetricSettings(metric, {
@@ -460,6 +471,15 @@ const TopNQueries = ({
           await core.http.put('/api/update_settings', { query: queryParams });
         } catch (error) {
           console.error('Failed to set settings:', error);
+          core.notifications.toasts.addDanger({
+            title: 'Failed to save settings',
+            text:
+              error?.body?.message ??
+              error?.message ??
+              'An unknown error occurred while saving settings.',
+          });
+          // The page already shows the new values, so reload what OpenSearch actually has.
+          await loadSettings();
         }
       }
     },

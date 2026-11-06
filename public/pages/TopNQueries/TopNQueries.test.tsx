@@ -13,7 +13,11 @@ import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { getVersionOnce } from '../../utils/version-utils';
 
 jest.mock('../QueryInsights/QueryInsights', () => () => <div>Mocked QueryInsights</div>);
-jest.mock('../Configuration/Configuration', () => () => <div>Mocked Configuration</div>);
+const mockConfigurationProps: { current?: any } = {};
+jest.mock('../Configuration/Configuration', () => (props: any) => {
+  mockConfigurationProps.current = props;
+  return <div>Mocked Configuration</div>;
+});
 jest.mock('../QueryDetails/QueryDetails', () => () => <div>Mocked QueryDetails</div>);
 jest.mock('../../utils/version-utils');
 
@@ -624,6 +628,81 @@ describe('TopNQueries Component', () => {
           })
         );
       });
+    });
+
+    it('shows one toast per refresh when every metric fails for the same reason', async () => {
+      const mockSettingsResponse = {
+        response: {
+          persistent: {
+            search: {
+              insights: {
+                top_queries: {
+                  latency: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  cpu: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                  memory: { enabled: 'true', top_n_size: '10', window_size: '1h' },
+                },
+              },
+            },
+          },
+        },
+      };
+      const forbidden = { body: { message: 'no permissions for [cluster:admin/top_queries]' } };
+      (mockCore.http.get as jest.Mock).mockImplementation((endpoint) => {
+        if (endpoint === '/api/settings') return Promise.resolve(mockSettingsResponse);
+        if (endpoint.startsWith('/api/top_queries/')) return Promise.reject(forbidden);
+        return Promise.resolve({ response: { top_queries: [] } });
+      });
+      const toastCalls = () =>
+        (mockCore.notifications.toasts.addDanger as jest.Mock).mock.calls.filter(
+          ([toast]) => toast?.title === 'Failed to retrieve top queries'
+        );
+      const memoryFetches = () =>
+        (mockCore.http.get as jest.Mock).mock.calls.filter(
+          ([endpoint]) => endpoint === '/api/top_queries/memory'
+        ).length;
+
+      renderTopNQueries(QUERY_INSIGHTS);
+
+      await waitFor(() => expect(toastCalls().length).toBeGreaterThan(0));
+      await waitFor(() => expect(toastCalls().length).toBe(memoryFetches()));
+      expect(toastCalls()[0][0].text).toBe(forbidden.body.message);
+    });
+
+    it('shows a danger toast when saving settings fails', async () => {
+      (mockCore.http.get as jest.Mock).mockResolvedValue({ response: {} });
+      (mockCore.http.put as jest.Mock).mockRejectedValue({
+        body: { message: 'settings update rejected' },
+      });
+
+      renderTopNQueries(CONFIGURATION);
+      await waitFor(() => expect(mockConfigurationProps.current).toBeDefined());
+
+      await mockConfigurationProps.current.configInfo(
+        false,
+        true,
+        'latency',
+        '10',
+        '5',
+        'MINUTES',
+        'local_index',
+        'none',
+        '7'
+      );
+
+      expect(mockCore.http.put).toHaveBeenCalledWith('/api/update_settings', expect.any(Object));
+      expect(mockCore.notifications.toasts.addDanger).toHaveBeenCalledWith({
+        title: 'Failed to save settings',
+        text: 'settings update rejected',
+      });
+      // The settings are reloaded after the failed save so the page shows what OpenSearch has.
+      const get = mockCore.http.get as jest.Mock;
+      const settingsGetOrders = get.mock.calls
+        .map(([endpoint], i) =>
+          endpoint === '/api/settings' ? get.mock.invocationCallOrder[i] : 0
+        )
+        .filter(Boolean);
+      const putOrder = (mockCore.http.put as jest.Mock).mock.invocationCallOrder[0];
+      expect(Math.max(...settingsGetOrders)).toBeGreaterThan(putOrder);
     });
 
     it('use error.message when error.body.message is absent', async () => {

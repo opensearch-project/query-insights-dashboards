@@ -39,6 +39,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { notifyCancelTaskFailure } from '../../utils/cancel-task-utils';
 import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
   DEFAULT_REFRESH_INTERVAL,
@@ -1424,10 +1425,12 @@ export const InflightQueries = ({
 
                               await httpClient.post(API_ENDPOINTS.CANCEL_TASK(item.id));
                               await new Promise((r) => setTimeout(r, 300));
-                              await fetchLiveQueries();
                             } catch (err) {
                               console.error('Failed to cancel task', err);
+                              notifyCancelTaskFailure(core.notifications, err);
                             }
+                            // Refresh either way. A failed cancel often means the task already finished.
+                            await fetchLiveQueries();
                           },
                         },
                       ],
@@ -1514,10 +1517,11 @@ export const InflightQueries = ({
                   ? async () => {
                       try {
                         await core.http.post(API_ENDPOINTS.CANCEL_TASK(selectedTaskId));
-                        await fetchLiveQueries();
                       } catch (e) {
                         console.error('Failed to cancel task:', e);
+                        notifyCancelTaskFailure(core.notifications, e);
                       }
+                      await fetchLiveQueries();
                     }
                   : undefined
               }

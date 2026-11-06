@@ -58,7 +58,6 @@ describe.each<[boolean]>([[true], [false]])(
             },
           },
         },
-        queryInsights: { logger: { error: jest.fn() } },
       };
 
       return { ctx, mockWlmCall, mockDsCallAPI, mockDsGetSettings, mockCoreGetSettings };
@@ -123,6 +122,24 @@ describe.each<[boolean]>([[true], [false]])(
       const body = res.ok.mock.calls[0][0].body;
       expect(body).toEqual({ nodes: { n1: {} } });
       expectNoMeta(body);
+    });
+
+    test('GET /api/_wlm/stats passes the OpenSearch status through on errors', async () => {
+      const handler = REG['GET /api/_wlm/stats'];
+      const { ctx, mockWlmCall } = makeCtx();
+      const res = makeRes();
+      const err = Object.assign(new Error('[security_exception] no permissions'), {
+        statusCode: 403,
+      });
+      mockWlmCall.mockRejectedValue(err);
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await handler(ctx, { query: {} }, res);
+
+      expect(res.customError).toHaveBeenCalledWith({
+        statusCode: 403,
+        body: { message: 'Failed to fetch WLM stats: [security_exception] no permissions' },
+      });
     });
 
     //

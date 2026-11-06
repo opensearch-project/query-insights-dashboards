@@ -69,6 +69,8 @@ const makeCore = (): CoreStart =>
       toasts: {
         addSuccess: jest.fn(),
         addError: jest.fn(),
+        addWarning: jest.fn(),
+        addDanger: jest.fn(),
       },
     },
   }) as unknown as CoreStart;
@@ -917,6 +919,105 @@ describe('InflightQueries - additional coverage', () => {
       expect(screen.getByText('my-index[0]')).toBeInTheDocument();
       expect(screen.getByText('Kill Query')).toBeInTheDocument();
     });
+  });
+
+  it('refreshes and warns when Kill Query hits a task that already finished', async () => {
+    const core = makeCore();
+    (core.http.post as jest.Mock).mockRejectedValue({
+      response: { status: 404 },
+      body: {
+        statusCode: 404,
+        message: 'Failed to cancel task task-abc:123: task [task-abc:123] is not found',
+      },
+    });
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'task-abc:123',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            description:
+              'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+            measurements: {
+              latency: { number: 5e9 },
+              cpu: { number: 1e6 },
+              memory: { number: 4096 },
+            },
+            is_cancelled: false,
+            coordinator_task: {
+              task_id: 'task-abc:123',
+              node_id: 'node1',
+              action: 'indices:data/read/search',
+              status: 'running',
+              description:
+                'indices[my-index] search_type[query_then_fetch] source[{"query":{"match_all":{}}}]',
+              start_time: 1640995200000,
+              running_time_nanos: 5e9,
+              cpu_nanos: 1e6,
+              memory_bytes: 4096,
+            },
+            shard_tasks: [
+              {
+                task_id: 'shard-xyz:456',
+                node_id: 'node1',
+                action: 'indices:data/read/search[phase/query]',
+                status: 'running',
+                description: 'shardId[[my-index][0]]',
+                start_time: 1640995200000,
+                running_time_nanos: 4e9,
+                cpu_nanos: 800000,
+                memory_bytes: 2048,
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    // Wait for table to render, then click the link
+    await waitFor(
+      () => expect(screen.getAllByText('task-abc:123').length).toBeGreaterThanOrEqual(1),
+      { timeout: 5000 }
+    );
+
+    // Click the link (first match is the table link)
+    const link = screen.getAllByText('task-abc:123')[0];
+    link.click();
+
+    await waitFor(() => expect(screen.getByText('Kill Query')).toBeInTheDocument());
+    const fetchesBefore = (retrieveLiveQueries as jest.Mock).mock.calls.length;
+
+    await act(async () => {
+      screen.getByText('Kill Query').click();
+    });
+
+    await waitFor(() => {
+      expect(core.http.post).toHaveBeenCalledWith('/api/tasks/task-abc:123/cancel');
+      expect(core.notifications.toasts.addWarning).toHaveBeenCalledWith(
+        'The query already finished, so there was nothing to cancel.'
+      );
+      expect((retrieveLiveQueries as jest.Mock).mock.calls.length).toBeGreaterThan(fetchesBefore);
+    });
+    expect(core.notifications.toasts.addDanger).not.toHaveBeenCalled();
   });
 
   it('flyout shows View Top N for completed tasks', async () => {

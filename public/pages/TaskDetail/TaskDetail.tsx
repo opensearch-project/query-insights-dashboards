@@ -27,6 +27,7 @@ import { filesize } from 'filesize';
 import { RichLiveQueryRecord, TaskDetailRecord, FinishedQueryRecord } from '../../../types/types';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
+import { notifyCancelTaskFailure } from '../../utils/cancel-task-utils';
 import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
@@ -127,10 +128,12 @@ const TaskDetail = ({
     if (!taskId) return;
     try {
       await core.http.post(API_ENDPOINTS.CANCEL_TASK(taskId));
-      fetchTask();
     } catch (e) {
       console.error('Failed to cancel task:', e);
+      notifyCancelTaskFailure(core.notifications, e);
     }
+    // Refresh either way. A failed cancel often means the task already finished.
+    fetchTask();
   };
 
   const navigateToTopN = (topNId: string) => {
