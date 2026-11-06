@@ -649,11 +649,11 @@ export const InflightQueries = ({
       { id: 'timestamp', label: 'Timestamp' },
       { id: 'task_id', label: 'Task ID', pinned: true },
       { id: 'index', label: 'Index' },
-      { id: 'coordinator_node', label: 'Coordinator Node' },
+      { id: 'coordinator_node', label: 'Coordinator Node', defaultVisible: false },
       { id: 'time_elapsed', label: 'Time Elapsed' },
       { id: 'cpu_usage', label: 'CPU Usage' },
       { id: 'memory_usage', label: 'Memory Usage' },
-      { id: 'search_type', label: 'Search Type' },
+      { id: 'search_type', label: 'Search Type', defaultVisible: false },
     ];
     // Keep this order matching the rendered table below: search_type, user info, status, WLM.
     if (userInfoSupported) {
