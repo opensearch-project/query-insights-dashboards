@@ -10,6 +10,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
 import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { DEFAULT_REFRESH_INTERVAL } from '../../../common/constants';
 import { getSecurityPluginStatus } from '../../utils/datasource-utils';
 import {
   getVersionOnce,
@@ -521,6 +522,51 @@ describe('InflightQueries', () => {
 
     unmount();
   });
+  it('preserves a linked WLM filter and other URL parameters across polling', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+    (useLocation as jest.Mock).mockImplementation(
+      jest.requireActual('react-router-dom').useLocation
+    );
+    const search = '?wlmGroupId=SEARCH_WORKLOAD_GROUP&keep=this';
+    const LocationProbe = () => (
+      <output data-testid="current-search">{useLocation().search}</output>
+    );
+
+    render(
+      <MemoryRouter initialEntries={[`/live-queries${search}`]}>
+        <DataSourceContext.Provider
+          value={{ dataSource: { id: 'default' }, setDataSource: jest.fn() }}
+        >
+          <InflightQueries
+            core={core}
+            depsStart={
+              { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+            }
+            params={{} as any}
+            dataSourceManagement={undefined}
+          />
+          <LocationProbe />
+        </DataSourceContext.Provider>
+      </MemoryRouter>
+    );
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+    expect(screen.getByTestId('current-search')).toHaveTextContent(search);
+    (retrieveLiveQueries as jest.Mock).mockClear();
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(DEFAULT_REFRESH_INTERVAL + 100);
+    });
+    expect(retrieveLiveQueries).toHaveBeenCalled();
+    expect(
+      (retrieveLiveQueries as jest.Mock).mock.calls.every(
+        (call) => call[2] === 'SEARCH_WORKLOAD_GROUP'
+      )
+    ).toBe(true);
+    expect(screen.getByTestId('current-search')).toHaveTextContent(search);
+  });
+
   it('calls API with SEARCH_WORKLOAD_GROUP parameter', async () => {
     const core = makeCore();
     mockLiveQueries(mockStubLiveQueries);
