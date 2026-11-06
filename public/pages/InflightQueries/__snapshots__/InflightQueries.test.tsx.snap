@@ -1699,7 +1699,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -1955,7 +1955,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -2211,7 +2211,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -2468,7 +2468,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -2694,7 +2694,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -2919,7 +2919,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -3176,7 +3176,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -3401,7 +3401,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -3658,7 +3658,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
@@ -3883,7 +3883,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      QUERY THEN FETCH
+                      query then fetch
                     </span>
                   </div>
                 </td>
