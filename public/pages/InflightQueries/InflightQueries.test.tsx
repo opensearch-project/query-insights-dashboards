@@ -979,6 +979,11 @@ describe('InflightQueries - additional coverage', () => {
   });
 
   it('handles new API format with coordinator_task and start_time', async () => {
+    // Search type is hidden by default. Show it so the parsed value can be checked.
+    localStorage.setItem(
+      'queryInsights_live_visibleColumns',
+      JSON.stringify({ search_type: true })
+    );
     const core = makeCore();
     mockLiveQueries({
       ok: true,
@@ -1705,6 +1710,78 @@ describe('InflightQueries - Column Visibility Integration', () => {
     });
   });
 
+  it('hides Coordinator node and Search type by default and shows them when toggled on', async () => {
+    const core = makeCore();
+    mockLiveQueries(mockStubLiveQueries);
+
+    render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Active queries')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+
+    const headerNames = () => {
+      const tables = document.querySelectorAll('table');
+      const mainTable = tables[tables.length - 1];
+      return Array.from(mainTable.querySelectorAll('thead th')).map((th) =>
+        (th.textContent ?? '').trim()
+      );
+    };
+
+    expect(headerNames()).toContain('Index');
+    expect(headerNames()).not.toContain('Coordinator node');
+    expect(headerNames()).not.toContain('Search type');
+
+    const columnsButton = document.querySelector(
+      '[data-test-subj="column-visibility-button"]'
+    ) as HTMLElement;
+    fireEvent.click(columnsButton);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector('[data-test-subj="column-toggle-coordinator_node"]')
+      ).toBeInTheDocument();
+    });
+
+    const coordinatorToggle = document.querySelector(
+      '[data-test-subj="column-toggle-coordinator_node"]'
+    ) as HTMLInputElement;
+    const searchTypeToggle = document.querySelector(
+      '[data-test-subj="column-toggle-search_type"]'
+    ) as HTMLInputElement;
+    expect(coordinatorToggle.checked).toBe(false);
+    expect(searchTypeToggle.checked).toBe(false);
+
+    fireEvent.click(coordinatorToggle);
+    fireEvent.click(searchTypeToggle);
+    fireEvent.click(columnsButton);
+
+    await waitFor(() => {
+      expect(headerNames()).toContain('Coordinator node');
+      expect(headerNames()).toContain('Search type');
+    });
+  });
+
   describe('user info columns', () => {
     const withUserInfo = {
       ok: true,
@@ -2148,11 +2225,9 @@ describe('InflightQueries - table sorting', () => {
       'Timestamp',
       'Task ID',
       'Index',
-      'Coordinator node',
       'Time elapsed',
       'CPU usage',
       'Memory usage',
-      'Search type',
       'Status',
       'WLM Group',
     ].forEach((name) => {
