@@ -9,6 +9,7 @@ import {
   liveQuerySource,
   pplIndices,
   pplQueryText,
+  pplSourceIndices,
 } from './live-query-utils';
 
 const search = (description: string) => ({ action: SEARCH_ACTION, description });
@@ -33,6 +34,53 @@ describe('pplQueryText', () => {
   it('leaves text without the prefix as it is', () => {
     expect(pplQueryText('source=logs')).toBe('source=logs');
     expect(pplQueryText(undefined)).toBe('');
+  });
+});
+
+describe('pplSourceIndices', () => {
+  it.each([
+    ['index=logs | head 5', ['logs']],
+    ['| source=logs', ['logs']],
+    ['/* note */ source=logs', ['logs']],
+    ['search status=500 source=logs', ['logs']],
+    ['source=[ source=logs | where a > 1 ] as t', ['logs']],
+  ])('reads %s', (query, expected) => {
+    expect(pplSourceIndices(query)).toEqual(expected);
+  });
+
+  it('ignores comments, including a line comment before the next command', () => {
+    expect(pplSourceIndices('// all logs\nsource=logs // the index\n| head 5')).toEqual(['logs']);
+    expect(pplSourceIndices('source=/* old */ logs')).toEqual(['logs']);
+  });
+
+  it('does not read source= inside a quoted string', () => {
+    expect(pplSourceIndices('search message="source=fake [ source=other ]" source=logs')).toEqual([
+      'logs',
+    ]);
+  });
+
+  it('keeps cluster prefixes, dots and backticked names', () => {
+    expect(pplSourceIndices('SOURCE = remote:logs.2026, `my index` as t')).toEqual([
+      'remote:logs.2026',
+      'my index',
+    ]);
+  });
+
+  it('reads the sources of nested subsearches', () => {
+    expect(
+      pplSourceIndices(
+        'source=a | where id in [ source=b | where x in [ index=c | fields x ] | fields id ]'
+      )
+    ).toEqual(['a', 'b', 'c']);
+  });
+
+  it('names no index for a table function or a bracketed source list', () => {
+    expect(pplSourceIndices("source=prometheus.query_range('up', 1, 2, 3)")).toEqual([]);
+    expect(pplSourceIndices('source=[logs-*, metrics]')).toEqual([]);
+  });
+
+  it('reads only the command that starts each pipeline', () => {
+    expect(pplSourceIndices('source=logs | eval index = 1 | where source = "x"')).toEqual(['logs']);
   });
 });
 
