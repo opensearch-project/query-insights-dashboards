@@ -73,6 +73,7 @@ describe('Inflight Queries Dashboard', () => {
       '',
       'Timestamp',
       'Task ID',
+      'Query source',
       'Index',
       'Coordinator node',
       'Time elapsed',
