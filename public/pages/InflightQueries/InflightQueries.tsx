@@ -108,6 +108,22 @@ interface WlmGroupDetail {
   name: string;
 }
 
+interface TableSort {
+  field: string;
+  direction: 'asc' | 'desc';
+}
+
+// Default sort for the live queries table: longest-running queries first.
+// Computed columns (no `field`) are referenced by their column `name`.
+const DEFAULT_TABLE_SORT: TableSort = { field: 'Time elapsed', direction: 'desc' };
+
+// Same label the Status column renders, so sorting matches what the user sees.
+const getStatusLabel = (item: any): string => {
+  if (item._finished) return item._status || 'Completed';
+  if (item.is_cancelled === true) return 'Cancelled';
+  return 'Running';
+};
+
 export const InflightQueries = ({
   core,
   depsStart,
@@ -553,6 +569,9 @@ export const InflightQueries = ({
   ]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
+  // Sort is kept in component state so it survives the periodic refreshes.
+  const [tableSort, setTableSort] = useState<TableSort>(DEFAULT_TABLE_SORT);
+  const tableSorting = useMemo(() => ({ sort: tableSort }), [tableSort]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- Field definitions for DynamicSearchBar ---
@@ -608,11 +627,7 @@ export const InflightQueries = ({
       {
         label: 'Status',
         key: 'status',
-        accessor: (q) => {
-          if ((q as any)._finished) return (q as any)._status || 'Completed';
-          if ((q as any).is_cancelled) return 'Cancelled';
-          return 'Running';
-        },
+        accessor: (q) => getStatusLabel(q),
         type: 'string',
       },
       {
@@ -1256,13 +1271,20 @@ export const InflightQueries = ({
           columns={(() => {
             const allColumns = [
               ...(isColumnVisible('timestamp')
-                ? [{ name: 'Timestamp', render: (item: any) => convertTime(item.timestamp) }]
+                ? [
+                    {
+                      name: 'Timestamp',
+                      render: (item: any) => convertTime(item.timestamp),
+                      sortable: (item: any) => item.timestamp,
+                    },
+                  ]
                 : []),
               ...(isColumnVisible('task_id')
                 ? [
                     {
                       field: 'id',
                       name: 'Task ID',
+                      sortable: true,
                       render: taskDetailSupported
                         ? (id: string) => (
                             <EuiLink onClick={() => setSelectedTaskId(id)}>{id}</EuiLink>
@@ -1276,6 +1298,7 @@ export const InflightQueries = ({
                     {
                       field: 'query_source',
                       name: 'Query source',
+                      sortable: true,
                       render: (source: string, item: LiveQueryRaw) => {
                         const queryText = (item as LiveQueryRow).query_text;
                         const badge = (
@@ -1292,15 +1315,18 @@ export const InflightQueries = ({
                     },
                   ]
                 : []),
-              ...(isColumnVisible('index') ? [{ field: 'index', name: 'Index' }] : []),
+              ...(isColumnVisible('index')
+                ? [{ field: 'index', name: 'Index', sortable: true }]
+                : []),
               ...(isColumnVisible('coordinator_node')
-                ? [{ field: 'coordinator_node', name: 'Coordinator node' }]
+                ? [{ field: 'coordinator_node', name: 'Coordinator node', sortable: true }]
                 : []),
               ...(isColumnVisible('time_elapsed')
                 ? [
                     {
                       name: 'Time elapsed',
                       render: (item: any) => formatTime(item.measurements?.latency?.number / 1e9),
+                      sortable: (item: any) => item.measurements?.latency?.number,
                     },
                   ]
                 : []),
@@ -1309,6 +1335,7 @@ export const InflightQueries = ({
                     {
                       name: 'CPU usage',
                       render: (item: any) => formatTime(item.measurements?.cpu?.number / 1e9),
+                      sortable: (item: any) => item.measurements?.cpu?.number,
                     },
                   ]
                 : []),
@@ -1317,11 +1344,12 @@ export const InflightQueries = ({
                     {
                       name: 'Memory usage',
                       render: (item: any) => formatMemory(item.measurements?.memory?.number),
+                      sortable: (item: any) => item.measurements?.memory?.number,
                     },
                   ]
                 : []),
               ...(isColumnVisible('search_type')
-                ? [{ field: 'search_type', name: 'Search type' }]
+                ? [{ field: 'search_type', name: 'Search type', sortable: true }]
                 : []),
               ...(userInfoSupported && isColumnVisible('username')
                 ? [
@@ -1329,6 +1357,9 @@ export const InflightQueries = ({
                       field: 'username',
                       name: USERNAME,
                       render: (username: string) => username || '-',
+                      // Empty usernames sort last in both directions.
+                      sortable: (item: any) =>
+                        item.username ? String(item.username).toLowerCase() : undefined,
                     },
                   ]
                 : []),
@@ -1354,22 +1385,30 @@ export const InflightQueries = ({
                 ? [
                     {
                       name: 'Status',
-                      render: (item: any) =>
-                        (item as any)._finished ? (
-                          <EuiBadge
-                            color={
-                              item.is_cancelled || (item as any)._status === 'Failed'
-                                ? 'danger'
-                                : 'success'
-                            }
-                          >
-                            {(item as any)._status || 'Completed'}
+                      // Finished statuses come from the backend in lowercase (e.g. 'completed'),
+                      // so sort on the lowercase label to order live and finished rows together.
+                      sortable: (item: any) => getStatusLabel(item).toLowerCase(),
+                      render: (item: any) => {
+                        const label = getStatusLabel(item);
+                        if (item._finished) {
+                          return (
+                            <EuiBadge
+                              color={
+                                item.is_cancelled || item._status === 'Failed'
+                                  ? 'danger'
+                                  : 'success'
+                              }
+                            >
+                              {label}
+                            </EuiBadge>
+                          );
+                        }
+                        return (
+                          <EuiBadge color={label === 'Cancelled' ? 'danger' : 'primary'}>
+                            {label}
                           </EuiBadge>
-                        ) : item.is_cancelled === true ? (
-                          <EuiBadge color="danger">Cancelled</EuiBadge>
-                        ) : (
-                          <EuiBadge color="primary">Running</EuiBadge>
-                        ),
+                        );
+                      },
                     },
                   ]
                 : []),
@@ -1377,6 +1416,12 @@ export const InflightQueries = ({
                 ? [
                     {
                       name: 'WLM Group',
+                      // Sort by the displayed group name; 'N/A' sorts last.
+                      sortable: (item: any) => {
+                        if (!item.wlm_group || item.wlm_group === 'N/A') return undefined;
+                        const groupName = wlmIdToNameMap[item.wlm_group] ?? item.wlm_group;
+                        return String(groupName).toLowerCase();
+                      },
                       render: (item: any) => {
                         if (!item.wlm_group || item.wlm_group === 'N/A') {
                           return 'N/A';
@@ -1444,14 +1489,28 @@ export const InflightQueries = ({
             return allColumns;
           })()}
           selection={selection}
+          sorting={tableSorting}
+          allowNeutralSort={false}
           pagination={{
             pageIndex: pagination.pageIndex,
             pageSize: 10,
             pageSizeOptions: [10, 20, 50],
           }}
-          onTableChange={(e: { page?: { index: number } }) =>
-            setPagination({ pageIndex: e.page?.index ?? 0 })
-          }
+          onTableChange={(e: {
+            page?: { index: number };
+            sort?: { field: string | number | symbol; direction: 'asc' | 'desc' };
+          }) => {
+            // Clicking a column header reports page index 0, so a new sort starts on page 1.
+            setPagination({ pageIndex: e.page?.index ?? 0 });
+            const nextSort = e.sort;
+            if (nextSort?.field && nextSort.direction) {
+              const field = String(nextSort.field);
+              const direction = nextSort.direction;
+              setTableSort((prev) =>
+                prev.field === field && prev.direction === direction ? prev : { field, direction }
+              );
+            }
+          }}
           itemId={(row) => `${row.id}-${row.timestamp}`}
           loading={!query}
         />

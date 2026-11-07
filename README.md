@@ -1,7 +1,7 @@
 # OpenSearch Query Insights Dashboards
 
 ## Introduction
-This is a OpenSearch-Dashboard plugin for Query Insights.
+This is an OpenSearch Dashboards plugin for Query Insights.
 
 OpenSearch stands as a versatile, scalable, open-source solution designed for diverse data exploration needs, ranging from interactive log analytics to real-time application monitoring. Despite its capabilities, OpenSearch users and administrators often encounter challenges in ensuring optimal search performance due to limited expertise or OpenSearch's current constraints in providing comprehensive data points on query executions. Common questions include:
 
@@ -15,14 +15,18 @@ The overarching objective of the Query Insights initiative is to address these i
 Query Insights and this dashboard plugin project was originally proposed in the [OpenSearch Query Insights RFC](https://github.com/opensearch-project/OpenSearch/issues/11429) and [OpenSearch Query Insights Dashboards RFC](https://github.com/opensearch-project/OpenSearch-Dashboards/issues/5571)
 
 
+## Developer Guide
+
+The [Developer Guide](DEVELOPER_GUIDE.md) explains how to set up a development environment, run the plugin locally against the Query Insights backend plugin, and run the tests. To learn how to contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Project Style Guidelines
 
-The [OpenSearch Project style guidelines](https://github.com/opensearch-project/documentation-website/blob/main/STYLE_GUIDE.md) and [OpenSearch terms](https://github.com/opensearch-project/documentation-website/blob/main/TERMS.md) documents provide style standards and terminology to be observed when creating OpenSearch Project content.
+The [OpenSearch Project style guidelines](https://github.com/opensearch-project/documentation-website/blob/main/style-guide/STYLE_GUIDE.md) and [OpenSearch terms](https://github.com/opensearch-project/documentation-website/blob/main/style-guide/TERMS.md) documents provide style standards and terminology to be observed when creating OpenSearch Project content.
 
 ## Getting Help
 
 * For questions or help getting started, please find us in the [OpenSearch Slack](https://opensearch.org/slack.html) in the `#plugins` channel.
-* For bugs or feature requests, please create [a new issue](https://github.com/opensearch-project/query-insights/issues/new/choose).
+* For bugs or feature requests, please create [a new issue](https://github.com/opensearch-project/query-insights-dashboards/issues/new/choose).
 
 ## Code of Conduct
 
@@ -30,8 +34,8 @@ This project has adopted the [Amazon Open Source Code of Conduct](CODE_OF_CONDUC
 
 ## License
 
-This project is licensed under the [Apache v2.0 License](LICENSE.txt).
+This project is licensed under the [Apache v2.0 License](LICENSE).
 
 ## Copyright
 
-Copyright OpenSearch Contributors. See [NOTICE](NOTICE.txt) for details.
+Copyright OpenSearch Contributors. See [NOTICE](NOTICE) for details.

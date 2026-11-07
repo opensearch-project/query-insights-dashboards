@@ -85,13 +85,12 @@ describe('Inflight Queries Dashboard - WLM Enabled', () => {
   });
 
   it('WLM group column links navigate to WLM details', () => {
-    cy.get('table tbody tr')
-      .first()
-      .within(() => {
-        cy.get('button')
-          .contains(/ANALYTICS_WORKLOAD_GROUP|SEARCH_WORKLOAD_GROUP/)
-          .should('exist');
-      });
+    // Rows are sorted by time elapsed by default, so do not depend on the first row.
+    cy.get('table tbody').within(() => {
+      cy.get('button')
+        .contains(/ANALYTICS_WORKLOAD_GROUP|SEARCH_WORKLOAD_GROUP/)
+        .should('exist');
+    });
   });
 
   it('displays status badges in the table', () => {

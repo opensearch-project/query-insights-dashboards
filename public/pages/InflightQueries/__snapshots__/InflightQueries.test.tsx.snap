@@ -1187,7 +1187,49 @@ exports[`InflightQueries matches snapshot 1`] = `
               </div>
               <div
                 class="euiFlexItem euiFlexItem--flexGrowZero"
-              />
+              >
+                <div
+                  class="euiTableSortMobile"
+                >
+                  <div
+                    class="euiPopover euiPopover--anchorDownRight"
+                  >
+                    <div
+                      class="euiPopover__anchor"
+                    >
+                      <button
+                        class="euiButtonEmpty euiButtonEmpty--primary euiButtonEmpty--xSmall euiButtonEmpty--flushRight"
+                        type="button"
+                      >
+                        <span
+                          class="euiButtonContent euiButtonContent--iconRight euiButtonEmpty__content"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="euiIcon euiIcon--small euiIcon--inherit euiIcon-isLoaded euiButtonContent__icon"
+                            focusable="false"
+                            height="16"
+                            role="img"
+                            viewBox="0 0 16 16"
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M13.069 5.157 8.384 9.768a.546.546 0 0 1-.768 0L2.93 5.158a.552.552 0 0 0-.771 0 .53.53 0 0 0 0 .759l4.684 4.61c.641.631 1.672.63 2.312 0l4.684-4.61a.53.53 0 0 0 0-.76.552.552 0 0 0-.771 0Z"
+                              fill-rule="non-zero"
+                            />
+                          </svg>
+                          <span
+                            class="euiButtonEmpty__text"
+                          >
+                            Sorting
+                          </span>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <table
@@ -1224,191 +1266,293 @@ exports[`InflightQueries matches snapshot 1`] = `
                   </div>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_Timestamp_0"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Timestamp"
+                      class="euiTableCellContent"
                     >
-                      Timestamp
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Timestamp"
+                      >
+                        Timestamp
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_id_1"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Task ID"
+                      class="euiTableCellContent"
                     >
-                      Task ID
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Task ID"
+                      >
+                        Task ID
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_query_source_2"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Query source"
+                      class="euiTableCellContent"
                     >
-                      Query source
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Query source"
+                      >
+                        Query source
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_index_3"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Index"
+                      class="euiTableCellContent"
                     >
-                      Index
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Index"
+                      >
+                        Index
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_coordinator_node_4"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Coordinator node"
+                      class="euiTableCellContent"
                     >
-                      Coordinator node
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Coordinator node"
+                      >
+                        Coordinator node
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="descending"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_Time elapsed_5"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton euiTableHeaderButton-isSorted"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Time elapsed"
+                      class="euiTableCellContent"
                     >
-                      Time elapsed
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Time elapsed"
+                      >
+                        Time elapsed
+                      </span>
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--medium euiIcon-isLoaded euiTableSortIcon"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M7 11.692V3.556C7 3.249 7.224 3 7.5 3s.5.249.5.556v8.136l4.096-4.096a.5.5 0 0 1 .707.707l-4.242 4.243a1.494 1.494 0 0 1-.925.433.454.454 0 0 1-.272 0 1.494 1.494 0 0 1-.925-.433L2.197 8.303a.5.5 0 1 1 .707-.707L7 11.692Z"
+                        />
+                      </svg>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_CPU usage_6"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="CPU usage"
+                      class="euiTableCellContent"
                     >
-                      CPU usage
+                      <span
+                        class="euiTableCellContent__text"
+                        title="CPU usage"
+                      >
+                        CPU usage
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_Memory usage_7"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Memory usage"
+                      class="euiTableCellContent"
                     >
-                      Memory usage
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Memory usage"
+                      >
+                        Memory usage
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_search_type_8"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Search type"
+                      class="euiTableCellContent"
                     >
-                      Search type
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Search type"
+                      >
+                        Search type
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_Status_9"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="Status"
+                      class="euiTableCellContent"
                     >
-                      Status
+                      <span
+                        class="euiTableCellContent__text"
+                        title="Status"
+                      >
+                        Status
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
+                  aria-live="polite"
+                  aria-sort="none"
                   class="euiTableHeaderCell"
                   data-test-subj="tableHeaderCell_WLM Group_10"
                   role="columnheader"
                   scope="col"
                 >
-                  <span
-                    class="euiTableCellContent"
+                  <button
+                    class="euiTableHeaderButton"
+                    data-test-subj="tableHeaderSortButton"
+                    type="button"
                   >
                     <span
-                      class="euiTableCellContent__text"
-                      title="WLM Group"
+                      class="euiTableCellContent"
                     >
-                      WLM Group
+                      <span
+                        class="euiTableCellContent__text"
+                        title="WLM Group"
+                      >
+                        WLM Group
+                      </span>
                     </span>
-                  </span>
+                  </button>
                 </th>
                 <th
                   class="euiTableHeaderCell"
@@ -1444,9 +1588,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <input
                         aria-label="Select this row"
                         class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-node-A1B2C3D4E5:3600-1640995200000"
-                        disabled=""
-                        id="_selection_column_node-A1B2C3D4E5:3600-1640995200000-checkbox"
+                        data-test-subj="checkboxSelectRow-node-A1B2C4E5:3614-1640995214000"
+                        id="_selection_column_node-A1B2C4E5:3614-1640995214000-checkbox"
                         title="Select this row"
                         type="checkbox"
                       />
@@ -1485,7 +1628,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      node-A1B2C3D4E5:3600
+                      node-A1B2C4E5:3614
                     </button>
                   </div>
                 </td>
@@ -1548,7 +1691,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      node-A1B2C3D4E5
+                      node-A1B2C4E5
                     </span>
                   </div>
                 </td>
@@ -1563,7 +1706,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    7.99 s
+                    9.69 s
                   </div>
                 </td>
                 <td
@@ -1577,7 +1720,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    89.95 µs
+                    57.88 µs
                   </div>
                 </td>
                 <td
@@ -1591,7 +1734,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    3.73 KB
+                    3.16 KB
                   </div>
                 </td>
                 <td
@@ -1625,8 +1768,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                   >
                     <span
                       class="euiBadge euiBadge--iconLeft"
-                      style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
-                      title="Cancelled"
+                      style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                      title="Running"
                     >
                       <span
                         class="euiBadge__content"
@@ -1634,260 +1777,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <span
                           class="euiBadge__text"
                         >
-                          Cancelled
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    WLM Group
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      ANALYTICS_WORKLOAD_GROUP
-                       
-                      <svg
-                        aria-hidden="true"
-                        class="euiIcon euiIcon--small euiIcon-isLoaded"
-                        focusable="false"
-                        height="16"
-                        role="img"
-                        viewBox="0 0 16 16"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M13 8.5a.5.5 0 1 1 1 0V12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.5a.5.5 0 0 1 0 1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8.5Zm-5.12.339a.5.5 0 1 1-.706-.707L13.305 2H10.5a.5.5 0 1 1 0-1H14a1 1 0 0 1 1 1v3.5a.5.5 0 1 1-1 0V2.72L7.88 8.838Z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell euiTableRowCell--hasActions"
-                >
-                  <div
-                    class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
-                  />
-                </td>
-              </tr>
-              <tr
-                class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
-              >
-                <td
-                  class="euiTableRowCellCheckbox"
-                >
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <div
-                      class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
-                    >
-                      <input
-                        aria-label="Select this row"
-                        class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000"
-                        disabled=""
-                        id="_selection_column_4W2VTHIgQY-oB7dSrYz4B:3601-1640995201000-checkbox"
-                        title="Select this row"
-                        type="checkbox"
-                      />
-                      <div
-                        class="euiCheckbox__square"
-                      />
-                    </div>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Timestamp
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    Sep 24, 2021 @ 12:00:00 AM
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Task ID
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      4W2VTHIgQY-oB7dSrYz4B:3601
-                    </button>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Query source
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <span
-                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
-                      title="DSL"
-                    >
-                      <span
-                        class="euiBadge__content"
-                      >
-                        <span
-                          class="euiBadge__text"
-                        >
-                          DSL
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Index
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      top_queries-2025.06.06-11009
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      4W2VTHIgQY-oB7dSrYz4B
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Time elapsed
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    6.41 s
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    CPU usage
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    113.70 µs
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Memory usage
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    2.59 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Status
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <span
-                      class="euiBadge euiBadge--iconLeft"
-                      style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
-                      title="Cancelled"
-                    >
-                      <span
-                        class="euiBadge__content"
-                      >
-                        <span
-                          class="euiBadge__text"
-                        >
-                          Cancelled
+                          Running
                         </span>
                       </span>
                     </span>
@@ -1932,7 +1822,38 @@ exports[`InflightQueries matches snapshot 1`] = `
                 >
                   <div
                     class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
-                  />
+                  >
+                    <span
+                      class="euiToolTipAnchor"
+                    >
+                      <button
+                        aria-labelledby="random_html_id"
+                        class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                        type="button"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        class="euiScreenReaderOnly"
+                        id="random_html_id"
+                      >
+                        Cancel
+                      </span>
+                    </span>
+                  </div>
                 </td>
               </tr>
               <tr
@@ -2516,292 +2437,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <input
                         aria-label="Select this row"
                         class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-4W2VTHIgQY-oB7dSrYz4:3604-1640995204000"
-                        id="_selection_column_4W2VTHIgQY-oB7dSrYz4:3604-1640995204000-checkbox"
-                        title="Select this row"
-                        type="checkbox"
-                      />
-                      <div
-                        class="euiCheckbox__square"
-                      />
-                    </div>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Timestamp
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    Sep 24, 2021 @ 12:00:00 AM
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Task ID
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      4W2VTHIgQY-oB7dSrYz4:3604
-                    </button>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Query source
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <span
-                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
-                      title="DSL"
-                    >
-                      <span
-                        class="euiBadge__content"
-                      >
-                        <span
-                          class="euiBadge__text"
-                        >
-                          DSL
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Index
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      top_queries-2025.06.06-11009
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      4W2VTHIgQY-oB7dSrYz4
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Time elapsed
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    6.08 s
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    CPU usage
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    99.93 µs
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Memory usage
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    4.26 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Status
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <span
-                      class="euiBadge euiBadge--iconLeft"
-                      style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
-                      title="Running"
-                    >
-                      <span
-                        class="euiBadge__content"
-                      >
-                        <span
-                          class="euiBadge__text"
-                        >
-                          Running
-                        </span>
-                      </span>
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    WLM Group
-                  </div>
-                  <div
-                    class="euiTableCellContent euiTableCellContent--overflowingContent"
-                  >
-                    <button
-                      class="euiLink euiLink--primary"
-                      type="button"
-                    >
-                      DEFAULT_QUERY_GROUP
-                       
-                      <svg
-                        aria-hidden="true"
-                        class="euiIcon euiIcon--small euiIcon-isLoaded"
-                        focusable="false"
-                        height="16"
-                        role="img"
-                        viewBox="0 0 16 16"
-                        width="16"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M13 8.5a.5.5 0 1 1 1 0V12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.5a.5.5 0 0 1 0 1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8.5Zm-5.12.339a.5.5 0 1 1-.706-.707L13.305 2H10.5a.5.5 0 1 1 0-1H14a1 1 0 0 1 1 1v3.5a.5.5 0 1 1-1 0V2.72L7.88 8.838Z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell euiTableRowCell--hasActions"
-                >
-                  <div
-                    class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
-                  >
-                    <span
-                      class="euiToolTipAnchor"
-                    >
-                      <button
-                        aria-labelledby="random_html_id"
-                        class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
-                        type="button"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
-                          focusable="false"
-                          height="16"
-                          role="img"
-                          viewBox="0 0 16 16"
-                          width="16"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
-                          />
-                        </svg>
-                      </button>
-                      <span
-                        class="euiScreenReaderOnly"
-                        id="random_html_id"
-                      >
-                        Cancel
-                      </span>
-                    </span>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
-              >
-                <td
-                  class="euiTableRowCellCheckbox"
-                >
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <div
-                      class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
-                    >
-                      <input
-                        aria-label="Select this row"
-                        class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-node-M2O3P4Q5:3605-1640995205000"
+                        data-test-subj="checkboxSelectRow-4W2VTHIgQY-7dSrYz4BQ:3618-1640995218000"
                         disabled=""
-                        id="_selection_column_node-M2O3P4Q5:3605-1640995205000-checkbox"
+                        id="_selection_column_4W2VTHIgQY-7dSrYz4BQ:3618-1640995218000-checkbox"
                         title="Select this row"
                         type="checkbox"
                       />
@@ -2840,7 +2478,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      node-M2O3P4Q5:3605
+                      4W2VTHIgQY-7dSrYz4BQ:3618
                     </button>
                   </div>
                 </td>
@@ -2903,7 +2541,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      node-M2O3P4Q5
+                      4W2VTHIgQY-7dSrYz4BQ
                     </span>
                   </div>
                 </td>
@@ -2918,7 +2556,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    5.97 s
+                    9.22 s
                   </div>
                 </td>
                 <td
@@ -2932,7 +2570,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    102.07 µs
+                    65.53 µs
                   </div>
                 </td>
                 <td
@@ -2946,7 +2584,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    3.86 KB
+                    2.79 KB
                   </div>
                 </td>
                 <td
@@ -3010,7 +2648,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      SEARCH_WORKLOAD_GROUP
+                      DEFAULT_QUERY_GROUP
                        
                       <svg
                         aria-hidden="true"
@@ -3052,9 +2690,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <input
                         aria-label="Select this row"
                         class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-node-B2C3D4E5:3606-1640995206000"
+                        data-test-subj="checkboxSelectRow-4WTHIgQY-oB7dSrYz4BQ:3612-1640995212000"
                         disabled=""
-                        id="_selection_column_node-B2C3D4E5:3606-1640995206000-checkbox"
+                        id="_selection_column_4WTHIgQY-oB7dSrYz4BQ:3612-1640995212000-checkbox"
                         title="Select this row"
                         type="checkbox"
                       />
@@ -3093,7 +2731,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      node-B2C3D4E5:3606
+                      4WTHIgQY-oB7dSrYz4BQ:3612
                     </button>
                   </div>
                 </td>
@@ -3156,7 +2794,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      node-B2C3D4E5
+                      4WTHIgQY-oB7dSrYz4BQ
                     </span>
                   </div>
                 </td>
@@ -3171,7 +2809,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    6.45 s
+                    8.89 s
                   </div>
                 </td>
                 <td
@@ -3185,7 +2823,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    86.46 µs
+                    41.21 µs
                   </div>
                 </td>
                 <td
@@ -3199,7 +2837,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    3.82 KB
+                    2.37 KB
                   </div>
                 </td>
                 <td
@@ -3452,6 +3090,542 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     2.07 KB
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Search type
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      QUERY THEN FETCH
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Status
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--iconLeft"
+                      style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                      title="Running"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          Running
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    WLM Group
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      DEFAULT_QUERY_GROUP
+                       
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--small euiIcon-isLoaded"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13 8.5a.5.5 0 1 1 1 0V12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.5a.5.5 0 0 1 0 1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8.5Zm-5.12.339a.5.5 0 1 1-.706-.707L13.305 2H10.5a.5.5 0 1 1 0-1H14a1 1 0 0 1 1 1v3.5a.5.5 0 1 1-1 0V2.72L7.88 8.838Z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell euiTableRowCell--hasActions"
+                >
+                  <div
+                    class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiToolTipAnchor"
+                    >
+                      <button
+                        aria-labelledby="random_html_id"
+                        class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                        type="button"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        class="euiScreenReaderOnly"
+                        id="random_html_id"
+                      >
+                        Cancel
+                      </span>
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <tr
+                class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+              >
+                <td
+                  class="euiTableRowCellCheckbox"
+                >
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <div
+                      class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                    >
+                      <input
+                        aria-label="Select this row"
+                        class="euiCheckbox__input"
+                        data-test-subj="checkboxSelectRow-node-A1B2C3D4E5:3600-1640995200000"
+                        disabled=""
+                        id="_selection_column_node-A1B2C3D4E5:3600-1640995200000-checkbox"
+                        title="Select this row"
+                        type="checkbox"
+                      />
+                      <div
+                        class="euiCheckbox__square"
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Timestamp
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    Sep 24, 2021 @ 12:00:00 AM
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Task ID
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      node-A1B2C3D4E5:3600
+                    </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Index
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      top_queries-2025.06.06-11009
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Coordinator node
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      node-A1B2C3D4E5
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Time elapsed
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    7.99 s
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    CPU usage
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    89.95 µs
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Memory usage
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    3.73 KB
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Search type
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      QUERY THEN FETCH
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Status
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--iconLeft"
+                      style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
+                      title="Cancelled"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          Cancelled
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    WLM Group
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      ANALYTICS_WORKLOAD_GROUP
+                       
+                      <svg
+                        aria-hidden="true"
+                        class="euiIcon euiIcon--small euiIcon-isLoaded"
+                        focusable="false"
+                        height="16"
+                        role="img"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13 8.5a.5.5 0 1 1 1 0V12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h3.5a.5.5 0 0 1 0 1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8.5Zm-5.12.339a.5.5 0 1 1-.706-.707L13.305 2H10.5a.5.5 0 1 1 0-1H14a1 1 0 0 1 1 1v3.5a.5.5 0 1 1-1 0V2.72L7.88 8.838Z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell euiTableRowCell--hasActions"
+                >
+                  <div
+                    class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
+                  />
+                </td>
+              </tr>
+              <tr
+                class="euiTableRow euiTableRow-isSelectable euiTableRow-hasActions"
+              >
+                <td
+                  class="euiTableRowCellCheckbox"
+                >
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <div
+                      class="euiCheckbox euiCheckbox--inList euiCheckbox--noLabel"
+                    >
+                      <input
+                        aria-label="Select this row"
+                        class="euiCheckbox__input"
+                        data-test-subj="checkboxSelectRow-no-P0Q9R8S7T6:3611-1640995211000"
+                        id="_selection_column_no-P0Q9R8S7T6:3611-1640995211000-checkbox"
+                        title="Select this row"
+                        type="checkbox"
+                      />
+                      <div
+                        class="euiCheckbox__square"
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Timestamp
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    Sep 24, 2021 @ 12:00:00 AM
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Task ID
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <button
+                      class="euiLink euiLink--primary"
+                      type="button"
+                    >
+                      no-P0Q9R8S7T6:3611
+                    </button>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Query source
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    <span
+                      class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                      title="DSL"
+                    >
+                      <span
+                        class="euiBadge__content"
+                      >
+                        <span
+                          class="euiBadge__text"
+                        >
+                          DSL
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Index
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      top_queries-2025.06.06-11009
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Coordinator node
+                  </div>
+                  <div
+                    class="euiTableCellContent"
+                  >
+                    <span
+                      class="euiTableCellContent__text"
+                    >
+                      no-P0Q9R8S7T6
+                    </span>
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Time elapsed
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    7.50 s
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    CPU usage
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    115.55 µs
+                  </div>
+                </td>
+                <td
+                  class="euiTableRowCell"
+                >
+                  <div
+                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
+                  >
+                    Memory usage
+                  </div>
+                  <div
+                    class="euiTableCellContent euiTableCellContent--overflowingContent"
+                  >
+                    3.07 KB
                   </div>
                 </td>
                 <td
@@ -3841,9 +4015,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                       <input
                         aria-label="Select this row"
                         class="euiCheckbox__input"
-                        data-test-subj="checkboxSelectRow-node-X9Y8Z7W6V5:3609-1640995209000"
-                        disabled=""
-                        id="_selection_column_node-X9Y8Z7W6V5:3609-1640995209000-checkbox"
+                        data-test-subj="checkboxSelectRow-node-X8Z7W6V5:3615-1640995215000"
+                        id="_selection_column_node-X8Z7W6V5:3615-1640995215000-checkbox"
                         title="Select this row"
                         type="checkbox"
                       />
@@ -3882,7 +4055,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                       class="euiLink euiLink--primary"
                       type="button"
                     >
-                      node-X9Y8Z7W6V5:3609
+                      node-X8Z7W6V5:3615
                     </button>
                   </div>
                 </td>
@@ -3945,7 +4118,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                     <span
                       class="euiTableCellContent__text"
                     >
-                      node-X9Y8Z7W6V5
+                      node-X8Z7W6V5
                     </span>
                   </div>
                 </td>
@@ -3960,7 +4133,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    5.17 s
+                    6.84 s
                   </div>
                 </td>
                 <td
@@ -3974,7 +4147,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    113.61 µs
+                    82.66 µs
                   </div>
                 </td>
                 <td
@@ -3988,7 +4161,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
-                    2.71 KB
+                    3.35 KB
                   </div>
                 </td>
                 <td
@@ -4022,8 +4195,8 @@ exports[`InflightQueries matches snapshot 1`] = `
                   >
                     <span
                       class="euiBadge euiBadge--iconLeft"
-                      style="background-color: rgb(255, 126, 98); color: rgb(0, 0, 0);"
-                      title="Cancelled"
+                      style="background-color: rgb(121, 170, 217); color: rgb(0, 0, 0);"
+                      title="Running"
                     >
                       <span
                         class="euiBadge__content"
@@ -4031,7 +4204,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                         <span
                           class="euiBadge__text"
                         >
-                          Cancelled
+                          Running
                         </span>
                       </span>
                     </span>
@@ -4076,7 +4249,38 @@ exports[`InflightQueries matches snapshot 1`] = `
                 >
                   <div
                     class="euiTableCellContent euiTableCellContent--alignRight euiTableCellContent--showOnHover euiTableCellContent--overflowingContent"
-                  />
+                  >
+                    <span
+                      class="euiToolTipAnchor"
+                    >
+                      <button
+                        aria-labelledby="random_html_id"
+                        class="euiButtonIcon euiButtonIcon--danger euiButtonIcon--empty euiButtonIcon--xSmall euiTableCellContent__hoverItem"
+                        type="button"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="euiIcon euiIcon--medium euiIcon--inherit euiIcon-isLoaded euiButtonIcon__icon"
+                          focusable="false"
+                          height="16"
+                          role="img"
+                          viewBox="0 0 16 16"
+                          width="16"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M11 3h5v1H0V3h5V1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2Zm-7.056 8H7v1H4.1l.392 2.519c.042.269.254.458.493.458h6.03c.239 0 .451-.189.493-.458l1.498-9.576H14l-1.504 9.73c-.116.747-.74 1.304-1.481 1.304h-6.03c-.741 0-1.365-.557-1.481-1.304l-1.511-9.73H9V5.95H3.157L3.476 8H8v1H3.632l.312 2ZM6 3h4V1H6v2Z"
+                          />
+                        </svg>
+                      </button>
+                      <span
+                        class="euiScreenReaderOnly"
+                        id="random_html_id"
+                      >
+                        Cancel
+                      </span>
+                    </span>
+                  </div>
                 </td>
               </tr>
             </tbody>
