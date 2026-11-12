@@ -1105,6 +1105,7 @@ describe('InflightQueries - additional coverage', () => {
         expect(badges.length).toBeGreaterThanOrEqual(3);
         expect(screen.getByText('Running')).toBeInTheDocument();
         expect(screen.getByText('Cancelled')).toBeInTheDocument();
+        expect(screen.getByText('Completed')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
@@ -2125,6 +2126,195 @@ describe('InflightQueries - Column Visibility Integration', () => {
   });
 });
 
+describe('InflightQueries - live and finished row normalization', () => {
+  const measurements = {
+    latency: { number: 1e9 },
+    cpu: { number: 0 },
+    memory: { number: 0 },
+  };
+
+  const renderPage = () => {
+    const core = makeCore();
+    return render(
+      withDataSource(
+        <InflightQueries
+          core={core}
+          depsStart={
+            { data: { dataSources: { get: jest.fn().mockReturnValue(core.http) } } } as any
+          }
+          params={{} as any}
+          dataSourceManagement={undefined}
+        />
+      )
+    );
+  };
+
+  const getMainTable = () => {
+    const tables = document.querySelectorAll('table');
+    return tables[tables.length - 1] as HTMLElement;
+  };
+
+  // Text of the cell under `columnName` in the row that contains `rowId`.
+  const getCellText = (rowId: string, columnName: string) => {
+    const table = getMainTable();
+    const headers = Array.from(table.querySelectorAll('thead th'));
+    const columnIndex = headers.findIndex((th) => (th.textContent ?? '').trim() === columnName);
+    expect(columnIndex).toBeGreaterThanOrEqual(0);
+    const row = Array.from(table.querySelectorAll('tbody tr')).find((tr) =>
+      (tr.textContent ?? '').includes(rowId)
+    ) as HTMLElement;
+    expect(row).toBeTruthy();
+    const cell = row.querySelectorAll('td')[columnIndex] as HTMLElement;
+    return (cell.querySelector('.euiTableCellContent')?.textContent ?? '').trim();
+  };
+
+  const getStatusBadge = (rowId: string) => {
+    const row = Array.from(getMainTable().querySelectorAll('tbody tr')).find((tr) =>
+      (tr.textContent ?? '').includes(rowId)
+    ) as HTMLElement;
+    return row.querySelector('.euiBadge') as HTMLElement;
+  };
+
+  it('formats index, search type, coordinator node and status the same way for both row types', async () => {
+    // Search type and Coordinator node are hidden by default. Show them so the
+    // normalized values can be checked for both row types.
+    localStorage.setItem(
+      'queryInsights_live_visibleColumns',
+      JSON.stringify({ search_type: true, coordinator_node: true })
+    );
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [
+          {
+            id: 'live-multi:1',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            description: 'indices[logs-a,logs-b], search_type[QUERY_THEN_FETCH]',
+            measurements,
+            is_cancelled: false,
+          },
+          {
+            id: 'live-empty:2',
+            timestamp: 1640995200000,
+            description: '',
+            measurements,
+            is_cancelled: false,
+          },
+        ],
+        finished_queries: [
+          {
+            id: 'finished-multi:3',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'completed',
+            indices: ['logs-a', 'logs-b'],
+            search_type: 'query_then_fetch',
+            measurements,
+            task_resource_usages: [],
+          },
+          {
+            id: 'finished-empty:4',
+            timestamp: 1640995200000,
+            status: 'completed',
+            measurements,
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getMainTable().querySelectorAll('tbody tr')).toHaveLength(4);
+    });
+
+    // Values that are present use one format.
+    ['live-multi:1', 'finished-multi:3'].forEach((id) => {
+      expect(getCellText(id, 'Index')).toBe('logs-a, logs-b');
+      expect(getCellText(id, 'Search type')).toBe('query then fetch');
+      expect(getCellText(id, 'Coordinator node')).toBe('node1');
+    });
+
+    // Missing values use one placeholder.
+    ['live-empty:2', 'finished-empty:4'].forEach((id) => {
+      expect(getCellText(id, 'Index')).toBe('-');
+      expect(getCellText(id, 'Search type')).toBe('-');
+      expect(getCellText(id, 'Coordinator node')).toBe('-');
+    });
+
+    // Status labels use one casing.
+    expect(getCellText('live-multi:1', 'Status')).toBe('Running');
+    expect(getCellText('finished-multi:3', 'Status')).toBe('Completed');
+  });
+
+  it('shows a danger badge for failed and cancelled finished queries', async () => {
+    mockLiveQueries({
+      ok: true,
+      response: {
+        live_queries: [],
+        finished_queries: [
+          {
+            id: 'finished-completed:1',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'completed',
+            failed: false,
+            is_cancelled: false,
+            measurements,
+            task_resource_usages: [],
+          },
+          {
+            id: 'finished-failed:2',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'failed',
+            is_cancelled: false,
+            measurements,
+            task_resource_usages: [],
+          },
+          {
+            id: 'finished-cancelled:3',
+            timestamp: 1640995200000,
+            node_id: 'node1',
+            status: 'cancelled',
+            failed: false,
+            is_cancelled: true,
+            measurements,
+            task_resource_usages: [],
+          },
+        ],
+      },
+    });
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    await waitFor(() => {
+      expect(getMainTable().querySelectorAll('tbody tr')).toHaveLength(3);
+    });
+
+    const completed = getStatusBadge('finished-completed:1');
+    const failed = getStatusBadge('finished-failed:2');
+    const cancelled = getStatusBadge('finished-cancelled:3');
+
+    expect(completed).toHaveTextContent('Completed');
+    expect(failed).toHaveTextContent('Failed');
+    expect(cancelled).toHaveTextContent('Cancelled');
+
+    // Failed and cancelled share the danger color; completed uses the success color.
+    expect(failed.style.backgroundColor).not.toBe('');
+    expect(failed.style.backgroundColor).toBe(cancelled.style.backgroundColor);
+    expect(completed.style.backgroundColor).not.toBe(failed.style.backgroundColor);
+  });
+});
+
 describe('InflightQueries - table sorting', () => {
   const makeQuery = (
     id: string,
@@ -2314,6 +2504,60 @@ describe('InflightQueries - table sorting', () => {
       expect(getRowIds(statusIds)).toEqual(['task-a:1', 'task-b:2', 'task-f:4', 'task-c:3']);
     });
     expect(getHeaderCell('Status')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('keeps missing index, search type and coordinator node values last in both directions', async () => {
+    // Search type and Coordinator node are hidden by default. Show them so their
+    // placeholder sort order can be checked.
+    localStorage.setItem(
+      'queryInsights_live_visibleColumns',
+      JSON.stringify({ search_type: true, coordinator_node: true })
+    );
+    const withoutDetails = {
+      ...makeQuery('task-d:4', 2, 1e6, 1024),
+      node_id: '',
+      description: '',
+    };
+    const otherIndex = {
+      ...makeQuery('task-e:5', 3, 1e6, 1024),
+      node_id: 'nodeBeta',
+      description: 'indices[logs-2024] search_type[dfs_query_then_fetch]',
+    };
+    mockLiveQueries(payload([makeQuery('task-a:1', 5, 3e6, 2048), withoutDetails, otherIndex]));
+    renderPage();
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(100);
+    });
+
+    const sortIds = ['task-a:1', 'task-d:4', 'task-e:5'];
+    await waitFor(() => {
+      expect(getRowIds(sortIds)).toHaveLength(3);
+    });
+
+    const cases: Array<[string, string[], string[]]> = [
+      ['Index', ['task-e:5', 'task-a:1', 'task-d:4'], ['task-a:1', 'task-e:5', 'task-d:4']],
+      ['Search type', ['task-e:5', 'task-a:1', 'task-d:4'], ['task-a:1', 'task-e:5', 'task-d:4']],
+      [
+        'Coordinator node',
+        ['task-a:1', 'task-e:5', 'task-d:4'],
+        ['task-e:5', 'task-a:1', 'task-d:4'],
+      ],
+    ];
+
+    for (const [column, ascending, descending] of cases) {
+      await clickHeader(column);
+      await waitFor(() => {
+        expect(getRowIds(sortIds)).toEqual(ascending);
+      });
+      expect(getHeaderCell(column)).toHaveAttribute('aria-sort', 'ascending');
+
+      await clickHeader(column);
+      await waitFor(() => {
+        expect(getRowIds(sortIds)).toEqual(descending);
+      });
+      expect(getHeaderCell(column)).toHaveAttribute('aria-sort', 'descending');
+    }
   });
 
   it('switches the default sort to ascending instead of clearing it', async () => {
