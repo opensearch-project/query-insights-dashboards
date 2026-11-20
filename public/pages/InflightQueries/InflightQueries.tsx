@@ -107,9 +107,34 @@ interface TableSort {
 // Computed columns (no `field`) are referenced by their column `name`.
 const DEFAULT_TABLE_SORT: TableSort = { field: 'Time elapsed', direction: 'desc' };
 
+// Placeholder for a missing value, shared by live and finished rows (matches Username).
+const EMPTY_VALUE = '-';
+
+// Live rows read indices from the task description ("a,b"), finished rows get an array.
+// Both are shown as "a, b".
+const formatIndices = (indices?: string | string[]): string => {
+  const list = Array.isArray(indices) ? indices : (indices ?? '').split(',');
+  const names = list.map((name) => String(name).trim()).filter((name) => name !== '');
+  return names.length > 0 ? names.join(', ') : EMPTY_VALUE;
+};
+
+// Live rows read "QUERY_THEN_FETCH" from the task description, finished rows get
+// "query_then_fetch". Both are shown as "query then fetch".
+const formatSearchType = (searchType?: string): string =>
+  searchType ? searchType.replace(/_/g, ' ').toLowerCase() : EMPTY_VALUE;
+
+// Missing values return undefined so the table keeps them last in both sort directions.
+const sortValueOrUndefined = (value?: string): string | undefined =>
+  value && value !== EMPTY_VALUE ? value : undefined;
+
 // Same label the Status column renders, so sorting matches what the user sees.
+// Finished statuses come from the backend in lowercase (e.g. 'completed'), so they are
+// capitalized to match the live labels ('Running', 'Cancelled').
 const getStatusLabel = (item: any): string => {
-  if (item._finished) return item._status || 'Completed';
+  if (item._finished) {
+    const status = String(item._status || 'completed').toLowerCase();
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
   if (item.is_cancelled === true) return 'Cancelled';
   return 'Running';
 };
@@ -395,11 +420,11 @@ export const InflightQueries = ({
             node_id: nodeId,
             measurements,
             is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
-            index: indexMatch ? indexMatch[1] : 'N/A',
-            search_type: searchTypeMatch
-              ? searchTypeMatch[1].replace(/_/g, ' ')
-              : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
-            coordinator_node: nodeId,
+            index: formatIndices(indexMatch ? indexMatch[1] : undefined),
+            search_type: formatSearchType(
+              searchTypeMatch ? searchTypeMatch[1] : (q as any).search_type
+            ),
+            coordinator_node: nodeId || EMPTY_VALUE,
             node_label: nodeId,
             wlm_group: wlmDisplay,
           };
@@ -418,10 +443,10 @@ export const InflightQueries = ({
               typeof fq.wlm_group_id === 'string' && fq.wlm_group_id.trim() !== ''
                 ? (idToName[fq.wlm_group_id] ?? fq.wlm_group_id)
                 : 'N/A';
-            const status = fq.status || (fq.failed ? 'Failed' : 'Completed');
-            const lowerStatus = status.toLowerCase();
-            if (lowerStatus === 'failed') failures++;
-            else if (lowerStatus === 'cancelled') cancellations++;
+            // Keep the raw backend status in lowercase; getStatusLabel formats it for display.
+            const status = String(fq.status || (fq.failed ? 'failed' : 'completed')).toLowerCase();
+            if (status === 'failed') failures++;
+            else if (status === 'cancelled') cancellations++;
             else completions++;
             return {
               ...fq,
@@ -429,15 +454,15 @@ export const InflightQueries = ({
               timestamp: fq.timestamp,
               node_id: fq.node_id || '-',
               description: '',
-              is_cancelled: fq.failed || false,
+              is_cancelled: fq.is_cancelled === true,
               measurements: fq.measurements || {
                 latency: { number: 0 },
                 cpu: { number: 0 },
                 memory: { number: 0 },
               },
-              index: fq.indices?.join(', ') || '-',
-              search_type: fq.search_type || '-',
-              coordinator_node: fq.node_id || '-',
+              index: formatIndices(fq.indices),
+              search_type: formatSearchType(fq.search_type),
+              coordinator_node: fq.node_id || EMPTY_VALUE,
               node_label: fq.node_id || '-',
               wlm_group: wlmDisplay,
               _finished: true,
@@ -1265,10 +1290,22 @@ export const InflightQueries = ({
                   ]
                 : []),
               ...(isColumnVisible('index')
-                ? [{ field: 'index', name: 'Index', sortable: true }]
+                ? [
+                    {
+                      field: 'index',
+                      name: 'Index',
+                      sortable: (item: any) => sortValueOrUndefined(item.index),
+                    },
+                  ]
                 : []),
               ...(isColumnVisible('coordinator_node')
-                ? [{ field: 'coordinator_node', name: 'Coordinator node', sortable: true }]
+                ? [
+                    {
+                      field: 'coordinator_node',
+                      name: 'Coordinator node',
+                      sortable: (item: any) => sortValueOrUndefined(item.coordinator_node),
+                    },
+                  ]
                 : []),
               ...(isColumnVisible('time_elapsed')
                 ? [
@@ -1298,7 +1335,13 @@ export const InflightQueries = ({
                   ]
                 : []),
               ...(isColumnVisible('search_type')
-                ? [{ field: 'search_type', name: 'Search type', sortable: true }]
+                ? [
+                    {
+                      field: 'search_type',
+                      name: 'Search type',
+                      sortable: (item: any) => sortValueOrUndefined(item.search_type),
+                    },
+                  ]
                 : []),
               ...(userInfoSupported && isColumnVisible('username')
                 ? [
@@ -1340,16 +1383,13 @@ export const InflightQueries = ({
                       render: (item: any) => {
                         const label = getStatusLabel(item);
                         if (item._finished) {
+                          const status = label.toLowerCase();
+                          const isError =
+                            item.is_cancelled === true ||
+                            status === 'failed' ||
+                            status === 'cancelled';
                           return (
-                            <EuiBadge
-                              color={
-                                item.is_cancelled || item._status === 'Failed'
-                                  ? 'danger'
-                                  : 'success'
-                              }
-                            >
-                              {label}
-                            </EuiBadge>
+                            <EuiBadge color={isError ? 'danger' : 'success'}>{label}</EuiBadge>
                           );
                         }
                         return (

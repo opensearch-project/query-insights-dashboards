@@ -713,7 +713,7 @@ describe('Task Detail Flyout', () => {
     cy.wait('@getLiveQueries');
 
     // Finished query should show completed badge
-    cy.get('.euiBadge').contains('completed').should('exist');
+    cy.get('.euiBadge').contains('Completed').should('exist');
 
     // No cancel action for finished queries
     cy.contains('nodeA:5001')
