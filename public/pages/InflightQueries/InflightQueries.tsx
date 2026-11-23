@@ -404,7 +404,8 @@ export const InflightQueries = ({
 
           let index = indexMatch ? indexMatch[1] : 'N/A';
           if (queryText !== undefined) {
-            index = pplIndices(queryText, shards).join(', ') || 'N/A';
+            // Joined the way a search's indices[...] are, so the same indices count once by index.
+            index = pplIndices(queryText, shards).join(',') || 'N/A';
           }
 
           return {

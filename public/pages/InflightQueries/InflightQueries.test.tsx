@@ -2186,6 +2186,25 @@ describe('InflightQueries - PPL queries', () => {
     expect(ppl.getByText('qibig')).toBeInTheDocument();
   });
 
+  it("lists a PPL query's indices the way a search lists them", async () => {
+    // A PPL query and a search that read the same two indices show, and count, the same value.
+    const payload = JSON.parse(JSON.stringify(stubLiveQueriesPpl.between_searches));
+    let dslId = '';
+    for (const q of payload.response.live_queries) {
+      const task = q.coordinator_task;
+      if (task.action === 'cluster:admin/opensearch/ppl') {
+        task.description = 'PPL: source=logs, metrics | head 5';
+      } else {
+        task.description = task.description.replace('indices[qibig]', 'indices[logs,metrics]');
+        dslId = q.id;
+      }
+    }
+    await renderPage(payload);
+
+    expect(within(rowOf(PPL_ID)).getByText('logs,metrics')).toBeInTheDocument();
+    expect(within(rowOf(dslId)).getByText('logs,metrics')).toBeInTheDocument();
+  });
+
   // The table listed under a flyout heading.
   const tableUnder = (heading: HTMLElement) => {
     let el = heading.nextElementSibling;
