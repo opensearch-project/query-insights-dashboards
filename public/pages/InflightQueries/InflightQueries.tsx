@@ -140,10 +140,13 @@ export const InflightQueries = ({
 
   const location = useLocation();
   const history = useHistory();
-  const urlSearchParams = new URLSearchParams(location.search);
-  const initialWlmGroup = urlSearchParams.get(WLM_GROUP_ID_PARAM) || '';
-
-  const wlmGroupId = initialWlmGroup !== '' ? initialWlmGroup : undefined;
+  // Capture once from the entry URL. The effect below strips `wlmGroupId` from the
+  // query string for a clean address bar; keeping it only in React state means later
+  // polls still filter by the group (#618).
+  const [wlmGroupId] = useState<string | undefined>(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get(WLM_GROUP_ID_PARAM);
+    return fromUrl && fromUrl.trim() ? fromUrl : undefined;
+  });
   const wlmIdToNameMap = React.useMemo(
     () => Object.fromEntries(wlmGroupOptions.map((g) => [g.id, g.name])),
     [wlmGroupOptions]
@@ -326,7 +329,13 @@ export const InflightQueries = ({
       : [];
     setWlmGroupOptions(options);
     return idToNameMap;
-  }, [core.http, dataSource?.id, wlmGroupId, queryInsightWlmNavigationSupported]);
+  }, [
+    core.http,
+    dataSource?.id,
+    wlmGroupId,
+    wlmAvailable,
+    queryInsightWlmNavigationSupported,
+  ]);
 
   const liveQueries = query?.response?.live_queries ?? [];
 
