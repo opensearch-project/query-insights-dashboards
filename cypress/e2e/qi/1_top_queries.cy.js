@@ -298,6 +298,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Query Count',
       'Timestamp',
       'Status',
@@ -324,6 +325,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Timestamp',
       'Status',
       'Latency',
@@ -354,6 +356,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Query Count',
       'Average Latency',
       'Average CPU Time',
@@ -377,6 +380,7 @@ describe('Query Insights — Dynamic Columns with Intercepted Top Queries (MIXED
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Query Count',
       'Timestamp',
       'Status',
@@ -433,6 +437,7 @@ describe('Query Insights — Dynamic Columns (QUERY ONLY fixture)', () => {
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Timestamp',
       'Status',
       'Latency',
@@ -479,6 +484,7 @@ describe('Query Insights — Dynamic Columns (GROUP ONLY fixture)', () => {
     const expected = [
       'Id',
       'Type',
+      'Query Source',
       'Query Count',
       'Average Latency',
       'Average CPU Time',

@@ -103,7 +103,7 @@ describe('Top Queries Details Page', () => {
         .parent()
         .next()
         .invoke('text')
-        .should('match', /^\d+(\.\d+)? B$/);
+        .should('match', /^\d+(\.\d+)? (B|KB|MB|GB|TB)$/);
       // Validate Indices
       cy.contains('h4', 'Indices').parent().next().invoke('text').should('not.be.empty');
       // Validate Search Type

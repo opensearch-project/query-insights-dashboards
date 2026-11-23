@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { filesize } from 'filesize';
 import { DEFAULT_TIME_UNIT, DEFAULT_WINDOW_SIZE, TIME_UNIT_ABBREVIATION } from '../constants';
 import { MetricSettingsResponse } from '../../types/types';
 
@@ -15,6 +16,21 @@ export function calculateMetric(
 ): string {
   if (value !== undefined && count !== undefined) {
     return `${calculateMetricNumber(value, count, factor).toFixed(2)} ${unit}`;
+  }
+  return defaultMsg;
+}
+
+/**
+ * A memory measurement in bytes, averaged over count, in binary units such as "40.11 GB", the way
+ * Live Queries shows memory.
+ */
+export function calculateMemory(
+  value?: number,
+  count?: number,
+  defaultMsg: string = 'N/A'
+): string {
+  if (value !== undefined && count !== undefined) {
+    return filesize(calculateMetricNumber(value, count), { base: 2, standard: 'jedec' }) as string;
   }
   return defaultMsg;
 }

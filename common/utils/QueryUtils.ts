@@ -29,15 +29,18 @@ interface CustomCore {
 }
 
 // Utility function to fetch query by id and time range
-export const retrieveQueryById = async (
+/**
+ * The records the Top N API returns for one id, from the first metric that has any: the record
+ * itself, plus, for a SQL/PPL query, the searches it ran.
+ */
+const retrieveRecordsById = async (
   core: { http: { get: (endpoint: string, params: any) => Promise<any> } },
   dataSourceId: string,
   start: string | null,
   end: string | null,
   id: string | null,
   verbose: boolean
-): Promise<SearchQueryRecord | null> => {
-  const nullResponse = { response: { top_queries: [] } };
+): Promise<SearchQueryRecord[]> => {
   const params = {
     query: {
       dataSourceId,
@@ -47,45 +50,68 @@ export const retrieveQueryById = async (
       verbose,
     },
   };
-
-  const fetchMetric = async (endpoint: string) => {
+  const fetchMetric = async (endpoint: string): Promise<SearchQueryRecord[]> => {
     try {
       const response: { response: { top_queries: SearchQueryRecord[] } } = await core.http.get(
         endpoint,
         params
       );
-      return {
-        response: {
-          top_queries: Array.isArray(response?.response?.top_queries)
-            ? response.response.top_queries
-            : [],
-        },
-      };
+      return Array.isArray(response?.response?.top_queries) ? response.response.top_queries : [];
     } catch (error) {
       console.error('Error occurred while fetching the data:', error);
-      return nullResponse;
+      return [];
     }
   };
-
   try {
     const endpoints = [
       `/api/top_queries/latency`,
       `/api/top_queries/cpu`,
       `/api/top_queries/memory`,
     ];
-
     for (const endpoint of endpoints) {
-      const result = await fetchMetric(endpoint);
-      if (result.response.top_queries.length > 0) {
-        const records = result.response.top_queries || [];
-        return records.find((q) => q.id === id) || null;
+      const records = await fetchMetric(endpoint);
+      if (records.length > 0) {
+        return records;
       }
     }
-    return null;
+    return [];
   } catch (error) {
     console.error('Error retrieving query details:', error);
-    return null;
+    return [];
   }
+};
+
+export const retrieveQueryById = async (
+  core: { http: { get: (endpoint: string, params: any) => Promise<any> } },
+  dataSourceId: string,
+  start: string | null,
+  end: string | null,
+  id: string | null,
+  verbose: boolean
+): Promise<SearchQueryRecord | null> => {
+  const records = await retrieveRecordsById(core, dataSourceId, start, end, id, verbose);
+  return records.find((q) => q.id === id) || null;
+};
+
+/**
+ * A query's record and, for a SQL/PPL query, every search it ran: the records the detail response
+ * lists after the query, which carry the query's marker in derived_from.
+ */
+export const retrieveQueryWithSearches = async (
+  core: { http: { get: (endpoint: string, params: any) => Promise<any> } },
+  dataSourceId: string,
+  start: string | null,
+  end: string | null,
+  id: string | null,
+  verbose: boolean
+): Promise<{ query: SearchQueryRecord | null; searches: SearchQueryRecord[] }> => {
+  const records = await retrieveRecordsById(core, dataSourceId, start, end, id, verbose);
+  const query = records.find((q) => q.id === id) || null;
+  const marker = query?.parent_marker;
+  const searches = marker
+    ? records.filter((r) => r.is_child === true && r.derived_from === marker)
+    : [];
+  return { query, searches };
 };
 
 export const retrieveLiveQueries = async (

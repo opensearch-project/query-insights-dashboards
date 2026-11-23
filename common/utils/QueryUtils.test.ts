@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { retrieveQueryById, retrieveLiveQueries } from './QueryUtils';
+import { retrieveQueryById, retrieveLiveQueries, retrieveQueryWithSearches } from './QueryUtils';
 import { mockQueries } from '../../test/mocks/mockQueries';
 import { testQueryParams } from '../../test/mocks/testConstants';
 
@@ -152,6 +152,49 @@ describe('retrieveQueryById - Fetch Query Record by ID from API', () => {
     expect(result).toBeNull();
   });
 });
+describe('retrieveQueryWithSearches - a query and the searches it ran', () => {
+  const record = (fields: Record<string, unknown>) => fields as any;
+  const respond = (topQueries: unknown[]) => ({
+    http: { get: jest.fn().mockResolvedValue({ response: { top_queries: topQueries } }) },
+  });
+
+  it('returns a PPL query with only its own searches', async () => {
+    const core = respond([
+      record({ id: 'query', query_source: 'PPL', parent_marker: 'PPL:n:1' }),
+      record({ id: 'search-1', is_child: true, derived_from: 'PPL:n:1' }),
+      record({ id: 'search-2', is_child: true, derived_from: 'PPL:n:1' }),
+      record({ id: 'other', is_child: true, derived_from: 'PPL:n:2' }),
+    ]);
+
+    const result = await retrieveQueryWithSearches(core, 'ds', 'from', 'to', 'query', true);
+
+    expect(result.query?.id).toBe('query');
+    expect(result.searches.map((s) => s.id)).toEqual(['search-1', 'search-2']);
+  });
+
+  it('returns no searches for a search', async () => {
+    const core = respond([record({ id: 'search', query_source: 'DSL' })]);
+
+    const result = await retrieveQueryWithSearches(core, 'ds', 'from', 'to', 'search', true);
+
+    expect(result.query?.id).toBe('search');
+    expect(result.searches).toEqual([]);
+  });
+
+  it('returns nothing when the id is not found', async () => {
+    const result = await retrieveQueryWithSearches(
+      respond([]),
+      'ds',
+      'from',
+      'to',
+      'missing',
+      true
+    );
+
+    expect(result).toEqual({ query: null, searches: [] });
+  });
+});
+
 describe('retrieveLiveQueries - Fetch Live Queries from API', () => {
   const mockCore = {
     http: {

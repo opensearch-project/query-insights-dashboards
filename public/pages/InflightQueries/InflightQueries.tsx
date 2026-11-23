@@ -21,6 +21,7 @@ import {
   EuiSelect,
   EuiBadge,
   EuiAccordion,
+  EuiToolTip,
 } from '@elastic/eui';
 import {
   RadialChart,
@@ -37,7 +38,7 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { retrieveLiveQueries, retrieveQueryWithSearches } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
@@ -69,6 +70,12 @@ import {
 import { SearchQueryRecord } from '../../../types/types';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
+import {
+  QUERY_SOURCE_BADGE_COLORS,
+  liveQuerySource,
+  pplIndices,
+  pplQueryText,
+} from '../../utils/live-query-utils';
 
 type LiveQueryRaw = NonNullable<LiveSearchQueryResponse['response']>['live_queries'][number];
 
@@ -78,6 +85,9 @@ type LiveQueryRow = LiveQueryRaw & {
   coordinator_node: string;
   node_label: string;
   wlm_group: string;
+  query_source: string;
+  // The query text of a PPL row; a DSL row's source stays in its coordinator description.
+  query_text?: string;
 };
 
 interface WlmGroupTally {
@@ -106,6 +116,13 @@ interface TableSort {
 // Default sort for the live queries table: longest-running queries first.
 // Computed columns (no `field`) are referenced by their column `name`.
 const DEFAULT_TABLE_SORT: TableSort = { field: 'Time elapsed', direction: 'desc' };
+
+// The flyout of a finished PPL query reads the searches it ran from Top N over the past hour, as
+// View Top N does. Top N takes in new records every 5 seconds, so a query that has just finished
+// may not be there yet: the flyout asks again twice, 5 seconds apart.
+const FINISHED_SEARCHES_LOOKBACK_MS = 60 * 60 * 1000;
+const FINISHED_SEARCHES_RETRY_MS = 5000;
+const FINISHED_SEARCHES_ATTEMPTS = 3;
 
 // Same label the Status column renders, so sorting matches what the user sees.
 const getStatusLabel = (item: any): string => {
@@ -365,6 +382,10 @@ export const InflightQueries = ({
 
         const parsed: LiveQueryRow[] = retrieved.response.live_queries.map((q) => {
           const desc = (q as any).coordinator_task?.description || (q as any).description || '';
+          // A PPL row's coordinator is the PPL task, which is described by its query text
+          // rather than by a search's indices and source.
+          const querySource = liveQuerySource(q.coordinator_task?.action);
+          const queryText = querySource === 'PPL' ? pplQueryText(desc) : undefined;
           const indexMatch = desc.match(/indices\[(.*?)\]/);
           const searchTypeMatch = desc.match(/search_type\[(.*?)\]/);
           const nodeId = (q as any).coordinator_task?.node_id || (q as any).node_id || '';
@@ -388,6 +409,11 @@ export const InflightQueries = ({
             memory: { number: (q as any).total_memory_bytes || shardMemTotal || 0 },
           };
 
+          let index = indexMatch ? indexMatch[1] : 'N/A';
+          if (queryText !== undefined) {
+            index = pplIndices(queryText, shards).join(', ') || 'N/A';
+          }
+
           return {
             ...q,
             timestamp: (q as any).timestamp || (q as any).start_time,
@@ -395,7 +421,9 @@ export const InflightQueries = ({
             node_id: nodeId,
             measurements,
             is_cancelled: (q as any).status === 'cancelled' || (q as any).is_cancelled === true,
-            index: indexMatch ? indexMatch[1] : 'N/A',
+            index,
+            query_source: querySource,
+            query_text: queryText,
             search_type: searchTypeMatch
               ? searchTypeMatch[1].replace(/_/g, ' ')
               : ((q as any).search_type || 'N/A').replace(/_/g, ' '),
@@ -430,12 +458,23 @@ export const InflightQueries = ({
               node_id: fq.node_id || '-',
               description: '',
               is_cancelled: fq.failed || false,
-              measurements: fq.measurements || {
-                latency: { number: 0 },
-                cpu: { number: 0 },
-                memory: { number: 0 },
+              measurements: {
+                ...fq.measurements,
+                // A finished entry is a Query Insights record, whose latency is in milliseconds.
+                // Running queries' rows carry nanoseconds, which the table and the flyout read.
+                latency: { number: (fq.measurements?.latency?.number || 0) * 1e6 },
+                cpu: fq.measurements?.cpu || { number: 0 },
+                memory: fq.measurements?.memory || { number: 0 },
               },
-              index: fq.indices?.join(', ') || '-',
+              // A finished PPL entry's source is its query text, and it names no indices of its
+              // own: they come from the text, as for a running PPL query.
+              index:
+                fq.query_source === 'PPL' && typeof fq.source === 'string'
+                  ? pplIndices(fq.source).join(', ') || '-'
+                  : fq.indices?.join(', ') || '-',
+              query_source: fq.query_source || 'DSL',
+              query_text:
+                fq.query_source === 'PPL' && typeof fq.source === 'string' ? fq.source : undefined,
               search_type: fq.search_type || '-',
               coordinator_node: fq.node_id || '-',
               node_label: fq.node_id || '-',
@@ -546,6 +585,47 @@ export const InflightQueries = ({
     queryInsightWlmNavigationSupported,
   ]);
 
+  // The searches of the finished PPL query whose flyout is open, kept with its Top N id so that
+  // another query's never show.
+  const [finishedSearches, setFinishedSearches] = useState<{
+    topNId: string;
+    searches: SearchQueryRecord[];
+  } | null>(null);
+  const selectedFinishedPplTopNId = useMemo(() => {
+    const row = (query?.response?.live_queries || []).find((q) => q.id === selectedTaskId) as
+      (LiveQueryRow & { _finished?: boolean; _topNId?: string }) | undefined;
+    return row?._finished && row.query_source === 'PPL' ? row._topNId : undefined;
+  }, [query, selectedTaskId]);
+
+  useEffect(() => {
+    if (!selectedFinishedPplTopNId) return;
+    let stale = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const load = async (attempt: number) => {
+      const to = new Date();
+      const from = new Date(to.getTime() - FINISHED_SEARCHES_LOOKBACK_MS);
+      const { searches } = await retrieveQueryWithSearches(
+        core,
+        dataSource?.id || '',
+        from.toISOString(),
+        to.toISOString(),
+        selectedFinishedPplTopNId,
+        true
+      );
+      if (stale) return;
+      if (searches.length === 0 && attempt < FINISHED_SEARCHES_ATTEMPTS) {
+        retry = setTimeout(() => void load(attempt + 1), FINISHED_SEARCHES_RETRY_MS);
+        return;
+      }
+      setFinishedSearches({ topNId: selectedFinishedPplTopNId, searches });
+    };
+    void load(1);
+    return () => {
+      stale = true;
+      clearTimeout(retry);
+    };
+  }, [core, dataSource?.id, selectedFinishedPplTopNId]);
+
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   // Sort is kept in component state so it survives the periodic refreshes.
   const [tableSort, setTableSort] = useState<TableSort>(DEFAULT_TABLE_SORT);
@@ -556,6 +636,12 @@ export const InflightQueries = ({
   const searchFields = useMemo<FieldDef[]>(() => {
     const fields: FieldDef[] = [
       { label: 'Task ID', key: 'id', accessor: (q) => (q as any).id, type: 'string' },
+      {
+        label: 'Query Source',
+        key: 'query_source',
+        accessor: (q) => (q as unknown as LiveQueryRow).query_source,
+        type: 'string',
+      },
       { label: 'Index', key: 'index', accessor: (q) => (q as any).index, type: 'string' },
       {
         label: 'Search Type',
@@ -648,6 +734,7 @@ export const InflightQueries = ({
     const defs: ColumnDef[] = [
       { id: 'timestamp', label: 'Timestamp' },
       { id: 'task_id', label: 'Task ID', pinned: true },
+      { id: 'query_source', label: 'Query Source' },
       { id: 'index', label: 'Index' },
       { id: 'coordinator_node', label: 'Coordinator Node', defaultVisible: false },
       { id: 'time_elapsed', label: 'Time Elapsed' },
@@ -1264,6 +1351,28 @@ export const InflightQueries = ({
                     },
                   ]
                 : []),
+              ...(isColumnVisible('query_source')
+                ? [
+                    {
+                      field: 'query_source',
+                      name: 'Query source',
+                      sortable: true,
+                      render: (source: string, item: LiveQueryRaw) => {
+                        const queryText = (item as LiveQueryRow).query_text;
+                        const badge = (
+                          <EuiBadge color={QUERY_SOURCE_BADGE_COLORS[source] ?? 'hollow'}>
+                            {source}
+                          </EuiBadge>
+                        );
+                        return queryText ? (
+                          <EuiToolTip content={queryText}>{badge}</EuiToolTip>
+                        ) : (
+                          badge
+                        );
+                      },
+                    },
+                  ]
+                : []),
               ...(isColumnVisible('index')
                 ? [{ field: 'index', name: 'Index', sortable: true }]
                 : []),
@@ -1493,6 +1602,8 @@ export const InflightQueries = ({
             user_roles: (selectedItem as any).user_roles,
             backend_roles: (selectedItem as any).backend_roles,
             _topNId: (selectedItem as any)._topNId,
+            _querySource: (selectedItem as LiveQueryRow).query_source,
+            _queryText: (selectedItem as LiveQueryRow).query_text,
             // Direct fields for finished queries
             _indices: (selectedItem as any).indices?.join(', ') || selectedItem.index,
             _searchType: (selectedItem as any).search_type || selectedItem.search_type,
@@ -1500,10 +1611,17 @@ export const InflightQueries = ({
             _totalShards: (selectedItem as any).total_shards,
             _source: (selectedItem as any).source,
             _taskResourceUsages: (selectedItem as any).task_resource_usages,
+            finished_searches: selectedItem.finished_searches,
           };
+          const searchesOfSelected =
+            selectedFinishedPplTopNId && finishedSearches?.topNId === selectedFinishedPplTopNId
+              ? finishedSearches.searches
+              : undefined;
           return (
             <TaskDetailFlyout
               task={richTask as any}
+              finishedSearches={searchesOfSelected}
+              finishedSearchesLoading={!!selectedFinishedPplTopNId && !searchesOfSelected}
               userInfoSupported={userInfoSupported}
               onClose={() => setSelectedTaskId(null)}
               onRefresh={async () => {

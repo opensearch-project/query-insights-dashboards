@@ -6,6 +6,8 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
+  EuiBadge,
+  EuiBasicTableColumn,
   EuiButton,
   EuiInMemoryTable,
   EuiCodeBlock,
@@ -14,8 +16,10 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiHorizontalRule,
+  EuiLink,
   EuiPanel,
   EuiSpacer,
+  EuiText,
   EuiTitle,
 } from '@elastic/eui';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -27,9 +31,18 @@ import { DataSourceContext, QUERY_INSIGHTS } from '../TopNQueries/TopNQueries';
 import { SearchQueryRecord } from '../../../types/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryInsightsDashboardsPluginStartDependencies } from '../../types';
-import { retrieveQueryById } from '../../../common/utils/QueryUtils';
+import { retrieveQueryWithSearches } from '../../../common/utils/QueryUtils';
+import { calculateMemory, calculateMetric } from '../../../common/utils/MetricUtils';
+import {
+  CPU_TIME,
+  INDICES,
+  LATENCY,
+  MEMORY_USAGE,
+  TIMESTAMP,
+  TOTAL_SHARDS,
+} from '../../../common/constants';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
-import { formatQueryDisplay } from '../../utils/query-formatter-utils';
+import { formatQueryDisplay, isDslQuery } from '../../utils/query-formatter-utils';
 import { getDataSourceFromUrl } from '../../utils/datasource-utils';
 import {
   getVersionOnce,
@@ -58,6 +71,8 @@ const QueryDetails = ({
   const verbose = Boolean(searchParams.get('verbose'));
 
   const [query, setQuery] = useState<SearchQueryRecord | null>(null);
+  // For a SQL/PPL query, every search it ran.
+  const [searches, setSearches] = useState<SearchQueryRecord[]>([]);
   const [wlmSupported, setWlmSupported] = useState(false);
   const [statusSupported, setStatusSupported] = useState(false);
   const [userInfoSupported, setUserInfoSupported] = useState(false);
@@ -72,7 +87,7 @@ const QueryDetails = ({
   }, []);
 
   const fetchQueryDetails = async () => {
-    const retrievedQuery = await retrieveQueryById(
+    const retrieved = await retrieveQueryWithSearches(
       core,
       getDataSourceFromUrl().id,
       from,
@@ -80,7 +95,8 @@ const QueryDetails = ({
       id,
       verbose
     );
-    setQuery(retrievedQuery);
+    setQuery(retrieved.query);
+    setSearches(retrieved.searches);
   };
 
   useEffect(() => {
@@ -211,6 +227,70 @@ const QueryDetails = ({
     </EuiFlexGrid>
   );
 
+  // Each search a SQL/PPL query ran, linked to its own details.
+  const searchColumns: Array<EuiBasicTableColumn<SearchQueryRecord>> = [
+    {
+      name: TIMESTAMP,
+      render: (search: SearchQueryRecord) => (
+        <EuiLink
+          onClick={() =>
+            history.push(
+              `/query-details?from=${encodeURIComponent(from || '')}&to=${encodeURIComponent(
+                to || ''
+              )}&id=${encodeURIComponent(search.id)}&verbose=true`
+            )
+          }
+        >
+          {convertTime(search.timestamp)}
+        </EuiLink>
+      ),
+      sortable: (search: SearchQueryRecord) => search.timestamp,
+    },
+    {
+      name: INDICES,
+      render: (search: SearchQueryRecord) => (search.indices || []).join(', ') || '-',
+    },
+    {
+      name: LATENCY,
+      render: (search: SearchQueryRecord) =>
+        calculateMetric(
+          search.measurements?.latency?.number,
+          search.measurements?.latency?.count,
+          'ms'
+        ),
+      sortable: (search: SearchQueryRecord) => search.measurements?.latency?.number ?? 0,
+    },
+    {
+      name: CPU_TIME,
+      render: (search: SearchQueryRecord) =>
+        calculateMetric(
+          search.measurements?.cpu?.number,
+          search.measurements?.cpu?.count,
+          'ms',
+          1000000
+        ),
+      sortable: (search: SearchQueryRecord) => search.measurements?.cpu?.number ?? 0,
+    },
+    {
+      name: MEMORY_USAGE,
+      render: (search: SearchQueryRecord) =>
+        calculateMemory(search.measurements?.memory?.number, search.measurements?.memory?.count),
+      sortable: (search: SearchQueryRecord) => search.measurements?.memory?.number ?? 0,
+    },
+    {
+      name: TOTAL_SHARDS,
+      render: (search: SearchQueryRecord) => search.total_shards ?? '-',
+    },
+    {
+      name: 'Status',
+      render: (search: SearchQueryRecord) => (
+        <EuiBadge color={search.failed ? 'danger' : 'success'}>
+          {search.failed ? 'Failed' : 'Completed'}
+        </EuiBadge>
+      ),
+    },
+  ];
+
   const shardColumns = [
     {
       field: 'action',
@@ -237,6 +317,12 @@ const QueryDetails = ({
   ];
 
   const queryDisplay = formatQueryDisplay(query);
+  // A PPL query's source is its query text: shown as written, and not a body the profiler can run.
+  const isDsl = !query || isDslQuery(query);
+  // A search's coordinator task is the one whose parent isn't listed: none (-1) for a search sent on
+  // its own, or the SQL/PPL query's task for a search such a query ran. Its shard tasks follow.
+  const listedTaskIds = new Set((query?.task_resource_usages || []).map((t) => t.taskId));
+  const isCoordinatorTask = (task: Task) => !listedTaskIds.has(task.parentTaskId);
 
   return (
     <div>
@@ -267,6 +353,11 @@ const QueryDetails = ({
         <QuerySummary
           query={query}
           wlmSupported={wlmSupported}
+          searchesWlmGroupId={
+            Array.from(new Set(searches.map((search) => search.wlm_group_id).filter(Boolean))).join(
+              ', '
+            ) || undefined
+          }
           statusSupported={statusSupported}
           userInfoSupported={userInfoSupported}
         />
@@ -283,7 +374,7 @@ const QueryDetails = ({
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               {query.task_resource_usages
-                .filter((t) => t.parentTaskId === -1)
+                .filter(isCoordinatorTask)
                 .map((t) => renderCoordinatorSummary(t))}
               <EuiSpacer size="m" />
               <EuiTitle size="xs">
@@ -291,7 +382,7 @@ const QueryDetails = ({
               </EuiTitle>
               <EuiHorizontalRule margin="xs" />
               <EuiInMemoryTable
-                items={query.task_resource_usages.filter((t) => t.parentTaskId !== -1)}
+                items={query.task_resource_usages.filter((t) => !isCoordinatorTask(t))}
                 columns={shardColumns}
                 itemId="taskId"
                 pagination={{ initialPageSize: 10, showPerPageOptions: false }}
@@ -309,7 +400,7 @@ const QueryDetails = ({
                     <h2>Query</h2>
                   </EuiTitle>
                 </EuiFlexItem>
-                {queryDisplay && !queryDisplay.includes('...truncated') && (
+                {isDsl && queryDisplay && !queryDisplay.includes('...truncated') && (
                   <EuiFlexItem grow={false}>
                     <EuiButton
                       size="s"
@@ -345,7 +436,7 @@ const QueryDetails = ({
               <EuiHorizontalRule margin="xs" />
               <EuiSpacer size="xs" />
               <EuiCodeBlock
-                language="jsx"
+                language={isDsl ? 'jsx' : undefined}
                 paddingSize="m"
                 fontSize="s"
                 overflowHeight={600}
@@ -355,20 +446,46 @@ const QueryDetails = ({
               </EuiCodeBlock>
             </EuiPanel>
           </EuiFlexItem>
-          <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
-            <EuiPanel data-test-subj={'query-details-latency-chart'}>
-              <EuiTitle size="xs">
-                <h2>Latency</h2>
+          {/* The chart shows a search's phases; a PPL query has none of its own. */}
+          {isDsl && (
+            <EuiFlexItem grow={1} style={{ alignSelf: 'start', minWidth: 0 }}>
+              <EuiPanel data-test-subj={'query-details-latency-chart'}>
+                <EuiTitle size="xs">
+                  <h2>Latency</h2>
+                </EuiTitle>
+                <EuiHorizontalRule margin="xs" />
+                <ReactECharts
+                  option={chartOptions}
+                  style={{ height: 120, width: '100%' }}
+                  opts={{ renderer: 'svg' }}
+                />
+              </EuiPanel>
+            </EuiFlexItem>
+          )}
+        </EuiFlexGroup>
+        {!isDsl && (
+          <>
+            <EuiSpacer size="m" />
+            <EuiPanel data-test-subj={'query-details-searches'}>
+              <EuiTitle size="s">
+                <h2>Searches ({searches.length})</h2>
               </EuiTitle>
+              <EuiText size="s" color="subdued">
+                <p>The searches this query ran. Its CPU time and memory usage include theirs.</p>
+              </EuiText>
               <EuiHorizontalRule margin="xs" />
-              <ReactECharts
-                option={chartOptions}
-                style={{ height: 120, width: '100%' }}
-                opts={{ renderer: 'svg' }}
+              <EuiInMemoryTable
+                tableCaption="Searches this query ran"
+                items={searches}
+                columns={searchColumns}
+                itemId="id"
+                sorting={{ sort: { field: LATENCY, direction: 'desc' } }}
+                pagination={{ initialPageSize: 10, pageSizeOptions: [10, 25, 50, 100] }}
+                message="No searches were recorded for this query."
               />
             </EuiPanel>
-          </EuiFlexItem>
-        </EuiFlexGroup>
+          </>
+        )}
       </EuiFlexItem>
     </div>
   );

@@ -184,4 +184,18 @@ describe('formatQueryDisplay', () => {
     const result = formatQueryDisplay(query);
     expect(result).toBe('{}');
   });
+
+  it('returns a PPL query text as written', () => {
+    const text = 'source=logs | where status = 500 | stats count() by host';
+    expect(formatQueryDisplay({ query_source: 'PPL', source: text } as SearchQueryRecord)).toBe(
+      text
+    );
+  });
+
+  it('treats a record without a query source, or a DSL one, as a search', () => {
+    const source = '{"size":5}';
+    const expected = JSON.stringify({ size: 5 }, null, 2);
+    expect(formatQueryDisplay({ source } as SearchQueryRecord)).toBe(expected);
+    expect(formatQueryDisplay({ query_source: 'DSL', source } as SearchQueryRecord)).toBe(expected);
+  });
 });

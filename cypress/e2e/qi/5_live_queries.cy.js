@@ -73,6 +73,7 @@ describe('Inflight Queries Dashboard', () => {
       '',
       'Timestamp',
       'Task ID',
+      'Query source',
       'Index',
       'Time elapsed',
       'CPU usage',
@@ -524,7 +525,7 @@ describe('Task Detail Flyout', () => {
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 5e6 },
               memory: { number: 8192 },
             },
@@ -694,7 +695,7 @@ describe('Task Detail Flyout', () => {
             indices: ['idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 1e9 },
+              latency: { number: 1000 },
               cpu: { number: 0 },
               memory: { number: 0 },
             },

@@ -20,7 +20,7 @@ import {
   ID,
   QUERY_GROUP_HASHCODE,
 } from '../../../../common/constants';
-import { calculateMetric } from '../../../../common/utils/MetricUtils';
+import { calculateMemory, calculateMetric } from '../../../../common/utils/MetricUtils';
 
 // Panel component for displaying query group detail values
 const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -73,7 +73,7 @@ export const QueryGroupAggregateSummary = ({ query }: { query: any }) => {
         />
         <PanelItem
           label={AVERAGE_MEMORY_USAGE}
-          value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B', 1)}
+          value={calculateMemory(measurements.memory?.number, measurements.memory?.count)}
         />
         <PanelItem label={GROUP_BY} value={groupBy !== undefined ? `${groupBy}` : 'N/A'} />
         {hashcode && <PanelItem label={QUERY_GROUP_HASHCODE} value={hashcode} />}

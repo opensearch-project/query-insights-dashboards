@@ -51,7 +51,11 @@ import {
   BACKEND_ROLES,
   CHART_COLORS,
 } from '../../../common/constants';
-import { calculateMetric, calculateMetricNumber } from '../../../common/utils/MetricUtils';
+import {
+  calculateMemory,
+  calculateMetric,
+  calculateMetricNumber,
+} from '../../../common/utils/MetricUtils';
 import { getOpaqueId } from '../../../common/utils/QueryUtils';
 import { parseDateString } from '../../../common/utils/DateUtils';
 import { QueryInsightsDataSourceMenu } from '../../components/DataSourcePicker';
@@ -79,6 +83,7 @@ import { DEFAULT_WORKLOAD_GROUP } from '../../../common/constants';
 import { useColumnVisibility, ColumnDef } from '../../hooks/useColumnVisibility';
 import { ColumnVisibilityPopover } from '../../components/ColumnVisibilityPopover';
 import { getSecurityPluginStatus, SecurityPluginStatus } from '../../utils/datasource-utils';
+import { QUERY_SOURCE_BADGE_COLORS } from '../../utils/live-query-utils';
 
 // --- constants for field names and defaults ---
 const TIMESTAMP_FIELD = 'timestamp';
@@ -86,6 +91,24 @@ const LATENCY_FIELD = 'measurements.latency';
 const CPU_FIELD = 'measurements.cpu';
 const MEMORY_FIELD = 'measurements.memory';
 const INDICES_FIELD = 'indices';
+
+// A record's language: PPL for a query the SQL plugin reported, else DSL. Records from before
+// SQL/PPL reporting, and groups of similar searches, carry no query_source.
+const querySourceOf = (q: SearchQueryRecord): string => q.query_source || 'DSL';
+
+// Whether a record is a PPL query or a DSL search. It depends on nothing in the component.
+const QUERY_SOURCE_COLUMN: Array<EuiBasicTableColumn<SearchQueryRecord> & { id?: string }> = [
+  {
+    id: 'query_source',
+    name: 'Query Source',
+    render: (q: SearchQueryRecord) => {
+      const source = querySourceOf(q);
+      return <EuiBadge color={QUERY_SOURCE_BADGE_COLORS[source] ?? 'hollow'}>{source}</EuiBadge>;
+    },
+    sortable: (q: SearchQueryRecord) => querySourceOf(q),
+    truncateText: true,
+  },
+];
 const SEARCH_TYPE_FIELD = 'search_type';
 const NODE_ID_FIELD = 'node_id';
 const TOTAL_SHARDS_FIELD = 'total_shards';
@@ -198,6 +221,7 @@ const QueryInsights = ({
     const defs: ColumnDef[] = [
       { id: 'id', label: 'ID', pinned: true },
       { id: 'type', label: 'Type' },
+      { id: 'query_source', label: 'Query Source' },
       { id: 'query_count', label: 'Query Count' },
       { id: 'timestamp', label: 'Timestamp' },
       ...(statusSupported ? [{ id: 'status', label: 'Status' }] : []),
@@ -387,6 +411,12 @@ const QueryInsights = ({
         label: 'Type',
         key: 'type',
         accessor: (q) => (q.group_by === 'SIMILARITY' ? 'group' : 'query'),
+        type: 'string',
+      },
+      {
+        label: 'Query Source',
+        key: 'query_source',
+        accessor: (q) => querySourceOf(q),
         type: 'string',
       },
       {
@@ -874,11 +904,9 @@ const QueryInsights = ({
         field: MEMORY_FIELD as keyof SearchQueryRecord,
         name: memHeader,
         render: (_: any, q: SearchQueryRecord) =>
-          calculateMetric(
+          calculateMemory(
             q.measurements?.memory?.number,
             q.measurements?.memory?.count,
-            'B',
-            1,
             METRIC_DEFAULT_MSG
           ),
         sortable: (q: SearchQueryRecord) =>
@@ -892,6 +920,7 @@ const QueryInsights = ({
   const defaultColumns = useMemo(
     () => [
       ...baseColumns,
+      ...QUERY_SOURCE_COLUMN,
       ...querycountColumn,
       ...timestampColumn,
       ...(statusSupported ? statusColumn : []),
@@ -909,13 +938,14 @@ const QueryInsights = ({
     ]
   );
   const groupTypeColumns = useMemo(
-    () => [...baseColumns, ...querycountColumn, ...metricColumns],
+    () => [...baseColumns, ...QUERY_SOURCE_COLUMN, ...querycountColumn, ...metricColumns],
     [baseColumns, querycountColumn, metricColumns]
   );
 
   const queryTypeColumns = useMemo(
     () => [
       ...baseColumns,
+      ...QUERY_SOURCE_COLUMN,
       ...timestampColumn,
       ...(statusSupported ? statusColumn : []),
       ...metricColumns,
