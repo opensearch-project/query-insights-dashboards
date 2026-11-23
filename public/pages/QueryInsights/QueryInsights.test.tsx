@@ -108,12 +108,12 @@ const clickTypeOption = async (label: 'group' | 'query') => {
   fireEvent.click(btn);
 };
 
-const renderQueryInsights = (initialEntries = ['/']) =>
+const renderQueryInsights = (initialEntries = ['/'], queries = sampleQueries) =>
   render(
     <MemoryRouter initialEntries={initialEntries}>
       <DataSourceContext.Provider value={mockDataSourceContext}>
         <QueryInsights
-          queries={sampleQueries}
+          queries={queries}
           loading={false}
           onTimeChange={mockOnTimeChange}
           recentlyUsedRanges={[]}
@@ -279,6 +279,7 @@ describe('QueryInsights Component', () => {
         const expectedHeaders = [
           'Id',
           'Type',
+          'Query Source',
           'Query Count',
           'Timestamp',
           'Status',
@@ -343,6 +344,7 @@ describe('QueryInsights Component', () => {
         const expectedHeaders = [
           'Id',
           'Type',
+          'Query Source',
           'Query Count',
           'Average Latency',
           'Average CPU Time',
@@ -368,6 +370,7 @@ describe('QueryInsights Component', () => {
         const expectedHeaders = [
           'Id',
           'Type',
+          'Query Source',
           'Timestamp',
           'Status',
           'Latency',
@@ -401,6 +404,7 @@ describe('QueryInsights Component', () => {
         const expectedHeaders = [
           'Id',
           'Type',
+          'Query Source',
           'Query Count',
           'Timestamp',
           'Status',
@@ -419,6 +423,55 @@ describe('QueryInsights Component', () => {
     } catch (_error) {
       console.log('Skipping filter test - Type filter not available');
     }
+  });
+
+  describe('Query source column', () => {
+    // A PPL query's record as the list reads it: it names no indices, and the list leaves out sources.
+    const pplQuery = {
+      ...sampleQueries[0],
+      id: 'ppl-record-1',
+      query_source: 'PPL',
+      indices: undefined,
+      search_type: undefined,
+    };
+
+    const mainTable = () => {
+      const tables = screen.getAllByRole('table');
+      return tables[tables.length - 1];
+    };
+    const rowOf = (id: string) => within(mainTable()).getByText(id).closest('tr') as HTMLElement;
+
+    it('shows whether each query is PPL or DSL', async () => {
+      await act(async () => {
+        renderQueryInsights(['/'], [pplQuery, ...sampleQueries]);
+      });
+
+      await waitFor(() =>
+        expect(within(mainTable()).getByText('ppl-record-1')).toBeInTheDocument()
+      );
+      const ppl = within(rowOf('ppl-record-1'));
+      expect(ppl.getByText('PPL')).toBeInTheDocument();
+      // A search that names no source is a DSL search, as is a group of similar searches.
+      expect(within(rowOf(sampleQueries[0].id)).getByText('DSL')).toBeInTheDocument();
+      expect(within(rowOf(sampleQueries[1].id)).getByText('DSL')).toBeInTheDocument();
+    });
+
+    it('filters by query source', async () => {
+      await act(async () => {
+        renderQueryInsights(['/'], [pplQuery, ...sampleQueries]);
+      });
+
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('e.g. latency >= 100 AND type = query'), {
+          target: { value: 'query_source = PPL' },
+        });
+      });
+
+      await waitFor(() => {
+        expect(within(mainTable()).getByText('ppl-record-1')).toBeInTheDocument();
+        expect(within(mainTable()).queryByText(sampleQueries[0].id)).not.toBeInTheDocument();
+      });
+    });
   });
 
   describe('WLM functions', () => {
@@ -1093,7 +1146,7 @@ describe('QueryInsights - user-info column interactions', () => {
       const columnHeaders = within(mainTable).getAllByRole('columnheader');
       const headerCell = columnHeaders.find((h) => h.textContent?.includes(header));
       const sortButton = headerCell?.querySelector('button') ?? headerCell;
-      // eslint-disable-next-line no-await-in-loop
+
       await act(async () => {
         fireEvent.click(sortButton as HTMLElement);
       });

@@ -65,7 +65,7 @@ describe('QueryGroupAggregateSummary', () => {
       </MemoryRouter>
     );
 
-    const memoryUsage = '16528.00 B';
+    const memoryUsage = '16.14 KB';
     expect(screen.getByText(memoryUsage)).toBeInTheDocument();
   });
 

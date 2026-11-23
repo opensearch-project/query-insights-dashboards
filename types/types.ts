@@ -16,6 +16,13 @@ export interface SearchQueryRecord {
   node_id: string;
   source: ISearchSource | string; // source can be ISearchSource object for versions before 3.5 and string for versions after 3.5
   source_truncated: boolean; // if source (as a string) is truncated
+  // 'DSL' for a search; for a query the SQL plugin reports, its language ('PPL'), whose source is
+  // the query text. Absent on records from versions before SQL/PPL reporting.
+  query_source?: string;
+  // A SQL/PPL query's marker; the searches it ran carry it in derived_from and is_child.
+  parent_marker?: string;
+  derived_from?: string;
+  is_child?: boolean;
   labels: Record<string, string>;
   search_type: string;
   indices: string[];
@@ -99,6 +106,15 @@ export interface RichLiveQueryRecord {
   username?: string;
   user_roles?: string[];
   backend_roles?: string[];
+  // A running PPL query's searches that have finished, whose tasks are gone; their CPU and memory
+  // are part of the totals. Absent for a DSL search, and before any search finishes.
+  finished_searches?: FinishedSearches;
+}
+
+export interface FinishedSearches {
+  count: number;
+  cpu_nanos: number;
+  memory_bytes: number;
 }
 
 // Finished query record — extends SearchQueryRecord with top_n_id and status

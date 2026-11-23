@@ -20,9 +20,19 @@
 
 import { SearchQueryRecord } from '../../types/types';
 
+/**
+ * Whether a record is a search. A PPL query the SQL plugin reports carries its query text as its
+ * source rather than a search body.
+ */
+export const isDslQuery = (query: Pick<SearchQueryRecord, 'query_source'>): boolean =>
+  !query.query_source || query.query_source === 'DSL';
+
 export const formatQueryDisplay = (query: SearchQueryRecord | null): string => {
   if (!query) {
     return '';
+  }
+  if (!isDslQuery(query)) {
+    return typeof query.source === 'string' ? query.source : '';
   }
   let parsedSource = query.source;
 

@@ -29,11 +29,13 @@ import {
   BACKEND_ROLES,
   WLM_GROUP,
 } from '../../../../common/constants';
-import { calculateMetric } from '../../../../common/utils/MetricUtils';
+import { calculateMemory, calculateMetric } from '../../../../common/utils/MetricUtils';
 import { getOpaqueId } from '../../../../common/utils/QueryUtils';
+import { isDslQuery } from '../../../utils/query-formatter-utils';
+import { QUERY_SOURCE_BADGE_COLORS, pplSourceIndices } from '../../../utils/live-query-utils';
 
 // Panel component for displaying query detail values
-const PanelItem = ({ label, value }: { label: string; value: string | number }) => (
+const PanelItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <EuiFlexItem>
     <EuiDescriptionList
       compressed={true}
@@ -52,11 +54,14 @@ const QuerySummary = ({
   userInfoSupported = false,
   wlmSupported = false,
   statusSupported = false,
+  searchesWlmGroupId,
 }: {
   query: SearchQueryRecord | null;
   userInfoSupported?: boolean;
   wlmSupported?: boolean;
   statusSupported?: boolean;
+  // The workload group(s) of the searches a SQL/PPL query ran; its own record names none.
+  searchesWlmGroupId?: string;
 }) => {
   // If query is null, return a message indicating no data is available
   if (!query) {
@@ -88,6 +93,18 @@ const QuerySummary = ({
     backend_roles: backendRoles,
   } = query;
   const appId = getOpaqueId(labels, '');
+  // A PPL query's record names no indices, shard count or search type: its searches have their own
+  // records, so the summary leaves out the search type and shard count. Its indices come from its
+  // text, as in Live Queries.
+  const isPpl = !isDslQuery(query);
+  // PPL for a query the SQL plugin reported, else DSL, as in the Top N list.
+  const querySource = query.query_source || 'DSL';
+  const indexList =
+    indices && indices.length > 0
+      ? indices.toString()
+      : isPpl && typeof query.source === 'string'
+        ? Array.from(new Set(pplSourceIndices(query.source))).join(',')
+        : '';
   return (
     <EuiPanel data-test-subj={'query-details-summary-section'}>
       <EuiTitle size="s">
@@ -106,15 +123,28 @@ const QuerySummary = ({
         />
         <PanelItem
           label={MEMORY_USAGE}
-          value={calculateMetric(measurements.memory?.number, measurements.memory?.count, 'B')}
+          value={calculateMemory(measurements.memory?.number, measurements.memory?.count)}
         />
-        <PanelItem label={INDICES} value={indices.toString()} />
-        <PanelItem label={SEARCH_TYPE} value={searchType.replaceAll('_', ' ')} />
+        <PanelItem
+          label="Query Source"
+          value={
+            <EuiBadge color={QUERY_SOURCE_BADGE_COLORS[querySource] ?? 'hollow'}>
+              {querySource}
+            </EuiBadge>
+          }
+        />
+        <PanelItem label={INDICES} value={indexList || '-'} />
+        {!isPpl && (
+          <PanelItem
+            label={SEARCH_TYPE}
+            value={searchType ? searchType.replaceAll('_', ' ') : '-'}
+          />
+        )}
         <PanelItem label={NODE_ID} value={nodeId} />
-        <PanelItem label={TOTAL_SHARDS} value={totalShards} />
+        {!isPpl && <PanelItem label={TOTAL_SHARDS} value={totalShards ?? '-'} />}
         {appId && <PanelItem label={OPAQUE_ID} value={appId} />}
-        {wlmSupported && query.wlm_group_id && (
-          <PanelItem label={WLM_GROUP} value={query.wlm_group_id} />
+        {wlmSupported && (query.wlm_group_id || searchesWlmGroupId) && (
+          <PanelItem label={WLM_GROUP} value={query.wlm_group_id || searchesWlmGroupId || ''} />
         )}
         {statusSupported && (
           <EuiFlexItem>

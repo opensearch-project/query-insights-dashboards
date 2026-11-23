@@ -9,7 +9,7 @@ import { render, screen, waitFor, act, cleanup, fireEvent, within } from '@testi
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { DataSourceContext } from '../TopNQueries/TopNQueries';
 import { InflightQueries } from './InflightQueries';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { retrieveLiveQueries, retrieveQueryWithSearches } from '../../../common/utils/QueryUtils';
 import { getSecurityPluginStatus } from '../../utils/datasource-utils';
 import {
   getVersionOnce,
@@ -19,6 +19,7 @@ import {
 } from '../../utils/version-utils';
 import stubLiveQueries from '../../../cypress/fixtures/stub_live_queries.json';
 import stubLiveQueriesPpl from '../../../cypress/fixtures/stub_live_queries_ppl.json';
+import { SearchQueryRecord } from '../../../types/types';
 import '@testing-library/jest-dom';
 
 jest.mock('../../../common/utils/QueryUtils');
@@ -783,7 +784,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['idx1'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 2e6 },
               memory: { number: 2048 },
             },
@@ -798,7 +799,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['idx1'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 3e9 },
+              latency: { number: 3000 },
               cpu: { number: 3e6 },
               memory: { number: 3072 },
             },
@@ -935,7 +936,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 5e6 },
               memory: { number: 8192 },
             },
@@ -969,6 +970,8 @@ describe('InflightQueries - additional coverage', () => {
       { timeout: 5000 }
     );
 
+    // The finished entry's latency is 2000 ms, as Query Insights reports it.
+    expect(screen.getAllByText('2.00 s').length).toBeGreaterThanOrEqual(1);
     screen.getAllByText('finished-task:789')[0].click();
 
     await waitFor(() => {
@@ -977,6 +980,7 @@ describe('InflightQueries - additional coverage', () => {
       // Completed task should NOT show Kill Query
       expect(screen.queryByText('Kill Query')).not.toBeInTheDocument();
     });
+    expect(screen.getByText('2000 ms')).toBeInTheDocument();
   });
 
   it('handles new API format with coordinator_task and start_time', async () => {
@@ -1075,7 +1079,7 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 3e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            measurements: { latency: { number: 3000 }, cpu: { number: 0 }, memory: { number: 0 } },
             task_resource_usages: [],
           },
         ],
@@ -1125,7 +1129,7 @@ describe('InflightQueries - additional coverage', () => {
             status: 'completed',
             indices: ['idx'],
             search_type: 'query_then_fetch',
-            measurements: { latency: { number: 1e9 }, cpu: { number: 0 }, memory: { number: 0 } },
+            measurements: { latency: { number: 1000 }, cpu: { number: 0 }, memory: { number: 0 } },
             task_resource_usages: [],
           },
         ],
@@ -1224,7 +1228,7 @@ describe('InflightQueries - additional coverage', () => {
             indices: ['test-idx'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 2e9 },
+              latency: { number: 2000 },
               cpu: { number: 5e6 },
               memory: { number: 8192 },
             },
@@ -2137,6 +2141,45 @@ describe('InflightQueries - PPL queries', () => {
   const PPL_TEXT =
     'source=qibig | join left=a right=b ON a.grp = b.grp qibig | eval z = a.v * b.v | stats sum(z) as c';
 
+  // A PPL query that has finished, as the finished-queries list reports it, and its Top N record.
+  const FINISHED_ID = 'ludTvLmlQpW7fvLIs4agRA:77';
+  const TOP_N_ID = 'topn-ppl-1';
+  const withFinishedPpl = {
+    ...stubLiveQueriesPpl.between_searches,
+    response: {
+      ...stubLiveQueriesPpl.between_searches.response,
+      finished_queries: [
+        {
+          id: FINISHED_ID,
+          timestamp: 1640995200000,
+          node_id: 'ludTvLmlQpW7fvLIs4agRA',
+          status: 'completed',
+          query_source: 'PPL',
+          parent_marker: 'PPL:ludTvLmlQpW7fvLIs4agRA:77',
+          source: PPL_TEXT,
+          top_n_id: TOP_N_ID,
+          // As Query Insights reports it: latency in ms, CPU in ns, memory in bytes.
+          measurements: {
+            latency: { number: 37355 },
+            cpu: { number: 36e9 },
+            memory: { number: 4096 },
+          },
+        },
+      ],
+    },
+  };
+
+  const mockSearchesInTopN = (searches: unknown[]) =>
+    (
+      retrieveQueryWithSearches as jest.MockedFunction<typeof retrieveQueryWithSearches>
+    ).mockResolvedValue({
+      query: searches.length > 0 ? ({ id: TOP_N_ID } as SearchQueryRecord) : null,
+      searches: searches as SearchQueryRecord[],
+    });
+
+  // By default, Top N has no record of a query.
+  beforeEach(() => mockSearchesInTopN([]));
+
   const renderPage = async (payload: unknown) => {
     const core = makeCore();
     mockLiveQueries(payload);
@@ -2186,6 +2229,12 @@ describe('InflightQueries - PPL queries', () => {
     expect(ppl.getByText('qibig')).toBeInTheDocument();
   });
 
+  // The PPL or DSL badge by a flyout's title.
+  const querySourceBadgeOf = (title: HTMLElement) =>
+    (title.closest('.euiFlyout') as HTMLElement).querySelector(
+      '[data-test-subj="task-detail-query-source"]'
+    )?.textContent;
+
   // The table listed under a flyout heading.
   const tableUnder = (heading: HTMLElement) => {
     let el = heading.nextElementSibling;
@@ -2205,6 +2254,9 @@ describe('InflightQueries - PPL queries', () => {
     const flyout = within(title.closest('.euiFlyout') as HTMLElement);
     expect(flyout.getByText('PPL Query')).toBeInTheDocument();
     expect(flyout.queryByText('Query Source')).not.toBeInTheDocument();
+    expect(querySourceBadgeOf(title)).toBe('PPL');
+    // A PPL query isn't a search: each search it runs has its own type.
+    expect(flyout.queryByText('Search Type')).not.toBeInTheDocument();
     // The join's running search and that search's shard task are listed apart.
     const searches = tableUnder(flyout.getByText('Child Search Tasks'));
     expect(searches.getByText(SEARCH_TASK_ID)).toBeInTheDocument();
@@ -2218,6 +2270,8 @@ describe('InflightQueries - PPL queries', () => {
     const code = (title.closest('.euiFlyout') as HTMLElement).querySelector('.euiCodeBlock__code');
     expect(code?.textContent).toBe(PPL_TEXT);
     expect(flyout.getByText('Kill Query')).toBeInTheDocument();
+    // A running query's tasks are live; Top N has none of them yet.
+    expect(retrieveQueryWithSearches).not.toHaveBeenCalled();
   });
 
   it('lists only shard tasks in the flyout of a DSL search', async () => {
@@ -2227,9 +2281,121 @@ describe('InflightQueries - PPL queries', () => {
 
     const title = await screen.findByText(`Task ID - ${DSL_ID}`);
     const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(querySourceBadgeOf(title)).toBe('DSL');
+    expect(flyout.getByText('Search Type')).toBeInTheDocument();
     expect(flyout.queryByText('Child Search Tasks')).not.toBeInTheDocument();
     const shards = tableUnder(flyout.getByText('Shard Tasks'));
     expect(shards.getByText('qibig[0]')).toBeInTheDocument();
+  });
+
+  it('shows a finished PPL query with its text and the indices it read', async () => {
+    await renderPage(withFinishedPpl);
+    const row = within(rowOf(FINISHED_ID));
+    expect(row.getByText('PPL')).toBeInTheDocument();
+    expect(row.getByText('qibig')).toBeInTheDocument();
+    expect(row.getByText('37.35 s')).toBeInTheDocument();
+
+    row.getByText(FINISHED_ID).click();
+    const title = await screen.findByText(`Task ID - ${FINISHED_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    const code = (title.closest('.euiFlyout') as HTMLElement).querySelector('.euiCodeBlock__code');
+    expect(code?.textContent).toBe(PPL_TEXT);
+    // A finished query says what it was too.
+    expect(querySourceBadgeOf(title)).toBe('PPL');
+    expect(flyout.getByText('37355 ms')).toBeInTheDocument();
+    expect(flyout.getByText(/^This query has finished\./)).toBeInTheDocument();
+    expect(flyout.queryByText(/Refresh to update/)).not.toBeInTheDocument();
+  });
+
+  it('lists the searches a finished PPL query ran, and their shard tasks, from Top N', async () => {
+    const node = 'ludTvLmlQpW7fvLIs4agRA';
+    const task = (action: string, taskId: number, parentTaskId: number, cpuMs: number) => ({
+      action,
+      taskId,
+      parentTaskId,
+      nodeId: node,
+      taskResourceUsage: { cpu_time_in_nanos: cpuMs * 1e6, memory_in_bytes: 1024 },
+    });
+    // Each search's coordinator task is a child of the query's task, 77.
+    mockSearchesInTopN([
+      {
+        id: 'search-1',
+        node_id: node,
+        indices: ['qibig'],
+        measurements: { latency: { number: 120 } },
+        task_resource_usages: [
+          task('indices:data/read/search[phase/query]', 102, 101, 30),
+          task('indices:data/read/search', 101, 77, 2),
+        ],
+      },
+      {
+        id: 'search-2',
+        node_id: node,
+        indices: ['qibig'],
+        measurements: { latency: { number: 95 } },
+        task_resource_usages: [
+          task('indices:data/read/search', 103, 77, 1),
+          task('indices:data/read/search[phase/query]', 104, 103, 20),
+          task('indices:data/read/search[phase/fetch/id]', 105, 103, 3),
+        ],
+      },
+    ]);
+    await renderPage(withFinishedPpl);
+
+    within(rowOf(FINISHED_ID)).getByText(FINISHED_ID).click();
+    const title = await screen.findByText(`Task ID - ${FINISHED_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(
+      await flyout.findByText(
+        'This query has finished. Its CPU and memory include the 2 searches it ran.'
+      )
+    ).toBeInTheDocument();
+    expect(retrieveQueryWithSearches).toHaveBeenCalledWith(
+      expect.anything(),
+      'default',
+      expect.any(String),
+      expect.any(String),
+      TOP_N_ID,
+      true
+    );
+
+    const searches = tableUnder(flyout.getByText('Child Search Tasks'));
+    expect(searches.getByText(`${node}:101`)).toBeInTheDocument();
+    expect(searches.getByText(`${node}:103`)).toBeInTheDocument();
+    expect(searches.getByText('120')).toBeInTheDocument();
+    expect(searches.getByText('2.00')).toBeInTheDocument();
+    expect(searches.queryByText(`${node}:102`)).not.toBeInTheDocument();
+    const shards = tableUnder(flyout.getByText('Shard Tasks'));
+    const shardRow = (id: string) => within(shards.getByText(id).closest('tr') as HTMLElement);
+    expect(shardRow(`${node}:102`).getByText(`${node}:101`)).toBeInTheDocument();
+    expect(shardRow(`${node}:102`).getByText('Query')).toBeInTheDocument();
+    expect(shardRow(`${node}:105`).getByText(`${node}:103`)).toBeInTheDocument();
+    expect(shardRow(`${node}:105`).getByText('Fetch (ID)')).toBeInTheDocument();
+    // The searches' own tasks aren't shard tasks.
+    expect(shards.queryByText('indices:data/read/search')).not.toBeInTheDocument();
+  });
+
+  it('tells when Top N has no record of the searches a finished PPL query ran', async () => {
+    await renderPage(withFinishedPpl);
+
+    within(rowOf(FINISHED_ID)).getByText(FINISHED_ID).click();
+    const title = await screen.findByText(`Task ID - ${FINISHED_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(flyout.getByText('Loading the searches it ran from Top N')).toBeInTheDocument();
+
+    // A query that has just finished may not be in Top N yet, so the flyout asks again.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(10000);
+    });
+    expect(retrieveQueryWithSearches).toHaveBeenCalledTimes(3);
+    expect(
+      flyout.getByText(
+        'This query has finished. Its CPU and memory include the searches it ran. ' +
+          'Top N has no record of them.'
+      )
+    ).toBeInTheDocument();
+    expect(flyout.queryByText('Loading the searches it ran from Top N')).not.toBeInTheDocument();
+    expect(flyout.queryByText('Child Search Tasks')).not.toBeInTheDocument();
   });
 
   it('tells a PPL query between searches has no running search', async () => {
@@ -2238,6 +2404,65 @@ describe('InflightQueries - PPL queries', () => {
     within(rowOf(PPL_ID)).getByText(PPL_ID).click();
 
     const title = await screen.findByText(`Task ID - ${PPL_ID}`);
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(
+      flyout.getByText('No searches running at this moment. Refresh to update.')
+    ).toBeInTheDocument();
+    // Before any search finishes, there is nothing to count.
+    expect(flyout.queryByText('Finished Searches')).not.toBeInTheDocument();
+  });
+
+  // The searches a running PPL query has finished, as Live Queries reports them; their tasks are gone.
+  const SEARCHES_SO_FAR = { count: 604, cpu_nanos: 7891230000, memory_bytes: 9123456789 };
+  const withSearchesSoFar = <T extends { response: { live_queries: Array<{ id: string }> } }>(
+    payload: T
+  ) => ({
+    ...payload,
+    response: {
+      ...payload.response,
+      live_queries: payload.response.live_queries.map((q) =>
+        q.id === PPL_ID ? { ...q, finished_searches: SEARCHES_SO_FAR } : q
+      ),
+    },
+  });
+
+  const finishedSearchesOf = (title: HTMLElement) => {
+    const section = (title.closest('.euiFlyout') as HTMLElement).querySelector(
+      '[data-test-subj="task-detail-finished-searches"]'
+    );
+    if (!section) throw new Error('no finished searches section');
+    return within(section as HTMLElement);
+  };
+
+  it('shows the searches a running PPL query has finished beside the one it runs', async () => {
+    await renderPage(withSearchesSoFar(stubLiveQueriesPpl.running_search));
+
+    within(rowOf(PPL_ID)).getByText(PPL_ID).click();
+
+    const title = await screen.findByText(`Task ID - ${PPL_ID}`);
+    const finished = finishedSearchesOf(title);
+    expect(
+      finished.getByText(
+        "604 searches have finished so far. Their CPU and memory are part of this query's usage."
+      )
+    ).toBeInTheDocument();
+    expect(finished.getByText('7891.23')).toBeInTheDocument();
+    expect(finished.getByText('9123456789')).toBeInTheDocument();
+    // The search it is running is still listed with its shard task.
+    const flyout = within(title.closest('.euiFlyout') as HTMLElement);
+    expect(
+      tableUnder(flyout.getByText('Child Search Tasks')).getByText(SEARCH_TASK_ID)
+    ).toBeTruthy();
+  });
+
+  it('shows the searches a PPL query between searches has finished', async () => {
+    await renderPage(withSearchesSoFar(stubLiveQueriesPpl.between_searches));
+
+    within(rowOf(PPL_ID)).getByText(PPL_ID).click();
+
+    const title = await screen.findByText(`Task ID - ${PPL_ID}`);
+    expect(finishedSearchesOf(title).getByText('Searches')).toBeInTheDocument();
+    expect(finishedSearchesOf(title).getByText('604')).toBeInTheDocument();
     const flyout = within(title.closest('.euiFlyout') as HTMLElement);
     expect(
       flyout.getByText('No searches running at this moment. Refresh to update.')
@@ -2418,7 +2643,7 @@ describe('InflightQueries - table sorting', () => {
             indices: ['orders-2024'],
             search_type: 'query_then_fetch',
             measurements: {
-              latency: { number: 3e9 },
+              latency: { number: 3000 },
               cpu: { number: 4e6 },
               memory: { number: 1024 },
             },

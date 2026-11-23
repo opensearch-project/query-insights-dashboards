@@ -119,6 +119,39 @@ exports[`QueryDetails component matches snapshot 1`] = `
                 class="euiDescriptionList__title"
               >
                 <h4>
+                  Query Source
+                </h4>
+              </dt>
+              <dd
+                class="euiDescriptionList__description"
+              >
+                <span
+                  class="euiBadge euiBadge--hollow euiBadge--iconLeft"
+                  title="DSL"
+                >
+                  <span
+                    class="euiBadge__content"
+                  >
+                    <span
+                      class="euiBadge__text"
+                    >
+                      DSL
+                    </span>
+                  </span>
+                </span>
+              </dd>
+            </dl>
+          </div>
+          <div
+            class="euiFlexItem"
+          >
+            <dl
+              class="euiDescriptionList euiDescriptionList--row euiDescriptionList--compressed"
+            >
+              <dt
+                class="euiDescriptionList__title"
+              >
+                <h4>
                   Indices
                 </h4>
               </dt>

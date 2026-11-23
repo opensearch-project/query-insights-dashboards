@@ -38,7 +38,7 @@ import { AppMountParameters, CoreStart } from 'opensearch-dashboards/public';
 import { DataSourceManagementPluginSetup } from 'src/plugins/data_source_management/public';
 import { useHistory, useLocation } from 'react-router-dom';
 import { LiveSearchQueryResponse } from '../../../types/types';
-import { retrieveLiveQueries } from '../../../common/utils/QueryUtils';
+import { retrieveLiveQueries, retrieveQueryWithSearches } from '../../../common/utils/QueryUtils';
 import { API_ENDPOINTS } from '../../../common/utils/apiendpoints';
 import { TaskDetailFlyout } from './TaskDetailFlyout';
 import {
@@ -116,6 +116,13 @@ interface TableSort {
 // Default sort for the live queries table: longest-running queries first.
 // Computed columns (no `field`) are referenced by their column `name`.
 const DEFAULT_TABLE_SORT: TableSort = { field: 'Time elapsed', direction: 'desc' };
+
+// The flyout of a finished PPL query reads the searches it ran from Top N over the past hour, as
+// View Top N does. Top N takes in new records every 5 seconds, so a query that has just finished
+// may not be there yet: the flyout asks again twice, 5 seconds apart.
+const FINISHED_SEARCHES_LOOKBACK_MS = 60 * 60 * 1000;
+const FINISHED_SEARCHES_RETRY_MS = 5000;
+const FINISHED_SEARCHES_ATTEMPTS = 3;
 
 // Same label the Status column renders, so sorting matches what the user sees.
 const getStatusLabel = (item: any): string => {
@@ -451,13 +458,23 @@ export const InflightQueries = ({
               node_id: fq.node_id || '-',
               description: '',
               is_cancelled: fq.failed || false,
-              measurements: fq.measurements || {
-                latency: { number: 0 },
-                cpu: { number: 0 },
-                memory: { number: 0 },
+              measurements: {
+                ...fq.measurements,
+                // A finished entry is a Query Insights record, whose latency is in milliseconds.
+                // Running queries' rows carry nanoseconds, which the table and the flyout read.
+                latency: { number: (fq.measurements?.latency?.number || 0) * 1e6 },
+                cpu: fq.measurements?.cpu || { number: 0 },
+                memory: fq.measurements?.memory || { number: 0 },
               },
-              index: fq.indices?.join(', ') || '-',
+              // A finished PPL entry's source is its query text, and it names no indices of its
+              // own: they come from the text, as for a running PPL query.
+              index:
+                fq.query_source === 'PPL' && typeof fq.source === 'string'
+                  ? pplIndices(fq.source).join(', ') || '-'
+                  : fq.indices?.join(', ') || '-',
               query_source: fq.query_source || 'DSL',
+              query_text:
+                fq.query_source === 'PPL' && typeof fq.source === 'string' ? fq.source : undefined,
               search_type: fq.search_type || '-',
               coordinator_node: fq.node_id || '-',
               node_label: fq.node_id || '-',
@@ -567,6 +584,47 @@ export const InflightQueries = ({
     fetchLiveQueriesSafe,
     queryInsightWlmNavigationSupported,
   ]);
+
+  // The searches of the finished PPL query whose flyout is open, kept with its Top N id so that
+  // another query's never show.
+  const [finishedSearches, setFinishedSearches] = useState<{
+    topNId: string;
+    searches: SearchQueryRecord[];
+  } | null>(null);
+  const selectedFinishedPplTopNId = useMemo(() => {
+    const row = (query?.response?.live_queries || []).find((q) => q.id === selectedTaskId) as
+      (LiveQueryRow & { _finished?: boolean; _topNId?: string }) | undefined;
+    return row?._finished && row.query_source === 'PPL' ? row._topNId : undefined;
+  }, [query, selectedTaskId]);
+
+  useEffect(() => {
+    if (!selectedFinishedPplTopNId) return;
+    let stale = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const load = async (attempt: number) => {
+      const to = new Date();
+      const from = new Date(to.getTime() - FINISHED_SEARCHES_LOOKBACK_MS);
+      const { searches } = await retrieveQueryWithSearches(
+        core,
+        dataSource?.id || '',
+        from.toISOString(),
+        to.toISOString(),
+        selectedFinishedPplTopNId,
+        true
+      );
+      if (stale) return;
+      if (searches.length === 0 && attempt < FINISHED_SEARCHES_ATTEMPTS) {
+        retry = setTimeout(() => void load(attempt + 1), FINISHED_SEARCHES_RETRY_MS);
+        return;
+      }
+      setFinishedSearches({ topNId: selectedFinishedPplTopNId, searches });
+    };
+    void load(1);
+    return () => {
+      stale = true;
+      clearTimeout(retry);
+    };
+  }, [core, dataSource?.id, selectedFinishedPplTopNId]);
 
   const [pagination, setPagination] = useState({ pageIndex: 0 });
   // Sort is kept in component state so it survives the periodic refreshes.
@@ -1553,10 +1611,17 @@ export const InflightQueries = ({
             _totalShards: (selectedItem as any).total_shards,
             _source: (selectedItem as any).source,
             _taskResourceUsages: (selectedItem as any).task_resource_usages,
+            finished_searches: selectedItem.finished_searches,
           };
+          const searchesOfSelected =
+            selectedFinishedPplTopNId && finishedSearches?.topNId === selectedFinishedPplTopNId
+              ? finishedSearches.searches
+              : undefined;
           return (
             <TaskDetailFlyout
               task={richTask as any}
+              finishedSearches={searchesOfSelected}
+              finishedSearchesLoading={!!selectedFinishedPplTopNId && !searchesOfSelected}
               userInfoSupported={userInfoSupported}
               onClose={() => setSelectedTaskId(null)}
               onRefresh={async () => {

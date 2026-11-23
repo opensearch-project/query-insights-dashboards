@@ -38,6 +38,9 @@ describe('QuerySummary', () => {
   it('renders base fields always', () => {
     render(<QuerySummary query={baseQuery} />);
     expect(screen.getByText('Timestamp')).toBeInTheDocument();
+    // A record without a query_source is a DSL search.
+    expect(screen.getByText('Query Source')).toBeInTheDocument();
+    expect(screen.getByText('DSL')).toBeInTheDocument();
     expect(screen.getByText('Indices')).toBeInTheDocument();
     expect(screen.getByText('Search Type')).toBeInTheDocument();
     expect(screen.getByText('Coordinator Node ID')).toBeInTheDocument();
@@ -62,6 +65,17 @@ describe('QuerySummary', () => {
       />
     );
     expect(screen.getByText('WLM Group')).toBeInTheDocument();
+    expect(screen.getByText('DEFAULT_WORKLOAD_GROUP')).toBeInTheDocument();
+  });
+
+  it("renders a PPL query's WLM group from its searches", () => {
+    render(
+      <QuerySummary
+        query={{ ...baseQuery, query_source: 'PPL', wlm_group_id: undefined }}
+        wlmSupported={true}
+        searchesWlmGroupId="DEFAULT_WORKLOAD_GROUP"
+      />
+    );
     expect(screen.getByText('DEFAULT_WORKLOAD_GROUP')).toBeInTheDocument();
   });
 
@@ -123,5 +137,38 @@ describe('QuerySummary', () => {
   it('does not render user_roles when userInfoSupported is true but user_roles is empty', () => {
     render(<QuerySummary query={{ ...baseQuery, user_roles: [] }} userInfoSupported={true} />);
     expect(screen.queryByText('User Roles')).not.toBeInTheDocument();
+  });
+
+  it('renders a PPL record, reading its indices from the query text', () => {
+    const { indices: _i, search_type: _s, total_shards: _t, ...rest } = baseQuery;
+    const pplQuery = {
+      ...rest,
+      query_source: 'PPL',
+      source: 'source=logs, metrics | where status = 500',
+    } as SearchQueryRecord;
+
+    render(<QuerySummary query={pplQuery} />);
+
+    expect(screen.getByText('logs,metrics')).toBeInTheDocument();
+    expect(screen.getByText('PPL')).toBeInTheDocument();
+    expect(screen.queryByText('DSL')).not.toBeInTheDocument();
+    // No search type or shard count: the searches it ran have records of their own.
+    expect(screen.queryByText('Search Type')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total Shards')).not.toBeInTheDocument();
+    expect(screen.queryByText('-')).not.toBeInTheDocument();
+    expect(screen.getByText('Coordinator Node ID')).toBeInTheDocument();
+  });
+
+  it('names an index a PPL self-join reads once', () => {
+    const { indices: _i, ...rest } = baseQuery;
+    const selfJoin = {
+      ...rest,
+      query_source: 'PPL',
+      source: 'source=logs | join left=a right=b ON a.k = b.k [ source=logs ] | stats count()',
+    } as SearchQueryRecord;
+
+    render(<QuerySummary query={selfJoin} />);
+
+    expect(screen.getByText('logs')).toBeInTheDocument();
   });
 });
