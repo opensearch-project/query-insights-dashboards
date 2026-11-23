@@ -1367,34 +1367,9 @@ exports[`InflightQueries matches snapshot 1`] = `
                 </th>
                 <th
                   aria-live="polite"
-                  aria-sort="none"
-                  class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_coordinator_node_4"
-                  role="columnheader"
-                  scope="col"
-                >
-                  <button
-                    class="euiTableHeaderButton"
-                    data-test-subj="tableHeaderSortButton"
-                    type="button"
-                  >
-                    <span
-                      class="euiTableCellContent"
-                    >
-                      <span
-                        class="euiTableCellContent__text"
-                        title="Coordinator node"
-                      >
-                        Coordinator node
-                      </span>
-                    </span>
-                  </button>
-                </th>
-                <th
-                  aria-live="polite"
                   aria-sort="descending"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Time elapsed_5"
+                  data-test-subj="tableHeaderCell_Time elapsed_4"
                   role="columnheader"
                   scope="col"
                 >
@@ -1433,7 +1408,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_CPU usage_6"
+                  data-test-subj="tableHeaderCell_CPU usage_5"
                   role="columnheader"
                   scope="col"
                 >
@@ -1458,7 +1433,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Memory usage_7"
+                  data-test-subj="tableHeaderCell_Memory usage_6"
                   role="columnheader"
                   scope="col"
                 >
@@ -1483,32 +1458,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_search_type_8"
-                  role="columnheader"
-                  scope="col"
-                >
-                  <button
-                    class="euiTableHeaderButton"
-                    data-test-subj="tableHeaderSortButton"
-                    type="button"
-                  >
-                    <span
-                      class="euiTableCellContent"
-                    >
-                      <span
-                        class="euiTableCellContent__text"
-                        title="Search type"
-                      >
-                        Search type
-                      </span>
-                    </span>
-                  </button>
-                </th>
-                <th
-                  aria-live="polite"
-                  aria-sort="none"
-                  class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_Status_9"
+                  data-test-subj="tableHeaderCell_Status_7"
                   role="columnheader"
                   scope="col"
                 >
@@ -1533,7 +1483,7 @@ exports[`InflightQueries matches snapshot 1`] = `
                   aria-live="polite"
                   aria-sort="none"
                   class="euiTableHeaderCell"
-                  data-test-subj="tableHeaderCell_WLM Group_10"
+                  data-test-subj="tableHeaderCell_WLM Group_8"
                   role="columnheader"
                   scope="col"
                 >
@@ -1683,24 +1633,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-A1B2C4E5
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -1735,24 +1667,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.16 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -1966,24 +1880,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-X9Y8Z7W6
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -2018,24 +1914,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.9 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -2249,24 +2127,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-P0Q9R8S7
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -2301,24 +2161,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.72 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -2533,24 +2375,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      4W2VTHIgQY-7dSrYz4BQ
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -2585,24 +2409,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     2.79 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -2786,24 +2592,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      4WTHIgQY-oB7dSrYz4BQ
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -2838,24 +2626,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     2.37 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -3038,24 +2808,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-N2O3P4Q5
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -3090,24 +2842,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     2.07 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -3322,24 +3056,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-A1B2C3D4E5
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -3374,24 +3090,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.73 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -3574,24 +3272,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      no-P0Q9R8S7T6
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -3626,24 +3306,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.07 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -3858,24 +3520,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      2VTHIgQY-oB7dSrYz4BQ
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -3910,24 +3554,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     4.25 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
@@ -4110,24 +3736,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                   <div
                     class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
                   >
-                    Coordinator node
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      node-X8Z7W6V5
-                    </span>
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
                     Time elapsed
                   </div>
                   <div
@@ -4162,24 +3770,6 @@ exports[`InflightQueries matches snapshot 1`] = `
                     class="euiTableCellContent euiTableCellContent--overflowingContent"
                   >
                     3.35 KB
-                  </div>
-                </td>
-                <td
-                  class="euiTableRowCell"
-                >
-                  <div
-                    class="euiTableRowCell__mobileHeader euiTableRowCell--hideForDesktop"
-                  >
-                    Search type
-                  </div>
-                  <div
-                    class="euiTableCellContent"
-                  >
-                    <span
-                      class="euiTableCellContent__text"
-                    >
-                      QUERY THEN FETCH
-                    </span>
                   </div>
                 </td>
                 <td
