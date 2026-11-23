@@ -23,7 +23,8 @@ export const QUERY_SOURCE_BADGE_COLORS: Record<string, string> = {
 };
 
 // The SQL plugin describes a PPL task as "PPL: <query>", or "PPL [queryId=<id>]: <query>".
-const PPL_DESCRIPTION_PREFIX = /^PPL(?: \[queryId=[^\]]*\])?: /;
+// The id can contain "]", so the prefix ends at the first "]: ".
+const PPL_DESCRIPTION_PREFIX = /^PPL(?: \[queryId=.*?\])?: /;
 
 const SEARCH_INDICES = /indices\[(.*?)\]/;
 
@@ -50,6 +51,18 @@ const isSpace = (c: string) => /\s/.test(c);
  */
 const tokenizePpl = (text: string): PplToken[] => {
   const tokens: PplToken[] = [];
+  let lastEnd = -1;
+  // A name can mix plain and backticked parts, as in logs.`2024`: parts with nothing between them
+  // make one name.
+  const pushName = (kind: 'word' | 'name', value: string, start: number, end: number) => {
+    const last = tokens[tokens.length - 1];
+    if (last && (last.kind === 'word' || last.kind === 'name') && lastEnd === start) {
+      last.text += value;
+    } else {
+      tokens.push({ kind, text: value });
+    }
+    lastEnd = end;
+  };
   let i = 0;
   while (i < text.length) {
     const c = text[i];
@@ -78,10 +91,16 @@ const tokenizePpl = (text: string): PplToken[] => {
           value += text[j];
         }
       }
-      tokens.push(c === '`' ? { kind: 'name', text: value } : { kind: 'string' });
+      if (c === '`') {
+        pushName('name', value, i, j + 1);
+      } else {
+        tokens.push({ kind: 'string' });
+        lastEnd = j + 1;
+      }
       i = j + 1;
     } else if (PPL_DELIMITERS.includes(c)) {
       tokens.push({ kind: c as '|' | '[' | ']' | '(' | ')' | ',' | '=' });
+      lastEnd = i + 1;
       i++;
     } else {
       let j = i + 1;
@@ -95,7 +114,7 @@ const tokenizePpl = (text: string): PplToken[] => {
       ) {
         j++;
       }
-      tokens.push({ kind: 'word', text: text.slice(i, j) });
+      pushName('word', text.slice(i, j), i, j);
       i = j;
     }
   }
@@ -116,13 +135,75 @@ const pplTableNames = (tokens: PplToken[], start: number): string[] => {
 };
 
 /**
+ * The first words of the PPL commands other than search, from the PPL grammar. Brackets that hold
+ * such a command, as after appendcol, appendpipe or foreach, work on the results so far and read
+ * no index.
+ */
+const PPL_COMMAND_WORDS = new Set([
+  'ad',
+  'addcoltotals',
+  'addtotals',
+  'append',
+  'appendcol',
+  'appendpipe',
+  'bin',
+  'chart',
+  'convert',
+  'dedup',
+  'eval',
+  'eventstats',
+  'expand',
+  'fieldformat',
+  'fields',
+  'fillnull',
+  'flatten',
+  'foreach',
+  'graphlookup',
+  'grok',
+  'head',
+  'join',
+  'kmeans',
+  'lookup',
+  'ml',
+  'mvcombine',
+  'mvexpand',
+  'nomv',
+  'parse',
+  'patterns',
+  'rare',
+  'regex',
+  'rename',
+  'replace',
+  'reverse',
+  'rex',
+  'sort',
+  'spath',
+  'stats',
+  'streamstats',
+  'table',
+  'timechart',
+  'timewrap',
+  'top',
+  'transpose',
+  'trendline',
+  'union',
+  'where',
+  'xyseries',
+]);
+
+/**
  * The tables the command starting at `start` reads, if it is a search command: the names after its
  * `source=` or `index=`, which may come after search expressions such as `status=500`. Bracketed
  * and parenthesized parts are skipped; a subsearch is read as a pipeline of its own.
  */
 const pplFirstCommandTables = (tokens: PplToken[], start: number): string[] => {
+  const first = tokens[start]?.kind === '|' ? start + 1 : start;
+  const firstToken = tokens[first];
+  if (firstToken?.kind === 'word' && PPL_COMMAND_WORDS.has(firstToken.text.toLowerCase())) {
+    return [];
+  }
   let depth = 0;
-  for (let i = tokens[start]?.kind === '|' ? start + 1 : start; i < tokens.length; i++) {
+  for (let i = first; i < tokens.length; i++) {
     const token = tokens[i];
     if (token.kind === '[' || token.kind === '(') {
       depth++;

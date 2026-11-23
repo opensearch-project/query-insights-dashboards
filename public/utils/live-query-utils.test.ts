@@ -30,6 +30,9 @@ describe('pplQueryText', () => {
   it('drops the prefix that carries a query id', () => {
     expect(pplQueryText('PPL [queryId=q-123]: source=logs | head 5')).toBe('source=logs | head 5');
   });
+  it('drops the prefix when the query id contains ]', () => {
+    expect(pplQueryText('PPL [queryId=q]1]: source=logs | head 5')).toBe('source=logs | head 5');
+  });
 
   it('leaves text without the prefix as it is', () => {
     expect(pplQueryText('source=logs')).toBe('source=logs');
@@ -82,6 +85,28 @@ describe('pplSourceIndices', () => {
   it('reads only the command that starts each pipeline', () => {
     expect(pplSourceIndices('source=logs | eval index = 1 | where source = "x"')).toEqual(['logs']);
   });
+  it.each([
+    ['source=logs | appendcol [ eval index = 1 ]'],
+    ['source=logs | appendcol override=true [ stats count() by index ]'],
+    ['source=logs | appendpipe [ | where index = 1 ]'],
+    ['source=logs | append [ | eval source = x ]'],
+    ['source=logs | foreach [ eval index = 1 ]'],
+  ])('reads no index from brackets that hold commands: %s', (query) => {
+    expect(pplSourceIndices(query)).toEqual(['logs']);
+  });
+  it('reads the source of an append that searches', () => {
+    expect(pplSourceIndices('source=logs | append [ search source=other | head 1 ]')).toEqual([
+      'logs',
+      'other',
+    ]);
+  });
+  it('keeps a name that is partly backticked', () => {
+    expect(pplSourceIndices('source=logs.`2024`')).toEqual(['logs.2024']);
+    expect(pplSourceIndices('source=`logs`.`2024`.archive, other')).toEqual([
+      'logs.2024.archive',
+      'other',
+    ]);
+  });
 });
 
 describe('pplIndices', () => {
@@ -120,5 +145,12 @@ describe('pplIndices', () => {
 
   it('is empty when nothing names an index', () => {
     expect(pplIndices('describe accounts')).toEqual([]);
+  });
+  it('names a partly backticked index once when its search is running', () => {
+    expect(
+      pplIndices('source=logs.`2024` | head 5', [
+        search('indices[logs.2024], search_type[QUERY_THEN_FETCH], source[{}]'),
+      ])
+    ).toEqual(['logs.2024']);
   });
 });
